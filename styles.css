@@ -209,3 +209,15 @@ repeating-linear-gradient(0deg,#1e7d43 0,#1e7d43 56px,#237f47 56px,#237f47 112px
 .world-empty{padding:22px}
 @media(max-width:900px){.world-allocation{grid-template-columns:repeat(4,minmax(0,1fr))}}
 @media(max-width:620px){.world-allocation{grid-template-columns:repeat(2,minmax(0,1fr))}.world-home{align-items:stretch;flex-direction:column}.real-filter{width:100%}}
+
+
+/* v23 — simulação da temporada inteira */
+.season-action-row{display:flex;gap:9px;align-items:stretch;flex-wrap:wrap}
+.season-action-row>button{min-height:44px;flex:1 1 260px}
+.season-sim-btn{border-color:#5f7042}
+.player-season-actions{grid-column:1/-1;display:grid;grid-template-columns:1fr 1fr;gap:8px}
+.player-season-actions .player-main-action{grid-column:auto;margin:0}
+@media(max-width:650px){
+  .season-action-row{display:grid;grid-template-columns:1fr}
+  .player-season-actions{grid-template-columns:1fr}
+}

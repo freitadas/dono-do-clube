@@ -426,3 +426,46 @@ Ao aceitar uma proposta internacional:
 - ao avançar a temporada, o jogador muda de país, liga e clube;
 - a nacionalidade do atleta não muda.
 
+
+
+## Simular temporada inteira + salários equilibrados — v23
+
+### Botão Simular Temporada Inteira
+
+Foi adicionado o botão **⏩ SIMULAR TEMPORADA INTEIRA**.
+
+No modo carreira de clube, ele conclui rapidamente tudo o que ainda estiver pendente na temporada:
+- Estadual, quando existir;
+- copa nacional;
+- rodadas restantes da liga;
+- Libertadores;
+- Champions League;
+- Super Mundial, quando a temporada tiver essa competição.
+
+A simulação também:
+- mantém a classificação e os resultados;
+- registra os últimos jogos simulados;
+- processa a passagem do calendário até o fim da temporada;
+- processa salários mensais, patrocínios, parcelas e empréstimos que vencem no período;
+- registra troféus conquistados;
+- mantém promoção e rebaixamento para a próxima temporada.
+
+No modo carreira de jogador, o mesmo botão:
+- simula todas as rodadas restantes;
+- continua calculando nota individual;
+- gols;
+- assistências;
+- físico;
+- moral;
+- pontos de evolução;
+- salários;
+- classificação;
+- três propostas de transferência no fim da temporada.
+
+A simulação não inicia automaticamente a temporada seguinte. O usuário ainda pode conferir o resultado final antes de avançar.
+
+### Salários dos jogadores reais
+
+Os jogadores com nomes reais agora usam **exatamente a mesma fórmula-base de salário dos jogadores normais do jogo**, de acordo com o overall.
+
+Assim, um jogador real não recebe um salário artificialmente maior apenas por ter um nome real. O salário sugerido continua podendo variar durante a negociação, como já ocorre com os demais jogadores.

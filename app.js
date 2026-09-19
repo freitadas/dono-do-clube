@@ -572,7 +572,10 @@ function homeView(){
       <h1>${esc(c.name)}</h1>
       <p>${esc(locationLabel(c))} · ${esc(leagueLabel(car.user_division,car.country_code||c.country_code))}${pos?` · ${pos}º lugar`:""}</p>
     </div></div>
-    ${action}
+    <div class="season-action-row">
+      ${action}
+      ${car.phase!=="END"?`<button id="simulateFullSeason" class="secondary season-sim-btn">⏩ SIMULAR TEMPORADA INTEIRA</button>`:""}
+    </div>
     <div class="stats">
       <div class="stat"><small>Overall</small><b>${c.team_rating}</b></div>
       <div class="stat"><small>Caixa</small><b>${Number(c.coins).toLocaleString("pt-BR")}</b></div>
@@ -1070,7 +1073,11 @@ function playerCareerHome(){
       <p>${esc(playerPositionLabel(pc.position))} · ${esc(pc.club_name)} · ${esc(pc.league_name)}${pos?` · ${pos}º`:""}</p>
     </div>
     <div class="player-overall"><small>OVR</small><b>${pc.overall}</b></div>
-    ${!statusEnd?`<button id="playerPlayNext" class="primary player-main-action">⚽ JOGAR RODADA ${pc.current_round}/38</button>`:`<button id="playerNextSeason" class="primary player-main-action">📅 IR PARA A PRÓXIMA TEMPORADA</button>`}
+    <div class="player-season-actions">
+      ${!statusEnd?`<button id="playerPlayNext" class="primary player-main-action">⚽ JOGAR RODADA ${pc.current_round}/38</button>
+      <button id="playerSimSeason" class="secondary player-main-action">⏩ SIMULAR TEMPORADA INTEIRA</button>`:
+      `<button id="playerNextSeason" class="primary player-main-action">📅 IR PARA A PRÓXIMA TEMPORADA</button>`}
+    </div>
   </section>
   <section class="player-career-stats">
     <div class="stat"><small>Idade</small><b>${pc.age}</b></div>
@@ -1142,6 +1149,20 @@ function bindPlayerCareer(){
       if(r.match)alert(`${r.match.homeName} ${r.match.homeGoals} x ${r.match.awayGoals} ${r.match.awayName}\nSua nota: ${r.match.performance} · Gols: ${r.match.goals} · Assistências: ${r.match.assists}`);
     }catch(err){alert(err.message);play.disabled=false}
   };
+  const simSeason=app.querySelector("#playerSimSeason");
+  if(simSeason)simSeason.onclick=async()=>{
+    if(!confirm("Simular todas as rodadas restantes desta temporada do jogador?\n\nNotas, gols, assistências, físico, evolução e salários continuarão sendo processados."))return;
+    simSeason.disabled=true;simSeason.textContent="SIMULANDO TEMPORADA...";
+    try{
+      const d=await api("/api/player-career/simulate-season",{method:"POST",body:"{}"});
+      await refreshPlayerCareer();
+      renderPlayerCareer();
+      alert(`Temporada simulada.\nRodadas simuladas: ${d.rounds||0}\nAgora você pode analisar as propostas recebidas.`);
+    }catch(err){
+      alert(err.message);simSeason.disabled=false;simSeason.textContent="⏩ SIMULAR TEMPORADA INTEIRA";
+    }
+  };
+
   const next=app.querySelector("#playerNextSeason");
   if(next)next.onclick=async()=>{
     if(!confirm("Iniciar a próxima temporada?"))return;
@@ -1437,6 +1458,25 @@ async function careerAction(action){
 function bindHome(){
   const b=app.querySelector("#careerAction");
   if(b)b.onclick=async()=>{b.disabled=true;b.textContent=b.dataset.action==="national"?"SIMULANDO RODADA...":"SIMULANDO...";await careerAction(b.dataset.action)};
+
+  const fullSeason=app.querySelector("#simulateFullSeason");
+  if(fullSeason)fullSeason.onclick=async()=>{
+    if(!confirm("Simular todos os jogos restantes desta temporada?\n\nA temporada será concluída de uma vez, incluindo competições restantes. Esta ação não pode ser desfeita."))return;
+    fullSeason.disabled=true;
+    fullSeason.textContent="SIMULANDO TEMPORADA...";
+    try{
+      const d=await api("/api/career/simulate-season",{method:"POST",body:"{}"});
+      await refreshAll();
+      render();
+      if(d.alreadyFinished)alert("Esta temporada já estava encerrada.");
+      else alert(`Temporada simulada até o fim.\nPosição final: ${d.position}º\nJogos simulados: ${d.simulatedMatches||0}`);
+    }catch(err){
+      alert(err.message);
+      fullSeason.disabled=false;
+      fullSeason.textContent="⏩ SIMULAR TEMPORADA INTEIRA";
+    }
+  };
+
   const gs=app.querySelector("#goSquad");if(gs)gs.onclick=()=>{state.view="squad";render()};
   const cup=app.querySelector("#playCopaHome");if(cup)cup.onclick=async()=>{cup.disabled=true;await careerAction("copa")};
   const world=app.querySelector("#goWorldCompetition");if(world)world.onclick=()=>{state.view="league";state.competitionTab="WORLD";render()};

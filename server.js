@@ -26,6 +26,7 @@ const V17_MIGRATION_KEY = "v17_independent_career_market_20260919";
 const V18_MIGRATION_KEY = "v18_manual_career_save_20260919";
 const V21_MIGRATION_KEY = "v21_countries_player_career_20260919";
 const V22_MIGRATION_KEY = "v22_real_market_champions_superworld_20260919";
+const V23_MIGRATION_KEY = "v23_full_season_sim_equal_wages_20260919";
 const MAX_CAREERS_PER_USER = 10;
 const TRANSFER_BAN_THRESHOLD = -10000;
 const competitionLocks = new Set();
@@ -444,7 +445,7 @@ async function seedRealMarketPlayers(){
           nationality_code=EXCLUDED.nationality_code
       `,[
         hub.id,p.name,p.position,p.role,p.rating,p.pace,p.shooting,p.passing,p.defending,
-        p.price,p.age,p.salary,p.contract_seasons,p.key,p.nationality
+        p.price,p.age,salaryForRating(Number(p.rating)),p.contract_seasons,p.key,p.nationality
       ]);
     }
   });
@@ -571,6 +572,18 @@ async function applyV22Migration(){
     }
 
     await c.query(`INSERT INTO app_meta(key,value) VALUES($1,$2)`,[V22_MIGRATION_KEY,new Date().toISOString()]);
+  });
+}
+
+async function applyV23Migration(){
+  const done=await q(`SELECT 1 FROM app_meta WHERE key=$1`,[V23_MIGRATION_KEY]);
+  if(done.rowCount)return;
+  await tx(async c=>{
+    const real=(await c.query(`SELECT id,rating FROM players WHERE is_real_name=TRUE`)).rows;
+    for(const p of real){
+      await c.query(`UPDATE players SET salary=$2 WHERE id=$1`,[p.id,salaryForRating(Number(p.rating||60))]);
+    }
+    await c.query(`INSERT INTO app_meta(key,value) VALUES($1,$2)`,[V23_MIGRATION_KEY,new Date().toISOString()]);
   });
 }
 
@@ -1059,7 +1072,7 @@ async function generatePlayerTransferOffers(pc,data){
 
   return data;
 }
-async function simulatePlayerCareerRound(userId){
+async function simulatePlayerCareerRound(userId,cachedClubMap=null){
   return tx(async client=>{
     const pc=(await client.query(`SELECT * FROM player_careers WHERE user_id=$1 AND is_active_career=TRUE FOR UPDATE`,[userId])).rows[0];
     if(!pc)throw Object.assign(new Error("Carreira de jogador não encontrada."),{status:404});
@@ -1068,7 +1081,7 @@ async function simulatePlayerCareerRound(userId){
     const data=typeof pc.data==="string"?JSON.parse(pc.data):pc.data;
     const round=Number(pc.current_round);
     const games=data.league.fixtures.filter(f=>Number(f.round)===round&&!f.played);
-    const clubMap=await fastClubSnapshot();
+    const clubMap=cachedClubMap||await fastClubSnapshot();
     let playerMatch=null;
 
     for(const f of games){
@@ -1869,14 +1882,14 @@ async function finishFastLibertadores(career,ownerId,clubMap,userMatches,include
   if(includeUser||career.phase==="LIBERTADORES")career.phase="END";
 }
 
-async function finishCopaFast(career,ownerId,clubMap){
+async function finishCopaFast(career,ownerId,clubMap,userMatches=null){
   const copa=await ensureCopaData(career);
   while(copa.status!=="finished"){
     const stage=copa.stage;
     const games=copa.fixtures.filter(f=>f.stage===stage&&!f.played);
     for(const f of games){
-      const {hg,ag}=fastScore(f.home,f.away,clubMap);f.played=true;f.hg=hg;f.ag=ag;
-      if(hg===ag)f.pw=Math.random()<.5?f.home:f.away;
+      playFastFixture(f,null,clubMap,ownerId,copa.name||"Copa Nacional",userMatches||[]);
+      if(f.hg===f.ag)f.pw=Math.random()<.5?f.home:f.away;
     }
     const winners=copaWinners(copa,stage);
     if(stage==="FINAL"){
@@ -2459,6 +2472,158 @@ async function maybeStartClubWorldCup(career){
     career.phase="END";
   }
   return {active:true,qualified};
+}
+
+function daysToSeasonEnd(career){
+  const cal=ensureCalendarData(career);
+  const current=new Date(`${cal.date}T12:00:00Z`);
+  const target=new Date(Date.UTC(seasonStartYear(career.season_no),11,20,12));
+  return Math.max(0,Math.ceil((target-current)/86400000));
+}
+
+async function settleFastSeasonSummary(ownerId,career,userMatches){
+  if(!userMatches.length)return {matches:0,revenue:0};
+
+  let revenue=0;
+  for(const m of userMatches){
+    let context=career.user_division||"D";
+    if(String(m.matchType||"").toLowerCase().includes("libertadores"))context="LIB";
+    else if(String(m.matchType||"").toLowerCase().includes("champions"))context="LIB";
+    else if(String(m.matchType||"").toLowerCase().includes("mundial"))context="LIB";
+    else if(String(m.matchType||"").toLowerCase().includes("copa"))context="CUP";
+    const rates=financeRates(context);
+    if(m.isHome)revenue+=Number(rates.gate||0);
+    revenue+=m.result==="win"?650:m.result==="draw"?250:80;
+  }
+
+  await tx(async client=>{
+    if(revenue>0)await addFinance(client,ownerId,revenue,"season_sim","Receitas acumuladas da simulação da temporada");
+
+    const recent=userMatches.slice(-12);
+    for(const m of recent){
+      await client.query(`
+        INSERT INTO matches(
+          user_club_id,opponent_club_id,user_goals,opponent_goals,reward,
+          user_rating,opponent_rating,events,match_type
+        ) VALUES($1,$2,$3,$4,0,$5,$6,'[]'::jsonb,$7)
+      `,[
+        ownerId,m.opponentId,m.userGoals,m.opponentGoals,
+        Math.round(Number(m.userRating||64)),Math.round(Number(m.opponentRating||64)),
+        `season_sim:${m.matchType||"Partida"}`
+      ]);
+    }
+  });
+
+  return {matches:userMatches.length,revenue};
+}
+
+async function simulateFullClubSeason(ownerId){
+  let career=await repairCareer(ownerId);
+  if(!career)throw Object.assign(new Error("Carreira não encontrada."),{status:404});
+  if(career.phase==="END")return {alreadyFinished:true,career};
+
+  const clubMap=await fastClubSnapshot();
+  const userMatches=[];
+
+  if(career.phase==="STATE"&&career.data.state){
+    finishFastState(career,ownerId,clubMap,userMatches);
+    if(String(career.data.state.champion||"")===String(ownerId)){
+      await tx(async client=>{await recordTrophy(client,ownerId,career.season_no,"ESTADUAL",`Campeão — ${career.data.state.name}`)});
+    }
+  }
+
+  if(career.data.copaBrasil?.status!=="finished"){
+    await finishCopaFast(career,ownerId,clubMap,userMatches);
+    if(String(career.data.copaBrasil?.champion||"")===String(ownerId)){
+      await tx(async client=>{
+        const cupName=career.data.copaBrasil?.name||domesticCupName(career.country_code||"BR");
+        const fresh=await recordTrophy(client,ownerId,career.season_no,"COPA_NACIONAL",`Campeão — ${cupName}`);
+        if(fresh)await addFinance(client,ownerId,9000,"prize",`Premiação pelo título — ${cupName}`);
+      });
+    }
+  }
+
+  if(career.phase==="NATIONAL"){
+    simulateFastNationalRounds(career,ownerId,clubMap,userMatches,100);
+    if(Number(career.current_round)>38){
+      await tx(async client=>{await maybeRecordDivisionTrophy(client,career,ownerId)});
+      const country=career.country_code||"BR";
+      const top4=sortEntries(career.data.divisions.A.entries).slice(0,4);
+      const qualified=career.user_division==="A"&&top4.some(e=>String(e.clubId)===String(ownerId));
+
+      if(country==="BR"){
+        if(!career.data.libertadores)await makeLibertadores(career);
+        career.phase="LIBERTADORES";
+        await finishFastLibertadores(career,ownerId,clubMap,userMatches,true);
+        await maybeStartClubWorldCup(career);
+      }else if(EUROPE_COUNTRIES.has(country)){
+        if(!career.data.championsLeague)await makeChampionsLeague(career,qualified);
+        career.phase="CHAMPIONS";
+        await autoFinishChampions(career);
+        await maybeStartClubWorldCup(career);
+      }else{
+        await maybeStartClubWorldCup(career);
+      }
+    }
+  }
+
+  if(career.phase==="LIBERTADORES"){
+    await finishFastLibertadores(career,ownerId,clubMap,userMatches,true);
+    await maybeStartClubWorldCup(career);
+  }
+
+  if(career.phase==="CHAMPIONS"){
+    await autoFinishChampions(career);
+    await maybeStartClubWorldCup(career);
+  }
+
+  if(career.phase==="CLUB_WORLD_CUP"){
+    await autoFinishClubWorldCup(career);
+    career.phase="END";
+  }
+
+  if(career.phase!=="END")career.phase="END";
+
+  const finance=await settleFastSeasonSummary(ownerId,career,userMatches);
+
+  const days=daysToSeasonEnd(career);
+  if(days>0)await advanceCalendar(career,ownerId,days,"Temporada simulada até o fim");
+
+  await saveCareer(career);
+
+  const table=sortEntries(career.data.divisions[career.user_division]?.entries||[]);
+  const position=Math.max(1,table.findIndex(e=>String(e.clubId)===String(ownerId))+1);
+
+  return {
+    alreadyFinished:false,
+    phase:career.phase,
+    seasonNo:career.season_no,
+    division:career.user_division,
+    position,
+    simulatedMatches:finance.matches,
+    simulatedRevenue:finance.revenue
+  };
+}
+
+async function simulateFullPlayerSeason(userId){
+  let rounds=0;
+  let last=null;
+  const clubMap=await fastClubSnapshot();
+  for(let i=0;i<45;i++){
+    const pc=await activePlayerCareer(userId);
+    if(!pc)throw Object.assign(new Error("Carreira de jogador não encontrada."),{status:404});
+    if(pc.status==="END")break;
+    last=await simulatePlayerCareerRound(userId,clubMap);
+    rounds++;
+  }
+
+  const pc=await activePlayerCareer(userId);
+  return {
+    rounds,
+    status:pc?.status||"END",
+    last,
+    career:pc?await hydratePlayerCareer(pc):null
+  };
 }
 
 async function playNational(ownerId){
@@ -3207,6 +3372,11 @@ app.post("/api/player-career/play",auth,async(req,res,next)=>{
     res.json(await withCompetitionLock(`player:${req.user.id}`,()=>simulatePlayerCareerRound(req.user.id)));
   }catch(e){next(e)}
 });
+app.post("/api/player-career/simulate-season",auth,async(req,res,next)=>{
+  try{
+    res.json(await withCompetitionLock(`player:${req.user.id}`,()=>simulateFullPlayerSeason(req.user.id)));
+  }catch(e){next(e)}
+});
 
 app.post("/api/player-career/train",auth,async(req,res,next)=>{
   try{
@@ -3561,6 +3731,14 @@ app.post("/api/club-world-cup/play-next",auth,async(req,res,next)=>{
     res.json(await withCompetitionLock(c.id,async()=>{await repairCareer(c.id);return playClubWorldCup(c.id)}));
   }catch(e){next(e)}
 });
+app.post("/api/career/simulate-season",auth,async(req,res,next)=>{
+  try{
+    const c=await userClub(req.user.id);
+    if(!c)return res.status(404).json({error:"Carreira de clube não encontrada."});
+    res.json(await withCompetitionLock(c.id,()=>simulateFullClubSeason(c.id)));
+  }catch(e){next(e)}
+});
+
 app.post("/api/career/next-season",auth,async(req,res,next)=>{
   try{
     const c=await userClub(req.user.id);
@@ -4040,8 +4218,9 @@ async function start(){
   await applyV18Migration();
   await applyV21Migration();
   await applyV22Migration();
+  await applyV23Migration();
   await seedRealMarketPlayers();
   await ensureMarket();
-  app.listen(PORT,"0.0.0.0",()=>console.log(`Dono do Clube v14 rodando na porta ${PORT}`));
+  app.listen(PORT,"0.0.0.0",()=>console.log(`Dono do Clube v15 rodando na porta ${PORT}`));
 }
 start().catch(e=>{console.error("Falha ao iniciar:",e);process.exit(1)});

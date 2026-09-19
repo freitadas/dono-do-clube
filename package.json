@@ -1,8 +1,8 @@
 {
   "name": "dono-do-clube",
-  "version": "22.0.0",
+  "version": "23.0.0",
   "private": true,
-  "description": "Dono do Clube com jogadores reais no mercado, Champions League, Super Mundial e transferências internacionais no modo jogador.",
+  "description": "Dono do Clube com simulação da temporada inteira e salários dos jogadores reais equilibrados pela mesma regra dos jogadores normais.",
   "main": "server.js",
   "scripts": {
     "start": "node server.js"
