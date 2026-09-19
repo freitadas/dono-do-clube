@@ -5,7 +5,7 @@ const STATES={"AC": "Acre", "AL": "Alagoas", "AP": "Amapá", "AM": "Amazonas", "
 const state={
   me:null,club:null,players:[],market:[],matches:[],friends:[],competitions:null,
   finance:{wages:0,recent:[],transferBan:{active:false}},clubEvents:[],transferResults:[],
-  trophies:[],incomingOffers:[],calendar:null,
+  trophies:[],incomingOffers:[],calendar:null,sponsorship:{active:null,offers:[]},marketProfile:null,
   view:"home",authMode:"login",competitionTab:"STATE",roundByDiv:{A:1,B:1,C:1,D:1}
 };
 
@@ -280,18 +280,42 @@ function trophyCards(list){
 }
 function calendarCard(){
   const cal=state.calendar;if(!cal)return "";
+  const installments=state.finance?.installments||[];
+  const loans=state.finance?.loans||[];
   return `<div class="card calendar-card">
-    <div class="section-title"><div><div class="kicker">CALENDÁRIO FINANCEIRO</div><h2>${formatGameDate(cal.currentDate)}</h2></div><span class="badge blue">Próximo pagamento ${formatGameDate(cal.nextPayrollDate)}</span></div>
+    <div class="section-title"><div><div class="kicker">CALENDÁRIO FINANCEIRO</div><h2>${formatGameDate(cal.currentDate)}</h2></div><span class="badge blue">Próximo fechamento ${formatGameDate(cal.nextPayrollDate)}</span></div>
     <div class="calendar-money"><span>Folha salarial mensal</span><b>${Number(cal.monthlyWages||0).toLocaleString("pt-BR")} moedas</b></div>
-    <p class="muted">Os salários são pagos uma vez por mês, quando o calendário passa para um novo mês. Não há mais salário cobrado por rodada.</p>
-    ${(cal.payrolls||[]).slice(0,3).map(x=>`<div class="finance-row"><span>Folha ${esc(x.month)}</span><b class="expense">-${Number(x.amount).toLocaleString("pt-BR")}</b></div>`).join("")}
+    <p class="muted">No início de cada novo mês o jogo paga salários, parcelas de transferências, taxas de empréstimos e recebe o patrocínio mensal.</p>
+    ${(cal.payrolls||[]).slice(0,3).map(x=>`<div class="finance-row"><span>Fechamento ${esc(x.month)}</span><b class="${Number(x.balance)>=0?"income":"expense"}">Saldo ${Number(x.balance).toLocaleString("pt-BR")}</b></div>`).join("")}
+    ${installments.length?`<div class="calendar-sub"><b>Parcelas de transferências</b>${installments.slice(0,4).map(x=>`<span>${esc(x.player_name)} · ${x.installments_paid}/${x.installments_total} pagas · restante ${Number(x.amount_remaining).toLocaleString("pt-BR")}</span>`).join("")}</div>`:""}
+    ${loans.length?`<div class="calendar-sub"><b>Empréstimos ativos</b>${loans.slice(0,4).map(x=>`<span>${esc(x.player_name)} · ${x.months_elapsed}/${x.months_total} meses · taxa ${Number(x.monthly_fee).toLocaleString("pt-BR")}/mês</span>`).join("")}</div>`:""}
   </div>`;
 }
+
 function transferBanBanner(){
   const ban=state.finance?.transferBan;
   if(!ban?.active)return "";
-  return `<div class="transfer-ban"><b>⛔ TRANSFER BAN ATIVO</b><span>O clube está excessivamente endividado. Você pode vender jogadores, mas não pode contratar enquanto o caixa estiver abaixo de ${Number(ban.threshold).toLocaleString("pt-BR")} moedas.</span></div>`;
+  return `<div class="transfer-ban"><b>⛔ TRANSFER BAN ATIVO</b><span>O clube está excessivamente endividado. Você pode vender jogadores, mas não pode contratar nem pedir novos empréstimos enquanto o caixa estiver abaixo de ${Number(ban.threshold).toLocaleString("pt-BR")} moedas.</span></div>`;
 }
+function sponsorshipCard(){
+  const sp=state.sponsorship||{active:null,offers:[]};
+  if(sp.active){
+    const remaining=Math.max(0,Number(sp.active.months_total||12)-Number(sp.active.months_paid||0));
+    return `<div class="card sponsor-card">
+      <div class="kicker">PATROCINADOR OFICIAL</div>
+      <h2>${esc(sp.active.sponsor_name)}</h2>
+      <div class="sponsor-money"><span>Pagamento mensal</span><b>+${Number(sp.active.monthly_amount).toLocaleString("pt-BR")}</b></div>
+      <p class="muted">${remaining} mês(es) restantes no contrato.</p>
+    </div>`;
+  }
+  const offers=sp.offers||[];
+  return `<div class="card sponsor-card">
+    <div class="kicker">PATROCÍNIO</div><h2>Escolha um patrocinador</h2>
+    <p class="muted">As propostas melhoram conforme o clube sobe de divisão.</p>
+    <div class="sponsor-offers">${offers.map(o=>`<button class="sponsor-offer secondary" data-sponsor="${esc(o.id)}"><b>${esc(o.name)}</b><span>+${Number(o.monthly).toLocaleString("pt-BR")}/mês</span><small>Luvas +${Number(o.signing).toLocaleString("pt-BR")}</small></button>`).join("")}</div>
+  </div>`;
+}
+
 function copaQuickCard(){
   const copa=state.competitions?.copaBrasil,car=state.competitions?.career;
   if(!copa||car?.phase==="STATE")return "";
@@ -352,7 +376,8 @@ function homeView(){
       <button class="secondary" id="goSquad">Ver escalação e físico</button>
     </div>
   </section>
-  <section class="grid calendar-grid">${calendarCard()}<div class="card"><div class="kicker">GALERIA</div><h2>Troféus do clube</h2>${trophyCards((state.trophies||[]).slice(0,6))}</div></section>`;
+  <section class="grid calendar-grid">${calendarCard()}${sponsorshipCard()}</section>
+  <section class="card" style="margin-top:14px"><div class="kicker">GALERIA</div><h2>Troféus do clube</h2>${trophyCards((state.trophies||[]).slice(0,6))}</section>`;
 }
 function squadView(){
   return `<section class="card">
@@ -390,7 +415,8 @@ function marketView(){
     </section>
     <hr class="section-divider">
     <div class="kicker">CONTRATAÇÕES</div><h3>Pesquisar jogadores</h3>
-    <p class="muted">O clube vendedor precisa aceitar a taxa e o jogador precisa aceitar o salário mensal e o projeto esportivo.</p>
+    ${state.marketProfile?`<div class="market-level">Mercado da Série ${esc(state.competitions?.career?.user_division||"D")} · jogadores normalmente entre OVR ${state.marketProfile.min} e ${state.marketProfile.max}. Ao subir de divisão, o nível disponível aumenta.</div>`:""}
+    <p class="muted">O clube vendedor precisa aceitar a proposta e o jogador precisa aceitar o salário e o projeto esportivo. Compras podem ser parceladas em até 24x. Jogadores não essenciais podem chegar por empréstimo.</p>
     ${ban?.active?`<p class="muted">A pesquisa continua disponível, mas novas contratações estão bloqueadas pelo transfer ban.</p>`:""}
     <form id="transferSearch" class="transfer-search">
       <input id="searchName" placeholder="Nome do jogador">
@@ -418,20 +444,26 @@ function incomingOfferCards(){
   </article>`).join("")}</div>`;
 }
 function transferCards(){
-  if(!state.transferResults?.length)return `<div class="empty">Use a pesquisa para encontrar jogadores livres e atletas de outros clubes.</div>`;
+  if(!state.transferResults?.length)return `<div class="empty">Use a pesquisa para encontrar jogadores livres e atletas de outros clubes. A qualidade do mercado aumenta conforme sua divisão.</div>`;
   return state.transferResults.map(p=>`<article class="player">
     <span class="pos">${esc(p.role||posName(p.position))} · ${p.age} anos</span><span class="rating">${p.rating}</span>
     <h4>${esc(p.name)}</h4>
     <div class="transfer-source">${p.source_club_name?esc(p.source_club_name):"Livre no mercado"}${p.source_division?` · Série ${p.source_division}`:""}</div>
     <div class="attrs"><span>VEL <b>${p.pace}</b></span><span>CHU <b>${p.shooting}</b></span><span>PAS <b>${p.passing}</b></span><span>DEF <b>${p.defending}</b></span></div>
     <div class="pstats">
+      <span>Valor justo <b>${Number(p.fair_value||0).toLocaleString("pt-BR")}</b></span>
       <span>Pedido <b>${Number(p.asking_price||0).toLocaleString("pt-BR")}</b></span>
       <span>Salário mensal <b>${Number(p.suggested_salary||0).toLocaleString("pt-BR")}</b></span>
-      <span>Interesse <b>${esc(p.interest)}</b></span><span>Contrato <b>${p.contract_seasons||1}T atual</b></span>
+      <span>Interesse <b>${esc(p.interest)}</b></span>
     </div>
-    <div class="player-actions"><button class="primary negotiate-player" data-id="${p.id}" ${state.finance?.transferBan?.active?"disabled":""}>${state.finance?.transferBan?.active?"Transfer ban":"Negociar"}</button></div>
+    <div class="loan-status ${p.loan_eligible?"loan-ok":"loan-no"}">${p.loan_eligible?`Empréstimo disponível · sugerido ${Number(p.suggested_loan_fee||0).toLocaleString("pt-BR")}/mês`:`Empréstimo: ${esc(p.loan_reason||"indisponível")}`}</div>
+    <div class="player-actions">
+      <button class="primary negotiate-player" data-id="${p.id}" ${state.finance?.transferBan?.active?"disabled":""}>${state.finance?.transferBan?.active?"Transfer ban":"Comprar"}</button>
+      ${p.loan_eligible?`<button class="secondary loan-player" data-id="${p.id}" ${state.finance?.transferBan?.active?"disabled":""}>Empréstimo</button>`:""}
+    </div>
   </article>`).join("");
 }
+
 function friendsView(){
   return `<section class="card">
     <div class="section-title"><div><div class="kicker">Multiplayer assíncrono</div><h2>Jogar contra amigos</h2></div><span class="badge">${state.friends.length} amigos</span></div>
@@ -642,7 +674,7 @@ function showMatch(m){
     <button class="secondary close-modal">Fechar</button></div>
     <div class="board"><span>${esc(m.userClub)}<br><small class="muted">OVR ${m.userRating}</small></span><b>${m.userGoals} × ${m.opponentGoals}</b>
     <span>${esc(m.opponent)}<br><small class="muted">OVR ${m.opponentRating}</small></span></div>
-    ${m.finance?`<div class="finance-match"><span>Patrocínio +${Number(m.finance.sponsor).toLocaleString("pt-BR")}</span><span>Bilheteria +${Number(m.finance.gate).toLocaleString("pt-BR")}</span><span>Resultado +${Number(m.finance.performance).toLocaleString("pt-BR")}</span><span>Salários: pagamento mensal pelo calendário</span><b>Receita líquida desta partida ${Number(m.finance.net)>=0?"+":""}${Number(m.finance.net).toLocaleString("pt-BR")}</b></div>${m.finance.event?`<div class="msg ok"><b>${esc(m.finance.event.title)}</b><br>${esc(m.finance.event.description)}</div>`:""}`:""}
+    ${m.finance?`<div class="finance-match"><span>Patrocínio: pagamento mensal</span><span>Bilheteria +${Number(m.finance.gate).toLocaleString("pt-BR")}</span><span>Resultado +${Number(m.finance.performance).toLocaleString("pt-BR")}</span><span>Salários: pagamento mensal pelo calendário</span><b>Receita líquida desta partida ${Number(m.finance.net)>=0?"+":""}${Number(m.finance.net).toLocaleString("pt-BR")}</b></div>${m.finance.event?`<div class="msg ok"><b>${esc(m.finance.event.title)}</b><br>${esc(m.finance.event.description)}</div>`:""}`:""}
     <h3>Lances</h3>${m.events?.length?m.events.map(e=>`<div class="event"><b>${e.minute}'</b> ${esc(e.text)}</div>`).join(""):`<div class="empty">Sem lances relevantes.</div>`}
   </div>`;
   document.body.appendChild(bg);bg.querySelector(".close-modal").onclick=()=>bg.remove();bg.onclick=e=>{if(e.target===bg)bg.remove()};
@@ -679,6 +711,17 @@ function bindHome(){
   if(b)b.onclick=async()=>{b.disabled=true;b.textContent=b.dataset.action==="national"?"SIMULANDO RODADA...":"SIMULANDO...";await careerAction(b.dataset.action)};
   const gs=app.querySelector("#goSquad");if(gs)gs.onclick=()=>{state.view="squad";render()};
   const cup=app.querySelector("#playCopaHome");if(cup)cup.onclick=async()=>{cup.disabled=true;await careerAction("copa")};
+  app.querySelectorAll(".sponsor-offer").forEach(btn=>btn.onclick=async()=>{
+    const sponsor=(state.sponsorship?.offers||[]).find(x=>x.id===btn.dataset.sponsor);
+    if(!sponsor)return;
+    if(!confirm(`Assinar com ${sponsor.name}?\n\n${Number(sponsor.monthly).toLocaleString("pt-BR")} moedas por mês\nLuvas: ${Number(sponsor.signing).toLocaleString("pt-BR")} moedas`))return;
+    btn.disabled=true;
+    try{
+      const d=await api("/api/sponsorships/sign",{method:"POST",body:JSON.stringify({sponsorId:sponsor.id})});
+      await refreshAll();render();
+      alert(`${d.name} é o novo patrocinador do clube.`);
+    }catch(err){alert(err.message);btn.disabled=false}
+  });
 }
 function bindSquad(){
   const formation=app.querySelector("#formation");
@@ -740,6 +783,8 @@ async function searchTransfers(){
   try{
     const d=await api(`/api/transfers/search?q=${qv}&position=${pos}&minRating=${min}&maxPrice=${max}`);
     state.transferResults=d.players||[];
+    state.marketProfile=d.marketProfile||state.marketProfile;
+    if(state.finance&&d.transferBan)state.finance.transferBan=d.transferBan;
     if(box)box.innerHTML=transferCards();
     bindTransferButtons();
   }catch(err){
@@ -751,22 +796,44 @@ function bindTransferButtons(){
     const p=state.transferResults.find(x=>String(x.id)===String(b.dataset.id));
     if(p)openTransferOffer(p);
   });
+  app.querySelectorAll(".loan-player").forEach(b=>b.onclick=()=>{
+    const p=state.transferResults.find(x=>String(x.id)===String(b.dataset.id));
+    if(p)openLoanOffer(p);
+  });
 }
 function openTransferOffer(p){
-  const fee=Number(p.asking_price||0),salary=Math.max(Number(p.suggested_salary||0),Math.round(Number(p.suggested_salary||0)*1.1/10)*10);
+  const fee=Number(p.asking_price||0);
+  const salary=Math.max(Number(p.suggested_salary||0),Math.round(Number(p.suggested_salary||0)*1.1/10)*10);
   const bg=document.createElement("div");bg.className="modal-bg";
+  const installmentOptions=p.source_club_id
+    ?[1,2,3,4,6,8,10,12,18,24].map(n=>`<option value="${n}">${n}x${n===1?" à vista":""}</option>`).join("")
+    :`<option value="1">À vista</option>`;
+
   bg.innerHTML=`<div class="modal">
-    <div class="modal-head"><div><div class="kicker">NEGOCIAÇÃO</div><h2>${esc(p.name)}</h2><span class="muted">${esc(p.source_club_name||"Jogador livre")} · ${esc(p.role||p.position)} · OVR ${p.rating}</span></div><button class="secondary close-modal">Fechar</button></div>
+    <div class="modal-head"><div><div class="kicker">NEGOCIAÇÃO DE COMPRA</div><h2>${esc(p.name)}</h2><span class="muted">${esc(p.source_club_name||"Jogador livre")} · ${esc(p.role||p.position)} · OVR ${p.rating}</span></div><button class="secondary close-modal">Fechar</button></div>
     <form id="offerForm" class="stack" style="margin-top:16px">
-      <label>Oferta ao clube<input id="offerFee" type="number" min="0" value="${fee}"></label>
+      <label>Oferta total ao clube<input id="offerFee" type="number" min="0" value="${fee}"></label>
+      <label>Forma de pagamento<select id="offerInstallments">${installmentOptions}</select></label>
       <label>Salário mensal<input id="offerSalary" type="number" min="10" value="${salary}"></label>
       <label>Duração do contrato<select id="offerYears"><option value="1">1 temporada</option><option value="2">2 temporadas</option><option value="3" selected>3 temporadas</option><option value="4">4 temporadas</option></select></label>
-      <div class="offer-summary">Pedido aproximado: <b>${fee.toLocaleString("pt-BR")}</b> · Salário mensal sugerido: <b>${Number(p.suggested_salary||0).toLocaleString("pt-BR")}</b> · Interesse atual: <b>${esc(p.interest)}</b></div>
+      <div id="installmentPreview" class="offer-summary"></div>
+      <div class="offer-summary">Valor justo estimado: <b>${Number(p.fair_value||0).toLocaleString("pt-BR")}</b> · Pedido: <b>${fee.toLocaleString("pt-BR")}</b> · Salário sugerido: <b>${Number(p.suggested_salary||0).toLocaleString("pt-BR")}</b></div>
       <div id="offerMsg"></div>
-      <button class="primary">Enviar proposta</button>
+      <button class="primary">Enviar proposta de compra</button>
     </form>
   </div>`;
+
   document.body.appendChild(bg);
+  const feeEl=bg.querySelector("#offerFee"),instEl=bg.querySelector("#offerInstallments"),preview=bg.querySelector("#installmentPreview");
+  const syncInstallments=()=>{
+    const total=Math.max(0,Number(feeEl.value||0)),n=Math.max(1,Number(instEl.value||1));
+    const each=n>1?Math.ceil(total/n):total;
+    preview.innerHTML=n>1
+      ?`Transferência em <b>${n}x</b> de aproximadamente <b>${each.toLocaleString("pt-BR")}</b>. A primeira parcela e as luvas são pagas na contratação; as demais vencem mensalmente.`
+      :`Pagamento da transferência <b>à vista</b>.`;
+  };
+  feeEl.oninput=syncInstallments;instEl.onchange=syncInstallments;syncInstallments();
+
   bg.querySelector(".close-modal").onclick=()=>bg.remove();
   bg.onclick=e=>{if(e.target===bg)bg.remove()};
   bg.querySelector("#offerForm").onsubmit=async e=>{
@@ -774,19 +841,64 @@ function openTransferOffer(p){
     const btn=e.target.querySelector("button.primary");btn.disabled=true;btn.textContent="NEGOCIANDO...";
     try{
       const d=await api("/api/transfers/offer",{method:"POST",body:JSON.stringify({
-        playerId:p.id,feeOffer:Number(bg.querySelector("#offerFee").value||0),
-        salaryOffer:Number(bg.querySelector("#offerSalary").value||0),years:Number(bg.querySelector("#offerYears").value||3)
+        playerId:p.id,
+        feeOffer:Number(feeEl.value||0),
+        installments:Number(instEl.value||1),
+        salaryOffer:Number(bg.querySelector("#offerSalary").value||0),
+        years:Number(bg.querySelector("#offerYears").value||3)
       })});
       bg.querySelector("#offerMsg").innerHTML=`<div class="msg ${d.accepted?"ok":""}">${esc(d.message)}</div>`;
       if(d.accepted){
+        state.transferResults=(state.transferResults||[]).filter(x=>String(x.id)!==String(p.id));
         await refreshAll();
-        setTimeout(()=>{bg.remove();state.view="market";render()},700);
-      }else{btn.disabled=false;btn.textContent="Enviar proposta"}
+        setTimeout(()=>{bg.remove();state.view="market";render()},550);
+      }else{btn.disabled=false;btn.textContent="Enviar proposta de compra"}
     }catch(err){
-      bg.querySelector("#offerMsg").innerHTML=`<div class="msg">${esc(err.message)}</div>`;btn.disabled=false;btn.textContent="Enviar proposta";
+      bg.querySelector("#offerMsg").innerHTML=`<div class="msg">${esc(err.message)}</div>`;
+      btn.disabled=false;btn.textContent="Enviar proposta de compra";
     }
   };
 }
+
+function openLoanOffer(p){
+  if(!p.loan_eligible){alert(p.loan_reason||"Jogador indisponível para empréstimo.");return}
+  const suggested=Number(p.suggested_loan_fee||0);
+  const bg=document.createElement("div");bg.className="modal-bg";
+  bg.innerHTML=`<div class="modal">
+    <div class="modal-head"><div><div class="kicker">EMPRÉSTIMO</div><h2>${esc(p.name)}</h2><span class="muted">${esc(p.source_club_name)} · ${esc(p.role||p.position)} · OVR ${p.rating}</span></div><button class="secondary close-modal">Fechar</button></div>
+    <form id="loanForm" class="stack" style="margin-top:16px">
+      <label>Duração<select id="loanMonths"><option value="3">3 meses</option><option value="6" selected>6 meses</option><option value="12">12 meses</option></select></label>
+      <label>Taxa mensal ao clube<input id="loanFee" type="number" min="0" value="${suggested}"></label>
+      <div class="offer-summary">Taxa sugerida: <b>${suggested.toLocaleString("pt-BR")}/mês</b>. O seu clube também assume o salário mensal do jogador durante o empréstimo.</div>
+      <div id="loanMsg"></div>
+      <button class="primary">Pedir empréstimo</button>
+    </form>
+  </div>`;
+  document.body.appendChild(bg);
+  bg.querySelector(".close-modal").onclick=()=>bg.remove();
+  bg.onclick=e=>{if(e.target===bg)bg.remove()};
+  bg.querySelector("#loanForm").onsubmit=async e=>{
+    e.preventDefault();
+    const btn=e.target.querySelector("button.primary");btn.disabled=true;btn.textContent="NEGOCIANDO...";
+    try{
+      const d=await api("/api/transfers/loan",{method:"POST",body:JSON.stringify({
+        playerId:p.id,
+        months:Number(bg.querySelector("#loanMonths").value||6),
+        monthlyFee:Number(bg.querySelector("#loanFee").value||0)
+      })});
+      bg.querySelector("#loanMsg").innerHTML=`<div class="msg ${d.accepted?"ok":""}">${esc(d.message)}</div>`;
+      if(d.accepted){
+        state.transferResults=(state.transferResults||[]).filter(x=>String(x.id)!==String(p.id));
+        await refreshAll();
+        setTimeout(()=>{bg.remove();state.view="market";render()},550);
+      }else{btn.disabled=false;btn.textContent="Pedir empréstimo"}
+    }catch(err){
+      bg.querySelector("#loanMsg").innerHTML=`<div class="msg">${esc(err.message)}</div>`;
+      btn.disabled=false;btn.textContent="Pedir empréstimo";
+    }
+  };
+}
+
 function bindMarket(){
   const form=app.querySelector("#transferSearch");
   if(form)form.onsubmit=async e=>{e.preventDefault();await searchTransfers()};
@@ -863,6 +975,8 @@ function bindClub(){
       state.trophies=[];
       state.incomingOffers=[];
       state.calendar=null;
+      state.sponsorship={active:null,offers:[]};
+      state.marketProfile=null;
       state.view="home";
       renderCreateClub();
     }catch(err){

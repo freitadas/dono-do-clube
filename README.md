@@ -102,3 +102,42 @@ As negociações de contratação agora usam **salário mensal**. O jogador cont
 - opção de apagar o time e reiniciar;
 - simulação otimizada de uma rodada por clique;
 - persistência de dados no PostgreSQL.
+
+
+## Mercado e finanças v15
+
+### Jogador sai do mercado
+Quando uma compra ou empréstimo é concluído, o jogador é removido imediatamente dos resultados do mercado e deixa de aparecer nas pesquisas seguintes.
+
+### Compras parceladas
+Transferências entre clubes podem ser fechadas em até **24 parcelas**.
+- a primeira parcela e as luvas são pagas no momento da contratação;
+- as parcelas restantes vencem mensalmente no calendário financeiro;
+- parcelas futuras podem levar o clube ao endividamento e ativar o transfer ban.
+
+### Empréstimos
+Jogadores de clubes controlados pelo jogo podem ser emprestados por 3, 6 ou 12 meses.
+- o clube paga uma taxa mensal de empréstimo;
+- o salário do atleta entra na folha mensal do clube;
+- jogadores considerados importantes para o clube de origem não podem ser emprestados;
+- ao terminar o prazo ou a temporada, o atleta volta ao clube de origem;
+- transfer ban bloqueia novos empréstimos.
+
+### Patrocínios
+A tela inicial apresenta propostas de patrocinadores de acordo com a divisão.
+- cada contrato possui luvas e pagamento mensal;
+- o dinheiro mensal entra no fechamento do calendário;
+- ao subir de divisão, as futuras propostas de patrocínio também melhoram.
+
+### Mercado progressivo
+O nível dos jogadores disponíveis aumenta conforme o clube sobe:
+- Série D: mercado mais modesto;
+- Série C: jogadores melhores;
+- Série B: atletas mais fortes;
+- Série A: acesso ao nível mais alto do mercado.
+
+### Preços mais justos
+O valor de mercado considera preço-base, idade, overall e duração contratual.
+- clubes vendedores pedem um prêmio moderado sobre o valor justo;
+- propostas recebidas pelo seu clube ficam próximas do valor justo;
+- ofertas muito abaixo do valor esperado podem ser recusadas.

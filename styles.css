@@ -74,3 +74,11 @@ repeating-linear-gradient(0deg,#1e7d43 0,#1e7d43 56px,#237f47 56px,#237f47 112px
 @media(max-width:1050px){.copa-grid{grid-template-columns:repeat(3,1fr)}}
 @media(max-width:760px){.copa-grid{grid-template-columns:1fr 1fr}.incoming-offer{grid-template-columns:1fr auto}.offer-actions{grid-column:1/-1}.offer-actions button{flex:1}.trophy-grid{grid-template-columns:1fr}}
 @media(max-width:560px){.copa-home{align-items:stretch;flex-direction:column}.copa-home button{width:100%}.copa-grid{grid-template-columns:1fr}.incoming-offer{grid-template-columns:1fr}.offer-value{text-align:left}.offer-actions{grid-column:auto}}
+
+
+/* v15 — patrocínios, parcelas e empréstimos */
+.sponsor-card{height:100%}.sponsor-card h2{margin:5px 0 12px}.sponsor-money{display:flex;justify-content:space-between;gap:12px;padding:12px;border:1px solid #315843;border-radius:13px;background:#09150e}.sponsor-money b{color:#aef2c5;font-size:19px}
+.sponsor-offers{display:grid;gap:8px;margin-top:12px}.sponsor-offer{display:grid;grid-template-columns:1fr auto;gap:3px 12px;text-align:left}.sponsor-offer span{color:#bdf2cc;font-weight:900}.sponsor-offer small{grid-column:1/-1;color:var(--muted)}
+.calendar-sub{display:grid;gap:5px;margin-top:12px;padding-top:10px;border-top:1px solid var(--line)}.calendar-sub>b{font-size:12px}.calendar-sub>span{font-size:10px;color:var(--muted)}
+.market-level{display:inline-block;margin:6px 0 4px;padding:7px 10px;border-radius:10px;background:#10291b;border:1px solid #315843;color:#bce9ca;font-size:11px;font-weight:800}
+.loan-status{margin:9px 0 2px;padding:7px 8px;border-radius:10px;font-size:10px}.loan-status.loan-ok{background:#102d1b;border:1px solid #2f6d46;color:#bdf2cc}.loan-status.loan-no{background:#20191a;border:1px solid #493336;color:#bfaaad}

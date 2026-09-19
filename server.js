@@ -18,6 +18,7 @@ const COOKIE = "ddc_session";
 const RESET_KEY = "v7_brasileirao_estaduais_reset_20260919";
 const ECONOMY_MIGRATION_KEY = "v8_economy_fitness_transfer_20260919";
 const V14_MIGRATION_KEY = "v14_copa_calendar_trophies_sales_20260919";
+const V15_MIGRATION_KEY = "v15_sponsors_installments_loans_market_20260919";
 const TRANSFER_BAN_THRESHOLD = -10000;
 const competitionLocks = new Set();
 const DIVS = ["A","B","C","D"];
@@ -172,6 +173,49 @@ async function initDb(){
       updated_at TIMESTAMPTZ NOT NULL DEFAULT NOW()
     );
 
+    CREATE TABLE IF NOT EXISTS sponsorship_contracts(
+      id BIGSERIAL PRIMARY KEY,
+      club_id BIGINT NOT NULL REFERENCES clubs(id) ON DELETE CASCADE,
+      sponsor_key TEXT NOT NULL,
+      sponsor_name TEXT NOT NULL,
+      division_signed TEXT NOT NULL,
+      monthly_amount INTEGER NOT NULL CHECK(monthly_amount>=0),
+      signing_bonus INTEGER NOT NULL DEFAULT 0,
+      months_total INTEGER NOT NULL DEFAULT 12,
+      months_paid INTEGER NOT NULL DEFAULT 0,
+      status TEXT NOT NULL DEFAULT 'active',
+      created_at TIMESTAMPTZ NOT NULL DEFAULT NOW()
+    );
+
+    CREATE TABLE IF NOT EXISTS transfer_installments(
+      id BIGSERIAL PRIMARY KEY,
+      buying_club_id BIGINT NOT NULL REFERENCES clubs(id) ON DELETE CASCADE,
+      selling_club_id BIGINT REFERENCES clubs(id) ON DELETE SET NULL,
+      player_id BIGINT REFERENCES players(id) ON DELETE SET NULL,
+      player_name TEXT NOT NULL,
+      total_fee INTEGER NOT NULL,
+      amount_remaining INTEGER NOT NULL,
+      installment_amount INTEGER NOT NULL,
+      installments_total INTEGER NOT NULL,
+      installments_paid INTEGER NOT NULL DEFAULT 1,
+      next_due_date DATE,
+      status TEXT NOT NULL DEFAULT 'active',
+      created_at TIMESTAMPTZ NOT NULL DEFAULT NOW()
+    );
+
+    CREATE TABLE IF NOT EXISTS player_loans(
+      id BIGSERIAL PRIMARY KEY,
+      player_id BIGINT NOT NULL REFERENCES players(id) ON DELETE CASCADE,
+      parent_club_id BIGINT NOT NULL REFERENCES clubs(id) ON DELETE CASCADE,
+      borrowing_club_id BIGINT NOT NULL REFERENCES clubs(id) ON DELETE CASCADE,
+      start_season_no INTEGER NOT NULL,
+      months_total INTEGER NOT NULL,
+      months_elapsed INTEGER NOT NULL DEFAULT 0,
+      monthly_fee INTEGER NOT NULL DEFAULT 0,
+      status TEXT NOT NULL DEFAULT 'active',
+      created_at TIMESTAMPTZ NOT NULL DEFAULT NOW()
+    );
+
     CREATE TABLE IF NOT EXISTS app_meta(
       key TEXT PRIMARY KEY,
       value TEXT NOT NULL,
@@ -184,6 +228,9 @@ async function initDb(){
     CREATE INDEX IF NOT EXISTS idx_transfer_offers_seller_status ON transfer_offers(selling_club_id,status);
     CREATE UNIQUE INDEX IF NOT EXISTS idx_transfer_offers_pending_player ON transfer_offers(selling_club_id,player_id) WHERE status='pending';
     CREATE INDEX IF NOT EXISTS idx_trophies_club_season ON club_trophies(club_id,season_no);
+    CREATE UNIQUE INDEX IF NOT EXISTS idx_sponsorship_active_club ON sponsorship_contracts(club_id) WHERE status='active';
+    CREATE INDEX IF NOT EXISTS idx_installments_buying_status ON transfer_installments(buying_club_id,status);
+    CREATE UNIQUE INDEX IF NOT EXISTS idx_active_loan_player ON player_loans(player_id) WHERE status='active';
   `);
 
   for(const sql of [
@@ -293,6 +340,15 @@ async function applyV14Migration(){
     await c.query(`UPDATE players SET transfer_listed=FALSE WHERE transfer_listed IS NULL`);
     await c.query(`UPDATE transfer_offers SET status='expired',updated_at=NOW() WHERE status='pending'`);
     await c.query(`INSERT INTO app_meta(key,value) VALUES($1,$2)`,[V14_MIGRATION_KEY,new Date().toISOString()]);
+  });
+}
+
+async function applyV15Migration(){
+  const done=await q(`SELECT 1 FROM app_meta WHERE key=$1`,[V15_MIGRATION_KEY]);
+  if(done.rowCount)return;
+  await tx(async c=>{
+    await c.query(`UPDATE transfer_installments SET status='paid',amount_remaining=0 WHERE status='active' AND amount_remaining<=0`);
+    await c.query(`INSERT INTO app_meta(key,value) VALUES($1,$2)`,[V15_MIGRATION_KEY,new Date().toISOString()]);
   });
 }
 
@@ -642,14 +698,13 @@ async function unexpectedClubEvent(client,clubId){
 }
 async function settleMatchFinances(client,clubId,context,isHome,result){
   const rates=financeRates(context);
-  const sponsor=rates.sponsor;
+  const sponsor=0;
   const gate=isHome?Math.round(rates.gate*(rand(85,115)/100)):0;
   const performance=result==="win"?650:result==="draw"?250:80;
-  await addFinance(client,clubId,sponsor,"sponsor","Receita de patrocinadores");
   if(gate)await addFinance(client,clubId,gate,"tickets","Bilheteria da partida em casa");
   await addFinance(client,clubId,performance,"performance","Bônus pelo resultado");
   const event=await unexpectedClubEvent(client,clubId);
-  return {sponsor,gate,performance,wages:0,net:sponsor+gate+performance,event};
+  return {sponsor,gate,performance,wages:0,net:gate+performance,event};
 }
 
 
@@ -697,15 +752,16 @@ async function generateIncomingOffers(client,clubId,{force=false,playerId=null}=
   }
   if(!players.length)return 0;
   const already=(await client.query(`SELECT player_id FROM transfer_offers WHERE selling_club_id=$1 AND status='pending'`,[clubId])).rows.map(r=>String(r.player_id));
-  const eligible=players.filter(p=>!already.includes(String(p.id))&&(p.transfer_listed||force||Math.random()<.18));
+  const loaned=(await client.query(`SELECT player_id FROM player_loans WHERE borrowing_club_id=$1 AND status='active'`,[clubId])).rows.map(r=>String(r.player_id));
+  const eligible=players.filter(p=>!already.includes(String(p.id))&&!loaned.includes(String(p.id))&&(p.transfer_listed||force||Math.random()<.18));
   if(!eligible.length)return 0;
   const buyers=(await client.query(`SELECT id,name,base_rating FROM clubs WHERE is_ai=TRUE AND country_code='BR' ORDER BY RANDOM() LIMIT 20`)).rows;
   if(!buyers.length)return 0;
   let created=0;
   for(const p of shuffle(eligible).slice(0,force?2:1)){
     const buyer=buyers.find(b=>String(b.id)!==String(clubId));if(!buyer)continue;
-    const base=Math.max(500,Number(p.price||0));
-    const factor=p.transfer_listed?(rand(92,125)/100):(rand(82,112)/100);
+    const base=fairMarketValue(p);
+    const factor=p.transfer_listed?(rand(98,112)/100):(rand(93,106)/100);
     const amount=Math.max(500,Math.round(base*factor/100)*100);
     const ins=await client.query(`INSERT INTO transfer_offers(selling_club_id,player_id,buying_club_id,amount,status) VALUES($1,$2,$3,$4,'pending') ON CONFLICT DO NOTHING RETURNING id`,[clubId,p.id,buyer.id,amount]);
     created+=ins.rowCount;
@@ -715,16 +771,34 @@ async function generateIncomingOffers(client,clubId,{force=false,playerId=null}=
 async function payMonthlyWages(client,career,clubId,month){
   const wages=await wageBill(client,clubId);
   if(wages>0)await addFinance(client,clubId,-wages,"wages",`Folha salarial mensal — ${month}`);
+
+  const sponsor=await paySponsorMonth(client,clubId,month);
+  const installments=await payTransferInstallments(client,clubId,month);
+  const loanFees=await processLoanMonth(client,clubId,month);
+
   const balance=Number((await client.query(`SELECT coins FROM clubs WHERE id=$1`,[clubId])).rows[0]?.coins||0);
   const cal=ensureCalendarData(career);
-  cal.payrolls.unshift({month,amount:wages,balance});cal.payrolls=cal.payrolls.slice(0,18);
+  cal.payrolls.unshift({
+    month,
+    amount:wages,
+    sponsor: sponsor?.amount||0,
+    installments,
+    loanFees,
+    balance
+  });
+  cal.payrolls=cal.payrolls.slice(0,18);
+
   if(balance<0)await client.query(`UPDATE players SET morale=GREATEST(35,morale-3) WHERE club_id=$1`,[clubId]);
   if(balance<TRANSFER_BAN_THRESHOLD){
-    await client.query(`INSERT INTO club_events(club_id,event_type,title,description) VALUES($1,'finance','Transfer ban por endividamento',$2)`,[clubId,`O saldo chegou a ${balance.toLocaleString("pt-BR")} moedas. Contratações ficam bloqueadas enquanto o caixa estiver abaixo de ${TRANSFER_BAN_THRESHOLD.toLocaleString("pt-BR")}.`]);
+    const recentBan=(await client.query(`SELECT 1 FROM club_events WHERE club_id=$1 AND event_type='finance' AND title='Transfer ban por endividamento' AND created_at>NOW()-INTERVAL '35 days' LIMIT 1`,[clubId])).rowCount>0;
+    if(!recentBan)await client.query(`INSERT INTO club_events(club_id,event_type,title,description) VALUES($1,'finance','Transfer ban por endividamento',$2)`,
+      [clubId,`O saldo chegou a ${balance.toLocaleString("pt-BR")} moedas. Contratações e novos empréstimos ficam bloqueados enquanto o caixa estiver abaixo de ${TRANSFER_BAN_THRESHOLD.toLocaleString("pt-BR")}.`]);
   }
+
   await generateIncomingOffers(client,clubId,{force:false});
-  return {wages,balance};
+  return {wages,sponsor,installments,loanFees,balance};
 }
+
 async function advanceCalendar(career,clubId,days,label){
   const cal=ensureCalendarData(career);
   const before=new Date(`${cal.date}T12:00:00Z`);
@@ -1458,6 +1532,13 @@ async function nextSeason(ownerId){
   const club=(await q(`SELECT * FROM clubs WHERE id=$1`,[ownerId])).rows[0];
 
   await tx(async c=>{
+    const borrowed=(await c.query(`SELECT l.player_id,l.parent_club_id,p.name FROM player_loans l JOIN players p ON p.id=l.player_id WHERE l.borrowing_club_id=$1 AND l.status='active' FOR UPDATE OF l`,[ownerId])).rows;
+    for(const l of borrowed){
+      await c.query(`UPDATE players SET club_id=$2,is_starter=FALSE,transfer_listed=FALSE,fitness=100,morale=72 WHERE id=$1`,[l.player_id,l.parent_club_id]);
+      await c.query(`UPDATE player_loans SET status='ended' WHERE player_id=$1 AND borrowing_club_id=$2 AND status='active'`,[l.player_id,ownerId]);
+      await c.query(`INSERT INTO club_events(club_id,event_type,title,description) VALUES($1,'loan','Fim de empréstimo',$2)`,[ownerId,`${l.name} retornou ao clube de origem no fim da temporada.`]);
+    }
+
     const ps=(await c.query(`SELECT id,name,age,contract_seasons FROM players WHERE club_id=$1`,[ownerId])).rows;
     for(const p of ps){
       let delta=0;if(p.age<=24&&Math.random()<.35)delta=1;if(p.age>=31&&Math.random()<.25)delta=-1;
@@ -1636,7 +1717,6 @@ async function hydrateCareer(career){
 }
 
 
-function divisionRank(div){return {D:1,C:2,B:3,A:4}[div]||1}
 function divisionOfClub(career,clubId){
   if(!career?.data?.divisions)return null;
   for(const d of DIVS){
@@ -1644,10 +1724,29 @@ function divisionOfClub(career,clubId){
   }
   return null;
 }
+function divisionRank(div){return {D:1,C:2,B:3,A:4}[div]||1}
+function marketProfile(div){
+  return ({
+    D:{min:54,max:69,preferredMin:58},
+    C:{min:57,max:73,preferredMin:61},
+    B:{min:60,max:78,preferredMin:64},
+    A:{min:63,max:86,preferredMin:67}
+  })[div]||{min:54,max:69,preferredMin:58};
+}
+function fairMarketValue(player){
+  const rating=Number(player.rating||60);
+  const age=Number(player.age||25);
+  const base=Math.max(500,Number(player.price||0));
+  const ageFactor=age<=21?1.12:age<=25?1.06:age<=29?1:age<=32?.91:.80;
+  const qualityFactor=rating>=80?1.08:rating>=74?1.04:rating<=60?.92:1;
+  return Math.max(500,Math.round(base*ageFactor*qualityFactor/100)*100);
+}
 function askingPrice(player){
   if(!player.club_id)return 0;
   const contract=Math.max(1,Number(player.contract_seasons||1));
-  return Math.max(500,Math.round((Number(player.price)*(1.08+contract*.09))/100)*100);
+  const fair=fairMarketValue(player);
+  const premium=1.03+Math.min(4,contract)*.025;
+  return Math.max(500,Math.round(fair*premium/100)*100);
 }
 function suggestedSalary(player){
   return Math.max(Number(player.salary||0),salaryForRating(Number(player.rating||60)));
@@ -1662,20 +1761,146 @@ function interestChance(player,userClub,userDiv,sourceDiv,salaryOffer,years){
   const elitePenalty=userDiv==="D"&&Number(player.rating)>=74?14:0;
   return clamp(Math.round(58+salaryBoost+divisionBoost+freeBonus+contractBoost-ratingGap-elitePenalty),5,95);
 }
+function marketSourceVisible(userDiv,sourceDiv){
+  if(!sourceDiv)return true;
+  return divisionRank(sourceDiv)<=divisionRank(userDiv)+1;
+}
 async function ensureTransferPool(ownerId){
   await ensureMarket();
   const career=await getCareer(ownerId);
   if(!career)return;
   const div=career.user_division||"D";
-  const ids=(career.data?.divisions?.[div]?.entries||[])
-    .map(e=>Number(e.clubId)).filter(id=>String(id)!==String(ownerId));
-  for(const id of shuffle(ids).slice(0,10))await ensureRoster(id);
+  const ranks={D:["D","C"],C:["D","C","B"],B:["C","B","A"],A:["B","A"]};
+  const wanted=new Set(ranks[div]||["D"]);
+  const ids=[];
+  for(const d of DIVS){
+    if(!wanted.has(d))continue;
+    for(const e of career.data?.divisions?.[d]?.entries||[]){
+      if(String(e.clubId)!==String(ownerId))ids.push(Number(e.clubId));
+    }
+  }
+  for(const id of shuffle(ids).slice(0,18))await ensureRoster(id);
+}
+function sponsorOffersForDivision(div){
+  const table={
+    D:[
+      {id:"regional_d",name:"Rede Regional",monthly:2600,signing:4500,months:12},
+      {id:"sports_d",name:"Arena Sports",monthly:3200,signing:3000,months:12},
+      {id:"digital_d",name:"PlayNet",monthly:2200,signing:6500,months:12}
+    ],
+    C:[
+      {id:"regional_c",name:"Banco Popular",monthly:3900,signing:7000,months:12},
+      {id:"sports_c",name:"Arena Sports+",monthly:4600,signing:5200,months:12},
+      {id:"digital_c",name:"PlayNet Pro",monthly:3500,signing:8500,months:12}
+    ],
+    B:[
+      {id:"national_b",name:"Brasil Energia",monthly:6200,signing:12000,months:12},
+      {id:"sports_b",name:"Arena Sports Nacional",monthly:7000,signing:9000,months:12},
+      {id:"bank_b",name:"Banco União",monthly:5600,signing:14500,months:12}
+    ],
+    A:[
+      {id:"elite_a",name:"Prime Brasil",monthly:10500,signing:22000,months:12},
+      {id:"sports_a",name:"Arena Sports Elite",monthly:11800,signing:17000,months:12},
+      {id:"tech_a",name:"Nexa Tecnologia",monthly:9400,signing:26000,months:12}
+    ]
+  };
+  return table[div]||table.D;
+}
+async function sponsorshipSummary(clubId,career){
+  const active=(await q(`SELECT * FROM sponsorship_contracts WHERE club_id=$1 AND status='active' ORDER BY id DESC LIMIT 1`,[clubId])).rows[0]||null;
+  return {active,offers:active?[]:sponsorOffersForDivision(career?.user_division||"D")};
+}
+async function paySponsorMonth(client,clubId,month){
+  const c=(await client.query(`SELECT * FROM sponsorship_contracts WHERE club_id=$1 AND status='active' ORDER BY id DESC LIMIT 1 FOR UPDATE`,[clubId])).rows[0];
+  if(!c)return null;
+  const amount=Number(c.monthly_amount||0);
+  if(amount>0)await addFinance(client,clubId,amount,"sponsor_monthly",`Patrocínio mensal — ${c.sponsor_name} — ${month}`);
+  const paid=Number(c.months_paid||0)+1;
+  const finished=paid>=Number(c.months_total||12);
+  await client.query(`UPDATE sponsorship_contracts SET months_paid=$2,status=$3 WHERE id=$1`,[c.id,paid,finished?"completed":"active"]);
+  if(finished)await client.query(`INSERT INTO club_events(club_id,event_type,title,description) VALUES($1,'sponsor','Contrato de patrocínio encerrado',$2)`,[clubId,`O contrato com ${c.sponsor_name} terminou. Novas propostas já podem ser avaliadas.`]);
+  return {name:c.sponsor_name,amount,finished};
+}
+function addOneMonth(dateStr){
+  const d=new Date(`${dateStr}T12:00:00Z`);
+  return isoDate(new Date(Date.UTC(d.getUTCFullYear(),d.getUTCMonth()+1,1,12)));
+}
+async function payTransferInstallments(client,clubId,month){
+  const dueDate=`${month}-01`;
+  const rows=(await client.query(`SELECT * FROM transfer_installments WHERE buying_club_id=$1 AND status='active' AND next_due_date<=$2::date ORDER BY next_due_date,id FOR UPDATE`,[clubId,dueDate])).rows;
+  let total=0;
+  for(const r of rows){
+    const payment=Math.min(Number(r.installment_amount),Number(r.amount_remaining));
+    if(payment<=0){
+      await client.query(`UPDATE transfer_installments SET status='paid',amount_remaining=0,next_due_date=NULL WHERE id=$1`,[r.id]);
+      continue;
+    }
+    await addFinance(client,clubId,-payment,"transfer_installment",`Parcela de ${r.player_name} — ${Number(r.installments_paid)+1}/${r.installments_total}`);
+    if(r.selling_club_id)await client.query(`UPDATE clubs SET coins=coins+$2 WHERE id=$1`,[r.selling_club_id,payment]);
+    const remaining=Math.max(0,Number(r.amount_remaining)-payment);
+    const paid=Number(r.installments_paid)+1;
+    const finished=remaining<=0||paid>=Number(r.installments_total);
+    await client.query(`UPDATE transfer_installments SET amount_remaining=$2,installments_paid=$3,status=$4,next_due_date=$5 WHERE id=$1`,
+      [r.id,remaining,paid,finished?"paid":"active",finished?null:addOneMonth(isoDate(new Date(r.next_due_date)))]);
+    total+=payment;
+  }
+  return total;
+}
+
+async function loanEligibility(client,player){
+  if(!player?.club_id)return {eligible:false,reason:"Jogador livre não precisa de empréstimo."};
+  const club=(await client.query(`SELECT id,name,is_ai,base_rating FROM clubs WHERE id=$1`,[player.club_id])).rows[0];
+  if(!club?.is_ai)return {eligible:false,reason:"Empréstimos diretos entre usuários não estão disponíveis."};
+  const active=(await client.query(`SELECT 1 FROM player_loans WHERE player_id=$1 AND status='active'`,[player.id])).rowCount>0;
+  if(active)return {eligible:false,reason:"Jogador já está emprestado."};
+  const top=(await client.query(`SELECT id,rating,is_starter FROM players WHERE club_id=$1 ORDER BY rating DESC LIMIT 5`,[player.club_id])).rows;
+  const important=top.some(x=>String(x.id)===String(player.id)) || (player.is_starter&&Number(player.rating)>=Number(club.base_rating||64)+2);
+  if(important)return {eligible:false,reason:"Jogador importante para o clube e indisponível para empréstimo."};
+  return {eligible:true,reason:"Disponível para empréstimo."};
+}
+async function processLoanMonth(client,clubId,month){
+  const loans=(await client.query(`
+    SELECT l.*,p.name player_name,p.salary
+    FROM player_loans l JOIN players p ON p.id=l.player_id
+    WHERE l.borrowing_club_id=$1 AND l.status='active'
+    ORDER BY l.id FOR UPDATE OF l
+  `,[clubId])).rows;
+  let total=0;
+  for(const l of loans){
+    const fee=Number(l.monthly_fee||0);
+    if(fee>0){
+      await addFinance(client,clubId,-fee,"loan_fee",`Empréstimo de ${l.player_name} — ${month}`);
+      await client.query(`UPDATE clubs SET coins=coins+$2 WHERE id=$1`,[l.parent_club_id,fee]);
+      total+=fee;
+    }
+    const elapsed=Number(l.months_elapsed||0)+1;
+    if(elapsed>=Number(l.months_total||0)){
+      await client.query(`UPDATE players SET club_id=$2,is_starter=FALSE,fitness=100,morale=72 WHERE id=$1`,[l.player_id,l.parent_club_id]);
+      await client.query(`UPDATE player_loans SET months_elapsed=$2,status='ended' WHERE id=$1`,[l.id,elapsed]);
+      await client.query(`INSERT INTO club_events(club_id,event_type,title,description) VALUES($1,'loan','Fim de empréstimo',$2)`,[clubId,`${l.player_name} retornou ao clube de origem.`]);
+    }else{
+      await client.query(`UPDATE player_loans SET months_elapsed=$2 WHERE id=$1`,[l.id,elapsed]);
+    }
+  }
+  return total;
 }
 async function financeSummary(clubId){
-  const wages=await q(`SELECT COALESCE(SUM(salary),0)::int total FROM players WHERE club_id=$1`,[clubId]);
-  const recent=await q(`SELECT amount,category,description,created_at FROM club_finance_events WHERE club_id=$1 ORDER BY created_at DESC,id DESC LIMIT 12`,[clubId]);
-  const club=(await q(`SELECT coins FROM clubs WHERE id=$1`,[clubId])).rows[0];
-  return {wages:Number(wages.rows[0].total||0),recent:recent.rows,transferBan:transferBanInfo(club?.coins||0)};
+  const [wages,recent,club,installments,loans]=await Promise.all([
+    q(`SELECT COALESCE(SUM(salary),0)::int total FROM players WHERE club_id=$1`,[clubId]),
+    q(`SELECT amount,category,description,created_at FROM club_finance_events WHERE club_id=$1 ORDER BY created_at DESC,id DESC LIMIT 16`,[clubId]),
+    q(`SELECT coins FROM clubs WHERE id=$1`,[clubId]),
+    q(`SELECT id,player_name,total_fee,amount_remaining,installment_amount,installments_total,installments_paid,next_due_date,status FROM transfer_installments WHERE buying_club_id=$1 AND status='active' ORDER BY next_due_date,id`,[clubId]),
+    q(`SELECT l.id,l.months_total,l.months_elapsed,l.monthly_fee,p.id player_id,p.name player_name,p.rating,pc.name parent_club_name
+       FROM player_loans l JOIN players p ON p.id=l.player_id JOIN clubs pc ON pc.id=l.parent_club_id
+       WHERE l.borrowing_club_id=$1 AND l.status='active' ORDER BY l.id`,[clubId])
+  ]);
+  return {
+    wages:Number(wages.rows[0].total||0),
+    recent:recent.rows,
+    transferBan:transferBanInfo(club.rows[0]?.coins||0),
+    installments:installments.rows,
+    loans:loans.rows
+  };
 }
 
 app.get("/health",async(_req,res,next)=>{try{await q("SELECT 1");res.json({ok:true})}catch(e){next(e)}});
@@ -1746,11 +1971,17 @@ app.delete("/api/club",auth,async(req,res,next)=>{
 
     await withCompetitionLock(club.id,async()=>{
       await tx(async client=>{
-        // Remove os jogadores do clube em vez de transformá-los em agentes livres.
+        // Devolve primeiro os jogadores que pertencem a outros clubes e estão emprestados.
+        const borrowed=(await client.query(`SELECT player_id,parent_club_id FROM player_loans WHERE borrowing_club_id=$1 AND status='active' FOR UPDATE`,[club.id])).rows;
+        for(const l of borrowed){
+          await client.query(`UPDATE players SET club_id=$2,is_starter=FALSE,transfer_listed=FALSE,fitness=100,morale=72 WHERE id=$1`,[l.player_id,l.parent_club_id]);
+          await client.query(`UPDATE player_loans SET status='ended' WHERE player_id=$1 AND borrowing_club_id=$2 AND status='active'`,[l.player_id,club.id]);
+        }
+
+        // Remove somente os jogadores que permaneceram como patrimônio do clube.
         await client.query(`DELETE FROM players WHERE club_id=$1`,[club.id]);
 
-        // As demais estruturas vinculadas ao clube usam ON DELETE CASCADE:
-        // carreira, partidas, amizades, finanças e eventos.
+        // As demais estruturas vinculadas ao clube usam ON DELETE CASCADE.
         await client.query(`DELETE FROM clubs WHERE id=$1 AND user_id=$2`,[club.id,req.user.id]);
       });
     });
@@ -1791,7 +2022,7 @@ app.get("/api/dashboard",auth,async(req,res,next)=>{
     c.team_rating=await clubRating(c.id);
     const career=await getCareer(c.id);
     Object.assign(c,(await q(`SELECT * FROM clubs WHERE id=$1`,[c.id])).rows[0]||c);
-    const [ps,mk,mt,fr,fin,events,trophies,offers]=await Promise.all([
+    const [ps,mk,mt,fr,fin,events,trophies,offers,sponsorship]=await Promise.all([
       q(`SELECT * FROM players WHERE club_id=$1 ORDER BY is_starter DESC,CASE position WHEN 'GK' THEN 1 WHEN 'DEF' THEN 2 WHEN 'MID' THEN 3 ELSE 4 END,rating DESC`,[c.id]),
       q(`SELECT * FROM players WHERE club_id IS NULL ORDER BY rating DESC,price DESC LIMIT 40`),
       q(`SELECT m.*,o.name opponent_name FROM matches m JOIN clubs o ON o.id=m.opponent_club_id WHERE m.user_club_id=$1 ORDER BY played_at DESC LIMIT 30`,[c.id]),
@@ -1799,10 +2030,35 @@ app.get("/api/dashboard",auth,async(req,res,next)=>{
       financeSummary(c.id),
       q(`SELECT event_type,title,description,created_at FROM club_events WHERE club_id=$1 ORDER BY created_at DESC,id DESC LIMIT 10`,[c.id]),
       q(`SELECT id,season_no,competition,title,won_at FROM club_trophies WHERE club_id=$1 ORDER BY season_no DESC,won_at DESC`,[c.id]),
-      q(`SELECT o.id,o.amount,o.status,o.created_at,p.id player_id,p.name player_name,p.position,p.role,p.rating,p.age,p.transfer_listed,b.id buying_club_id,b.name buying_club_name FROM transfer_offers o JOIN players p ON p.id=o.player_id JOIN clubs b ON b.id=o.buying_club_id WHERE o.selling_club_id=$1 AND o.status='pending' ORDER BY o.amount DESC,o.created_at DESC`,[c.id])
+      q(`SELECT o.id,o.amount,o.status,o.created_at,p.id player_id,p.name player_name,p.position,p.role,p.rating,p.age,p.transfer_listed,b.id buying_club_id,b.name buying_club_name FROM transfer_offers o JOIN players p ON p.id=o.player_id JOIN clubs b ON b.id=o.buying_club_id WHERE o.selling_club_id=$1 AND o.status='pending' ORDER BY o.amount DESC,o.created_at DESC`,[c.id]),
+      sponsorshipSummary(c.id,career)
     ]);
     const cal=career?calendarSummary(career,fin.wages):null;
-    res.json({club:c,players:ps.rows,market:mk.rows,matches:mt.rows,friends:fr.rows,finance:fin,clubEvents:events.rows,trophies:trophies.rows,incomingOffers:offers.rows,calendar:cal});
+    res.json({club:c,players:ps.rows,market:mk.rows,matches:mt.rows,friends:fr.rows,finance:fin,clubEvents:events.rows,trophies:trophies.rows,incomingOffers:offers.rows,calendar:cal,sponsorship});
+  }catch(e){next(e)}
+});
+
+app.post("/api/sponsorships/sign",auth,async(req,res,next)=>{
+  try{
+    const c=await userClub(req.user.id);
+    if(!c)return res.status(404).json({error:"Clube não encontrado."});
+    const career=await getCareer(c.id);
+    if(!career)return res.status(400).json({error:"Carreira não encontrada."});
+    const sponsorId=String(req.body.sponsorId||"");
+    const offer=sponsorOffersForDivision(career.user_division).find(x=>x.id===sponsorId);
+    if(!offer)return res.status(400).json({error:"Proposta de patrocínio inválida para sua divisão."});
+    const result=await tx(async client=>{
+      const active=(await client.query(`SELECT 1 FROM sponsorship_contracts WHERE club_id=$1 AND status='active' LIMIT 1 FOR UPDATE`,[c.id])).rowCount>0;
+      if(active)throw Object.assign(new Error("Seu clube já possui um patrocinador ativo."),{status:409});
+      await client.query(`INSERT INTO sponsorship_contracts(club_id,sponsor_key,sponsor_name,division_signed,monthly_amount,signing_bonus,months_total,months_paid,status)
+        VALUES($1,$2,$3,$4,$5,$6,$7,0,'active')`,
+        [c.id,offer.id,offer.name,career.user_division,offer.monthly,offer.signing,offer.months]);
+      if(offer.signing>0)await addFinance(client,c.id,offer.signing,"sponsor_signing",`Luvas de patrocínio — ${offer.name}`);
+      await client.query(`INSERT INTO club_events(club_id,event_type,title,description) VALUES($1,'sponsor','Novo patrocinador',$2)`,
+        [c.id,`${offer.name} assinou por ${offer.months} meses: ${offer.monthly.toLocaleString("pt-BR")} moedas por mês.`]);
+      return {ok:true,name:offer.name,monthly:offer.monthly,signing:offer.signing};
+    });
+    res.json(result);
   }catch(e){next(e)}
 });
 
@@ -1897,6 +2153,8 @@ app.post("/api/players/:id/transfer-list",auth,async(req,res,next)=>{
     const result=await tx(async client=>{
       const p=(await client.query(`SELECT * FROM players WHERE id=$1 AND club_id=$2 FOR UPDATE`,[pid,c.id])).rows[0];
       if(!p)throw Object.assign(new Error("Jogador não encontrado."),{status:404});
+      const borrowed=(await client.query(`SELECT 1 FROM player_loans WHERE player_id=$1 AND borrowing_club_id=$2 AND status='active'`,[pid,c.id])).rowCount>0;
+      if(borrowed&&listed)throw Object.assign(new Error("Jogador emprestado não pode ser colocado à venda."),{status:400});
       await client.query(`UPDATE players SET transfer_listed=$3 WHERE id=$1 AND club_id=$2`,[pid,c.id,listed]);
       let offersCreated=0;
       if(listed)offersCreated=await generateIncomingOffers(client,c.id,{force:true,playerId:p.id});
@@ -1963,35 +2221,46 @@ app.get("/api/transfers/search",auth,async(req,res,next)=>{
     const position=String(req.query.position||"").trim().toUpperCase();
     const minRating=Number(req.query.minRating||0);
     const maxPrice=Number(req.query.maxPrice||999999999);
+    const userDiv=career?.user_division||"D";
+    const profile=marketProfile(userDiv);
+
     const rows=(await q(`
-      SELECT p.*,sc.name source_club_name,sc.id source_club_id,sc.is_ai source_is_ai
+      SELECT p.*,sc.name source_club_name,sc.id source_club_id,sc.is_ai source_is_ai,sc.base_rating source_base_rating
       FROM players p
       LEFT JOIN clubs sc ON sc.id=p.club_id
       WHERE (p.club_id IS NULL OR sc.is_ai=TRUE) AND (p.club_id IS NULL OR p.club_id<>$1)
       ORDER BY p.rating DESC,p.price DESC
-      LIMIT 300
+      LIMIT 400
     `,[c.id])).rows;
 
-    const userDiv=career?.user_division||"D";
     const filtered=rows.filter(p=>{
+      const sourceDiv=p.source_club_id?divisionOfClub(career,p.source_club_id):null;
+      const ask=askingPrice(p);
       if(qText&&!String(p.name).toLowerCase().includes(qText))return false;
       if(position&&p.position!==position&&p.role!==position)return false;
-      if(Number(p.rating)<minRating)return false;
-      if(askingPrice(p)>maxPrice)return false;
+      if(Number(p.rating)<Math.max(minRating,profile.min))return false;
+      if(Number(p.rating)>profile.max)return false;
+      if(ask>maxPrice)return false;
+      if(!marketSourceVisible(userDiv,sourceDiv))return false;
       return true;
-    }).slice(0,60).map(p=>{
+    }).slice(0,72).map(p=>{
       const sourceDiv=p.source_club_id?divisionOfClub(career,p.source_club_id):null;
       const salary=suggestedSalary(p);
       const chance=interestChance(p,c,userDiv,sourceDiv,Math.round(salary*1.1/10)*10,3);
+      const likelyImportant=Boolean(p.club_id)&&Boolean(p.is_starter)&&Number(p.rating)>=Number(p.source_base_rating||64)+2;
       return {
         ...p,
+        fair_value:fairMarketValue(p),
         asking_price:askingPrice(p),
         suggested_salary:salary,
         source_division:sourceDiv,
-        interest:chance>=70?"Alta":chance>=45?"Média":"Baixa"
+        interest:chance>=70?"Alta":chance>=45?"Média":"Baixa",
+        loan_eligible:Boolean(p.club_id)&&Boolean(p.source_is_ai)&&!likelyImportant,
+        loan_reason:!p.club_id?"Jogador livre":likelyImportant?"Importante para o clube":"Disponível",
+        suggested_loan_fee:Boolean(p.club_id)?Math.max(250,Math.round(fairMarketValue(p)*0.025/50)*50):0
       };
     });
-    res.json({players:filtered,transferBan:ban});
+    res.json({players:filtered,transferBan:ban,marketProfile:profile,userDivision:userDiv});
   }catch(e){next(e)}
 });
 
@@ -2003,23 +2272,29 @@ app.post("/api/transfers/offer",auth,async(req,res,next)=>{
     const feeOffer=Math.max(0,Number(req.body.feeOffer||0));
     const salaryOffer=Math.max(0,Number(req.body.salaryOffer||0));
     const years=clamp(Number(req.body.years||3),1,4);
+    const installments=clamp(Number(req.body.installments||1),1,24);
     const career=await getCareer(c.id);
     const userDiv=career?.user_division||"D";
-    if(transferBanInfo(c.coins).active)return res.status(403).json({error:`Transfer ban ativo por endividamento. O caixa precisa voltar para pelo menos ${TRANSFER_BAN_THRESHOLD.toLocaleString("pt-BR")} moedas para contratar.`});
+
+    if(transferBanInfo(c.coins).active){
+      return res.status(403).json({error:`Transfer ban ativo por endividamento. O caixa precisa voltar para pelo menos ${TRANSFER_BAN_THRESHOLD.toLocaleString("pt-BR")} moedas para contratar.`});
+    }
 
     const result=await tx(async client=>{
       const currentBalance=Number((await client.query(`SELECT coins FROM clubs WHERE id=$1 FOR UPDATE`,[c.id])).rows[0]?.coins||0);
       if(transferBanInfo(currentBalance).active)throw Object.assign(new Error(`Transfer ban ativo por endividamento. Saldo atual: ${currentBalance.toLocaleString("pt-BR")} moedas.`),{status:403});
+
       const p=(await client.query(`
-        SELECT p.*,sc.name source_club_name,sc.id source_club_id,sc.is_ai source_is_ai
+        SELECT p.*,sc.name source_club_name,sc.id source_club_id,sc.is_ai source_is_ai,sc.base_rating source_base_rating
         FROM players p LEFT JOIN clubs sc ON sc.id=p.club_id
         WHERE p.id=$1 FOR UPDATE OF p
       `,[playerId])).rows[0];
-      if(!p)throw Object.assign(new Error("Jogador não encontrado."),{status:404});
+
+      if(!p)throw Object.assign(new Error("Jogador não encontrado ou já saiu do mercado."),{status:404});
       if(String(p.club_id)===String(c.id))throw Object.assign(new Error("Esse jogador já é do seu clube."),{status:400});
       if(p.club_id&&!p.source_is_ai)throw Object.assign(new Error("Jogador de outro usuário não está disponível para compra direta."),{status:400});
 
-      const squad=(await client.query(`SELECT COUNT(*)::int count FROM players WHERE club_id=$1`,[c.id])).rows[0].count;
+      const squad=Number((await client.query(`SELECT COUNT(*)::int count FROM players WHERE club_id=$1`,[c.id])).rows[0].count);
       if(squad>=30)throw Object.assign(new Error("Seu elenco já possui 30 jogadores."),{status:400});
 
       const ask=askingPrice(p);
@@ -2027,11 +2302,11 @@ app.post("/api/transfers/offer",auth,async(req,res,next)=>{
       const sourceDiv=p.source_club_id?divisionOfClub(career,p.source_club_id):null;
 
       if(p.club_id){
-        if(feeOffer<Math.round(ask*.90)){
-          return {accepted:false,stage:"club",message:`${p.source_club_name} recusou. O clube pede aproximadamente ${ask.toLocaleString("pt-BR")} moedas.`,askingPrice:ask,suggestedSalary:suggested};
+        if(feeOffer<Math.round(ask*.92)){
+          return {accepted:false,stage:"club",message:`${p.source_club_name} recusou. O valor considerado justo está próximo de ${ask.toLocaleString("pt-BR")} moedas.`,askingPrice:ask,suggestedSalary:suggested};
         }
-        if(feeOffer<ask&&Math.random()>.55){
-          return {accepted:false,stage:"club",message:`${p.source_club_name} recusou a proposta e quer um valor mais próximo de ${ask.toLocaleString("pt-BR")} moedas.`,askingPrice:ask,suggestedSalary:suggested};
+        if(feeOffer<ask&&Math.random()>.68){
+          return {accepted:false,stage:"club",message:`${p.source_club_name} quer uma proposta mais próxima de ${ask.toLocaleString("pt-BR")} moedas.`,askingPrice:ask,suggestedSalary:suggested};
         }
       }
 
@@ -2042,26 +2317,124 @@ app.post("/api/transfers/offer",auth,async(req,res,next)=>{
         return {accepted:false,stage:"player",message:`${p.name} recusou. ${reason}`,chance,askingPrice:ask,suggestedSalary:suggested};
       }
 
-      const signingBonus=salaryOffer*2;
-      const total=feeOffer+signingBonus;
-      const balance=Number((await client.query(`SELECT coins FROM clubs WHERE id=$1 FOR UPDATE`,[c.id])).rows[0].coins);
-      if(balance<total)throw Object.assign(new Error(`Caixa insuficiente. Custo imediato: ${total.toLocaleString("pt-BR")} moedas.`),{status:400});
+      const realInstallments=p.club_id?installments:1;
+      const signingBonus=Math.max(100,Math.round(salaryOffer*1.5));
+      const firstFee=realInstallments>1?Math.ceil(feeOffer/realInstallments):feeOffer;
+      const immediateCost=firstFee+signingBonus;
 
-      await client.query(`UPDATE clubs SET coins=coins-$2 WHERE id=$1`,[c.id,total]);
+      if(currentBalance<immediateCost){
+        throw Object.assign(new Error(`Caixa insuficiente para a entrada e as luvas. Custo imediato: ${immediateCost.toLocaleString("pt-BR")} moedas.`),{status:400});
+      }
+
+      await client.query(`UPDATE clubs SET coins=coins-$2 WHERE id=$1`,[c.id,immediateCost]);
       await client.query(`INSERT INTO club_finance_events(club_id,amount,category,description) VALUES($1,$2,'transfer',$3)`,
-        [c.id,-total,`Contratação de ${p.name}: transferência + luvas`]);
-      if(p.club_id)await client.query(`UPDATE clubs SET coins=coins+$2 WHERE id=$1`,[p.club_id,feeOffer]);
+        [c.id,-immediateCost,`Contratação de ${p.name}: ${realInstallments>1?`entrada 1/${realInstallments}`:"transferência"} + luvas`]);
+
+      if(p.club_id&&firstFee>0)await client.query(`UPDATE clubs SET coins=coins+$2 WHERE id=$1`,[p.club_id,firstFee]);
+
+      if(p.club_id&&realInstallments>1){
+        const remaining=Math.max(0,feeOffer-firstFee);
+        const nextDue=nextPayrollDate(ensureCalendarData(career));
+        await client.query(`
+          INSERT INTO transfer_installments(
+            buying_club_id,selling_club_id,player_id,player_name,total_fee,amount_remaining,
+            installment_amount,installments_total,installments_paid,next_due_date,status
+          ) VALUES($1,$2,$3,$4,$5,$6,$7,$8,1,$9,'active')
+        `,[c.id,p.club_id,p.id,p.name,feeOffer,remaining,firstFee,realInstallments,nextDue]);
+      }
+
+      if(p.club_id){
+        await client.query(`UPDATE transfer_offers SET status='expired',updated_at=NOW() WHERE player_id=$1 AND status='pending'`,[p.id]);
+      }
+
       await client.query(`
-        UPDATE players SET club_id=$2,is_starter=FALSE,salary=$3,contract_seasons=$4,fitness=GREATEST(fitness,82),morale=78
+        UPDATE players SET club_id=$2,is_starter=FALSE,transfer_listed=FALSE,salary=$3,contract_seasons=$4,
+          fitness=GREATEST(fitness,82),morale=78
         WHERE id=$1
       `,[p.id,c.id,Math.round(salaryOffer),years]);
+
       await applyFelipeMode(client,c.id);
 
+      const installmentText=realInstallments>1?` em ${realInstallments}x`:"";
       await client.query(`INSERT INTO club_events(club_id,event_type,title,description) VALUES($1,'transfer','Contratação confirmada',$2)`,
-        [c.id,`${p.name} aceitou contrato de ${years} temporada(s), com salário mensal de ${Math.round(salaryOffer).toLocaleString("pt-BR")} moedas.`]);
+        [c.id,`${p.name} foi contratado${installmentText}. Salário mensal: ${Math.round(salaryOffer).toLocaleString("pt-BR")} moedas.`]);
 
-      return {accepted:true,message:`${p.name} aceitou a proposta e é o novo reforço do clube.`,playerId:p.id,cost:total};
+      return {
+        accepted:true,
+        message:`${p.name} aceitou a proposta e foi retirado do mercado.${realInstallments>1?` Transferência parcelada em ${realInstallments}x.`:""}`,
+        playerId:p.id,
+        cost:immediateCost,
+        installments:realInstallments,
+        firstPayment:firstFee,
+        removedFromMarket:true
+      };
     });
+
+    res.json(result);
+  }catch(e){next(e)}
+});
+
+app.post("/api/transfers/loan",auth,async(req,res,next)=>{
+  try{
+    const c=await userClub(req.user.id);
+    if(!c)return res.status(404).json({error:"Clube não encontrado."});
+    if(transferBanInfo(c.coins).active)return res.status(403).json({error:"Transfer ban ativo. Novos empréstimos estão bloqueados até o clube sair do limite de endividamento."});
+
+    const playerId=String(req.body.playerId||"");
+    const months=[3,6,12].includes(Number(req.body.months))?Number(req.body.months):6;
+    const monthlyFee=Math.max(0,Number(req.body.monthlyFee||0));
+    const career=await getCareer(c.id);
+    const userDiv=career?.user_division||"D";
+
+    const result=await tx(async client=>{
+      const balance=Number((await client.query(`SELECT coins FROM clubs WHERE id=$1 FOR UPDATE`,[c.id])).rows[0]?.coins||0);
+      if(transferBanInfo(balance).active)throw Object.assign(new Error("Transfer ban ativo por endividamento."),{status:403});
+
+      const p=(await client.query(`
+        SELECT p.*,sc.name source_club_name,sc.is_ai source_is_ai,sc.base_rating source_base_rating
+        FROM players p JOIN clubs sc ON sc.id=p.club_id
+        WHERE p.id=$1 FOR UPDATE OF p
+      `,[playerId])).rows[0];
+
+      if(!p)throw Object.assign(new Error("Jogador não encontrado ou já saiu do mercado."),{status:404});
+      if(String(p.club_id)===String(c.id))throw Object.assign(new Error("Esse jogador já está no seu clube."),{status:400});
+
+      const eligibility=await loanEligibility(client,p);
+      if(!eligibility.eligible)throw Object.assign(new Error(eligibility.reason),{status:400});
+
+      const sourceDiv=divisionOfClub(career,p.club_id);
+      const profile=marketProfile(userDiv);
+      if(Number(p.rating)>profile.max+1)throw Object.assign(new Error("Esse jogador está acima do nível de empréstimo disponível para sua divisão."),{status:400});
+
+      const fairFee=Math.max(250,Math.round(fairMarketValue(p)*0.025/50)*50);
+      if(monthlyFee<Math.round(fairFee*.90)){
+        return {accepted:false,message:`${p.source_club_name} recusou. O valor mensal esperado é próximo de ${fairFee.toLocaleString("pt-BR")} moedas.`,suggestedFee:fairFee};
+      }
+
+      const currentTeamRating=await clubRating(c.id,client);
+      const projectChance=clamp(72+(divisionRank(userDiv)-divisionRank(sourceDiv||userDiv))*5-(Number(p.rating)-currentTeamRating)*1.6,20,95);
+      if(Math.random()*100>projectChance){
+        return {accepted:false,message:`${p.name} preferiu permanecer no clube atual por enquanto.`,suggestedFee:fairFee};
+      }
+
+      const squad=Number((await client.query(`SELECT COUNT(*)::int count FROM players WHERE club_id=$1`,[c.id])).rows[0].count);
+      if(squad>=30)throw Object.assign(new Error("Seu elenco já possui 30 jogadores."),{status:400});
+
+      const parentId=p.club_id;
+      await client.query(`INSERT INTO player_loans(player_id,parent_club_id,borrowing_club_id,start_season_no,months_total,months_elapsed,monthly_fee,status)
+        VALUES($1,$2,$3,$4,$5,0,$6,'active')`,
+        [p.id,parentId,c.id,career.season_no,months,Math.round(monthlyFee)]);
+
+      await client.query(`UPDATE transfer_offers SET status='expired',updated_at=NOW() WHERE player_id=$1 AND status='pending'`,[p.id]);
+      await client.query(`UPDATE players SET club_id=$2,is_starter=FALSE,transfer_listed=FALSE,fitness=100,morale=76 WHERE id=$1`,[p.id,c.id]);
+      await applyFelipeMode(client,c.id);
+
+      await client.query(`INSERT INTO club_events(club_id,event_type,title,description) VALUES($1,'loan','Empréstimo confirmado',$2)`,
+        [c.id,`${p.name} chegou por ${months} meses. Taxa mensal: ${Math.round(monthlyFee).toLocaleString("pt-BR")} moedas, além do salário do jogador.`]);
+
+      return {accepted:true,message:`${p.name} chegou por empréstimo de ${months} meses e foi retirado do mercado.`,playerId:p.id,months,monthlyFee:Math.round(monthlyFee),removedFromMarket:true};
+    });
+
     res.json(result);
   }catch(e){next(e)}
 });
@@ -2111,7 +2484,8 @@ async function start(){
   await oneTimeReset();
   await applyEconomyMigration();
   await applyV14Migration();
+  await applyV15Migration();
   await ensureMarket();
-  app.listen(PORT,"0.0.0.0",()=>console.log(`Dono do Clube v8 rodando na porta ${PORT}`));
+  app.listen(PORT,"0.0.0.0",()=>console.log(`Dono do Clube v9 rodando na porta ${PORT}`));
 }
 start().catch(e=>{console.error("Falha ao iniciar:",e);process.exit(1)});

@@ -1,8 +1,8 @@
 {
   "name": "dono-do-clube",
-  "version": "14.0.0",
+  "version": "15.0.0",
   "private": true,
-  "description": "Dono do Clube com Copa do Brasil, troféus, calendário mensal de salários, vendas, propostas e transfer ban.",
+  "description": "Dono do Clube com patrocínios, transferências parceladas até 24x, empréstimos e mercado progressivo por divisão.",
   "main": "server.js",
   "scripts": {
     "start": "node server.js"
