@@ -73,3 +73,18 @@ Foram adicionados:
 ## Persistência
 
 Conta, clube, carreira, finanças, jogadores e demais dados continuam no PostgreSQL do Render.
+
+
+## Modo FELIPE
+
+Existe um modo especial ativado quando o nome do clube é exatamente `Felipe` (maiúsculas/minúsculas não importam).
+
+Ao criar o clube como Felipe ou mudar o nome para Felipe:
+- todos os jogadores do clube ficam com overall 100;
+- velocidade, chute, passe e defesa ficam em 100;
+- físico e moral ficam em 100;
+- lesões atuais são zeradas;
+- novos jogadores contratados também passam a 100 enquanto o clube continuar chamado Felipe;
+- o clube vence as partidas com placares especiais sorteados entre 100 x 0, 1067 x 0 e 67 x 42.
+
+A aba **Clube** possui uma opção explícita para mudar o nome a qualquer momento.

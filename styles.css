@@ -51,3 +51,6 @@ repeating-linear-gradient(0deg,#1e7d43 0,#1e7d43 56px,#237f47 56px,#237f47 112px
 .transfer-search{display:grid;grid-template-columns:1.5fr 1fr .75fr .9fr auto;gap:8px;margin:14px 0}.transfer-source{color:#9eb3a7;font-size:11px;margin-bottom:8px}.offer-summary{background:#09150e;border:1px solid #244333;padding:10px;border-radius:11px;color:#b9c9c0;font-size:12px}
 @media(max-width:900px){.transfer-search{grid-template-columns:1fr 1fr}.transfer-search button{grid-column:1/-1}.pitch{height:500px}.pitch-player{width:94px}}
 @media(max-width:620px){.pitch{height:470px}.pitch-player{width:60px;min-height:55px;padding:6px 3px}.pitch-player b{font-size:10px}.pitch-player small{font-size:8px}.pitch-rating{font-size:9px}.transfer-search{grid-template-columns:1fr}}
+
+.rename-box{display:grid;gap:8px;padding:13px;border:1px solid #315640;background:#0a1710;border-radius:14px}
+.rename-box>b{font-size:15px}.felipe-banner{padding:12px;border-radius:13px;border:1px solid #f0c94a;background:linear-gradient(135deg,#3b3108,#1c1806);color:#ffe990;font-weight:950;text-align:center;box-shadow:0 0 28px rgba(246,200,76,.12)}

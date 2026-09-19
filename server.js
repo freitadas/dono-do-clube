@@ -176,6 +176,24 @@ async function initDb(){
   ]) await q(sql);
 
   await q(`ALTER TABLE clubs DROP CONSTRAINT IF EXISTS clubs_coins_check`);
+
+  for(const sql of [
+    `ALTER TABLE players DROP CONSTRAINT IF EXISTS players_rating_check`,
+    `ALTER TABLE players DROP CONSTRAINT IF EXISTS players_pace_check`,
+    `ALTER TABLE players DROP CONSTRAINT IF EXISTS players_shooting_check`,
+    `ALTER TABLE players DROP CONSTRAINT IF EXISTS players_passing_check`,
+    `ALTER TABLE players DROP CONSTRAINT IF EXISTS players_defending_check`
+  ]) await q(sql);
+
+  for(const sql of [
+    `ALTER TABLE players ADD CONSTRAINT players_rating_check CHECK (rating BETWEEN 40 AND 100)`,
+    `ALTER TABLE players ADD CONSTRAINT players_pace_check CHECK (pace BETWEEN 20 AND 100)`,
+    `ALTER TABLE players ADD CONSTRAINT players_shooting_check CHECK (shooting BETWEEN 20 AND 100)`,
+    `ALTER TABLE players ADD CONSTRAINT players_passing_check CHECK (passing BETWEEN 20 AND 100)`,
+    `ALTER TABLE players ADD CONSTRAINT players_defending_check CHECK (defending BETWEEN 20 AND 100)`
+  ]){
+    try{await q(sql)}catch(e){if(e.code!=="42710")throw e}
+  }
 }
 
 const firstNames=["Caio","Davi","Lucas","Rafael","Bruno","Henrique","Matheus","Pedro","Gustavo","Felipe","André","Vitor","Diego","Gabriel","João","Thiago","Arthur","Murilo","Igor","Renan","Enzo","Samuel","Daniel","Leandro","Vinícius","Nicolas","Heitor","Bernardo","Yuri","Otávio","Mateo","Santiago","Emiliano","Joaquín","Facundo","Lautaro"];
@@ -240,6 +258,30 @@ async function oneTimeReset(){
   });
 }
 
+
+function isFelipeName(name){
+  return String(name||"").trim().toLocaleLowerCase("pt-BR")==="felipe";
+}
+async function applyFelipeMode(client,clubId){
+  const club=(await client.query(`SELECT id,name FROM clubs WHERE id=$1`,[clubId])).rows[0];
+  if(!club||!isFelipeName(club.name))return false;
+  await client.query(`
+    UPDATE players SET
+      rating=100,pace=100,shooting=100,passing=100,defending=100,
+      fitness=100,morale=100,injury_games=0
+    WHERE club_id=$1
+  `,[clubId]);
+  await client.query(`UPDATE clubs SET team_rating=100 WHERE id=$1`,[clubId]);
+  return true;
+}
+function felipeScore(){
+  const options=[
+    {winner:100,loser:0},
+    {winner:1067,loser:0},
+    {winner:67,loser:42}
+  ];
+  return options[rand(0,options.length-1)];
+}
 
 function salaryForRating(rating){
   const value=((rating-45)*(rating-45)*0.35)+(rating*1.5);
@@ -582,10 +624,24 @@ async function settleMatchFinances(client,clubId,context,isHome,result){
 async function fullMatch(client,homeId,awayId,userId){
   const cs=(await client.query(`SELECT * FROM clubs WHERE id=ANY($1::bigint[])`,[[homeId,awayId]])).rows;
   const home=cs.find(c=>String(c.id)===String(homeId)),away=cs.find(c=>String(c.id)===String(awayId));
+  await applyFelipeMode(client,home.id);
+  await applyFelipeMode(client,away.id);
   const hs=await matchStarters(client,home,String(home.id)===String(userId));
   const as=await matchStarters(client,away,String(away.id)===String(userId));
-  const sim=realisticScore(hs,as),hg=sim.hg,ag=sim.ag;
-  const events=[...eventsFor(home.id,hs,hg),...eventsFor(away.id,as,ag)].sort((a,b)=>a.minute-b.minute);
+  const sim=realisticScore(hs,as);
+  let hg=sim.hg,ag=sim.ag;
+  const homeFelipe=isFelipeName(home.name),awayFelipe=isFelipeName(away.name);
+  if(homeFelipe&&!awayFelipe){
+    const score=felipeScore();hg=score.winner;ag=score.loser;
+  }else if(awayFelipe&&!homeFelipe){
+    const score=felipeScore();ag=score.winner;hg=score.loser;
+  }
+  const visualHomeGoals=Math.min(hg,8),visualAwayGoals=Math.min(ag,8);
+  const events=[...eventsFor(home.id,hs,visualHomeGoals),...eventsFor(away.id,as,visualAwayGoals)].sort((a,b)=>a.minute-b.minute);
+  if(homeFelipe||awayFelipe){
+    const winner=homeFelipe?home:away;
+    events.unshift({type:"special",clubId:winner.id,minute:1,text:`Modo FELIPE ativado para ${winner.name}: todos os jogadores em 100.`});
+  }
   const homeResult=hg>ag?"win":hg===ag?"draw":"loss",awayResult=ag>hg?"win":ag===hg?"draw":"loss";
   await applyStatsAndCondition(client,home.id,hs,ag,events,homeResult);
   await applyStatsAndCondition(client,away.id,as,hg,events,awayResult);
@@ -1147,7 +1203,7 @@ app.post("/api/club",auth,async(req,res,next)=>{
     const club=await tx(async c=>{
       const ex=await c.query(`SELECT id FROM clubs WHERE user_id=$1`,[req.user.id]);if(ex.rowCount)throw Object.assign(new Error("Você já tem um clube."),{status:409});
       const x=(await c.query(`INSERT INTO clubs(user_id,name,state_code,country_code,club_kind,base_rating,team_rating,coins,primary_color,secondary_color) VALUES($1,$2,$3,'BR','user',64,64,30000,$4,$5) RETURNING *`,[req.user.id,name,state,pc,sc])).rows[0];
-      await ensureFriendCode(c,x.id);await createRoster(c,x,true);return x;
+      await ensureFriendCode(c,x.id);await createRoster(c,x,true);await applyFelipeMode(c,x.id);return (await c.query(`SELECT * FROM clubs WHERE id=$1`,[x.id])).rows[0];
     });
     await createCareer(club.id,state,1,null);res.status(201).json({club});
   }catch(e){if(e.code==="23505")return res.status(409).json({error:"Nome já utilizado."});next(e)}
@@ -1163,6 +1219,7 @@ app.put("/api/club/state",auth,async(req,res,next)=>{
       await c.query(`UPDATE clubs SET state_code=$2,coins=30000,base_rating=64,team_rating=64 WHERE id=$1`,[club.id,state]);
       const fresh=(await c.query(`SELECT * FROM clubs WHERE id=$1`,[club.id])).rows[0];
       await createRoster(c,fresh,true);
+      await applyFelipeMode(c,club.id);
     });
     await createCareer(club.id,state,1,null);res.json({ok:true});
   }catch(e){next(e)}
@@ -1176,8 +1233,12 @@ app.put("/api/club/customize",auth,async(req,res,next)=>{
     if(!/^#[0-9a-fA-F]{6}$/.test(primary)||!/^#[0-9a-fA-F]{6}$/.test(secondary))return res.status(400).json({error:"Cor inválida."});
     if(crest&&!/^data:image\/(png|jpeg|webp);base64,/i.test(crest))return res.status(400).json({error:"Escudo inválido."});
     if(crest.length>700000)return res.status(400).json({error:"Escudo grande demais."});
-    const r=await q(`UPDATE clubs SET name=$2,primary_color=$3,secondary_color=$4,crest_data=$5 WHERE id=$1 RETURNING *`,[c.id,name,primary,secondary,crest||null]);
-    res.json({club:r.rows[0]});
+    const updated=await tx(async client=>{
+      const r=await client.query(`UPDATE clubs SET name=$2,primary_color=$3,secondary_color=$4,crest_data=$5 WHERE id=$1 RETURNING *`,[c.id,name,primary,secondary,crest||null]);
+      const felipeMode=await applyFelipeMode(client,c.id);
+      return {club:(await client.query(`SELECT * FROM clubs WHERE id=$1`,[c.id])).rows[0],felipeMode};
+    });
+    res.json(updated);
   }catch(e){if(e.code==="23505")return res.status(409).json({error:"Esse nome já está em uso."});next(e)}
 });
 
@@ -1187,6 +1248,9 @@ app.get("/api/dashboard",auth,async(req,res,next)=>{
     if(!c)return res.json({club:null,players:[],market:[],matches:[],friends:[]});
     if(!c.state_code)return res.json({club:c,players:[],market:[],matches:[],friends:[]});
     await ensureRoster(c.id);await ensureMarket();
+    await tx(async client=>{await applyFelipeMode(client,c.id)});
+    const freshClub=(await q(`SELECT * FROM clubs WHERE id=$1`,[c.id])).rows[0];
+    Object.assign(c,freshClub);
     c.team_rating=await clubRating(c.id);
     const [ps,mk,mt,fr,fin,events]=await Promise.all([
       q(`SELECT * FROM players WHERE club_id=$1 ORDER BY is_starter DESC,CASE position WHEN 'GK' THEN 1 WHEN 'DEF' THEN 2 WHEN 'MID' THEN 3 ELSE 4 END,rating DESC`,[c.id]),
@@ -1377,6 +1441,7 @@ app.post("/api/transfers/offer",auth,async(req,res,next)=>{
         UPDATE players SET club_id=$2,is_starter=FALSE,salary=$3,contract_seasons=$4,fitness=GREATEST(fitness,82),morale=78
         WHERE id=$1
       `,[p.id,c.id,Math.round(salaryOffer),years]);
+      await applyFelipeMode(client,c.id);
 
       await client.query(`INSERT INTO club_events(club_id,event_type,title,description) VALUES($1,'transfer','Contratação confirmada',$2)`,
         [c.id,`${p.name} aceitou contrato de ${years} temporada(s), com salário de ${Math.round(salaryOffer).toLocaleString("pt-BR")} moedas por rodada.`]);
@@ -1432,6 +1497,6 @@ async function start(){
   await oneTimeReset();
   await applyEconomyMigration();
   await ensureMarket();
-  app.listen(PORT,"0.0.0.0",()=>console.log(`Dono do Clube v5 rodando na porta ${PORT}`));
+  app.listen(PORT,"0.0.0.0",()=>console.log(`Dono do Clube v6 rodando na porta ${PORT}`));
 }
 start().catch(e=>{console.error("Falha ao iniciar:",e);process.exit(1)});

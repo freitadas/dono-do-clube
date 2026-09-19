@@ -96,7 +96,8 @@ function renderCreateClub(){
     const n=app.querySelector("#clubName").value||"Meu Clube FC";
     const c1=app.querySelector("#c1").value,c2=app.querySelector("#c2").value;
     app.querySelector("#preview").style.background=`linear-gradient(135deg,${c1},${c2})`;
-    app.querySelector("#preview").innerHTML=`<div><div class="preview-crest">${esc(initials(n))}</div><h2>${esc(n)}</h2><p>Começa na Série D</p></div>`;
+    const felipe=n.trim().toLowerCase()==="felipe";
+    app.querySelector("#preview").innerHTML=`<div><div class="preview-crest">${esc(initials(n))}</div><h2>${esc(n)}</h2><p>${felipe?"⚡ Modo Felipe será ativado":"Começa na Série D"}</p></div>`;
   };
   ["clubName","c1","c2"].forEach(id=>app.querySelector("#"+id).oninput=sync);
   sync();
@@ -455,12 +456,17 @@ function clubView(){
     </div></div>
     <div class="card"><div class="kicker">Identidade do clube</div><h2>Personalização</h2>
       <form id="customForm" class="stack">
-        <label>Nome<input id="customName" value="${esc(c.name)}" maxlength="30" required></label>
+        <div class="rename-box">
+          <b>Mudar nome do clube</b>
+          <span class="muted">Você pode alterar o nome a qualquer momento.</span>
+          <label>Novo nome<input id="customName" value="${esc(c.name)}" maxlength="30" required></label>
+        </div>
+        ${String(c.name||"").trim().toLowerCase()==="felipe"?`<div class="felipe-banner">⚡ MODO FELIPE ATIVO — elenco 100 e goleadas especiais.</div>`:""}
         <label>Estado<input value="${esc(STATES[c.state_code])}" disabled></label>
         <div class="colors"><label>Cor principal<input id="customPrimary" type="color" value="${c.primary_color}"></label>
         <label>Cor secundária<input id="customSecondary" type="color" value="${c.secondary_color}"></label></div>
         <label class="filebox">Escudo<input id="crestFile" type="file" accept="image/png,image/jpeg,image/webp"><span class="muted">PNG, JPG ou WebP.</span></label>
-        <div style="display:flex;gap:8px"><button type="button" id="removeCrest" class="secondary">Remover escudo</button><button class="primary" style="flex:1">Salvar</button></div>
+        <div style="display:flex;gap:8px"><button type="button" id="removeCrest" class="secondary">Remover escudo</button><button class="primary" style="flex:1">Salvar nome e personalização</button></div>
         <div id="customMsg"></div>
       </form>
     </div>
@@ -674,10 +680,11 @@ function bindClub(){
   app.querySelector("#customForm").onsubmit=async e=>{
     e.preventDefault();
     try{
-      await api("/api/club/customize",{method:"PUT",body:JSON.stringify({
+      const result=await api("/api/club/customize",{method:"PUT",body:JSON.stringify({
         name:name.value,primaryColor:c1.value,secondaryColor:c2.value,crestData:pendingCrest
       })});
       await refreshAll();render();
+      if(result.felipeMode)alert("MODO FELIPE ATIVADO: todos os jogadores do clube agora têm atributos 100 e o time recebe placares especiais.");
     }catch(err){
       app.querySelector("#customMsg").innerHTML=`<div class="msg">${esc(err.message)}</div>`;
     }

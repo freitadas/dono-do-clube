@@ -1,8 +1,8 @@
 {
   "name": "dono-do-clube",
-  "version": "5.0.0",
+  "version": "6.0.0",
   "private": true,
-  "description": "Dono do Clube com escalação visual, fadiga, salários, finanças, negociações realistas e competições estáveis.",
+  "description": "Dono do Clube com Modo Felipe, renomeação de clube e gestão realista.",
   "main": "server.js",
   "scripts": {
     "start": "node server.js"
