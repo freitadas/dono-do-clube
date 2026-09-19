@@ -1,0 +1,5612 @@
+[
+  {
+    "name": "Manchester City (ENG)",
+    "state": null,
+    "country": "ENG",
+    "kind": "national",
+    "division": "A",
+    "rating": 84,
+    "primary": "#8b1e2d",
+    "secondary": "#f4f7f5"
+  },
+  {
+    "name": "Liverpool (ENG)",
+    "state": null,
+    "country": "ENG",
+    "kind": "national",
+    "division": "A",
+    "rating": 83,
+    "primary": "#1e4f8a",
+    "secondary": "#f4f7f5"
+  },
+  {
+    "name": "Arsenal (ENG)",
+    "state": null,
+    "country": "ENG",
+    "kind": "national",
+    "division": "A",
+    "rating": 82,
+    "primary": "#7a4d1b",
+    "secondary": "#f4f7f5"
+  },
+  {
+    "name": "Chelsea (ENG)",
+    "state": null,
+    "country": "ENG",
+    "kind": "national",
+    "division": "A",
+    "rating": 81,
+    "primary": "#5b2c83",
+    "secondary": "#f4f7f5"
+  },
+  {
+    "name": "Manchester United (ENG)",
+    "state": null,
+    "country": "ENG",
+    "kind": "national",
+    "division": "A",
+    "rating": 80,
+    "primary": "#0c6f73",
+    "secondary": "#f4f7f5"
+  },
+  {
+    "name": "Tottenham (ENG)",
+    "state": null,
+    "country": "ENG",
+    "kind": "national",
+    "division": "A",
+    "rating": 79,
+    "primary": "#8a6d1d",
+    "secondary": "#f4f7f5"
+  },
+  {
+    "name": "Newcastle United (ENG)",
+    "state": null,
+    "country": "ENG",
+    "kind": "national",
+    "division": "A",
+    "rating": 78,
+    "primary": "#333333",
+    "secondary": "#f4f7f5"
+  },
+  {
+    "name": "Aston Villa (ENG)",
+    "state": null,
+    "country": "ENG",
+    "kind": "national",
+    "division": "A",
+    "rating": 77,
+    "primary": "#1f6b3a",
+    "secondary": "#f4f7f5"
+  },
+  {
+    "name": "West Ham United (ENG)",
+    "state": null,
+    "country": "ENG",
+    "kind": "national",
+    "division": "A",
+    "rating": 76,
+    "primary": "#8b1e2d",
+    "secondary": "#f4f7f5"
+  },
+  {
+    "name": "Brighton (ENG)",
+    "state": null,
+    "country": "ENG",
+    "kind": "national",
+    "division": "A",
+    "rating": 75,
+    "primary": "#1e4f8a",
+    "secondary": "#f4f7f5"
+  },
+  {
+    "name": "Everton (ENG)",
+    "state": null,
+    "country": "ENG",
+    "kind": "national",
+    "division": "A",
+    "rating": 84,
+    "primary": "#7a4d1b",
+    "secondary": "#f4f7f5"
+  },
+  {
+    "name": "Fulham (ENG)",
+    "state": null,
+    "country": "ENG",
+    "kind": "national",
+    "division": "A",
+    "rating": 83,
+    "primary": "#5b2c83",
+    "secondary": "#f4f7f5"
+  },
+  {
+    "name": "Crystal Palace (ENG)",
+    "state": null,
+    "country": "ENG",
+    "kind": "national",
+    "division": "A",
+    "rating": 82,
+    "primary": "#0c6f73",
+    "secondary": "#f4f7f5"
+  },
+  {
+    "name": "Brentford (ENG)",
+    "state": null,
+    "country": "ENG",
+    "kind": "national",
+    "division": "A",
+    "rating": 81,
+    "primary": "#8a6d1d",
+    "secondary": "#f4f7f5"
+  },
+  {
+    "name": "Bournemouth (ENG)",
+    "state": null,
+    "country": "ENG",
+    "kind": "national",
+    "division": "A",
+    "rating": 80,
+    "primary": "#333333",
+    "secondary": "#f4f7f5"
+  },
+  {
+    "name": "Wolverhampton (ENG)",
+    "state": null,
+    "country": "ENG",
+    "kind": "national",
+    "division": "A",
+    "rating": 79,
+    "primary": "#1f6b3a",
+    "secondary": "#f4f7f5"
+  },
+  {
+    "name": "Nottingham Forest (ENG)",
+    "state": null,
+    "country": "ENG",
+    "kind": "national",
+    "division": "A",
+    "rating": 78,
+    "primary": "#8b1e2d",
+    "secondary": "#f4f7f5"
+  },
+  {
+    "name": "Leeds United (ENG)",
+    "state": null,
+    "country": "ENG",
+    "kind": "national",
+    "division": "A",
+    "rating": 77,
+    "primary": "#1e4f8a",
+    "secondary": "#f4f7f5"
+  },
+  {
+    "name": "Burnley (ENG)",
+    "state": null,
+    "country": "ENG",
+    "kind": "national",
+    "division": "A",
+    "rating": 76,
+    "primary": "#7a4d1b",
+    "secondary": "#f4f7f5"
+  },
+  {
+    "name": "Sunderland (ENG)",
+    "state": null,
+    "country": "ENG",
+    "kind": "national",
+    "division": "A",
+    "rating": 75,
+    "primary": "#5b2c83",
+    "secondary": "#f4f7f5"
+  },
+  {
+    "name": "Leicester City (ENG)",
+    "state": null,
+    "country": "ENG",
+    "kind": "national",
+    "division": "B",
+    "rating": 75,
+    "primary": "#8b1e2d",
+    "secondary": "#f4f7f5"
+  },
+  {
+    "name": "Southampton (ENG)",
+    "state": null,
+    "country": "ENG",
+    "kind": "national",
+    "division": "B",
+    "rating": 74,
+    "primary": "#1e4f8a",
+    "secondary": "#f4f7f5"
+  },
+  {
+    "name": "Ipswich Town (ENG)",
+    "state": null,
+    "country": "ENG",
+    "kind": "national",
+    "division": "B",
+    "rating": 73,
+    "primary": "#7a4d1b",
+    "secondary": "#f4f7f5"
+  },
+  {
+    "name": "Norwich City (ENG)",
+    "state": null,
+    "country": "ENG",
+    "kind": "national",
+    "division": "B",
+    "rating": 72,
+    "primary": "#5b2c83",
+    "secondary": "#f4f7f5"
+  },
+  {
+    "name": "Watford (ENG)",
+    "state": null,
+    "country": "ENG",
+    "kind": "national",
+    "division": "B",
+    "rating": 71,
+    "primary": "#0c6f73",
+    "secondary": "#f4f7f5"
+  },
+  {
+    "name": "Coventry City (ENG)",
+    "state": null,
+    "country": "ENG",
+    "kind": "national",
+    "division": "B",
+    "rating": 70,
+    "primary": "#8a6d1d",
+    "secondary": "#f4f7f5"
+  },
+  {
+    "name": "Middlesbrough (ENG)",
+    "state": null,
+    "country": "ENG",
+    "kind": "national",
+    "division": "B",
+    "rating": 69,
+    "primary": "#333333",
+    "secondary": "#f4f7f5"
+  },
+  {
+    "name": "West Bromwich Albion (ENG)",
+    "state": null,
+    "country": "ENG",
+    "kind": "national",
+    "division": "B",
+    "rating": 68,
+    "primary": "#1f6b3a",
+    "secondary": "#f4f7f5"
+  },
+  {
+    "name": "Sheffield United (ENG)",
+    "state": null,
+    "country": "ENG",
+    "kind": "national",
+    "division": "B",
+    "rating": 75,
+    "primary": "#8b1e2d",
+    "secondary": "#f4f7f5"
+  },
+  {
+    "name": "Sheffield Wednesday (ENG)",
+    "state": null,
+    "country": "ENG",
+    "kind": "national",
+    "division": "B",
+    "rating": 74,
+    "primary": "#1e4f8a",
+    "secondary": "#f4f7f5"
+  },
+  {
+    "name": "Blackburn Rovers (ENG)",
+    "state": null,
+    "country": "ENG",
+    "kind": "national",
+    "division": "B",
+    "rating": 73,
+    "primary": "#7a4d1b",
+    "secondary": "#f4f7f5"
+  },
+  {
+    "name": "Bristol City (ENG)",
+    "state": null,
+    "country": "ENG",
+    "kind": "national",
+    "division": "B",
+    "rating": 72,
+    "primary": "#5b2c83",
+    "secondary": "#f4f7f5"
+  },
+  {
+    "name": "Swansea City (ENG)",
+    "state": null,
+    "country": "ENG",
+    "kind": "national",
+    "division": "B",
+    "rating": 71,
+    "primary": "#0c6f73",
+    "secondary": "#f4f7f5"
+  },
+  {
+    "name": "Stoke City (ENG)",
+    "state": null,
+    "country": "ENG",
+    "kind": "national",
+    "division": "B",
+    "rating": 70,
+    "primary": "#8a6d1d",
+    "secondary": "#f4f7f5"
+  },
+  {
+    "name": "Hull City (ENG)",
+    "state": null,
+    "country": "ENG",
+    "kind": "national",
+    "division": "B",
+    "rating": 69,
+    "primary": "#333333",
+    "secondary": "#f4f7f5"
+  },
+  {
+    "name": "Queens Park Rangers (ENG)",
+    "state": null,
+    "country": "ENG",
+    "kind": "national",
+    "division": "B",
+    "rating": 68,
+    "primary": "#1f6b3a",
+    "secondary": "#f4f7f5"
+  },
+  {
+    "name": "Millwall (ENG)",
+    "state": null,
+    "country": "ENG",
+    "kind": "national",
+    "division": "B",
+    "rating": 75,
+    "primary": "#8b1e2d",
+    "secondary": "#f4f7f5"
+  },
+  {
+    "name": "Portsmouth (ENG)",
+    "state": null,
+    "country": "ENG",
+    "kind": "national",
+    "division": "B",
+    "rating": 74,
+    "primary": "#1e4f8a",
+    "secondary": "#f4f7f5"
+  },
+  {
+    "name": "Derby County (ENG)",
+    "state": null,
+    "country": "ENG",
+    "kind": "national",
+    "division": "B",
+    "rating": 73,
+    "primary": "#7a4d1b",
+    "secondary": "#f4f7f5"
+  },
+  {
+    "name": "Preston North End (ENG)",
+    "state": null,
+    "country": "ENG",
+    "kind": "national",
+    "division": "B",
+    "rating": 72,
+    "primary": "#5b2c83",
+    "secondary": "#f4f7f5"
+  },
+  {
+    "name": "English C01 (ENG)",
+    "state": null,
+    "country": "ENG",
+    "kind": "national",
+    "division": "C",
+    "rating": 69,
+    "primary": "#8b1e2d",
+    "secondary": "#f4f7f5"
+  },
+  {
+    "name": "English C02 (ENG)",
+    "state": null,
+    "country": "ENG",
+    "kind": "national",
+    "division": "C",
+    "rating": 68,
+    "primary": "#1e4f8a",
+    "secondary": "#f4f7f5"
+  },
+  {
+    "name": "English C03 (ENG)",
+    "state": null,
+    "country": "ENG",
+    "kind": "national",
+    "division": "C",
+    "rating": 67,
+    "primary": "#7a4d1b",
+    "secondary": "#f4f7f5"
+  },
+  {
+    "name": "English C04 (ENG)",
+    "state": null,
+    "country": "ENG",
+    "kind": "national",
+    "division": "C",
+    "rating": 66,
+    "primary": "#5b2c83",
+    "secondary": "#f4f7f5"
+  },
+  {
+    "name": "English C05 (ENG)",
+    "state": null,
+    "country": "ENG",
+    "kind": "national",
+    "division": "C",
+    "rating": 65,
+    "primary": "#0c6f73",
+    "secondary": "#f4f7f5"
+  },
+  {
+    "name": "English C06 (ENG)",
+    "state": null,
+    "country": "ENG",
+    "kind": "national",
+    "division": "C",
+    "rating": 64,
+    "primary": "#8a6d1d",
+    "secondary": "#f4f7f5"
+  },
+  {
+    "name": "English C07 (ENG)",
+    "state": null,
+    "country": "ENG",
+    "kind": "national",
+    "division": "C",
+    "rating": 63,
+    "primary": "#333333",
+    "secondary": "#f4f7f5"
+  },
+  {
+    "name": "English C08 (ENG)",
+    "state": null,
+    "country": "ENG",
+    "kind": "national",
+    "division": "C",
+    "rating": 62,
+    "primary": "#1f6b3a",
+    "secondary": "#f4f7f5"
+  },
+  {
+    "name": "English C09 (ENG)",
+    "state": null,
+    "country": "ENG",
+    "kind": "national",
+    "division": "C",
+    "rating": 69,
+    "primary": "#8b1e2d",
+    "secondary": "#f4f7f5"
+  },
+  {
+    "name": "English C10 (ENG)",
+    "state": null,
+    "country": "ENG",
+    "kind": "national",
+    "division": "C",
+    "rating": 68,
+    "primary": "#1e4f8a",
+    "secondary": "#f4f7f5"
+  },
+  {
+    "name": "English C11 (ENG)",
+    "state": null,
+    "country": "ENG",
+    "kind": "national",
+    "division": "C",
+    "rating": 67,
+    "primary": "#7a4d1b",
+    "secondary": "#f4f7f5"
+  },
+  {
+    "name": "English C12 (ENG)",
+    "state": null,
+    "country": "ENG",
+    "kind": "national",
+    "division": "C",
+    "rating": 66,
+    "primary": "#5b2c83",
+    "secondary": "#f4f7f5"
+  },
+  {
+    "name": "English C13 (ENG)",
+    "state": null,
+    "country": "ENG",
+    "kind": "national",
+    "division": "C",
+    "rating": 65,
+    "primary": "#0c6f73",
+    "secondary": "#f4f7f5"
+  },
+  {
+    "name": "English C14 (ENG)",
+    "state": null,
+    "country": "ENG",
+    "kind": "national",
+    "division": "C",
+    "rating": 64,
+    "primary": "#8a6d1d",
+    "secondary": "#f4f7f5"
+  },
+  {
+    "name": "English C15 (ENG)",
+    "state": null,
+    "country": "ENG",
+    "kind": "national",
+    "division": "C",
+    "rating": 63,
+    "primary": "#333333",
+    "secondary": "#f4f7f5"
+  },
+  {
+    "name": "English C16 (ENG)",
+    "state": null,
+    "country": "ENG",
+    "kind": "national",
+    "division": "C",
+    "rating": 62,
+    "primary": "#1f6b3a",
+    "secondary": "#f4f7f5"
+  },
+  {
+    "name": "English C17 (ENG)",
+    "state": null,
+    "country": "ENG",
+    "kind": "national",
+    "division": "C",
+    "rating": 69,
+    "primary": "#8b1e2d",
+    "secondary": "#f4f7f5"
+  },
+  {
+    "name": "English C18 (ENG)",
+    "state": null,
+    "country": "ENG",
+    "kind": "national",
+    "division": "C",
+    "rating": 68,
+    "primary": "#1e4f8a",
+    "secondary": "#f4f7f5"
+  },
+  {
+    "name": "English C19 (ENG)",
+    "state": null,
+    "country": "ENG",
+    "kind": "national",
+    "division": "C",
+    "rating": 67,
+    "primary": "#7a4d1b",
+    "secondary": "#f4f7f5"
+  },
+  {
+    "name": "English C20 (ENG)",
+    "state": null,
+    "country": "ENG",
+    "kind": "national",
+    "division": "C",
+    "rating": 66,
+    "primary": "#5b2c83",
+    "secondary": "#f4f7f5"
+  },
+  {
+    "name": "English D01 (ENG)",
+    "state": null,
+    "country": "ENG",
+    "kind": "national",
+    "division": "D",
+    "rating": 64,
+    "primary": "#8b1e2d",
+    "secondary": "#f4f7f5"
+  },
+  {
+    "name": "English D02 (ENG)",
+    "state": null,
+    "country": "ENG",
+    "kind": "national",
+    "division": "D",
+    "rating": 63,
+    "primary": "#1e4f8a",
+    "secondary": "#f4f7f5"
+  },
+  {
+    "name": "English D03 (ENG)",
+    "state": null,
+    "country": "ENG",
+    "kind": "national",
+    "division": "D",
+    "rating": 62,
+    "primary": "#7a4d1b",
+    "secondary": "#f4f7f5"
+  },
+  {
+    "name": "English D04 (ENG)",
+    "state": null,
+    "country": "ENG",
+    "kind": "national",
+    "division": "D",
+    "rating": 61,
+    "primary": "#5b2c83",
+    "secondary": "#f4f7f5"
+  },
+  {
+    "name": "English D05 (ENG)",
+    "state": null,
+    "country": "ENG",
+    "kind": "national",
+    "division": "D",
+    "rating": 60,
+    "primary": "#0c6f73",
+    "secondary": "#f4f7f5"
+  },
+  {
+    "name": "English D06 (ENG)",
+    "state": null,
+    "country": "ENG",
+    "kind": "national",
+    "division": "D",
+    "rating": 59,
+    "primary": "#8a6d1d",
+    "secondary": "#f4f7f5"
+  },
+  {
+    "name": "English D07 (ENG)",
+    "state": null,
+    "country": "ENG",
+    "kind": "national",
+    "division": "D",
+    "rating": 58,
+    "primary": "#333333",
+    "secondary": "#f4f7f5"
+  },
+  {
+    "name": "English D08 (ENG)",
+    "state": null,
+    "country": "ENG",
+    "kind": "national",
+    "division": "D",
+    "rating": 57,
+    "primary": "#1f6b3a",
+    "secondary": "#f4f7f5"
+  },
+  {
+    "name": "English D09 (ENG)",
+    "state": null,
+    "country": "ENG",
+    "kind": "national",
+    "division": "D",
+    "rating": 56,
+    "primary": "#8b1e2d",
+    "secondary": "#f4f7f5"
+  },
+  {
+    "name": "English D10 (ENG)",
+    "state": null,
+    "country": "ENG",
+    "kind": "national",
+    "division": "D",
+    "rating": 64,
+    "primary": "#1e4f8a",
+    "secondary": "#f4f7f5"
+  },
+  {
+    "name": "English D11 (ENG)",
+    "state": null,
+    "country": "ENG",
+    "kind": "national",
+    "division": "D",
+    "rating": 63,
+    "primary": "#7a4d1b",
+    "secondary": "#f4f7f5"
+  },
+  {
+    "name": "English D12 (ENG)",
+    "state": null,
+    "country": "ENG",
+    "kind": "national",
+    "division": "D",
+    "rating": 62,
+    "primary": "#5b2c83",
+    "secondary": "#f4f7f5"
+  },
+  {
+    "name": "English D13 (ENG)",
+    "state": null,
+    "country": "ENG",
+    "kind": "national",
+    "division": "D",
+    "rating": 61,
+    "primary": "#0c6f73",
+    "secondary": "#f4f7f5"
+  },
+  {
+    "name": "English D14 (ENG)",
+    "state": null,
+    "country": "ENG",
+    "kind": "national",
+    "division": "D",
+    "rating": 60,
+    "primary": "#8a6d1d",
+    "secondary": "#f4f7f5"
+  },
+  {
+    "name": "English D15 (ENG)",
+    "state": null,
+    "country": "ENG",
+    "kind": "national",
+    "division": "D",
+    "rating": 59,
+    "primary": "#333333",
+    "secondary": "#f4f7f5"
+  },
+  {
+    "name": "English D16 (ENG)",
+    "state": null,
+    "country": "ENG",
+    "kind": "national",
+    "division": "D",
+    "rating": 58,
+    "primary": "#1f6b3a",
+    "secondary": "#f4f7f5"
+  },
+  {
+    "name": "English D17 (ENG)",
+    "state": null,
+    "country": "ENG",
+    "kind": "national",
+    "division": "D",
+    "rating": 57,
+    "primary": "#8b1e2d",
+    "secondary": "#f4f7f5"
+  },
+  {
+    "name": "English D18 (ENG)",
+    "state": null,
+    "country": "ENG",
+    "kind": "national",
+    "division": "D",
+    "rating": 56,
+    "primary": "#1e4f8a",
+    "secondary": "#f4f7f5"
+  },
+  {
+    "name": "English D19 (ENG)",
+    "state": null,
+    "country": "ENG",
+    "kind": "national",
+    "division": "D",
+    "rating": 64,
+    "primary": "#7a4d1b",
+    "secondary": "#f4f7f5"
+  },
+  {
+    "name": "English D20 (ENG)",
+    "state": null,
+    "country": "ENG",
+    "kind": "national",
+    "division": "D",
+    "rating": 63,
+    "primary": "#5b2c83",
+    "secondary": "#f4f7f5"
+  },
+  {
+    "name": "Real Madrid (ESP)",
+    "state": null,
+    "country": "ESP",
+    "kind": "national",
+    "division": "A",
+    "rating": 84,
+    "primary": "#1e4f8a",
+    "secondary": "#f4f7f5"
+  },
+  {
+    "name": "Barcelona (ESP)",
+    "state": null,
+    "country": "ESP",
+    "kind": "national",
+    "division": "A",
+    "rating": 83,
+    "primary": "#7a4d1b",
+    "secondary": "#f4f7f5"
+  },
+  {
+    "name": "Atlético de Madrid (ESP)",
+    "state": null,
+    "country": "ESP",
+    "kind": "national",
+    "division": "A",
+    "rating": 82,
+    "primary": "#5b2c83",
+    "secondary": "#f4f7f5"
+  },
+  {
+    "name": "Athletic Club (ESP)",
+    "state": null,
+    "country": "ESP",
+    "kind": "national",
+    "division": "A",
+    "rating": 81,
+    "primary": "#0c6f73",
+    "secondary": "#f4f7f5"
+  },
+  {
+    "name": "Real Sociedad (ESP)",
+    "state": null,
+    "country": "ESP",
+    "kind": "national",
+    "division": "A",
+    "rating": 80,
+    "primary": "#8a6d1d",
+    "secondary": "#f4f7f5"
+  },
+  {
+    "name": "Villarreal (ESP)",
+    "state": null,
+    "country": "ESP",
+    "kind": "national",
+    "division": "A",
+    "rating": 79,
+    "primary": "#333333",
+    "secondary": "#f4f7f5"
+  },
+  {
+    "name": "Real Betis (ESP)",
+    "state": null,
+    "country": "ESP",
+    "kind": "national",
+    "division": "A",
+    "rating": 78,
+    "primary": "#1f6b3a",
+    "secondary": "#f4f7f5"
+  },
+  {
+    "name": "Sevilla (ESP)",
+    "state": null,
+    "country": "ESP",
+    "kind": "national",
+    "division": "A",
+    "rating": 77,
+    "primary": "#8b1e2d",
+    "secondary": "#f4f7f5"
+  },
+  {
+    "name": "Valencia (ESP)",
+    "state": null,
+    "country": "ESP",
+    "kind": "national",
+    "division": "A",
+    "rating": 76,
+    "primary": "#1e4f8a",
+    "secondary": "#f4f7f5"
+  },
+  {
+    "name": "Girona (ESP)",
+    "state": null,
+    "country": "ESP",
+    "kind": "national",
+    "division": "A",
+    "rating": 75,
+    "primary": "#7a4d1b",
+    "secondary": "#f4f7f5"
+  },
+  {
+    "name": "Celta Vigo (ESP)",
+    "state": null,
+    "country": "ESP",
+    "kind": "national",
+    "division": "A",
+    "rating": 84,
+    "primary": "#5b2c83",
+    "secondary": "#f4f7f5"
+  },
+  {
+    "name": "Osasuna (ESP)",
+    "state": null,
+    "country": "ESP",
+    "kind": "national",
+    "division": "A",
+    "rating": 83,
+    "primary": "#0c6f73",
+    "secondary": "#f4f7f5"
+  },
+  {
+    "name": "Mallorca (ESP)",
+    "state": null,
+    "country": "ESP",
+    "kind": "national",
+    "division": "A",
+    "rating": 82,
+    "primary": "#8a6d1d",
+    "secondary": "#f4f7f5"
+  },
+  {
+    "name": "Getafe (ESP)",
+    "state": null,
+    "country": "ESP",
+    "kind": "national",
+    "division": "A",
+    "rating": 81,
+    "primary": "#333333",
+    "secondary": "#f4f7f5"
+  },
+  {
+    "name": "Rayo Vallecano (ESP)",
+    "state": null,
+    "country": "ESP",
+    "kind": "national",
+    "division": "A",
+    "rating": 80,
+    "primary": "#1f6b3a",
+    "secondary": "#f4f7f5"
+  },
+  {
+    "name": "Espanyol (ESP)",
+    "state": null,
+    "country": "ESP",
+    "kind": "national",
+    "division": "A",
+    "rating": 79,
+    "primary": "#8b1e2d",
+    "secondary": "#f4f7f5"
+  },
+  {
+    "name": "Alavés (ESP)",
+    "state": null,
+    "country": "ESP",
+    "kind": "national",
+    "division": "A",
+    "rating": 78,
+    "primary": "#1e4f8a",
+    "secondary": "#f4f7f5"
+  },
+  {
+    "name": "Las Palmas (ESP)",
+    "state": null,
+    "country": "ESP",
+    "kind": "national",
+    "division": "A",
+    "rating": 77,
+    "primary": "#7a4d1b",
+    "secondary": "#f4f7f5"
+  },
+  {
+    "name": "Levante (ESP)",
+    "state": null,
+    "country": "ESP",
+    "kind": "national",
+    "division": "A",
+    "rating": 76,
+    "primary": "#5b2c83",
+    "secondary": "#f4f7f5"
+  },
+  {
+    "name": "Elche (ESP)",
+    "state": null,
+    "country": "ESP",
+    "kind": "national",
+    "division": "A",
+    "rating": 75,
+    "primary": "#0c6f73",
+    "secondary": "#f4f7f5"
+  },
+  {
+    "name": "Real Valladolid (ESP)",
+    "state": null,
+    "country": "ESP",
+    "kind": "national",
+    "division": "B",
+    "rating": 75,
+    "primary": "#1e4f8a",
+    "secondary": "#f4f7f5"
+  },
+  {
+    "name": "Leganés (ESP)",
+    "state": null,
+    "country": "ESP",
+    "kind": "national",
+    "division": "B",
+    "rating": 74,
+    "primary": "#7a4d1b",
+    "secondary": "#f4f7f5"
+  },
+  {
+    "name": "Eibar (ESP)",
+    "state": null,
+    "country": "ESP",
+    "kind": "national",
+    "division": "B",
+    "rating": 73,
+    "primary": "#5b2c83",
+    "secondary": "#f4f7f5"
+  },
+  {
+    "name": "Sporting Gijón (ESP)",
+    "state": null,
+    "country": "ESP",
+    "kind": "national",
+    "division": "B",
+    "rating": 72,
+    "primary": "#0c6f73",
+    "secondary": "#f4f7f5"
+  },
+  {
+    "name": "Real Oviedo (ESP)",
+    "state": null,
+    "country": "ESP",
+    "kind": "national",
+    "division": "B",
+    "rating": 71,
+    "primary": "#8a6d1d",
+    "secondary": "#f4f7f5"
+  },
+  {
+    "name": "Zaragoza (ESP)",
+    "state": null,
+    "country": "ESP",
+    "kind": "national",
+    "division": "B",
+    "rating": 70,
+    "primary": "#333333",
+    "secondary": "#f4f7f5"
+  },
+  {
+    "name": "Deportivo La Coruña (ESP)",
+    "state": null,
+    "country": "ESP",
+    "kind": "national",
+    "division": "B",
+    "rating": 69,
+    "primary": "#1f6b3a",
+    "secondary": "#f4f7f5"
+  },
+  {
+    "name": "Granada (ESP)",
+    "state": null,
+    "country": "ESP",
+    "kind": "national",
+    "division": "B",
+    "rating": 68,
+    "primary": "#8b1e2d",
+    "secondary": "#f4f7f5"
+  },
+  {
+    "name": "Almería (ESP)",
+    "state": null,
+    "country": "ESP",
+    "kind": "national",
+    "division": "B",
+    "rating": 75,
+    "primary": "#1e4f8a",
+    "secondary": "#f4f7f5"
+  },
+  {
+    "name": "Cádiz (ESP)",
+    "state": null,
+    "country": "ESP",
+    "kind": "national",
+    "division": "B",
+    "rating": 74,
+    "primary": "#7a4d1b",
+    "secondary": "#f4f7f5"
+  },
+  {
+    "name": "Málaga (ESP)",
+    "state": null,
+    "country": "ESP",
+    "kind": "national",
+    "division": "B",
+    "rating": 73,
+    "primary": "#5b2c83",
+    "secondary": "#f4f7f5"
+  },
+  {
+    "name": "Racing Santander (ESP)",
+    "state": null,
+    "country": "ESP",
+    "kind": "national",
+    "division": "B",
+    "rating": 72,
+    "primary": "#0c6f73",
+    "secondary": "#f4f7f5"
+  },
+  {
+    "name": "Burgos (ESP)",
+    "state": null,
+    "country": "ESP",
+    "kind": "national",
+    "division": "B",
+    "rating": 71,
+    "primary": "#8a6d1d",
+    "secondary": "#f4f7f5"
+  },
+  {
+    "name": "Huesca (ESP)",
+    "state": null,
+    "country": "ESP",
+    "kind": "national",
+    "division": "B",
+    "rating": 70,
+    "primary": "#333333",
+    "secondary": "#f4f7f5"
+  },
+  {
+    "name": "Tenerife (ESP)",
+    "state": null,
+    "country": "ESP",
+    "kind": "national",
+    "division": "B",
+    "rating": 69,
+    "primary": "#1f6b3a",
+    "secondary": "#f4f7f5"
+  },
+  {
+    "name": "Albacete (ESP)",
+    "state": null,
+    "country": "ESP",
+    "kind": "national",
+    "division": "B",
+    "rating": 68,
+    "primary": "#8b1e2d",
+    "secondary": "#f4f7f5"
+  },
+  {
+    "name": "Córdoba (ESP)",
+    "state": null,
+    "country": "ESP",
+    "kind": "national",
+    "division": "B",
+    "rating": 75,
+    "primary": "#1e4f8a",
+    "secondary": "#f4f7f5"
+  },
+  {
+    "name": "Mirandés (ESP)",
+    "state": null,
+    "country": "ESP",
+    "kind": "national",
+    "division": "B",
+    "rating": 74,
+    "primary": "#7a4d1b",
+    "secondary": "#f4f7f5"
+  },
+  {
+    "name": "Castellón (ESP)",
+    "state": null,
+    "country": "ESP",
+    "kind": "national",
+    "division": "B",
+    "rating": 73,
+    "primary": "#5b2c83",
+    "secondary": "#f4f7f5"
+  },
+  {
+    "name": "Eldense (ESP)",
+    "state": null,
+    "country": "ESP",
+    "kind": "national",
+    "division": "B",
+    "rating": 72,
+    "primary": "#0c6f73",
+    "secondary": "#f4f7f5"
+  },
+  {
+    "name": "Español C01 (ESP)",
+    "state": null,
+    "country": "ESP",
+    "kind": "national",
+    "division": "C",
+    "rating": 69,
+    "primary": "#1e4f8a",
+    "secondary": "#f4f7f5"
+  },
+  {
+    "name": "Español C02 (ESP)",
+    "state": null,
+    "country": "ESP",
+    "kind": "national",
+    "division": "C",
+    "rating": 68,
+    "primary": "#7a4d1b",
+    "secondary": "#f4f7f5"
+  },
+  {
+    "name": "Español C03 (ESP)",
+    "state": null,
+    "country": "ESP",
+    "kind": "national",
+    "division": "C",
+    "rating": 67,
+    "primary": "#5b2c83",
+    "secondary": "#f4f7f5"
+  },
+  {
+    "name": "Español C04 (ESP)",
+    "state": null,
+    "country": "ESP",
+    "kind": "national",
+    "division": "C",
+    "rating": 66,
+    "primary": "#0c6f73",
+    "secondary": "#f4f7f5"
+  },
+  {
+    "name": "Español C05 (ESP)",
+    "state": null,
+    "country": "ESP",
+    "kind": "national",
+    "division": "C",
+    "rating": 65,
+    "primary": "#8a6d1d",
+    "secondary": "#f4f7f5"
+  },
+  {
+    "name": "Español C06 (ESP)",
+    "state": null,
+    "country": "ESP",
+    "kind": "national",
+    "division": "C",
+    "rating": 64,
+    "primary": "#333333",
+    "secondary": "#f4f7f5"
+  },
+  {
+    "name": "Español C07 (ESP)",
+    "state": null,
+    "country": "ESP",
+    "kind": "national",
+    "division": "C",
+    "rating": 63,
+    "primary": "#1f6b3a",
+    "secondary": "#f4f7f5"
+  },
+  {
+    "name": "Español C08 (ESP)",
+    "state": null,
+    "country": "ESP",
+    "kind": "national",
+    "division": "C",
+    "rating": 62,
+    "primary": "#8b1e2d",
+    "secondary": "#f4f7f5"
+  },
+  {
+    "name": "Español C09 (ESP)",
+    "state": null,
+    "country": "ESP",
+    "kind": "national",
+    "division": "C",
+    "rating": 69,
+    "primary": "#1e4f8a",
+    "secondary": "#f4f7f5"
+  },
+  {
+    "name": "Español C10 (ESP)",
+    "state": null,
+    "country": "ESP",
+    "kind": "national",
+    "division": "C",
+    "rating": 68,
+    "primary": "#7a4d1b",
+    "secondary": "#f4f7f5"
+  },
+  {
+    "name": "Español C11 (ESP)",
+    "state": null,
+    "country": "ESP",
+    "kind": "national",
+    "division": "C",
+    "rating": 67,
+    "primary": "#5b2c83",
+    "secondary": "#f4f7f5"
+  },
+  {
+    "name": "Español C12 (ESP)",
+    "state": null,
+    "country": "ESP",
+    "kind": "national",
+    "division": "C",
+    "rating": 66,
+    "primary": "#0c6f73",
+    "secondary": "#f4f7f5"
+  },
+  {
+    "name": "Español C13 (ESP)",
+    "state": null,
+    "country": "ESP",
+    "kind": "national",
+    "division": "C",
+    "rating": 65,
+    "primary": "#8a6d1d",
+    "secondary": "#f4f7f5"
+  },
+  {
+    "name": "Español C14 (ESP)",
+    "state": null,
+    "country": "ESP",
+    "kind": "national",
+    "division": "C",
+    "rating": 64,
+    "primary": "#333333",
+    "secondary": "#f4f7f5"
+  },
+  {
+    "name": "Español C15 (ESP)",
+    "state": null,
+    "country": "ESP",
+    "kind": "national",
+    "division": "C",
+    "rating": 63,
+    "primary": "#1f6b3a",
+    "secondary": "#f4f7f5"
+  },
+  {
+    "name": "Español C16 (ESP)",
+    "state": null,
+    "country": "ESP",
+    "kind": "national",
+    "division": "C",
+    "rating": 62,
+    "primary": "#8b1e2d",
+    "secondary": "#f4f7f5"
+  },
+  {
+    "name": "Español C17 (ESP)",
+    "state": null,
+    "country": "ESP",
+    "kind": "national",
+    "division": "C",
+    "rating": 69,
+    "primary": "#1e4f8a",
+    "secondary": "#f4f7f5"
+  },
+  {
+    "name": "Español C18 (ESP)",
+    "state": null,
+    "country": "ESP",
+    "kind": "national",
+    "division": "C",
+    "rating": 68,
+    "primary": "#7a4d1b",
+    "secondary": "#f4f7f5"
+  },
+  {
+    "name": "Español C19 (ESP)",
+    "state": null,
+    "country": "ESP",
+    "kind": "national",
+    "division": "C",
+    "rating": 67,
+    "primary": "#5b2c83",
+    "secondary": "#f4f7f5"
+  },
+  {
+    "name": "Español C20 (ESP)",
+    "state": null,
+    "country": "ESP",
+    "kind": "national",
+    "division": "C",
+    "rating": 66,
+    "primary": "#0c6f73",
+    "secondary": "#f4f7f5"
+  },
+  {
+    "name": "Español D01 (ESP)",
+    "state": null,
+    "country": "ESP",
+    "kind": "national",
+    "division": "D",
+    "rating": 64,
+    "primary": "#1e4f8a",
+    "secondary": "#f4f7f5"
+  },
+  {
+    "name": "Español D02 (ESP)",
+    "state": null,
+    "country": "ESP",
+    "kind": "national",
+    "division": "D",
+    "rating": 63,
+    "primary": "#7a4d1b",
+    "secondary": "#f4f7f5"
+  },
+  {
+    "name": "Español D03 (ESP)",
+    "state": null,
+    "country": "ESP",
+    "kind": "national",
+    "division": "D",
+    "rating": 62,
+    "primary": "#5b2c83",
+    "secondary": "#f4f7f5"
+  },
+  {
+    "name": "Español D04 (ESP)",
+    "state": null,
+    "country": "ESP",
+    "kind": "national",
+    "division": "D",
+    "rating": 61,
+    "primary": "#0c6f73",
+    "secondary": "#f4f7f5"
+  },
+  {
+    "name": "Español D05 (ESP)",
+    "state": null,
+    "country": "ESP",
+    "kind": "national",
+    "division": "D",
+    "rating": 60,
+    "primary": "#8a6d1d",
+    "secondary": "#f4f7f5"
+  },
+  {
+    "name": "Español D06 (ESP)",
+    "state": null,
+    "country": "ESP",
+    "kind": "national",
+    "division": "D",
+    "rating": 59,
+    "primary": "#333333",
+    "secondary": "#f4f7f5"
+  },
+  {
+    "name": "Español D07 (ESP)",
+    "state": null,
+    "country": "ESP",
+    "kind": "national",
+    "division": "D",
+    "rating": 58,
+    "primary": "#1f6b3a",
+    "secondary": "#f4f7f5"
+  },
+  {
+    "name": "Español D08 (ESP)",
+    "state": null,
+    "country": "ESP",
+    "kind": "national",
+    "division": "D",
+    "rating": 57,
+    "primary": "#8b1e2d",
+    "secondary": "#f4f7f5"
+  },
+  {
+    "name": "Español D09 (ESP)",
+    "state": null,
+    "country": "ESP",
+    "kind": "national",
+    "division": "D",
+    "rating": 56,
+    "primary": "#1e4f8a",
+    "secondary": "#f4f7f5"
+  },
+  {
+    "name": "Español D10 (ESP)",
+    "state": null,
+    "country": "ESP",
+    "kind": "national",
+    "division": "D",
+    "rating": 64,
+    "primary": "#7a4d1b",
+    "secondary": "#f4f7f5"
+  },
+  {
+    "name": "Español D11 (ESP)",
+    "state": null,
+    "country": "ESP",
+    "kind": "national",
+    "division": "D",
+    "rating": 63,
+    "primary": "#5b2c83",
+    "secondary": "#f4f7f5"
+  },
+  {
+    "name": "Español D12 (ESP)",
+    "state": null,
+    "country": "ESP",
+    "kind": "national",
+    "division": "D",
+    "rating": 62,
+    "primary": "#0c6f73",
+    "secondary": "#f4f7f5"
+  },
+  {
+    "name": "Español D13 (ESP)",
+    "state": null,
+    "country": "ESP",
+    "kind": "national",
+    "division": "D",
+    "rating": 61,
+    "primary": "#8a6d1d",
+    "secondary": "#f4f7f5"
+  },
+  {
+    "name": "Español D14 (ESP)",
+    "state": null,
+    "country": "ESP",
+    "kind": "national",
+    "division": "D",
+    "rating": 60,
+    "primary": "#333333",
+    "secondary": "#f4f7f5"
+  },
+  {
+    "name": "Español D15 (ESP)",
+    "state": null,
+    "country": "ESP",
+    "kind": "national",
+    "division": "D",
+    "rating": 59,
+    "primary": "#1f6b3a",
+    "secondary": "#f4f7f5"
+  },
+  {
+    "name": "Español D16 (ESP)",
+    "state": null,
+    "country": "ESP",
+    "kind": "national",
+    "division": "D",
+    "rating": 58,
+    "primary": "#8b1e2d",
+    "secondary": "#f4f7f5"
+  },
+  {
+    "name": "Español D17 (ESP)",
+    "state": null,
+    "country": "ESP",
+    "kind": "national",
+    "division": "D",
+    "rating": 57,
+    "primary": "#1e4f8a",
+    "secondary": "#f4f7f5"
+  },
+  {
+    "name": "Español D18 (ESP)",
+    "state": null,
+    "country": "ESP",
+    "kind": "national",
+    "division": "D",
+    "rating": 56,
+    "primary": "#7a4d1b",
+    "secondary": "#f4f7f5"
+  },
+  {
+    "name": "Español D19 (ESP)",
+    "state": null,
+    "country": "ESP",
+    "kind": "national",
+    "division": "D",
+    "rating": 64,
+    "primary": "#5b2c83",
+    "secondary": "#f4f7f5"
+  },
+  {
+    "name": "Español D20 (ESP)",
+    "state": null,
+    "country": "ESP",
+    "kind": "national",
+    "division": "D",
+    "rating": 63,
+    "primary": "#0c6f73",
+    "secondary": "#f4f7f5"
+  },
+  {
+    "name": "Inter (ITA)",
+    "state": null,
+    "country": "ITA",
+    "kind": "national",
+    "division": "A",
+    "rating": 84,
+    "primary": "#7a4d1b",
+    "secondary": "#f4f7f5"
+  },
+  {
+    "name": "Milan (ITA)",
+    "state": null,
+    "country": "ITA",
+    "kind": "national",
+    "division": "A",
+    "rating": 83,
+    "primary": "#5b2c83",
+    "secondary": "#f4f7f5"
+  },
+  {
+    "name": "Juventus (ITA)",
+    "state": null,
+    "country": "ITA",
+    "kind": "national",
+    "division": "A",
+    "rating": 82,
+    "primary": "#0c6f73",
+    "secondary": "#f4f7f5"
+  },
+  {
+    "name": "Napoli (ITA)",
+    "state": null,
+    "country": "ITA",
+    "kind": "national",
+    "division": "A",
+    "rating": 81,
+    "primary": "#8a6d1d",
+    "secondary": "#f4f7f5"
+  },
+  {
+    "name": "Roma (ITA)",
+    "state": null,
+    "country": "ITA",
+    "kind": "national",
+    "division": "A",
+    "rating": 80,
+    "primary": "#333333",
+    "secondary": "#f4f7f5"
+  },
+  {
+    "name": "Lazio (ITA)",
+    "state": null,
+    "country": "ITA",
+    "kind": "national",
+    "division": "A",
+    "rating": 79,
+    "primary": "#1f6b3a",
+    "secondary": "#f4f7f5"
+  },
+  {
+    "name": "Atalanta (ITA)",
+    "state": null,
+    "country": "ITA",
+    "kind": "national",
+    "division": "A",
+    "rating": 78,
+    "primary": "#8b1e2d",
+    "secondary": "#f4f7f5"
+  },
+  {
+    "name": "Fiorentina (ITA)",
+    "state": null,
+    "country": "ITA",
+    "kind": "national",
+    "division": "A",
+    "rating": 77,
+    "primary": "#1e4f8a",
+    "secondary": "#f4f7f5"
+  },
+  {
+    "name": "Bologna (ITA)",
+    "state": null,
+    "country": "ITA",
+    "kind": "national",
+    "division": "A",
+    "rating": 76,
+    "primary": "#7a4d1b",
+    "secondary": "#f4f7f5"
+  },
+  {
+    "name": "Torino (ITA)",
+    "state": null,
+    "country": "ITA",
+    "kind": "national",
+    "division": "A",
+    "rating": 75,
+    "primary": "#5b2c83",
+    "secondary": "#f4f7f5"
+  },
+  {
+    "name": "Genoa (ITA)",
+    "state": null,
+    "country": "ITA",
+    "kind": "national",
+    "division": "A",
+    "rating": 84,
+    "primary": "#0c6f73",
+    "secondary": "#f4f7f5"
+  },
+  {
+    "name": "Udinese (ITA)",
+    "state": null,
+    "country": "ITA",
+    "kind": "national",
+    "division": "A",
+    "rating": 83,
+    "primary": "#8a6d1d",
+    "secondary": "#f4f7f5"
+  },
+  {
+    "name": "Parma (ITA)",
+    "state": null,
+    "country": "ITA",
+    "kind": "national",
+    "division": "A",
+    "rating": 82,
+    "primary": "#333333",
+    "secondary": "#f4f7f5"
+  },
+  {
+    "name": "Cagliari (ITA)",
+    "state": null,
+    "country": "ITA",
+    "kind": "national",
+    "division": "A",
+    "rating": 81,
+    "primary": "#1f6b3a",
+    "secondary": "#f4f7f5"
+  },
+  {
+    "name": "Como (ITA)",
+    "state": null,
+    "country": "ITA",
+    "kind": "national",
+    "division": "A",
+    "rating": 80,
+    "primary": "#8b1e2d",
+    "secondary": "#f4f7f5"
+  },
+  {
+    "name": "Verona (ITA)",
+    "state": null,
+    "country": "ITA",
+    "kind": "national",
+    "division": "A",
+    "rating": 79,
+    "primary": "#1e4f8a",
+    "secondary": "#f4f7f5"
+  },
+  {
+    "name": "Lecce (ITA)",
+    "state": null,
+    "country": "ITA",
+    "kind": "national",
+    "division": "A",
+    "rating": 78,
+    "primary": "#7a4d1b",
+    "secondary": "#f4f7f5"
+  },
+  {
+    "name": "Sassuolo (ITA)",
+    "state": null,
+    "country": "ITA",
+    "kind": "national",
+    "division": "A",
+    "rating": 77,
+    "primary": "#5b2c83",
+    "secondary": "#f4f7f5"
+  },
+  {
+    "name": "Cremonese (ITA)",
+    "state": null,
+    "country": "ITA",
+    "kind": "national",
+    "division": "A",
+    "rating": 76,
+    "primary": "#0c6f73",
+    "secondary": "#f4f7f5"
+  },
+  {
+    "name": "Pisa (ITA)",
+    "state": null,
+    "country": "ITA",
+    "kind": "national",
+    "division": "A",
+    "rating": 75,
+    "primary": "#8a6d1d",
+    "secondary": "#f4f7f5"
+  },
+  {
+    "name": "Sampdoria (ITA)",
+    "state": null,
+    "country": "ITA",
+    "kind": "national",
+    "division": "B",
+    "rating": 75,
+    "primary": "#7a4d1b",
+    "secondary": "#f4f7f5"
+  },
+  {
+    "name": "Palermo (ITA)",
+    "state": null,
+    "country": "ITA",
+    "kind": "national",
+    "division": "B",
+    "rating": 74,
+    "primary": "#5b2c83",
+    "secondary": "#f4f7f5"
+  },
+  {
+    "name": "Bari (ITA)",
+    "state": null,
+    "country": "ITA",
+    "kind": "national",
+    "division": "B",
+    "rating": 73,
+    "primary": "#0c6f73",
+    "secondary": "#f4f7f5"
+  },
+  {
+    "name": "Empoli (ITA)",
+    "state": null,
+    "country": "ITA",
+    "kind": "national",
+    "division": "B",
+    "rating": 72,
+    "primary": "#8a6d1d",
+    "secondary": "#f4f7f5"
+  },
+  {
+    "name": "Monza (ITA)",
+    "state": null,
+    "country": "ITA",
+    "kind": "national",
+    "division": "B",
+    "rating": 71,
+    "primary": "#333333",
+    "secondary": "#f4f7f5"
+  },
+  {
+    "name": "Venezia (ITA)",
+    "state": null,
+    "country": "ITA",
+    "kind": "national",
+    "division": "B",
+    "rating": 70,
+    "primary": "#1f6b3a",
+    "secondary": "#f4f7f5"
+  },
+  {
+    "name": "Frosinone (ITA)",
+    "state": null,
+    "country": "ITA",
+    "kind": "national",
+    "division": "B",
+    "rating": 69,
+    "primary": "#8b1e2d",
+    "secondary": "#f4f7f5"
+  },
+  {
+    "name": "Spezia (ITA)",
+    "state": null,
+    "country": "ITA",
+    "kind": "national",
+    "division": "B",
+    "rating": 68,
+    "primary": "#1e4f8a",
+    "secondary": "#f4f7f5"
+  },
+  {
+    "name": "Catanzaro (ITA)",
+    "state": null,
+    "country": "ITA",
+    "kind": "national",
+    "division": "B",
+    "rating": 75,
+    "primary": "#7a4d1b",
+    "secondary": "#f4f7f5"
+  },
+  {
+    "name": "Modena (ITA)",
+    "state": null,
+    "country": "ITA",
+    "kind": "national",
+    "division": "B",
+    "rating": 74,
+    "primary": "#5b2c83",
+    "secondary": "#f4f7f5"
+  },
+  {
+    "name": "Cesena (ITA)",
+    "state": null,
+    "country": "ITA",
+    "kind": "national",
+    "division": "B",
+    "rating": 73,
+    "primary": "#0c6f73",
+    "secondary": "#f4f7f5"
+  },
+  {
+    "name": "Reggiana (ITA)",
+    "state": null,
+    "country": "ITA",
+    "kind": "national",
+    "division": "B",
+    "rating": 72,
+    "primary": "#8a6d1d",
+    "secondary": "#f4f7f5"
+  },
+  {
+    "name": "Mantova (ITA)",
+    "state": null,
+    "country": "ITA",
+    "kind": "national",
+    "division": "B",
+    "rating": 71,
+    "primary": "#333333",
+    "secondary": "#f4f7f5"
+  },
+  {
+    "name": "Brescia (ITA)",
+    "state": null,
+    "country": "ITA",
+    "kind": "national",
+    "division": "B",
+    "rating": 70,
+    "primary": "#1f6b3a",
+    "secondary": "#f4f7f5"
+  },
+  {
+    "name": "Salernitana (ITA)",
+    "state": null,
+    "country": "ITA",
+    "kind": "national",
+    "division": "B",
+    "rating": 69,
+    "primary": "#8b1e2d",
+    "secondary": "#f4f7f5"
+  },
+  {
+    "name": "Cittadella (ITA)",
+    "state": null,
+    "country": "ITA",
+    "kind": "national",
+    "division": "B",
+    "rating": 68,
+    "primary": "#1e4f8a",
+    "secondary": "#f4f7f5"
+  },
+  {
+    "name": "Südtirol (ITA)",
+    "state": null,
+    "country": "ITA",
+    "kind": "national",
+    "division": "B",
+    "rating": 75,
+    "primary": "#7a4d1b",
+    "secondary": "#f4f7f5"
+  },
+  {
+    "name": "Carrarese (ITA)",
+    "state": null,
+    "country": "ITA",
+    "kind": "national",
+    "division": "B",
+    "rating": 74,
+    "primary": "#5b2c83",
+    "secondary": "#f4f7f5"
+  },
+  {
+    "name": "Juve Stabia (ITA)",
+    "state": null,
+    "country": "ITA",
+    "kind": "national",
+    "division": "B",
+    "rating": 73,
+    "primary": "#0c6f73",
+    "secondary": "#f4f7f5"
+  },
+  {
+    "name": "Avellino (ITA)",
+    "state": null,
+    "country": "ITA",
+    "kind": "national",
+    "division": "B",
+    "rating": 72,
+    "primary": "#8a6d1d",
+    "secondary": "#f4f7f5"
+  },
+  {
+    "name": "Italiano C01 (ITA)",
+    "state": null,
+    "country": "ITA",
+    "kind": "national",
+    "division": "C",
+    "rating": 69,
+    "primary": "#7a4d1b",
+    "secondary": "#f4f7f5"
+  },
+  {
+    "name": "Italiano C02 (ITA)",
+    "state": null,
+    "country": "ITA",
+    "kind": "national",
+    "division": "C",
+    "rating": 68,
+    "primary": "#5b2c83",
+    "secondary": "#f4f7f5"
+  },
+  {
+    "name": "Italiano C03 (ITA)",
+    "state": null,
+    "country": "ITA",
+    "kind": "national",
+    "division": "C",
+    "rating": 67,
+    "primary": "#0c6f73",
+    "secondary": "#f4f7f5"
+  },
+  {
+    "name": "Italiano C04 (ITA)",
+    "state": null,
+    "country": "ITA",
+    "kind": "national",
+    "division": "C",
+    "rating": 66,
+    "primary": "#8a6d1d",
+    "secondary": "#f4f7f5"
+  },
+  {
+    "name": "Italiano C05 (ITA)",
+    "state": null,
+    "country": "ITA",
+    "kind": "national",
+    "division": "C",
+    "rating": 65,
+    "primary": "#333333",
+    "secondary": "#f4f7f5"
+  },
+  {
+    "name": "Italiano C06 (ITA)",
+    "state": null,
+    "country": "ITA",
+    "kind": "national",
+    "division": "C",
+    "rating": 64,
+    "primary": "#1f6b3a",
+    "secondary": "#f4f7f5"
+  },
+  {
+    "name": "Italiano C07 (ITA)",
+    "state": null,
+    "country": "ITA",
+    "kind": "national",
+    "division": "C",
+    "rating": 63,
+    "primary": "#8b1e2d",
+    "secondary": "#f4f7f5"
+  },
+  {
+    "name": "Italiano C08 (ITA)",
+    "state": null,
+    "country": "ITA",
+    "kind": "national",
+    "division": "C",
+    "rating": 62,
+    "primary": "#1e4f8a",
+    "secondary": "#f4f7f5"
+  },
+  {
+    "name": "Italiano C09 (ITA)",
+    "state": null,
+    "country": "ITA",
+    "kind": "national",
+    "division": "C",
+    "rating": 69,
+    "primary": "#7a4d1b",
+    "secondary": "#f4f7f5"
+  },
+  {
+    "name": "Italiano C10 (ITA)",
+    "state": null,
+    "country": "ITA",
+    "kind": "national",
+    "division": "C",
+    "rating": 68,
+    "primary": "#5b2c83",
+    "secondary": "#f4f7f5"
+  },
+  {
+    "name": "Italiano C11 (ITA)",
+    "state": null,
+    "country": "ITA",
+    "kind": "national",
+    "division": "C",
+    "rating": 67,
+    "primary": "#0c6f73",
+    "secondary": "#f4f7f5"
+  },
+  {
+    "name": "Italiano C12 (ITA)",
+    "state": null,
+    "country": "ITA",
+    "kind": "national",
+    "division": "C",
+    "rating": 66,
+    "primary": "#8a6d1d",
+    "secondary": "#f4f7f5"
+  },
+  {
+    "name": "Italiano C13 (ITA)",
+    "state": null,
+    "country": "ITA",
+    "kind": "national",
+    "division": "C",
+    "rating": 65,
+    "primary": "#333333",
+    "secondary": "#f4f7f5"
+  },
+  {
+    "name": "Italiano C14 (ITA)",
+    "state": null,
+    "country": "ITA",
+    "kind": "national",
+    "division": "C",
+    "rating": 64,
+    "primary": "#1f6b3a",
+    "secondary": "#f4f7f5"
+  },
+  {
+    "name": "Italiano C15 (ITA)",
+    "state": null,
+    "country": "ITA",
+    "kind": "national",
+    "division": "C",
+    "rating": 63,
+    "primary": "#8b1e2d",
+    "secondary": "#f4f7f5"
+  },
+  {
+    "name": "Italiano C16 (ITA)",
+    "state": null,
+    "country": "ITA",
+    "kind": "national",
+    "division": "C",
+    "rating": 62,
+    "primary": "#1e4f8a",
+    "secondary": "#f4f7f5"
+  },
+  {
+    "name": "Italiano C17 (ITA)",
+    "state": null,
+    "country": "ITA",
+    "kind": "national",
+    "division": "C",
+    "rating": 69,
+    "primary": "#7a4d1b",
+    "secondary": "#f4f7f5"
+  },
+  {
+    "name": "Italiano C18 (ITA)",
+    "state": null,
+    "country": "ITA",
+    "kind": "national",
+    "division": "C",
+    "rating": 68,
+    "primary": "#5b2c83",
+    "secondary": "#f4f7f5"
+  },
+  {
+    "name": "Italiano C19 (ITA)",
+    "state": null,
+    "country": "ITA",
+    "kind": "national",
+    "division": "C",
+    "rating": 67,
+    "primary": "#0c6f73",
+    "secondary": "#f4f7f5"
+  },
+  {
+    "name": "Italiano C20 (ITA)",
+    "state": null,
+    "country": "ITA",
+    "kind": "national",
+    "division": "C",
+    "rating": 66,
+    "primary": "#8a6d1d",
+    "secondary": "#f4f7f5"
+  },
+  {
+    "name": "Italiano D01 (ITA)",
+    "state": null,
+    "country": "ITA",
+    "kind": "national",
+    "division": "D",
+    "rating": 64,
+    "primary": "#7a4d1b",
+    "secondary": "#f4f7f5"
+  },
+  {
+    "name": "Italiano D02 (ITA)",
+    "state": null,
+    "country": "ITA",
+    "kind": "national",
+    "division": "D",
+    "rating": 63,
+    "primary": "#5b2c83",
+    "secondary": "#f4f7f5"
+  },
+  {
+    "name": "Italiano D03 (ITA)",
+    "state": null,
+    "country": "ITA",
+    "kind": "national",
+    "division": "D",
+    "rating": 62,
+    "primary": "#0c6f73",
+    "secondary": "#f4f7f5"
+  },
+  {
+    "name": "Italiano D04 (ITA)",
+    "state": null,
+    "country": "ITA",
+    "kind": "national",
+    "division": "D",
+    "rating": 61,
+    "primary": "#8a6d1d",
+    "secondary": "#f4f7f5"
+  },
+  {
+    "name": "Italiano D05 (ITA)",
+    "state": null,
+    "country": "ITA",
+    "kind": "national",
+    "division": "D",
+    "rating": 60,
+    "primary": "#333333",
+    "secondary": "#f4f7f5"
+  },
+  {
+    "name": "Italiano D06 (ITA)",
+    "state": null,
+    "country": "ITA",
+    "kind": "national",
+    "division": "D",
+    "rating": 59,
+    "primary": "#1f6b3a",
+    "secondary": "#f4f7f5"
+  },
+  {
+    "name": "Italiano D07 (ITA)",
+    "state": null,
+    "country": "ITA",
+    "kind": "national",
+    "division": "D",
+    "rating": 58,
+    "primary": "#8b1e2d",
+    "secondary": "#f4f7f5"
+  },
+  {
+    "name": "Italiano D08 (ITA)",
+    "state": null,
+    "country": "ITA",
+    "kind": "national",
+    "division": "D",
+    "rating": 57,
+    "primary": "#1e4f8a",
+    "secondary": "#f4f7f5"
+  },
+  {
+    "name": "Italiano D09 (ITA)",
+    "state": null,
+    "country": "ITA",
+    "kind": "national",
+    "division": "D",
+    "rating": 56,
+    "primary": "#7a4d1b",
+    "secondary": "#f4f7f5"
+  },
+  {
+    "name": "Italiano D10 (ITA)",
+    "state": null,
+    "country": "ITA",
+    "kind": "national",
+    "division": "D",
+    "rating": 64,
+    "primary": "#5b2c83",
+    "secondary": "#f4f7f5"
+  },
+  {
+    "name": "Italiano D11 (ITA)",
+    "state": null,
+    "country": "ITA",
+    "kind": "national",
+    "division": "D",
+    "rating": 63,
+    "primary": "#0c6f73",
+    "secondary": "#f4f7f5"
+  },
+  {
+    "name": "Italiano D12 (ITA)",
+    "state": null,
+    "country": "ITA",
+    "kind": "national",
+    "division": "D",
+    "rating": 62,
+    "primary": "#8a6d1d",
+    "secondary": "#f4f7f5"
+  },
+  {
+    "name": "Italiano D13 (ITA)",
+    "state": null,
+    "country": "ITA",
+    "kind": "national",
+    "division": "D",
+    "rating": 61,
+    "primary": "#333333",
+    "secondary": "#f4f7f5"
+  },
+  {
+    "name": "Italiano D14 (ITA)",
+    "state": null,
+    "country": "ITA",
+    "kind": "national",
+    "division": "D",
+    "rating": 60,
+    "primary": "#1f6b3a",
+    "secondary": "#f4f7f5"
+  },
+  {
+    "name": "Italiano D15 (ITA)",
+    "state": null,
+    "country": "ITA",
+    "kind": "national",
+    "division": "D",
+    "rating": 59,
+    "primary": "#8b1e2d",
+    "secondary": "#f4f7f5"
+  },
+  {
+    "name": "Italiano D16 (ITA)",
+    "state": null,
+    "country": "ITA",
+    "kind": "national",
+    "division": "D",
+    "rating": 58,
+    "primary": "#1e4f8a",
+    "secondary": "#f4f7f5"
+  },
+  {
+    "name": "Italiano D17 (ITA)",
+    "state": null,
+    "country": "ITA",
+    "kind": "national",
+    "division": "D",
+    "rating": 57,
+    "primary": "#7a4d1b",
+    "secondary": "#f4f7f5"
+  },
+  {
+    "name": "Italiano D18 (ITA)",
+    "state": null,
+    "country": "ITA",
+    "kind": "national",
+    "division": "D",
+    "rating": 56,
+    "primary": "#5b2c83",
+    "secondary": "#f4f7f5"
+  },
+  {
+    "name": "Italiano D19 (ITA)",
+    "state": null,
+    "country": "ITA",
+    "kind": "national",
+    "division": "D",
+    "rating": 64,
+    "primary": "#0c6f73",
+    "secondary": "#f4f7f5"
+  },
+  {
+    "name": "Italiano D20 (ITA)",
+    "state": null,
+    "country": "ITA",
+    "kind": "national",
+    "division": "D",
+    "rating": 63,
+    "primary": "#8a6d1d",
+    "secondary": "#f4f7f5"
+  },
+  {
+    "name": "Bayern München (GER)",
+    "state": null,
+    "country": "GER",
+    "kind": "national",
+    "division": "A",
+    "rating": 84,
+    "primary": "#5b2c83",
+    "secondary": "#f4f7f5"
+  },
+  {
+    "name": "Borussia Dortmund (GER)",
+    "state": null,
+    "country": "GER",
+    "kind": "national",
+    "division": "A",
+    "rating": 83,
+    "primary": "#0c6f73",
+    "secondary": "#f4f7f5"
+  },
+  {
+    "name": "Bayer Leverkusen (GER)",
+    "state": null,
+    "country": "GER",
+    "kind": "national",
+    "division": "A",
+    "rating": 82,
+    "primary": "#8a6d1d",
+    "secondary": "#f4f7f5"
+  },
+  {
+    "name": "RB Leipzig (GER)",
+    "state": null,
+    "country": "GER",
+    "kind": "national",
+    "division": "A",
+    "rating": 81,
+    "primary": "#333333",
+    "secondary": "#f4f7f5"
+  },
+  {
+    "name": "Eintracht Frankfurt (GER)",
+    "state": null,
+    "country": "GER",
+    "kind": "national",
+    "division": "A",
+    "rating": 80,
+    "primary": "#1f6b3a",
+    "secondary": "#f4f7f5"
+  },
+  {
+    "name": "VfB Stuttgart (GER)",
+    "state": null,
+    "country": "GER",
+    "kind": "national",
+    "division": "A",
+    "rating": 79,
+    "primary": "#8b1e2d",
+    "secondary": "#f4f7f5"
+  },
+  {
+    "name": "Wolfsburg (GER)",
+    "state": null,
+    "country": "GER",
+    "kind": "national",
+    "division": "A",
+    "rating": 78,
+    "primary": "#1e4f8a",
+    "secondary": "#f4f7f5"
+  },
+  {
+    "name": "Freiburg (GER)",
+    "state": null,
+    "country": "GER",
+    "kind": "national",
+    "division": "A",
+    "rating": 77,
+    "primary": "#7a4d1b",
+    "secondary": "#f4f7f5"
+  },
+  {
+    "name": "Mainz (GER)",
+    "state": null,
+    "country": "GER",
+    "kind": "national",
+    "division": "A",
+    "rating": 76,
+    "primary": "#5b2c83",
+    "secondary": "#f4f7f5"
+  },
+  {
+    "name": "Borussia Mönchengladbach (GER)",
+    "state": null,
+    "country": "GER",
+    "kind": "national",
+    "division": "A",
+    "rating": 75,
+    "primary": "#0c6f73",
+    "secondary": "#f4f7f5"
+  },
+  {
+    "name": "Werder Bremen (GER)",
+    "state": null,
+    "country": "GER",
+    "kind": "national",
+    "division": "A",
+    "rating": 84,
+    "primary": "#8a6d1d",
+    "secondary": "#f4f7f5"
+  },
+  {
+    "name": "Augsburg (GER)",
+    "state": null,
+    "country": "GER",
+    "kind": "national",
+    "division": "A",
+    "rating": 83,
+    "primary": "#333333",
+    "secondary": "#f4f7f5"
+  },
+  {
+    "name": "Hoffenheim (GER)",
+    "state": null,
+    "country": "GER",
+    "kind": "national",
+    "division": "A",
+    "rating": 82,
+    "primary": "#1f6b3a",
+    "secondary": "#f4f7f5"
+  },
+  {
+    "name": "Union Berlin (GER)",
+    "state": null,
+    "country": "GER",
+    "kind": "national",
+    "division": "A",
+    "rating": 81,
+    "primary": "#8b1e2d",
+    "secondary": "#f4f7f5"
+  },
+  {
+    "name": "St. Pauli (GER)",
+    "state": null,
+    "country": "GER",
+    "kind": "national",
+    "division": "A",
+    "rating": 80,
+    "primary": "#1e4f8a",
+    "secondary": "#f4f7f5"
+  },
+  {
+    "name": "Hamburger SV (GER)",
+    "state": null,
+    "country": "GER",
+    "kind": "national",
+    "division": "A",
+    "rating": 79,
+    "primary": "#7a4d1b",
+    "secondary": "#f4f7f5"
+  },
+  {
+    "name": "Köln (GER)",
+    "state": null,
+    "country": "GER",
+    "kind": "national",
+    "division": "A",
+    "rating": 78,
+    "primary": "#5b2c83",
+    "secondary": "#f4f7f5"
+  },
+  {
+    "name": "Heidenheim (GER)",
+    "state": null,
+    "country": "GER",
+    "kind": "national",
+    "division": "A",
+    "rating": 77,
+    "primary": "#0c6f73",
+    "secondary": "#f4f7f5"
+  },
+  {
+    "name": "Hertha Berlin (GER)",
+    "state": null,
+    "country": "GER",
+    "kind": "national",
+    "division": "A",
+    "rating": 76,
+    "primary": "#8a6d1d",
+    "secondary": "#f4f7f5"
+  },
+  {
+    "name": "Schalke 04 (GER)",
+    "state": null,
+    "country": "GER",
+    "kind": "national",
+    "division": "A",
+    "rating": 75,
+    "primary": "#333333",
+    "secondary": "#f4f7f5"
+  },
+  {
+    "name": "Hannover 96 (GER)",
+    "state": null,
+    "country": "GER",
+    "kind": "national",
+    "division": "B",
+    "rating": 75,
+    "primary": "#5b2c83",
+    "secondary": "#f4f7f5"
+  },
+  {
+    "name": "Fortuna Düsseldorf (GER)",
+    "state": null,
+    "country": "GER",
+    "kind": "national",
+    "division": "B",
+    "rating": 74,
+    "primary": "#0c6f73",
+    "secondary": "#f4f7f5"
+  },
+  {
+    "name": "Nürnberg (GER)",
+    "state": null,
+    "country": "GER",
+    "kind": "national",
+    "division": "B",
+    "rating": 73,
+    "primary": "#8a6d1d",
+    "secondary": "#f4f7f5"
+  },
+  {
+    "name": "Karlsruher SC (GER)",
+    "state": null,
+    "country": "GER",
+    "kind": "national",
+    "division": "B",
+    "rating": 72,
+    "primary": "#333333",
+    "secondary": "#f4f7f5"
+  },
+  {
+    "name": "Darmstadt (GER)",
+    "state": null,
+    "country": "GER",
+    "kind": "national",
+    "division": "B",
+    "rating": 71,
+    "primary": "#1f6b3a",
+    "secondary": "#f4f7f5"
+  },
+  {
+    "name": "Paderborn (GER)",
+    "state": null,
+    "country": "GER",
+    "kind": "national",
+    "division": "B",
+    "rating": 70,
+    "primary": "#8b1e2d",
+    "secondary": "#f4f7f5"
+  },
+  {
+    "name": "Kaiserslautern (GER)",
+    "state": null,
+    "country": "GER",
+    "kind": "national",
+    "division": "B",
+    "rating": 69,
+    "primary": "#1e4f8a",
+    "secondary": "#f4f7f5"
+  },
+  {
+    "name": "Greuther Fürth (GER)",
+    "state": null,
+    "country": "GER",
+    "kind": "national",
+    "division": "B",
+    "rating": 68,
+    "primary": "#7a4d1b",
+    "secondary": "#f4f7f5"
+  },
+  {
+    "name": "Holstein Kiel (GER)",
+    "state": null,
+    "country": "GER",
+    "kind": "national",
+    "division": "B",
+    "rating": 75,
+    "primary": "#5b2c83",
+    "secondary": "#f4f7f5"
+  },
+  {
+    "name": "Bochum (GER)",
+    "state": null,
+    "country": "GER",
+    "kind": "national",
+    "division": "B",
+    "rating": 74,
+    "primary": "#0c6f73",
+    "secondary": "#f4f7f5"
+  },
+  {
+    "name": "Arminia Bielefeld (GER)",
+    "state": null,
+    "country": "GER",
+    "kind": "national",
+    "division": "B",
+    "rating": 73,
+    "primary": "#8a6d1d",
+    "secondary": "#f4f7f5"
+  },
+  {
+    "name": "Dynamo Dresden (GER)",
+    "state": null,
+    "country": "GER",
+    "kind": "national",
+    "division": "B",
+    "rating": 72,
+    "primary": "#333333",
+    "secondary": "#f4f7f5"
+  },
+  {
+    "name": "Magdeburg (GER)",
+    "state": null,
+    "country": "GER",
+    "kind": "national",
+    "division": "B",
+    "rating": 71,
+    "primary": "#1f6b3a",
+    "secondary": "#f4f7f5"
+  },
+  {
+    "name": "Elversberg (GER)",
+    "state": null,
+    "country": "GER",
+    "kind": "national",
+    "division": "B",
+    "rating": 70,
+    "primary": "#8b1e2d",
+    "secondary": "#f4f7f5"
+  },
+  {
+    "name": "Preußen Münster (GER)",
+    "state": null,
+    "country": "GER",
+    "kind": "national",
+    "division": "B",
+    "rating": 69,
+    "primary": "#1e4f8a",
+    "secondary": "#f4f7f5"
+  },
+  {
+    "name": "Braunschweig (GER)",
+    "state": null,
+    "country": "GER",
+    "kind": "national",
+    "division": "B",
+    "rating": 68,
+    "primary": "#7a4d1b",
+    "secondary": "#f4f7f5"
+  },
+  {
+    "name": "Hansa Rostock (GER)",
+    "state": null,
+    "country": "GER",
+    "kind": "national",
+    "division": "B",
+    "rating": 75,
+    "primary": "#5b2c83",
+    "secondary": "#f4f7f5"
+  },
+  {
+    "name": "1860 München (GER)",
+    "state": null,
+    "country": "GER",
+    "kind": "national",
+    "division": "B",
+    "rating": 74,
+    "primary": "#0c6f73",
+    "secondary": "#f4f7f5"
+  },
+  {
+    "name": "Saarbrücken (GER)",
+    "state": null,
+    "country": "GER",
+    "kind": "national",
+    "division": "B",
+    "rating": 73,
+    "primary": "#8a6d1d",
+    "secondary": "#f4f7f5"
+  },
+  {
+    "name": "Rot-Weiss Essen (GER)",
+    "state": null,
+    "country": "GER",
+    "kind": "national",
+    "division": "B",
+    "rating": 72,
+    "primary": "#333333",
+    "secondary": "#f4f7f5"
+  },
+  {
+    "name": "Deutsch C01 (GER)",
+    "state": null,
+    "country": "GER",
+    "kind": "national",
+    "division": "C",
+    "rating": 69,
+    "primary": "#5b2c83",
+    "secondary": "#f4f7f5"
+  },
+  {
+    "name": "Deutsch C02 (GER)",
+    "state": null,
+    "country": "GER",
+    "kind": "national",
+    "division": "C",
+    "rating": 68,
+    "primary": "#0c6f73",
+    "secondary": "#f4f7f5"
+  },
+  {
+    "name": "Deutsch C03 (GER)",
+    "state": null,
+    "country": "GER",
+    "kind": "national",
+    "division": "C",
+    "rating": 67,
+    "primary": "#8a6d1d",
+    "secondary": "#f4f7f5"
+  },
+  {
+    "name": "Deutsch C04 (GER)",
+    "state": null,
+    "country": "GER",
+    "kind": "national",
+    "division": "C",
+    "rating": 66,
+    "primary": "#333333",
+    "secondary": "#f4f7f5"
+  },
+  {
+    "name": "Deutsch C05 (GER)",
+    "state": null,
+    "country": "GER",
+    "kind": "national",
+    "division": "C",
+    "rating": 65,
+    "primary": "#1f6b3a",
+    "secondary": "#f4f7f5"
+  },
+  {
+    "name": "Deutsch C06 (GER)",
+    "state": null,
+    "country": "GER",
+    "kind": "national",
+    "division": "C",
+    "rating": 64,
+    "primary": "#8b1e2d",
+    "secondary": "#f4f7f5"
+  },
+  {
+    "name": "Deutsch C07 (GER)",
+    "state": null,
+    "country": "GER",
+    "kind": "national",
+    "division": "C",
+    "rating": 63,
+    "primary": "#1e4f8a",
+    "secondary": "#f4f7f5"
+  },
+  {
+    "name": "Deutsch C08 (GER)",
+    "state": null,
+    "country": "GER",
+    "kind": "national",
+    "division": "C",
+    "rating": 62,
+    "primary": "#7a4d1b",
+    "secondary": "#f4f7f5"
+  },
+  {
+    "name": "Deutsch C09 (GER)",
+    "state": null,
+    "country": "GER",
+    "kind": "national",
+    "division": "C",
+    "rating": 69,
+    "primary": "#5b2c83",
+    "secondary": "#f4f7f5"
+  },
+  {
+    "name": "Deutsch C10 (GER)",
+    "state": null,
+    "country": "GER",
+    "kind": "national",
+    "division": "C",
+    "rating": 68,
+    "primary": "#0c6f73",
+    "secondary": "#f4f7f5"
+  },
+  {
+    "name": "Deutsch C11 (GER)",
+    "state": null,
+    "country": "GER",
+    "kind": "national",
+    "division": "C",
+    "rating": 67,
+    "primary": "#8a6d1d",
+    "secondary": "#f4f7f5"
+  },
+  {
+    "name": "Deutsch C12 (GER)",
+    "state": null,
+    "country": "GER",
+    "kind": "national",
+    "division": "C",
+    "rating": 66,
+    "primary": "#333333",
+    "secondary": "#f4f7f5"
+  },
+  {
+    "name": "Deutsch C13 (GER)",
+    "state": null,
+    "country": "GER",
+    "kind": "national",
+    "division": "C",
+    "rating": 65,
+    "primary": "#1f6b3a",
+    "secondary": "#f4f7f5"
+  },
+  {
+    "name": "Deutsch C14 (GER)",
+    "state": null,
+    "country": "GER",
+    "kind": "national",
+    "division": "C",
+    "rating": 64,
+    "primary": "#8b1e2d",
+    "secondary": "#f4f7f5"
+  },
+  {
+    "name": "Deutsch C15 (GER)",
+    "state": null,
+    "country": "GER",
+    "kind": "national",
+    "division": "C",
+    "rating": 63,
+    "primary": "#1e4f8a",
+    "secondary": "#f4f7f5"
+  },
+  {
+    "name": "Deutsch C16 (GER)",
+    "state": null,
+    "country": "GER",
+    "kind": "national",
+    "division": "C",
+    "rating": 62,
+    "primary": "#7a4d1b",
+    "secondary": "#f4f7f5"
+  },
+  {
+    "name": "Deutsch C17 (GER)",
+    "state": null,
+    "country": "GER",
+    "kind": "national",
+    "division": "C",
+    "rating": 69,
+    "primary": "#5b2c83",
+    "secondary": "#f4f7f5"
+  },
+  {
+    "name": "Deutsch C18 (GER)",
+    "state": null,
+    "country": "GER",
+    "kind": "national",
+    "division": "C",
+    "rating": 68,
+    "primary": "#0c6f73",
+    "secondary": "#f4f7f5"
+  },
+  {
+    "name": "Deutsch C19 (GER)",
+    "state": null,
+    "country": "GER",
+    "kind": "national",
+    "division": "C",
+    "rating": 67,
+    "primary": "#8a6d1d",
+    "secondary": "#f4f7f5"
+  },
+  {
+    "name": "Deutsch C20 (GER)",
+    "state": null,
+    "country": "GER",
+    "kind": "national",
+    "division": "C",
+    "rating": 66,
+    "primary": "#333333",
+    "secondary": "#f4f7f5"
+  },
+  {
+    "name": "Deutsch D01 (GER)",
+    "state": null,
+    "country": "GER",
+    "kind": "national",
+    "division": "D",
+    "rating": 64,
+    "primary": "#5b2c83",
+    "secondary": "#f4f7f5"
+  },
+  {
+    "name": "Deutsch D02 (GER)",
+    "state": null,
+    "country": "GER",
+    "kind": "national",
+    "division": "D",
+    "rating": 63,
+    "primary": "#0c6f73",
+    "secondary": "#f4f7f5"
+  },
+  {
+    "name": "Deutsch D03 (GER)",
+    "state": null,
+    "country": "GER",
+    "kind": "national",
+    "division": "D",
+    "rating": 62,
+    "primary": "#8a6d1d",
+    "secondary": "#f4f7f5"
+  },
+  {
+    "name": "Deutsch D04 (GER)",
+    "state": null,
+    "country": "GER",
+    "kind": "national",
+    "division": "D",
+    "rating": 61,
+    "primary": "#333333",
+    "secondary": "#f4f7f5"
+  },
+  {
+    "name": "Deutsch D05 (GER)",
+    "state": null,
+    "country": "GER",
+    "kind": "national",
+    "division": "D",
+    "rating": 60,
+    "primary": "#1f6b3a",
+    "secondary": "#f4f7f5"
+  },
+  {
+    "name": "Deutsch D06 (GER)",
+    "state": null,
+    "country": "GER",
+    "kind": "national",
+    "division": "D",
+    "rating": 59,
+    "primary": "#8b1e2d",
+    "secondary": "#f4f7f5"
+  },
+  {
+    "name": "Deutsch D07 (GER)",
+    "state": null,
+    "country": "GER",
+    "kind": "national",
+    "division": "D",
+    "rating": 58,
+    "primary": "#1e4f8a",
+    "secondary": "#f4f7f5"
+  },
+  {
+    "name": "Deutsch D08 (GER)",
+    "state": null,
+    "country": "GER",
+    "kind": "national",
+    "division": "D",
+    "rating": 57,
+    "primary": "#7a4d1b",
+    "secondary": "#f4f7f5"
+  },
+  {
+    "name": "Deutsch D09 (GER)",
+    "state": null,
+    "country": "GER",
+    "kind": "national",
+    "division": "D",
+    "rating": 56,
+    "primary": "#5b2c83",
+    "secondary": "#f4f7f5"
+  },
+  {
+    "name": "Deutsch D10 (GER)",
+    "state": null,
+    "country": "GER",
+    "kind": "national",
+    "division": "D",
+    "rating": 64,
+    "primary": "#0c6f73",
+    "secondary": "#f4f7f5"
+  },
+  {
+    "name": "Deutsch D11 (GER)",
+    "state": null,
+    "country": "GER",
+    "kind": "national",
+    "division": "D",
+    "rating": 63,
+    "primary": "#8a6d1d",
+    "secondary": "#f4f7f5"
+  },
+  {
+    "name": "Deutsch D12 (GER)",
+    "state": null,
+    "country": "GER",
+    "kind": "national",
+    "division": "D",
+    "rating": 62,
+    "primary": "#333333",
+    "secondary": "#f4f7f5"
+  },
+  {
+    "name": "Deutsch D13 (GER)",
+    "state": null,
+    "country": "GER",
+    "kind": "national",
+    "division": "D",
+    "rating": 61,
+    "primary": "#1f6b3a",
+    "secondary": "#f4f7f5"
+  },
+  {
+    "name": "Deutsch D14 (GER)",
+    "state": null,
+    "country": "GER",
+    "kind": "national",
+    "division": "D",
+    "rating": 60,
+    "primary": "#8b1e2d",
+    "secondary": "#f4f7f5"
+  },
+  {
+    "name": "Deutsch D15 (GER)",
+    "state": null,
+    "country": "GER",
+    "kind": "national",
+    "division": "D",
+    "rating": 59,
+    "primary": "#1e4f8a",
+    "secondary": "#f4f7f5"
+  },
+  {
+    "name": "Deutsch D16 (GER)",
+    "state": null,
+    "country": "GER",
+    "kind": "national",
+    "division": "D",
+    "rating": 58,
+    "primary": "#7a4d1b",
+    "secondary": "#f4f7f5"
+  },
+  {
+    "name": "Deutsch D17 (GER)",
+    "state": null,
+    "country": "GER",
+    "kind": "national",
+    "division": "D",
+    "rating": 57,
+    "primary": "#5b2c83",
+    "secondary": "#f4f7f5"
+  },
+  {
+    "name": "Deutsch D18 (GER)",
+    "state": null,
+    "country": "GER",
+    "kind": "national",
+    "division": "D",
+    "rating": 56,
+    "primary": "#0c6f73",
+    "secondary": "#f4f7f5"
+  },
+  {
+    "name": "Deutsch D19 (GER)",
+    "state": null,
+    "country": "GER",
+    "kind": "national",
+    "division": "D",
+    "rating": 64,
+    "primary": "#8a6d1d",
+    "secondary": "#f4f7f5"
+  },
+  {
+    "name": "Deutsch D20 (GER)",
+    "state": null,
+    "country": "GER",
+    "kind": "national",
+    "division": "D",
+    "rating": 63,
+    "primary": "#333333",
+    "secondary": "#f4f7f5"
+  },
+  {
+    "name": "Paris Saint-Germain (FRA)",
+    "state": null,
+    "country": "FRA",
+    "kind": "national",
+    "division": "A",
+    "rating": 84,
+    "primary": "#0c6f73",
+    "secondary": "#f4f7f5"
+  },
+  {
+    "name": "Marseille (FRA)",
+    "state": null,
+    "country": "FRA",
+    "kind": "national",
+    "division": "A",
+    "rating": 83,
+    "primary": "#8a6d1d",
+    "secondary": "#f4f7f5"
+  },
+  {
+    "name": "Monaco (FRA)",
+    "state": null,
+    "country": "FRA",
+    "kind": "national",
+    "division": "A",
+    "rating": 82,
+    "primary": "#333333",
+    "secondary": "#f4f7f5"
+  },
+  {
+    "name": "Lyon (FRA)",
+    "state": null,
+    "country": "FRA",
+    "kind": "national",
+    "division": "A",
+    "rating": 81,
+    "primary": "#1f6b3a",
+    "secondary": "#f4f7f5"
+  },
+  {
+    "name": "Lille (FRA)",
+    "state": null,
+    "country": "FRA",
+    "kind": "national",
+    "division": "A",
+    "rating": 80,
+    "primary": "#8b1e2d",
+    "secondary": "#f4f7f5"
+  },
+  {
+    "name": "Nice (FRA)",
+    "state": null,
+    "country": "FRA",
+    "kind": "national",
+    "division": "A",
+    "rating": 79,
+    "primary": "#1e4f8a",
+    "secondary": "#f4f7f5"
+  },
+  {
+    "name": "Rennes (FRA)",
+    "state": null,
+    "country": "FRA",
+    "kind": "national",
+    "division": "A",
+    "rating": 78,
+    "primary": "#7a4d1b",
+    "secondary": "#f4f7f5"
+  },
+  {
+    "name": "Lens (FRA)",
+    "state": null,
+    "country": "FRA",
+    "kind": "national",
+    "division": "A",
+    "rating": 77,
+    "primary": "#5b2c83",
+    "secondary": "#f4f7f5"
+  },
+  {
+    "name": "Strasbourg (FRA)",
+    "state": null,
+    "country": "FRA",
+    "kind": "national",
+    "division": "A",
+    "rating": 76,
+    "primary": "#0c6f73",
+    "secondary": "#f4f7f5"
+  },
+  {
+    "name": "Toulouse (FRA)",
+    "state": null,
+    "country": "FRA",
+    "kind": "national",
+    "division": "A",
+    "rating": 75,
+    "primary": "#8a6d1d",
+    "secondary": "#f4f7f5"
+  },
+  {
+    "name": "Nantes (FRA)",
+    "state": null,
+    "country": "FRA",
+    "kind": "national",
+    "division": "A",
+    "rating": 84,
+    "primary": "#333333",
+    "secondary": "#f4f7f5"
+  },
+  {
+    "name": "Montpellier (FRA)",
+    "state": null,
+    "country": "FRA",
+    "kind": "national",
+    "division": "A",
+    "rating": 83,
+    "primary": "#1f6b3a",
+    "secondary": "#f4f7f5"
+  },
+  {
+    "name": "Auxerre (FRA)",
+    "state": null,
+    "country": "FRA",
+    "kind": "national",
+    "division": "A",
+    "rating": 82,
+    "primary": "#8b1e2d",
+    "secondary": "#f4f7f5"
+  },
+  {
+    "name": "Brest (FRA)",
+    "state": null,
+    "country": "FRA",
+    "kind": "national",
+    "division": "A",
+    "rating": 81,
+    "primary": "#1e4f8a",
+    "secondary": "#f4f7f5"
+  },
+  {
+    "name": "Reims (FRA)",
+    "state": null,
+    "country": "FRA",
+    "kind": "national",
+    "division": "A",
+    "rating": 80,
+    "primary": "#7a4d1b",
+    "secondary": "#f4f7f5"
+  },
+  {
+    "name": "Le Havre (FRA)",
+    "state": null,
+    "country": "FRA",
+    "kind": "national",
+    "division": "A",
+    "rating": 79,
+    "primary": "#5b2c83",
+    "secondary": "#f4f7f5"
+  },
+  {
+    "name": "Saint-Étienne (FRA)",
+    "state": null,
+    "country": "FRA",
+    "kind": "national",
+    "division": "A",
+    "rating": 78,
+    "primary": "#0c6f73",
+    "secondary": "#f4f7f5"
+  },
+  {
+    "name": "Lorient (FRA)",
+    "state": null,
+    "country": "FRA",
+    "kind": "national",
+    "division": "A",
+    "rating": 77,
+    "primary": "#8a6d1d",
+    "secondary": "#f4f7f5"
+  },
+  {
+    "name": "Metz (FRA)",
+    "state": null,
+    "country": "FRA",
+    "kind": "national",
+    "division": "A",
+    "rating": 76,
+    "primary": "#333333",
+    "secondary": "#f4f7f5"
+  },
+  {
+    "name": "Paris FC (FRA)",
+    "state": null,
+    "country": "FRA",
+    "kind": "national",
+    "division": "A",
+    "rating": 75,
+    "primary": "#1f6b3a",
+    "secondary": "#f4f7f5"
+  },
+  {
+    "name": "Caen (FRA)",
+    "state": null,
+    "country": "FRA",
+    "kind": "national",
+    "division": "B",
+    "rating": 75,
+    "primary": "#0c6f73",
+    "secondary": "#f4f7f5"
+  },
+  {
+    "name": "Guingamp (FRA)",
+    "state": null,
+    "country": "FRA",
+    "kind": "national",
+    "division": "B",
+    "rating": 74,
+    "primary": "#8a6d1d",
+    "secondary": "#f4f7f5"
+  },
+  {
+    "name": "Bastia (FRA)",
+    "state": null,
+    "country": "FRA",
+    "kind": "national",
+    "division": "B",
+    "rating": 73,
+    "primary": "#333333",
+    "secondary": "#f4f7f5"
+  },
+  {
+    "name": "Ajaccio (FRA)",
+    "state": null,
+    "country": "FRA",
+    "kind": "national",
+    "division": "B",
+    "rating": 72,
+    "primary": "#1f6b3a",
+    "secondary": "#f4f7f5"
+  },
+  {
+    "name": "Grenoble (FRA)",
+    "state": null,
+    "country": "FRA",
+    "kind": "national",
+    "division": "B",
+    "rating": 71,
+    "primary": "#8b1e2d",
+    "secondary": "#f4f7f5"
+  },
+  {
+    "name": "Amiens (FRA)",
+    "state": null,
+    "country": "FRA",
+    "kind": "national",
+    "division": "B",
+    "rating": 70,
+    "primary": "#1e4f8a",
+    "secondary": "#f4f7f5"
+  },
+  {
+    "name": "Rodez (FRA)",
+    "state": null,
+    "country": "FRA",
+    "kind": "national",
+    "division": "B",
+    "rating": 69,
+    "primary": "#7a4d1b",
+    "secondary": "#f4f7f5"
+  },
+  {
+    "name": "Pau (FRA)",
+    "state": null,
+    "country": "FRA",
+    "kind": "national",
+    "division": "B",
+    "rating": 68,
+    "primary": "#5b2c83",
+    "secondary": "#f4f7f5"
+  },
+  {
+    "name": "Annecy (FRA)",
+    "state": null,
+    "country": "FRA",
+    "kind": "national",
+    "division": "B",
+    "rating": 75,
+    "primary": "#0c6f73",
+    "secondary": "#f4f7f5"
+  },
+  {
+    "name": "Laval (FRA)",
+    "state": null,
+    "country": "FRA",
+    "kind": "national",
+    "division": "B",
+    "rating": 74,
+    "primary": "#8a6d1d",
+    "secondary": "#f4f7f5"
+  },
+  {
+    "name": "Dunkerque (FRA)",
+    "state": null,
+    "country": "FRA",
+    "kind": "national",
+    "division": "B",
+    "rating": 73,
+    "primary": "#333333",
+    "secondary": "#f4f7f5"
+  },
+  {
+    "name": "Clermont (FRA)",
+    "state": null,
+    "country": "FRA",
+    "kind": "national",
+    "division": "B",
+    "rating": 72,
+    "primary": "#1f6b3a",
+    "secondary": "#f4f7f5"
+  },
+  {
+    "name": "Troyes (FRA)",
+    "state": null,
+    "country": "FRA",
+    "kind": "national",
+    "division": "B",
+    "rating": 71,
+    "primary": "#8b1e2d",
+    "secondary": "#f4f7f5"
+  },
+  {
+    "name": "Red Star (FRA)",
+    "state": null,
+    "country": "FRA",
+    "kind": "national",
+    "division": "B",
+    "rating": 70,
+    "primary": "#1e4f8a",
+    "secondary": "#f4f7f5"
+  },
+  {
+    "name": "Martigues (FRA)",
+    "state": null,
+    "country": "FRA",
+    "kind": "national",
+    "division": "B",
+    "rating": 69,
+    "primary": "#7a4d1b",
+    "secondary": "#f4f7f5"
+  },
+  {
+    "name": "Nancy (FRA)",
+    "state": null,
+    "country": "FRA",
+    "kind": "national",
+    "division": "B",
+    "rating": 68,
+    "primary": "#5b2c83",
+    "secondary": "#f4f7f5"
+  },
+  {
+    "name": "Sochaux (FRA)",
+    "state": null,
+    "country": "FRA",
+    "kind": "national",
+    "division": "B",
+    "rating": 75,
+    "primary": "#0c6f73",
+    "secondary": "#f4f7f5"
+  },
+  {
+    "name": "Valenciennes (FRA)",
+    "state": null,
+    "country": "FRA",
+    "kind": "national",
+    "division": "B",
+    "rating": 74,
+    "primary": "#8a6d1d",
+    "secondary": "#f4f7f5"
+  },
+  {
+    "name": "Le Mans (FRA)",
+    "state": null,
+    "country": "FRA",
+    "kind": "national",
+    "division": "B",
+    "rating": 73,
+    "primary": "#333333",
+    "secondary": "#f4f7f5"
+  },
+  {
+    "name": "Orléans (FRA)",
+    "state": null,
+    "country": "FRA",
+    "kind": "national",
+    "division": "B",
+    "rating": 72,
+    "primary": "#1f6b3a",
+    "secondary": "#f4f7f5"
+  },
+  {
+    "name": "Français C01 (FRA)",
+    "state": null,
+    "country": "FRA",
+    "kind": "national",
+    "division": "C",
+    "rating": 69,
+    "primary": "#0c6f73",
+    "secondary": "#f4f7f5"
+  },
+  {
+    "name": "Français C02 (FRA)",
+    "state": null,
+    "country": "FRA",
+    "kind": "national",
+    "division": "C",
+    "rating": 68,
+    "primary": "#8a6d1d",
+    "secondary": "#f4f7f5"
+  },
+  {
+    "name": "Français C03 (FRA)",
+    "state": null,
+    "country": "FRA",
+    "kind": "national",
+    "division": "C",
+    "rating": 67,
+    "primary": "#333333",
+    "secondary": "#f4f7f5"
+  },
+  {
+    "name": "Français C04 (FRA)",
+    "state": null,
+    "country": "FRA",
+    "kind": "national",
+    "division": "C",
+    "rating": 66,
+    "primary": "#1f6b3a",
+    "secondary": "#f4f7f5"
+  },
+  {
+    "name": "Français C05 (FRA)",
+    "state": null,
+    "country": "FRA",
+    "kind": "national",
+    "division": "C",
+    "rating": 65,
+    "primary": "#8b1e2d",
+    "secondary": "#f4f7f5"
+  },
+  {
+    "name": "Français C06 (FRA)",
+    "state": null,
+    "country": "FRA",
+    "kind": "national",
+    "division": "C",
+    "rating": 64,
+    "primary": "#1e4f8a",
+    "secondary": "#f4f7f5"
+  },
+  {
+    "name": "Français C07 (FRA)",
+    "state": null,
+    "country": "FRA",
+    "kind": "national",
+    "division": "C",
+    "rating": 63,
+    "primary": "#7a4d1b",
+    "secondary": "#f4f7f5"
+  },
+  {
+    "name": "Français C08 (FRA)",
+    "state": null,
+    "country": "FRA",
+    "kind": "national",
+    "division": "C",
+    "rating": 62,
+    "primary": "#5b2c83",
+    "secondary": "#f4f7f5"
+  },
+  {
+    "name": "Français C09 (FRA)",
+    "state": null,
+    "country": "FRA",
+    "kind": "national",
+    "division": "C",
+    "rating": 69,
+    "primary": "#0c6f73",
+    "secondary": "#f4f7f5"
+  },
+  {
+    "name": "Français C10 (FRA)",
+    "state": null,
+    "country": "FRA",
+    "kind": "national",
+    "division": "C",
+    "rating": 68,
+    "primary": "#8a6d1d",
+    "secondary": "#f4f7f5"
+  },
+  {
+    "name": "Français C11 (FRA)",
+    "state": null,
+    "country": "FRA",
+    "kind": "national",
+    "division": "C",
+    "rating": 67,
+    "primary": "#333333",
+    "secondary": "#f4f7f5"
+  },
+  {
+    "name": "Français C12 (FRA)",
+    "state": null,
+    "country": "FRA",
+    "kind": "national",
+    "division": "C",
+    "rating": 66,
+    "primary": "#1f6b3a",
+    "secondary": "#f4f7f5"
+  },
+  {
+    "name": "Français C13 (FRA)",
+    "state": null,
+    "country": "FRA",
+    "kind": "national",
+    "division": "C",
+    "rating": 65,
+    "primary": "#8b1e2d",
+    "secondary": "#f4f7f5"
+  },
+  {
+    "name": "Français C14 (FRA)",
+    "state": null,
+    "country": "FRA",
+    "kind": "national",
+    "division": "C",
+    "rating": 64,
+    "primary": "#1e4f8a",
+    "secondary": "#f4f7f5"
+  },
+  {
+    "name": "Français C15 (FRA)",
+    "state": null,
+    "country": "FRA",
+    "kind": "national",
+    "division": "C",
+    "rating": 63,
+    "primary": "#7a4d1b",
+    "secondary": "#f4f7f5"
+  },
+  {
+    "name": "Français C16 (FRA)",
+    "state": null,
+    "country": "FRA",
+    "kind": "national",
+    "division": "C",
+    "rating": 62,
+    "primary": "#5b2c83",
+    "secondary": "#f4f7f5"
+  },
+  {
+    "name": "Français C17 (FRA)",
+    "state": null,
+    "country": "FRA",
+    "kind": "national",
+    "division": "C",
+    "rating": 69,
+    "primary": "#0c6f73",
+    "secondary": "#f4f7f5"
+  },
+  {
+    "name": "Français C18 (FRA)",
+    "state": null,
+    "country": "FRA",
+    "kind": "national",
+    "division": "C",
+    "rating": 68,
+    "primary": "#8a6d1d",
+    "secondary": "#f4f7f5"
+  },
+  {
+    "name": "Français C19 (FRA)",
+    "state": null,
+    "country": "FRA",
+    "kind": "national",
+    "division": "C",
+    "rating": 67,
+    "primary": "#333333",
+    "secondary": "#f4f7f5"
+  },
+  {
+    "name": "Français C20 (FRA)",
+    "state": null,
+    "country": "FRA",
+    "kind": "national",
+    "division": "C",
+    "rating": 66,
+    "primary": "#1f6b3a",
+    "secondary": "#f4f7f5"
+  },
+  {
+    "name": "Français D01 (FRA)",
+    "state": null,
+    "country": "FRA",
+    "kind": "national",
+    "division": "D",
+    "rating": 64,
+    "primary": "#0c6f73",
+    "secondary": "#f4f7f5"
+  },
+  {
+    "name": "Français D02 (FRA)",
+    "state": null,
+    "country": "FRA",
+    "kind": "national",
+    "division": "D",
+    "rating": 63,
+    "primary": "#8a6d1d",
+    "secondary": "#f4f7f5"
+  },
+  {
+    "name": "Français D03 (FRA)",
+    "state": null,
+    "country": "FRA",
+    "kind": "national",
+    "division": "D",
+    "rating": 62,
+    "primary": "#333333",
+    "secondary": "#f4f7f5"
+  },
+  {
+    "name": "Français D04 (FRA)",
+    "state": null,
+    "country": "FRA",
+    "kind": "national",
+    "division": "D",
+    "rating": 61,
+    "primary": "#1f6b3a",
+    "secondary": "#f4f7f5"
+  },
+  {
+    "name": "Français D05 (FRA)",
+    "state": null,
+    "country": "FRA",
+    "kind": "national",
+    "division": "D",
+    "rating": 60,
+    "primary": "#8b1e2d",
+    "secondary": "#f4f7f5"
+  },
+  {
+    "name": "Français D06 (FRA)",
+    "state": null,
+    "country": "FRA",
+    "kind": "national",
+    "division": "D",
+    "rating": 59,
+    "primary": "#1e4f8a",
+    "secondary": "#f4f7f5"
+  },
+  {
+    "name": "Français D07 (FRA)",
+    "state": null,
+    "country": "FRA",
+    "kind": "national",
+    "division": "D",
+    "rating": 58,
+    "primary": "#7a4d1b",
+    "secondary": "#f4f7f5"
+  },
+  {
+    "name": "Français D08 (FRA)",
+    "state": null,
+    "country": "FRA",
+    "kind": "national",
+    "division": "D",
+    "rating": 57,
+    "primary": "#5b2c83",
+    "secondary": "#f4f7f5"
+  },
+  {
+    "name": "Français D09 (FRA)",
+    "state": null,
+    "country": "FRA",
+    "kind": "national",
+    "division": "D",
+    "rating": 56,
+    "primary": "#0c6f73",
+    "secondary": "#f4f7f5"
+  },
+  {
+    "name": "Français D10 (FRA)",
+    "state": null,
+    "country": "FRA",
+    "kind": "national",
+    "division": "D",
+    "rating": 64,
+    "primary": "#8a6d1d",
+    "secondary": "#f4f7f5"
+  },
+  {
+    "name": "Français D11 (FRA)",
+    "state": null,
+    "country": "FRA",
+    "kind": "national",
+    "division": "D",
+    "rating": 63,
+    "primary": "#333333",
+    "secondary": "#f4f7f5"
+  },
+  {
+    "name": "Français D12 (FRA)",
+    "state": null,
+    "country": "FRA",
+    "kind": "national",
+    "division": "D",
+    "rating": 62,
+    "primary": "#1f6b3a",
+    "secondary": "#f4f7f5"
+  },
+  {
+    "name": "Français D13 (FRA)",
+    "state": null,
+    "country": "FRA",
+    "kind": "national",
+    "division": "D",
+    "rating": 61,
+    "primary": "#8b1e2d",
+    "secondary": "#f4f7f5"
+  },
+  {
+    "name": "Français D14 (FRA)",
+    "state": null,
+    "country": "FRA",
+    "kind": "national",
+    "division": "D",
+    "rating": 60,
+    "primary": "#1e4f8a",
+    "secondary": "#f4f7f5"
+  },
+  {
+    "name": "Français D15 (FRA)",
+    "state": null,
+    "country": "FRA",
+    "kind": "national",
+    "division": "D",
+    "rating": 59,
+    "primary": "#7a4d1b",
+    "secondary": "#f4f7f5"
+  },
+  {
+    "name": "Français D16 (FRA)",
+    "state": null,
+    "country": "FRA",
+    "kind": "national",
+    "division": "D",
+    "rating": 58,
+    "primary": "#5b2c83",
+    "secondary": "#f4f7f5"
+  },
+  {
+    "name": "Français D17 (FRA)",
+    "state": null,
+    "country": "FRA",
+    "kind": "national",
+    "division": "D",
+    "rating": 57,
+    "primary": "#0c6f73",
+    "secondary": "#f4f7f5"
+  },
+  {
+    "name": "Français D18 (FRA)",
+    "state": null,
+    "country": "FRA",
+    "kind": "national",
+    "division": "D",
+    "rating": 56,
+    "primary": "#8a6d1d",
+    "secondary": "#f4f7f5"
+  },
+  {
+    "name": "Français D19 (FRA)",
+    "state": null,
+    "country": "FRA",
+    "kind": "national",
+    "division": "D",
+    "rating": 64,
+    "primary": "#333333",
+    "secondary": "#f4f7f5"
+  },
+  {
+    "name": "Français D20 (FRA)",
+    "state": null,
+    "country": "FRA",
+    "kind": "national",
+    "division": "D",
+    "rating": 63,
+    "primary": "#1f6b3a",
+    "secondary": "#f4f7f5"
+  },
+  {
+    "name": "Benfica (POR)",
+    "state": null,
+    "country": "POR",
+    "kind": "national",
+    "division": "A",
+    "rating": 84,
+    "primary": "#8a6d1d",
+    "secondary": "#f4f7f5"
+  },
+  {
+    "name": "Sporting CP (POR)",
+    "state": null,
+    "country": "POR",
+    "kind": "national",
+    "division": "A",
+    "rating": 83,
+    "primary": "#333333",
+    "secondary": "#f4f7f5"
+  },
+  {
+    "name": "Porto (POR)",
+    "state": null,
+    "country": "POR",
+    "kind": "national",
+    "division": "A",
+    "rating": 82,
+    "primary": "#1f6b3a",
+    "secondary": "#f4f7f5"
+  },
+  {
+    "name": "Braga (POR)",
+    "state": null,
+    "country": "POR",
+    "kind": "national",
+    "division": "A",
+    "rating": 81,
+    "primary": "#8b1e2d",
+    "secondary": "#f4f7f5"
+  },
+  {
+    "name": "Vitória SC (POR)",
+    "state": null,
+    "country": "POR",
+    "kind": "national",
+    "division": "A",
+    "rating": 80,
+    "primary": "#1e4f8a",
+    "secondary": "#f4f7f5"
+  },
+  {
+    "name": "Boavista (POR)",
+    "state": null,
+    "country": "POR",
+    "kind": "national",
+    "division": "A",
+    "rating": 79,
+    "primary": "#7a4d1b",
+    "secondary": "#f4f7f5"
+  },
+  {
+    "name": "Famalicão (POR)",
+    "state": null,
+    "country": "POR",
+    "kind": "national",
+    "division": "A",
+    "rating": 78,
+    "primary": "#5b2c83",
+    "secondary": "#f4f7f5"
+  },
+  {
+    "name": "Casa Pia (POR)",
+    "state": null,
+    "country": "POR",
+    "kind": "national",
+    "division": "A",
+    "rating": 77,
+    "primary": "#0c6f73",
+    "secondary": "#f4f7f5"
+  },
+  {
+    "name": "Estoril (POR)",
+    "state": null,
+    "country": "POR",
+    "kind": "national",
+    "division": "A",
+    "rating": 76,
+    "primary": "#8a6d1d",
+    "secondary": "#f4f7f5"
+  },
+  {
+    "name": "Rio Ave (POR)",
+    "state": null,
+    "country": "POR",
+    "kind": "national",
+    "division": "A",
+    "rating": 75,
+    "primary": "#333333",
+    "secondary": "#f4f7f5"
+  },
+  {
+    "name": "Gil Vicente (POR)",
+    "state": null,
+    "country": "POR",
+    "kind": "national",
+    "division": "A",
+    "rating": 84,
+    "primary": "#1f6b3a",
+    "secondary": "#f4f7f5"
+  },
+  {
+    "name": "Arouca (POR)",
+    "state": null,
+    "country": "POR",
+    "kind": "national",
+    "division": "A",
+    "rating": 83,
+    "primary": "#8b1e2d",
+    "secondary": "#f4f7f5"
+  },
+  {
+    "name": "Moreirense (POR)",
+    "state": null,
+    "country": "POR",
+    "kind": "national",
+    "division": "A",
+    "rating": 82,
+    "primary": "#1e4f8a",
+    "secondary": "#f4f7f5"
+  },
+  {
+    "name": "Nacional Madeira (POR)",
+    "state": null,
+    "country": "POR",
+    "kind": "national",
+    "division": "A",
+    "rating": 81,
+    "primary": "#7a4d1b",
+    "secondary": "#f4f7f5"
+  },
+  {
+    "name": "Santa Clara (POR)",
+    "state": null,
+    "country": "POR",
+    "kind": "national",
+    "division": "A",
+    "rating": 80,
+    "primary": "#5b2c83",
+    "secondary": "#f4f7f5"
+  },
+  {
+    "name": "Farense (POR)",
+    "state": null,
+    "country": "POR",
+    "kind": "national",
+    "division": "A",
+    "rating": 79,
+    "primary": "#0c6f73",
+    "secondary": "#f4f7f5"
+  },
+  {
+    "name": "AVS (POR)",
+    "state": null,
+    "country": "POR",
+    "kind": "national",
+    "division": "A",
+    "rating": 78,
+    "primary": "#8a6d1d",
+    "secondary": "#f4f7f5"
+  },
+  {
+    "name": "Tondela (POR)",
+    "state": null,
+    "country": "POR",
+    "kind": "national",
+    "division": "A",
+    "rating": 77,
+    "primary": "#333333",
+    "secondary": "#f4f7f5"
+  },
+  {
+    "name": "Marítimo (POR)",
+    "state": null,
+    "country": "POR",
+    "kind": "national",
+    "division": "A",
+    "rating": 76,
+    "primary": "#1f6b3a",
+    "secondary": "#f4f7f5"
+  },
+  {
+    "name": "Académica (POR)",
+    "state": null,
+    "country": "POR",
+    "kind": "national",
+    "division": "A",
+    "rating": 75,
+    "primary": "#8b1e2d",
+    "secondary": "#f4f7f5"
+  },
+  {
+    "name": "Paços de Ferreira (POR)",
+    "state": null,
+    "country": "POR",
+    "kind": "national",
+    "division": "B",
+    "rating": 75,
+    "primary": "#8a6d1d",
+    "secondary": "#f4f7f5"
+  },
+  {
+    "name": "Leixões (POR)",
+    "state": null,
+    "country": "POR",
+    "kind": "national",
+    "division": "B",
+    "rating": 74,
+    "primary": "#333333",
+    "secondary": "#f4f7f5"
+  },
+  {
+    "name": "Penafiel (POR)",
+    "state": null,
+    "country": "POR",
+    "kind": "national",
+    "division": "B",
+    "rating": 73,
+    "primary": "#1f6b3a",
+    "secondary": "#f4f7f5"
+  },
+  {
+    "name": "Feirense (POR)",
+    "state": null,
+    "country": "POR",
+    "kind": "national",
+    "division": "B",
+    "rating": 72,
+    "primary": "#8b1e2d",
+    "secondary": "#f4f7f5"
+  },
+  {
+    "name": "Chaves (POR)",
+    "state": null,
+    "country": "POR",
+    "kind": "national",
+    "division": "B",
+    "rating": 71,
+    "primary": "#1e4f8a",
+    "secondary": "#f4f7f5"
+  },
+  {
+    "name": "Vizela (POR)",
+    "state": null,
+    "country": "POR",
+    "kind": "national",
+    "division": "B",
+    "rating": 70,
+    "primary": "#7a4d1b",
+    "secondary": "#f4f7f5"
+  },
+  {
+    "name": "Portimonense (POR)",
+    "state": null,
+    "country": "POR",
+    "kind": "national",
+    "division": "B",
+    "rating": 69,
+    "primary": "#5b2c83",
+    "secondary": "#f4f7f5"
+  },
+  {
+    "name": "União de Leiria (POR)",
+    "state": null,
+    "country": "POR",
+    "kind": "national",
+    "division": "B",
+    "rating": 68,
+    "primary": "#0c6f73",
+    "secondary": "#f4f7f5"
+  },
+  {
+    "name": "Mafra (POR)",
+    "state": null,
+    "country": "POR",
+    "kind": "national",
+    "division": "B",
+    "rating": 75,
+    "primary": "#8a6d1d",
+    "secondary": "#f4f7f5"
+  },
+  {
+    "name": "Oliveirense (POR)",
+    "state": null,
+    "country": "POR",
+    "kind": "national",
+    "division": "B",
+    "rating": 74,
+    "primary": "#333333",
+    "secondary": "#f4f7f5"
+  },
+  {
+    "name": "Alverca (POR)",
+    "state": null,
+    "country": "POR",
+    "kind": "national",
+    "division": "B",
+    "rating": 73,
+    "primary": "#1f6b3a",
+    "secondary": "#f4f7f5"
+  },
+  {
+    "name": "Felgueiras (POR)",
+    "state": null,
+    "country": "POR",
+    "kind": "national",
+    "division": "B",
+    "rating": 72,
+    "primary": "#8b1e2d",
+    "secondary": "#f4f7f5"
+  },
+  {
+    "name": "Varzim (POR)",
+    "state": null,
+    "country": "POR",
+    "kind": "national",
+    "division": "B",
+    "rating": 71,
+    "primary": "#1e4f8a",
+    "secondary": "#f4f7f5"
+  },
+  {
+    "name": "Belenenses (POR)",
+    "state": null,
+    "country": "POR",
+    "kind": "national",
+    "division": "B",
+    "rating": 70,
+    "primary": "#7a4d1b",
+    "secondary": "#f4f7f5"
+  },
+  {
+    "name": "Amora (POR)",
+    "state": null,
+    "country": "POR",
+    "kind": "national",
+    "division": "B",
+    "rating": 69,
+    "primary": "#5b2c83",
+    "secondary": "#f4f7f5"
+  },
+  {
+    "name": "Caldas (POR)",
+    "state": null,
+    "country": "POR",
+    "kind": "national",
+    "division": "B",
+    "rating": 68,
+    "primary": "#0c6f73",
+    "secondary": "#f4f7f5"
+  },
+  {
+    "name": "Lusitânia (POR)",
+    "state": null,
+    "country": "POR",
+    "kind": "national",
+    "division": "B",
+    "rating": 75,
+    "primary": "#8a6d1d",
+    "secondary": "#f4f7f5"
+  },
+  {
+    "name": "Sanjoanense (POR)",
+    "state": null,
+    "country": "POR",
+    "kind": "national",
+    "division": "B",
+    "rating": 74,
+    "primary": "#333333",
+    "secondary": "#f4f7f5"
+  },
+  {
+    "name": "Fafe (POR)",
+    "state": null,
+    "country": "POR",
+    "kind": "national",
+    "division": "B",
+    "rating": 73,
+    "primary": "#1f6b3a",
+    "secondary": "#f4f7f5"
+  },
+  {
+    "name": "Anadia (POR)",
+    "state": null,
+    "country": "POR",
+    "kind": "national",
+    "division": "B",
+    "rating": 72,
+    "primary": "#8b1e2d",
+    "secondary": "#f4f7f5"
+  },
+  {
+    "name": "Português C01 (POR)",
+    "state": null,
+    "country": "POR",
+    "kind": "national",
+    "division": "C",
+    "rating": 69,
+    "primary": "#8a6d1d",
+    "secondary": "#f4f7f5"
+  },
+  {
+    "name": "Português C02 (POR)",
+    "state": null,
+    "country": "POR",
+    "kind": "national",
+    "division": "C",
+    "rating": 68,
+    "primary": "#333333",
+    "secondary": "#f4f7f5"
+  },
+  {
+    "name": "Português C03 (POR)",
+    "state": null,
+    "country": "POR",
+    "kind": "national",
+    "division": "C",
+    "rating": 67,
+    "primary": "#1f6b3a",
+    "secondary": "#f4f7f5"
+  },
+  {
+    "name": "Português C04 (POR)",
+    "state": null,
+    "country": "POR",
+    "kind": "national",
+    "division": "C",
+    "rating": 66,
+    "primary": "#8b1e2d",
+    "secondary": "#f4f7f5"
+  },
+  {
+    "name": "Português C05 (POR)",
+    "state": null,
+    "country": "POR",
+    "kind": "national",
+    "division": "C",
+    "rating": 65,
+    "primary": "#1e4f8a",
+    "secondary": "#f4f7f5"
+  },
+  {
+    "name": "Português C06 (POR)",
+    "state": null,
+    "country": "POR",
+    "kind": "national",
+    "division": "C",
+    "rating": 64,
+    "primary": "#7a4d1b",
+    "secondary": "#f4f7f5"
+  },
+  {
+    "name": "Português C07 (POR)",
+    "state": null,
+    "country": "POR",
+    "kind": "national",
+    "division": "C",
+    "rating": 63,
+    "primary": "#5b2c83",
+    "secondary": "#f4f7f5"
+  },
+  {
+    "name": "Português C08 (POR)",
+    "state": null,
+    "country": "POR",
+    "kind": "national",
+    "division": "C",
+    "rating": 62,
+    "primary": "#0c6f73",
+    "secondary": "#f4f7f5"
+  },
+  {
+    "name": "Português C09 (POR)",
+    "state": null,
+    "country": "POR",
+    "kind": "national",
+    "division": "C",
+    "rating": 69,
+    "primary": "#8a6d1d",
+    "secondary": "#f4f7f5"
+  },
+  {
+    "name": "Português C10 (POR)",
+    "state": null,
+    "country": "POR",
+    "kind": "national",
+    "division": "C",
+    "rating": 68,
+    "primary": "#333333",
+    "secondary": "#f4f7f5"
+  },
+  {
+    "name": "Português C11 (POR)",
+    "state": null,
+    "country": "POR",
+    "kind": "national",
+    "division": "C",
+    "rating": 67,
+    "primary": "#1f6b3a",
+    "secondary": "#f4f7f5"
+  },
+  {
+    "name": "Português C12 (POR)",
+    "state": null,
+    "country": "POR",
+    "kind": "national",
+    "division": "C",
+    "rating": 66,
+    "primary": "#8b1e2d",
+    "secondary": "#f4f7f5"
+  },
+  {
+    "name": "Português C13 (POR)",
+    "state": null,
+    "country": "POR",
+    "kind": "national",
+    "division": "C",
+    "rating": 65,
+    "primary": "#1e4f8a",
+    "secondary": "#f4f7f5"
+  },
+  {
+    "name": "Português C14 (POR)",
+    "state": null,
+    "country": "POR",
+    "kind": "national",
+    "division": "C",
+    "rating": 64,
+    "primary": "#7a4d1b",
+    "secondary": "#f4f7f5"
+  },
+  {
+    "name": "Português C15 (POR)",
+    "state": null,
+    "country": "POR",
+    "kind": "national",
+    "division": "C",
+    "rating": 63,
+    "primary": "#5b2c83",
+    "secondary": "#f4f7f5"
+  },
+  {
+    "name": "Português C16 (POR)",
+    "state": null,
+    "country": "POR",
+    "kind": "national",
+    "division": "C",
+    "rating": 62,
+    "primary": "#0c6f73",
+    "secondary": "#f4f7f5"
+  },
+  {
+    "name": "Português C17 (POR)",
+    "state": null,
+    "country": "POR",
+    "kind": "national",
+    "division": "C",
+    "rating": 69,
+    "primary": "#8a6d1d",
+    "secondary": "#f4f7f5"
+  },
+  {
+    "name": "Português C18 (POR)",
+    "state": null,
+    "country": "POR",
+    "kind": "national",
+    "division": "C",
+    "rating": 68,
+    "primary": "#333333",
+    "secondary": "#f4f7f5"
+  },
+  {
+    "name": "Português C19 (POR)",
+    "state": null,
+    "country": "POR",
+    "kind": "national",
+    "division": "C",
+    "rating": 67,
+    "primary": "#1f6b3a",
+    "secondary": "#f4f7f5"
+  },
+  {
+    "name": "Português C20 (POR)",
+    "state": null,
+    "country": "POR",
+    "kind": "national",
+    "division": "C",
+    "rating": 66,
+    "primary": "#8b1e2d",
+    "secondary": "#f4f7f5"
+  },
+  {
+    "name": "Português D01 (POR)",
+    "state": null,
+    "country": "POR",
+    "kind": "national",
+    "division": "D",
+    "rating": 64,
+    "primary": "#8a6d1d",
+    "secondary": "#f4f7f5"
+  },
+  {
+    "name": "Português D02 (POR)",
+    "state": null,
+    "country": "POR",
+    "kind": "national",
+    "division": "D",
+    "rating": 63,
+    "primary": "#333333",
+    "secondary": "#f4f7f5"
+  },
+  {
+    "name": "Português D03 (POR)",
+    "state": null,
+    "country": "POR",
+    "kind": "national",
+    "division": "D",
+    "rating": 62,
+    "primary": "#1f6b3a",
+    "secondary": "#f4f7f5"
+  },
+  {
+    "name": "Português D04 (POR)",
+    "state": null,
+    "country": "POR",
+    "kind": "national",
+    "division": "D",
+    "rating": 61,
+    "primary": "#8b1e2d",
+    "secondary": "#f4f7f5"
+  },
+  {
+    "name": "Português D05 (POR)",
+    "state": null,
+    "country": "POR",
+    "kind": "national",
+    "division": "D",
+    "rating": 60,
+    "primary": "#1e4f8a",
+    "secondary": "#f4f7f5"
+  },
+  {
+    "name": "Português D06 (POR)",
+    "state": null,
+    "country": "POR",
+    "kind": "national",
+    "division": "D",
+    "rating": 59,
+    "primary": "#7a4d1b",
+    "secondary": "#f4f7f5"
+  },
+  {
+    "name": "Português D07 (POR)",
+    "state": null,
+    "country": "POR",
+    "kind": "national",
+    "division": "D",
+    "rating": 58,
+    "primary": "#5b2c83",
+    "secondary": "#f4f7f5"
+  },
+  {
+    "name": "Português D08 (POR)",
+    "state": null,
+    "country": "POR",
+    "kind": "national",
+    "division": "D",
+    "rating": 57,
+    "primary": "#0c6f73",
+    "secondary": "#f4f7f5"
+  },
+  {
+    "name": "Português D09 (POR)",
+    "state": null,
+    "country": "POR",
+    "kind": "national",
+    "division": "D",
+    "rating": 56,
+    "primary": "#8a6d1d",
+    "secondary": "#f4f7f5"
+  },
+  {
+    "name": "Português D10 (POR)",
+    "state": null,
+    "country": "POR",
+    "kind": "national",
+    "division": "D",
+    "rating": 64,
+    "primary": "#333333",
+    "secondary": "#f4f7f5"
+  },
+  {
+    "name": "Português D11 (POR)",
+    "state": null,
+    "country": "POR",
+    "kind": "national",
+    "division": "D",
+    "rating": 63,
+    "primary": "#1f6b3a",
+    "secondary": "#f4f7f5"
+  },
+  {
+    "name": "Português D12 (POR)",
+    "state": null,
+    "country": "POR",
+    "kind": "national",
+    "division": "D",
+    "rating": 62,
+    "primary": "#8b1e2d",
+    "secondary": "#f4f7f5"
+  },
+  {
+    "name": "Português D13 (POR)",
+    "state": null,
+    "country": "POR",
+    "kind": "national",
+    "division": "D",
+    "rating": 61,
+    "primary": "#1e4f8a",
+    "secondary": "#f4f7f5"
+  },
+  {
+    "name": "Português D14 (POR)",
+    "state": null,
+    "country": "POR",
+    "kind": "national",
+    "division": "D",
+    "rating": 60,
+    "primary": "#7a4d1b",
+    "secondary": "#f4f7f5"
+  },
+  {
+    "name": "Português D15 (POR)",
+    "state": null,
+    "country": "POR",
+    "kind": "national",
+    "division": "D",
+    "rating": 59,
+    "primary": "#5b2c83",
+    "secondary": "#f4f7f5"
+  },
+  {
+    "name": "Português D16 (POR)",
+    "state": null,
+    "country": "POR",
+    "kind": "national",
+    "division": "D",
+    "rating": 58,
+    "primary": "#0c6f73",
+    "secondary": "#f4f7f5"
+  },
+  {
+    "name": "Português D17 (POR)",
+    "state": null,
+    "country": "POR",
+    "kind": "national",
+    "division": "D",
+    "rating": 57,
+    "primary": "#8a6d1d",
+    "secondary": "#f4f7f5"
+  },
+  {
+    "name": "Português D18 (POR)",
+    "state": null,
+    "country": "POR",
+    "kind": "national",
+    "division": "D",
+    "rating": 56,
+    "primary": "#333333",
+    "secondary": "#f4f7f5"
+  },
+  {
+    "name": "Português D19 (POR)",
+    "state": null,
+    "country": "POR",
+    "kind": "national",
+    "division": "D",
+    "rating": 64,
+    "primary": "#1f6b3a",
+    "secondary": "#f4f7f5"
+  },
+  {
+    "name": "Português D20 (POR)",
+    "state": null,
+    "country": "POR",
+    "kind": "national",
+    "division": "D",
+    "rating": 63,
+    "primary": "#8b1e2d",
+    "secondary": "#f4f7f5"
+  },
+  {
+    "name": "River Plate ARG (ARG)",
+    "state": null,
+    "country": "ARG",
+    "kind": "national",
+    "division": "A",
+    "rating": 84,
+    "primary": "#333333",
+    "secondary": "#f4f7f5"
+  },
+  {
+    "name": "Boca Juniors ARG (ARG)",
+    "state": null,
+    "country": "ARG",
+    "kind": "national",
+    "division": "A",
+    "rating": 83,
+    "primary": "#1f6b3a",
+    "secondary": "#f4f7f5"
+  },
+  {
+    "name": "Racing Club ARG (ARG)",
+    "state": null,
+    "country": "ARG",
+    "kind": "national",
+    "division": "A",
+    "rating": 82,
+    "primary": "#8b1e2d",
+    "secondary": "#f4f7f5"
+  },
+  {
+    "name": "Independiente ARG (ARG)",
+    "state": null,
+    "country": "ARG",
+    "kind": "national",
+    "division": "A",
+    "rating": 81,
+    "primary": "#1e4f8a",
+    "secondary": "#f4f7f5"
+  },
+  {
+    "name": "San Lorenzo (ARG)",
+    "state": null,
+    "country": "ARG",
+    "kind": "national",
+    "division": "A",
+    "rating": 80,
+    "primary": "#7a4d1b",
+    "secondary": "#f4f7f5"
+  },
+  {
+    "name": "Vélez Sarsfield (ARG)",
+    "state": null,
+    "country": "ARG",
+    "kind": "national",
+    "division": "A",
+    "rating": 79,
+    "primary": "#5b2c83",
+    "secondary": "#f4f7f5"
+  },
+  {
+    "name": "Estudiantes ARG (ARG)",
+    "state": null,
+    "country": "ARG",
+    "kind": "national",
+    "division": "A",
+    "rating": 78,
+    "primary": "#0c6f73",
+    "secondary": "#f4f7f5"
+  },
+  {
+    "name": "Rosario Central ARG (ARG)",
+    "state": null,
+    "country": "ARG",
+    "kind": "national",
+    "division": "A",
+    "rating": 77,
+    "primary": "#8a6d1d",
+    "secondary": "#f4f7f5"
+  },
+  {
+    "name": "Newell's Old Boys (ARG)",
+    "state": null,
+    "country": "ARG",
+    "kind": "national",
+    "division": "A",
+    "rating": 76,
+    "primary": "#333333",
+    "secondary": "#f4f7f5"
+  },
+  {
+    "name": "Talleres (ARG)",
+    "state": null,
+    "country": "ARG",
+    "kind": "national",
+    "division": "A",
+    "rating": 75,
+    "primary": "#1f6b3a",
+    "secondary": "#f4f7f5"
+  },
+  {
+    "name": "Belgrano (ARG)",
+    "state": null,
+    "country": "ARG",
+    "kind": "national",
+    "division": "A",
+    "rating": 84,
+    "primary": "#8b1e2d",
+    "secondary": "#f4f7f5"
+  },
+  {
+    "name": "Lanús (ARG)",
+    "state": null,
+    "country": "ARG",
+    "kind": "national",
+    "division": "A",
+    "rating": 83,
+    "primary": "#1e4f8a",
+    "secondary": "#f4f7f5"
+  },
+  {
+    "name": "Banfield (ARG)",
+    "state": null,
+    "country": "ARG",
+    "kind": "national",
+    "division": "A",
+    "rating": 82,
+    "primary": "#7a4d1b",
+    "secondary": "#f4f7f5"
+  },
+  {
+    "name": "Huracán (ARG)",
+    "state": null,
+    "country": "ARG",
+    "kind": "national",
+    "division": "A",
+    "rating": 81,
+    "primary": "#5b2c83",
+    "secondary": "#f4f7f5"
+  },
+  {
+    "name": "Argentinos Juniors (ARG)",
+    "state": null,
+    "country": "ARG",
+    "kind": "national",
+    "division": "A",
+    "rating": 80,
+    "primary": "#0c6f73",
+    "secondary": "#f4f7f5"
+  },
+  {
+    "name": "Defensa y Justicia (ARG)",
+    "state": null,
+    "country": "ARG",
+    "kind": "national",
+    "division": "A",
+    "rating": 79,
+    "primary": "#8a6d1d",
+    "secondary": "#f4f7f5"
+  },
+  {
+    "name": "Godoy Cruz (ARG)",
+    "state": null,
+    "country": "ARG",
+    "kind": "national",
+    "division": "A",
+    "rating": 78,
+    "primary": "#333333",
+    "secondary": "#f4f7f5"
+  },
+  {
+    "name": "Unión Santa Fe (ARG)",
+    "state": null,
+    "country": "ARG",
+    "kind": "national",
+    "division": "A",
+    "rating": 77,
+    "primary": "#1f6b3a",
+    "secondary": "#f4f7f5"
+  },
+  {
+    "name": "Colón (ARG)",
+    "state": null,
+    "country": "ARG",
+    "kind": "national",
+    "division": "A",
+    "rating": 76,
+    "primary": "#8b1e2d",
+    "secondary": "#f4f7f5"
+  },
+  {
+    "name": "Gimnasia La Plata (ARG)",
+    "state": null,
+    "country": "ARG",
+    "kind": "national",
+    "division": "A",
+    "rating": 75,
+    "primary": "#1e4f8a",
+    "secondary": "#f4f7f5"
+  },
+  {
+    "name": "Quilmes (ARG)",
+    "state": null,
+    "country": "ARG",
+    "kind": "national",
+    "division": "B",
+    "rating": 75,
+    "primary": "#333333",
+    "secondary": "#f4f7f5"
+  },
+  {
+    "name": "Ferro Carril Oeste (ARG)",
+    "state": null,
+    "country": "ARG",
+    "kind": "national",
+    "division": "B",
+    "rating": 74,
+    "primary": "#1f6b3a",
+    "secondary": "#f4f7f5"
+  },
+  {
+    "name": "Chacarita Juniors (ARG)",
+    "state": null,
+    "country": "ARG",
+    "kind": "national",
+    "division": "B",
+    "rating": 73,
+    "primary": "#8b1e2d",
+    "secondary": "#f4f7f5"
+  },
+  {
+    "name": "Nueva Chicago (ARG)",
+    "state": null,
+    "country": "ARG",
+    "kind": "national",
+    "division": "B",
+    "rating": 72,
+    "primary": "#1e4f8a",
+    "secondary": "#f4f7f5"
+  },
+  {
+    "name": "San Martín Tucumán (ARG)",
+    "state": null,
+    "country": "ARG",
+    "kind": "national",
+    "division": "B",
+    "rating": 71,
+    "primary": "#7a4d1b",
+    "secondary": "#f4f7f5"
+  },
+  {
+    "name": "Atlético Tucumán (ARG)",
+    "state": null,
+    "country": "ARG",
+    "kind": "national",
+    "division": "B",
+    "rating": 70,
+    "primary": "#5b2c83",
+    "secondary": "#f4f7f5"
+  },
+  {
+    "name": "Instituto Córdoba (ARG)",
+    "state": null,
+    "country": "ARG",
+    "kind": "national",
+    "division": "B",
+    "rating": 69,
+    "primary": "#0c6f73",
+    "secondary": "#f4f7f5"
+  },
+  {
+    "name": "Gimnasia Mendoza (ARG)",
+    "state": null,
+    "country": "ARG",
+    "kind": "national",
+    "division": "B",
+    "rating": 68,
+    "primary": "#8a6d1d",
+    "secondary": "#f4f7f5"
+  },
+  {
+    "name": "Almirante Brown (ARG)",
+    "state": null,
+    "country": "ARG",
+    "kind": "national",
+    "division": "B",
+    "rating": 75,
+    "primary": "#333333",
+    "secondary": "#f4f7f5"
+  },
+  {
+    "name": "Temperley (ARG)",
+    "state": null,
+    "country": "ARG",
+    "kind": "national",
+    "division": "B",
+    "rating": 74,
+    "primary": "#1f6b3a",
+    "secondary": "#f4f7f5"
+  },
+  {
+    "name": "Atlanta (ARG)",
+    "state": null,
+    "country": "ARG",
+    "kind": "national",
+    "division": "B",
+    "rating": 73,
+    "primary": "#8b1e2d",
+    "secondary": "#f4f7f5"
+  },
+  {
+    "name": "All Boys (ARG)",
+    "state": null,
+    "country": "ARG",
+    "kind": "national",
+    "division": "B",
+    "rating": 72,
+    "primary": "#1e4f8a",
+    "secondary": "#f4f7f5"
+  },
+  {
+    "name": "Deportivo Morón (ARG)",
+    "state": null,
+    "country": "ARG",
+    "kind": "national",
+    "division": "B",
+    "rating": 71,
+    "primary": "#7a4d1b",
+    "secondary": "#f4f7f5"
+  },
+  {
+    "name": "Patronato (ARG)",
+    "state": null,
+    "country": "ARG",
+    "kind": "national",
+    "division": "B",
+    "rating": 70,
+    "primary": "#5b2c83",
+    "secondary": "#f4f7f5"
+  },
+  {
+    "name": "Arsenal Sarandí (ARG)",
+    "state": null,
+    "country": "ARG",
+    "kind": "national",
+    "division": "B",
+    "rating": 69,
+    "primary": "#0c6f73",
+    "secondary": "#f4f7f5"
+  },
+  {
+    "name": "San Martín San Juan (ARG)",
+    "state": null,
+    "country": "ARG",
+    "kind": "national",
+    "division": "B",
+    "rating": 68,
+    "primary": "#8a6d1d",
+    "secondary": "#f4f7f5"
+  },
+  {
+    "name": "Gimnasia Jujuy (ARG)",
+    "state": null,
+    "country": "ARG",
+    "kind": "national",
+    "division": "B",
+    "rating": 75,
+    "primary": "#333333",
+    "secondary": "#f4f7f5"
+  },
+  {
+    "name": "Almagro (ARG)",
+    "state": null,
+    "country": "ARG",
+    "kind": "national",
+    "division": "B",
+    "rating": 74,
+    "primary": "#1f6b3a",
+    "secondary": "#f4f7f5"
+  },
+  {
+    "name": "Defensores de Belgrano (ARG)",
+    "state": null,
+    "country": "ARG",
+    "kind": "national",
+    "division": "B",
+    "rating": 73,
+    "primary": "#8b1e2d",
+    "secondary": "#f4f7f5"
+  },
+  {
+    "name": "Estudiantes Caseros (ARG)",
+    "state": null,
+    "country": "ARG",
+    "kind": "national",
+    "division": "B",
+    "rating": 72,
+    "primary": "#1e4f8a",
+    "secondary": "#f4f7f5"
+  },
+  {
+    "name": "Argentino C01 (ARG)",
+    "state": null,
+    "country": "ARG",
+    "kind": "national",
+    "division": "C",
+    "rating": 69,
+    "primary": "#333333",
+    "secondary": "#f4f7f5"
+  },
+  {
+    "name": "Argentino C02 (ARG)",
+    "state": null,
+    "country": "ARG",
+    "kind": "national",
+    "division": "C",
+    "rating": 68,
+    "primary": "#1f6b3a",
+    "secondary": "#f4f7f5"
+  },
+  {
+    "name": "Argentino C03 (ARG)",
+    "state": null,
+    "country": "ARG",
+    "kind": "national",
+    "division": "C",
+    "rating": 67,
+    "primary": "#8b1e2d",
+    "secondary": "#f4f7f5"
+  },
+  {
+    "name": "Argentino C04 (ARG)",
+    "state": null,
+    "country": "ARG",
+    "kind": "national",
+    "division": "C",
+    "rating": 66,
+    "primary": "#1e4f8a",
+    "secondary": "#f4f7f5"
+  },
+  {
+    "name": "Argentino C05 (ARG)",
+    "state": null,
+    "country": "ARG",
+    "kind": "national",
+    "division": "C",
+    "rating": 65,
+    "primary": "#7a4d1b",
+    "secondary": "#f4f7f5"
+  },
+  {
+    "name": "Argentino C06 (ARG)",
+    "state": null,
+    "country": "ARG",
+    "kind": "national",
+    "division": "C",
+    "rating": 64,
+    "primary": "#5b2c83",
+    "secondary": "#f4f7f5"
+  },
+  {
+    "name": "Argentino C07 (ARG)",
+    "state": null,
+    "country": "ARG",
+    "kind": "national",
+    "division": "C",
+    "rating": 63,
+    "primary": "#0c6f73",
+    "secondary": "#f4f7f5"
+  },
+  {
+    "name": "Argentino C08 (ARG)",
+    "state": null,
+    "country": "ARG",
+    "kind": "national",
+    "division": "C",
+    "rating": 62,
+    "primary": "#8a6d1d",
+    "secondary": "#f4f7f5"
+  },
+  {
+    "name": "Argentino C09 (ARG)",
+    "state": null,
+    "country": "ARG",
+    "kind": "national",
+    "division": "C",
+    "rating": 69,
+    "primary": "#333333",
+    "secondary": "#f4f7f5"
+  },
+  {
+    "name": "Argentino C10 (ARG)",
+    "state": null,
+    "country": "ARG",
+    "kind": "national",
+    "division": "C",
+    "rating": 68,
+    "primary": "#1f6b3a",
+    "secondary": "#f4f7f5"
+  },
+  {
+    "name": "Argentino C11 (ARG)",
+    "state": null,
+    "country": "ARG",
+    "kind": "national",
+    "division": "C",
+    "rating": 67,
+    "primary": "#8b1e2d",
+    "secondary": "#f4f7f5"
+  },
+  {
+    "name": "Argentino C12 (ARG)",
+    "state": null,
+    "country": "ARG",
+    "kind": "national",
+    "division": "C",
+    "rating": 66,
+    "primary": "#1e4f8a",
+    "secondary": "#f4f7f5"
+  },
+  {
+    "name": "Argentino C13 (ARG)",
+    "state": null,
+    "country": "ARG",
+    "kind": "national",
+    "division": "C",
+    "rating": 65,
+    "primary": "#7a4d1b",
+    "secondary": "#f4f7f5"
+  },
+  {
+    "name": "Argentino C14 (ARG)",
+    "state": null,
+    "country": "ARG",
+    "kind": "national",
+    "division": "C",
+    "rating": 64,
+    "primary": "#5b2c83",
+    "secondary": "#f4f7f5"
+  },
+  {
+    "name": "Argentino C15 (ARG)",
+    "state": null,
+    "country": "ARG",
+    "kind": "national",
+    "division": "C",
+    "rating": 63,
+    "primary": "#0c6f73",
+    "secondary": "#f4f7f5"
+  },
+  {
+    "name": "Argentino C16 (ARG)",
+    "state": null,
+    "country": "ARG",
+    "kind": "national",
+    "division": "C",
+    "rating": 62,
+    "primary": "#8a6d1d",
+    "secondary": "#f4f7f5"
+  },
+  {
+    "name": "Argentino C17 (ARG)",
+    "state": null,
+    "country": "ARG",
+    "kind": "national",
+    "division": "C",
+    "rating": 69,
+    "primary": "#333333",
+    "secondary": "#f4f7f5"
+  },
+  {
+    "name": "Argentino C18 (ARG)",
+    "state": null,
+    "country": "ARG",
+    "kind": "national",
+    "division": "C",
+    "rating": 68,
+    "primary": "#1f6b3a",
+    "secondary": "#f4f7f5"
+  },
+  {
+    "name": "Argentino C19 (ARG)",
+    "state": null,
+    "country": "ARG",
+    "kind": "national",
+    "division": "C",
+    "rating": 67,
+    "primary": "#8b1e2d",
+    "secondary": "#f4f7f5"
+  },
+  {
+    "name": "Argentino C20 (ARG)",
+    "state": null,
+    "country": "ARG",
+    "kind": "national",
+    "division": "C",
+    "rating": 66,
+    "primary": "#1e4f8a",
+    "secondary": "#f4f7f5"
+  },
+  {
+    "name": "Argentino D01 (ARG)",
+    "state": null,
+    "country": "ARG",
+    "kind": "national",
+    "division": "D",
+    "rating": 64,
+    "primary": "#333333",
+    "secondary": "#f4f7f5"
+  },
+  {
+    "name": "Argentino D02 (ARG)",
+    "state": null,
+    "country": "ARG",
+    "kind": "national",
+    "division": "D",
+    "rating": 63,
+    "primary": "#1f6b3a",
+    "secondary": "#f4f7f5"
+  },
+  {
+    "name": "Argentino D03 (ARG)",
+    "state": null,
+    "country": "ARG",
+    "kind": "national",
+    "division": "D",
+    "rating": 62,
+    "primary": "#8b1e2d",
+    "secondary": "#f4f7f5"
+  },
+  {
+    "name": "Argentino D04 (ARG)",
+    "state": null,
+    "country": "ARG",
+    "kind": "national",
+    "division": "D",
+    "rating": 61,
+    "primary": "#1e4f8a",
+    "secondary": "#f4f7f5"
+  },
+  {
+    "name": "Argentino D05 (ARG)",
+    "state": null,
+    "country": "ARG",
+    "kind": "national",
+    "division": "D",
+    "rating": 60,
+    "primary": "#7a4d1b",
+    "secondary": "#f4f7f5"
+  },
+  {
+    "name": "Argentino D06 (ARG)",
+    "state": null,
+    "country": "ARG",
+    "kind": "national",
+    "division": "D",
+    "rating": 59,
+    "primary": "#5b2c83",
+    "secondary": "#f4f7f5"
+  },
+  {
+    "name": "Argentino D07 (ARG)",
+    "state": null,
+    "country": "ARG",
+    "kind": "national",
+    "division": "D",
+    "rating": 58,
+    "primary": "#0c6f73",
+    "secondary": "#f4f7f5"
+  },
+  {
+    "name": "Argentino D08 (ARG)",
+    "state": null,
+    "country": "ARG",
+    "kind": "national",
+    "division": "D",
+    "rating": 57,
+    "primary": "#8a6d1d",
+    "secondary": "#f4f7f5"
+  },
+  {
+    "name": "Argentino D09 (ARG)",
+    "state": null,
+    "country": "ARG",
+    "kind": "national",
+    "division": "D",
+    "rating": 56,
+    "primary": "#333333",
+    "secondary": "#f4f7f5"
+  },
+  {
+    "name": "Argentino D10 (ARG)",
+    "state": null,
+    "country": "ARG",
+    "kind": "national",
+    "division": "D",
+    "rating": 64,
+    "primary": "#1f6b3a",
+    "secondary": "#f4f7f5"
+  },
+  {
+    "name": "Argentino D11 (ARG)",
+    "state": null,
+    "country": "ARG",
+    "kind": "national",
+    "division": "D",
+    "rating": 63,
+    "primary": "#8b1e2d",
+    "secondary": "#f4f7f5"
+  },
+  {
+    "name": "Argentino D12 (ARG)",
+    "state": null,
+    "country": "ARG",
+    "kind": "national",
+    "division": "D",
+    "rating": 62,
+    "primary": "#1e4f8a",
+    "secondary": "#f4f7f5"
+  },
+  {
+    "name": "Argentino D13 (ARG)",
+    "state": null,
+    "country": "ARG",
+    "kind": "national",
+    "division": "D",
+    "rating": 61,
+    "primary": "#7a4d1b",
+    "secondary": "#f4f7f5"
+  },
+  {
+    "name": "Argentino D14 (ARG)",
+    "state": null,
+    "country": "ARG",
+    "kind": "national",
+    "division": "D",
+    "rating": 60,
+    "primary": "#5b2c83",
+    "secondary": "#f4f7f5"
+  },
+  {
+    "name": "Argentino D15 (ARG)",
+    "state": null,
+    "country": "ARG",
+    "kind": "national",
+    "division": "D",
+    "rating": 59,
+    "primary": "#0c6f73",
+    "secondary": "#f4f7f5"
+  },
+  {
+    "name": "Argentino D16 (ARG)",
+    "state": null,
+    "country": "ARG",
+    "kind": "national",
+    "division": "D",
+    "rating": 58,
+    "primary": "#8a6d1d",
+    "secondary": "#f4f7f5"
+  },
+  {
+    "name": "Argentino D17 (ARG)",
+    "state": null,
+    "country": "ARG",
+    "kind": "national",
+    "division": "D",
+    "rating": 57,
+    "primary": "#333333",
+    "secondary": "#f4f7f5"
+  },
+  {
+    "name": "Argentino D18 (ARG)",
+    "state": null,
+    "country": "ARG",
+    "kind": "national",
+    "division": "D",
+    "rating": 56,
+    "primary": "#1f6b3a",
+    "secondary": "#f4f7f5"
+  },
+  {
+    "name": "Argentino D19 (ARG)",
+    "state": null,
+    "country": "ARG",
+    "kind": "national",
+    "division": "D",
+    "rating": 64,
+    "primary": "#8b1e2d",
+    "secondary": "#f4f7f5"
+  },
+  {
+    "name": "Argentino D20 (ARG)",
+    "state": null,
+    "country": "ARG",
+    "kind": "national",
+    "division": "D",
+    "rating": 63,
+    "primary": "#1e4f8a",
+    "secondary": "#f4f7f5"
+  },
+  {
+    "name": "São José-RS",
+    "state": "RS",
+    "country": "BR",
+    "kind": "national",
+    "division": "D",
+    "rating": 62,
+    "primary": "#1f6b3a",
+    "secondary": "#f4f7f5"
+  }
+]

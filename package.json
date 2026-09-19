@@ -1,8 +1,8 @@
 {
   "name": "dono-do-clube",
-  "version": "19.0.0",
+  "version": "21.0.0",
   "private": true,
-  "description": "Dono do Clube com aba Titulares separada, mantendo a aba Elenco completa.",
+  "description": "Dono do Clube com carreiras de clube em vários países e modo carreira de jogador.",
   "main": "server.js",
   "scripts": {
     "start": "node server.js"

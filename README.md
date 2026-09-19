@@ -226,3 +226,107 @@ Na nova aba TITULARES é possível:
 - abrir rapidamente o elenco completo.
 
 A aba ELENCO continua contendo todos os jogadores, reservas e as opções completas de gestão.
+
+
+## Escalação mais intuitiva — v20
+
+A aba **TITULARES** foi simplificada para montar o time sem precisar procurar jogadores em vários cards.
+
+Agora:
+- a tela mostra um passo a passo curto;
+- trocar a formação reorganiza automaticamente os jogadores, tentando preservar os titulares atuais;
+- basta clicar em um jogador no campo para abrir os reservas compatíveis;
+- também existe botão **Trocar** em cada titular;
+- só aparecem reservas da mesma faixa de posição e sem lesão;
+- os reservas ficam em uma lista recolhível;
+- **Usar os melhores** monta o time pelo overall;
+- **Priorizar descansados** monta o time considerando condição física;
+- a tela informa claramente quando existem alterações ainda não salvas;
+- o botão **Salvar escalação** fica mais fácil de alcançar;
+- a aba **ELENCO** continua disponível e não foi removida.
+
+
+## Países e modo carreira de jogador — v21
+
+### Carreira de clube em outros países
+
+Ao criar uma nova carreira de clube, agora é possível escolher:
+
+- Brasil
+- Inglaterra
+- Espanha
+- Itália
+- Alemanha
+- França
+- Portugal
+- Argentina
+
+Cada país possui nomes próprios para as quatro divisões e para a copa nacional.
+
+Exemplos:
+- Inglaterra: Premier League, Championship, League One, League Two e FA Cup;
+- Espanha: La Liga, Segunda División e Copa del Rey;
+- Itália: Serie A, Serie B e Coppa Italia;
+- Alemanha: Bundesliga, 2. Bundesliga e DFB-Pokal;
+- França: Ligue 1, Ligue 2 e Coupe de France;
+- Portugal: Liga Portugal e Taça de Portugal;
+- Argentina: Primera División e Copa Argentina.
+
+Para manter o mesmo sistema de progressão do jogo, todas as pirâmides usam o formato padronizado de **20 clubes, 38 rodadas e quatro divisões**. Portanto, este é um formato de jogo simplificado e não uma reprodução exata dos regulamentos reais de todas as federações.
+
+No Brasil, a carreira continua começando na Série D e disputando também o Estadual.
+
+Nos demais países:
+- a carreira começa na quarta divisão correspondente;
+- não existe Estadual;
+- há uma copa nacional mata-mata;
+- promoção e rebaixamento continuam funcionando entre as quatro divisões.
+
+A Libertadores permanece no modo de clube brasileiro. As carreiras europeias e argentina, nesta versão, encerram a temporada após liga e copa nacional.
+
+### Carreira de jogador
+
+Na criação de um novo save existe agora a opção **Carreira de Jogador**.
+
+É possível escolher:
+- nome do jogador;
+- nacionalidade;
+- país onde a carreira será disputada;
+- posição;
+- clube inicial da quarta divisão.
+
+O jogador começa com 17 anos.
+
+O modo inclui:
+- 38 rodadas por temporada;
+- nota individual por partida;
+- gols e assistências;
+- jogos disputados;
+- clean sheets para goleiros;
+- físico;
+- moral;
+- overall;
+- salário;
+- saldo pessoal;
+- pontos de evolução;
+- treino de velocidade, chute, passe e defesa;
+- recuperação física;
+- tabela da liga;
+- histórico das partidas;
+- propostas de transferência ao fim da temporada;
+- possibilidade de aceitar um clube de divisão superior;
+- promoção/rebaixamento do clube quando o jogador permanece;
+- envelhecimento e passagem para a temporada seguinte;
+- salvamento manual próprio.
+
+### Limite de saves
+
+O limite continua sendo de **10 carreiras por conta**, somando:
+- carreiras de clube;
+- carreiras de jogador.
+
+É possível misturar os dois tipos livremente na aba **CARREIRAS**.
+
+### Independência dos saves
+
+Cada carreira continua independente. Uma carreira em outro país ou uma carreira de jogador não altera elenco, dinheiro, tabela, troféus ou progresso das demais.

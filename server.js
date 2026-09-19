@@ -3,8 +3,9 @@ const express = require("express");
 const { Pool } = require("pg");
 const crypto = require("crypto");
 const path = require("path");
-const CLUB_SEED = require("./clubs.json");
+const CLUB_SEED = [...require("./clubs.json"),...require("./international_clubs.json")];
 const STATE_DATA = require("./states.json");
+const COUNTRY_DATA = require("./countries.json");
 
 if (!process.env.DATABASE_URL) {
   console.error("DATABASE_URL não configurada.");
@@ -22,11 +23,13 @@ const V15_MIGRATION_KEY = "v15_sponsors_installments_loans_market_20260919";
 const V16_MIGRATION_KEY = "v16_multi_career_shared_market_20260919";
 const V17_MIGRATION_KEY = "v17_independent_career_market_20260919";
 const V18_MIGRATION_KEY = "v18_manual_career_save_20260919";
+const V21_MIGRATION_KEY = "v21_countries_player_career_20260919";
 const MAX_CAREERS_PER_USER = 10;
 const TRANSFER_BAN_THRESHOLD = -10000;
 const competitionLocks = new Set();
 const DIVS = ["A","B","C","D"];
 const VALID_STATES = new Set(Object.keys(STATE_DATA.names));
+const VALID_COUNTRIES = new Set(Object.keys(COUNTRY_DATA));
 
 const pool = new Pool({
   connectionString: process.env.DATABASE_URL,
@@ -221,6 +224,44 @@ async function initDb(){
       created_at TIMESTAMPTZ NOT NULL DEFAULT NOW()
     );
 
+    CREATE TABLE IF NOT EXISTS player_careers(
+      id BIGSERIAL PRIMARY KEY,
+      user_id BIGINT NOT NULL REFERENCES users(id) ON DELETE CASCADE,
+      career_slot INTEGER NOT NULL,
+      career_label TEXT NOT NULL,
+      is_active_career BOOLEAN NOT NULL DEFAULT FALSE,
+      player_name TEXT NOT NULL,
+      nationality_code TEXT NOT NULL DEFAULT 'BR',
+      country_code TEXT NOT NULL DEFAULT 'BR',
+      position TEXT NOT NULL CHECK(position IN ('GK','DEF','MID','ATT')),
+      role TEXT NOT NULL,
+      age INTEGER NOT NULL DEFAULT 17,
+      club_id BIGINT NOT NULL REFERENCES clubs(id) ON DELETE RESTRICT,
+      club_division TEXT NOT NULL DEFAULT 'D',
+      season_no INTEGER NOT NULL DEFAULT 1,
+      current_round INTEGER NOT NULL DEFAULT 1,
+      status TEXT NOT NULL DEFAULT 'ACTIVE',
+      overall INTEGER NOT NULL DEFAULT 60,
+      pace INTEGER NOT NULL DEFAULT 60,
+      shooting INTEGER NOT NULL DEFAULT 60,
+      passing INTEGER NOT NULL DEFAULT 60,
+      defending INTEGER NOT NULL DEFAULT 60,
+      fitness INTEGER NOT NULL DEFAULT 100,
+      morale INTEGER NOT NULL DEFAULT 75,
+      appearances INTEGER NOT NULL DEFAULT 0,
+      goals INTEGER NOT NULL DEFAULT 0,
+      assists INTEGER NOT NULL DEFAULT 0,
+      clean_sheets INTEGER NOT NULL DEFAULT 0,
+      skill_points INTEGER NOT NULL DEFAULT 0,
+      reputation INTEGER NOT NULL DEFAULT 10,
+      salary INTEGER NOT NULL DEFAULT 800,
+      balance INTEGER NOT NULL DEFAULT 0,
+      data JSONB NOT NULL DEFAULT '{}'::jsonb,
+      manual_saved_at TIMESTAMPTZ,
+      created_at TIMESTAMPTZ NOT NULL DEFAULT NOW(),
+      updated_at TIMESTAMPTZ NOT NULL DEFAULT NOW()
+    );
+
     CREATE TABLE IF NOT EXISTS app_meta(
       key TEXT PRIMARY KEY,
       value TEXT NOT NULL,
@@ -236,6 +277,8 @@ async function initDb(){
     CREATE UNIQUE INDEX IF NOT EXISTS idx_sponsorship_active_club ON sponsorship_contracts(club_id) WHERE status='active';
     CREATE INDEX IF NOT EXISTS idx_installments_buying_status ON transfer_installments(buying_club_id,status);
     CREATE UNIQUE INDEX IF NOT EXISTS idx_active_loan_player ON player_loans(player_id) WHERE status='active';
+    CREATE UNIQUE INDEX IF NOT EXISTS idx_player_careers_user_slot ON player_careers(user_id,career_slot);
+    CREATE UNIQUE INDEX IF NOT EXISTS idx_player_careers_one_active ON player_careers(user_id) WHERE is_active_career=TRUE;
   `);
 
   for(const sql of [
@@ -260,7 +303,8 @@ async function initDb(){
     `ALTER TABLE players ADD COLUMN IF NOT EXISTS injury_games INTEGER NOT NULL DEFAULT 0`,
     `ALTER TABLE players ADD COLUMN IF NOT EXISTS transfer_listed BOOLEAN NOT NULL DEFAULT FALSE`,
     `ALTER TABLE players ADD COLUMN IF NOT EXISTS market_template_id BIGINT`,
-    `ALTER TABLE careers ADD COLUMN IF NOT EXISTS manual_saved_at TIMESTAMPTZ`
+    `ALTER TABLE careers ADD COLUMN IF NOT EXISTS manual_saved_at TIMESTAMPTZ`,
+    `ALTER TABLE careers ADD COLUMN IF NOT EXISTS country_code TEXT NOT NULL DEFAULT 'BR'`
   ]) await q(sql);
 
   await q(`ALTER TABLE clubs DROP CONSTRAINT IF EXISTS clubs_coins_check`);
@@ -270,6 +314,8 @@ async function initDb(){
   await q(`CREATE UNIQUE INDEX IF NOT EXISTS idx_clubs_one_active_career ON clubs(user_id) WHERE user_id IS NOT NULL AND is_active_career=TRUE`);
   await q(`CREATE UNIQUE INDEX IF NOT EXISTS idx_transfer_offers_pending_buyer_player ON transfer_offers(player_id,buying_club_id) WHERE status='pending'`);
   await q(`CREATE UNIQUE INDEX IF NOT EXISTS idx_players_career_market_template ON players(club_id,market_template_id) WHERE club_id IS NOT NULL AND market_template_id IS NOT NULL`);
+  await q(`CREATE UNIQUE INDEX IF NOT EXISTS idx_player_careers_user_slot ON player_careers(user_id,career_slot)`);
+  await q(`CREATE UNIQUE INDEX IF NOT EXISTS idx_player_careers_one_active ON player_careers(user_id) WHERE is_active_career=TRUE`);
 
   for(const sql of [
     `ALTER TABLE players DROP CONSTRAINT IF EXISTS players_rating_check`,
@@ -424,6 +470,31 @@ async function applyV18Migration(){
     await c.query(`ALTER TABLE careers ADD COLUMN IF NOT EXISTS manual_saved_at TIMESTAMPTZ`);
     await c.query(`INSERT INTO app_meta(key,value) VALUES($1,$2)`,[V18_MIGRATION_KEY,new Date().toISOString()]);
   });
+}
+
+async function applyV21Migration(){
+  const done=await q(`SELECT 1 FROM app_meta WHERE key=$1`,[V21_MIGRATION_KEY]);
+  if(done.rowCount)return;
+  await tx(async c=>{
+    await c.query(`ALTER TABLE careers ADD COLUMN IF NOT EXISTS country_code TEXT NOT NULL DEFAULT 'BR'`);
+    await c.query(`UPDATE careers cr SET country_code=COALESCE(cl.country_code,'BR') FROM clubs cl WHERE cl.id=cr.owner_club_id`);
+    await c.query(`CREATE UNIQUE INDEX IF NOT EXISTS idx_player_careers_user_slot ON player_careers(user_id,career_slot)`);
+    await c.query(`CREATE UNIQUE INDEX IF NOT EXISTS idx_player_careers_one_active ON player_careers(user_id) WHERE is_active_career=TRUE`);
+    await c.query(`INSERT INTO app_meta(key,value) VALUES($1,$2)`,[V21_MIGRATION_KEY,new Date().toISOString()]);
+  });
+}
+
+function countryProfile(code){
+  return COUNTRY_DATA[code]||COUNTRY_DATA.BR;
+}
+function countryName(code){
+  return countryProfile(code).name||code;
+}
+function leagueName(countryCode,div){
+  return countryProfile(countryCode).divisions?.[div]||`Divisão ${div}`;
+}
+function domesticCupName(countryCode){
+  return countryProfile(countryCode).cup||"Copa Nacional";
 }
 
 function isFelipeName(name){
@@ -642,42 +713,379 @@ async function auth(req,res,next){
   }catch(e){next(e)}
 }
 
+async function activePlayerCareer(userId){
+  return (await q(`SELECT pc.*,c.name club_name,c.base_rating club_rating FROM player_careers pc JOIN clubs c ON c.id=pc.club_id WHERE pc.user_id=$1 AND pc.is_active_career=TRUE ORDER BY pc.career_slot,pc.id LIMIT 1`,[userId])).rows[0]||null;
+}
 async function userClub(userId){
   let r=await q(`SELECT * FROM clubs WHERE user_id=$1 AND is_active_career=TRUE ORDER BY career_slot,id LIMIT 1`,[userId]);
   if(r.rowCount)return r.rows[0];
+
+  const player=await activePlayerCareer(userId);
+  if(player)return null;
+
   r=await q(`SELECT * FROM clubs WHERE user_id=$1 ORDER BY career_slot NULLS LAST,created_at,id LIMIT 1`,[userId]);
   if(!r.rowCount)return null;
   await tx(async c=>{
+    await c.query(`UPDATE player_careers SET is_active_career=FALSE WHERE user_id=$1`,[userId]);
     await c.query(`UPDATE clubs SET is_active_career=FALSE WHERE user_id=$1`,[userId]);
     await c.query(`UPDATE clubs SET is_active_career=TRUE WHERE id=$1`,[r.rows[0].id]);
   });
   return (await q(`SELECT * FROM clubs WHERE id=$1`,[r.rows[0].id])).rows[0]||null;
 }
 async function listUserCareers(userId){
-  return (await q(`
-    SELECT c.id,c.name,c.state_code,c.primary_color,c.secondary_color,c.crest_data,c.coins,c.team_rating,
-      c.career_slot,c.career_label,c.is_active_career,c.created_at,
-      cr.season_no,cr.phase,cr.user_division,cr.current_round,cr.manual_saved_at
-    FROM clubs c
-    LEFT JOIN careers cr ON cr.owner_club_id=c.id
-    WHERE c.user_id=$1
-    ORDER BY c.career_slot NULLS LAST,c.created_at,c.id
-  `,[userId])).rows;
+  const [clubs,players]=await Promise.all([
+    q(`
+      SELECT 'club'::text career_type,c.id,c.name,c.state_code,c.country_code,c.primary_color,c.secondary_color,c.crest_data,c.coins,c.team_rating,
+        c.career_slot,c.career_label,c.is_active_career,c.created_at,
+        cr.season_no,cr.phase,cr.user_division,cr.current_round,cr.manual_saved_at,
+        NULL::text player_name,NULL::text player_position,NULL::int overall,NULL::text club_name
+      FROM clubs c
+      LEFT JOIN careers cr ON cr.owner_club_id=c.id
+      WHERE c.user_id=$1
+    `,[userId]),
+    q(`
+      SELECT 'player'::text career_type,pc.id,pc.player_name AS name,NULL::text state_code,pc.country_code,
+        '#244c3c'::text primary_color,'#f5f7f6'::text secondary_color,NULL::text crest_data,
+        pc.balance AS coins,pc.overall AS team_rating,
+        pc.career_slot,pc.career_label,pc.is_active_career,pc.created_at,
+        pc.season_no,pc.status AS phase,pc.club_division AS user_division,pc.current_round,pc.manual_saved_at,
+        pc.player_name,pc.position AS player_position,pc.overall,c.name AS club_name
+      FROM player_careers pc
+      JOIN clubs c ON c.id=pc.club_id
+      WHERE pc.user_id=$1
+    `,[userId])
+  ]);
+  return [...clubs.rows,...players.rows].sort((a,b)=>Number(a.career_slot||99)-Number(b.career_slot||99)||Number(a.id)-Number(b.id));
+}
+async function activeCareerSummary(userId){
+  const player=await activePlayerCareer(userId);
+  if(player)return {type:"player",playerCareer:player,club:null};
+
+  const club=await userClub(userId);
+  if(club)return {type:"club",club,playerCareer:null};
+
+  // Robustez para saves antigos/incompletos: se só existirem carreiras de jogador
+  // sem flag ativa, ativa automaticamente a primeira.
+  const firstPlayer=(await q(`SELECT id FROM player_careers WHERE user_id=$1 ORDER BY career_slot,id LIMIT 1`,[userId])).rows[0];
+  if(firstPlayer){
+    const playerCareer=await activatePlayerCareer(userId,firstPlayer.id);
+    return {type:"player",playerCareer,club:null};
+  }
+  return {type:null,club:null,playerCareer:null};
 }
 async function activateUserCareer(userId,clubId){
   return tx(async c=>{
     const target=(await c.query(`SELECT * FROM clubs WHERE id=$1 AND user_id=$2 FOR UPDATE`,[clubId,userId])).rows[0];
-    if(!target)throw Object.assign(new Error("Carreira não encontrada."),{status:404});
+    if(!target)throw Object.assign(new Error("Carreira de clube não encontrada."),{status:404});
+    await c.query(`UPDATE player_careers SET is_active_career=FALSE WHERE user_id=$1`,[userId]);
     await c.query(`UPDATE clubs SET is_active_career=FALSE WHERE user_id=$1`,[userId]);
     await c.query(`UPDATE clubs SET is_active_career=TRUE WHERE id=$1`,[target.id]);
     return (await c.query(`SELECT * FROM clubs WHERE id=$1`,[target.id])).rows[0];
   });
 }
+async function activatePlayerCareer(userId,careerId){
+  return tx(async c=>{
+    const target=(await c.query(`SELECT * FROM player_careers WHERE id=$1 AND user_id=$2 FOR UPDATE`,[careerId,userId])).rows[0];
+    if(!target)throw Object.assign(new Error("Carreira de jogador não encontrada."),{status:404});
+    await c.query(`UPDATE clubs SET is_active_career=FALSE WHERE user_id=$1`,[userId]);
+    await c.query(`UPDATE player_careers SET is_active_career=FALSE WHERE user_id=$1`,[userId]);
+    await c.query(`UPDATE player_careers SET is_active_career=TRUE WHERE id=$1`,[target.id]);
+    return (await c.query(`SELECT pc.*,cl.name club_name,cl.base_rating club_rating FROM player_careers pc JOIN clubs cl ON cl.id=pc.club_id WHERE pc.id=$1`,[target.id])).rows[0];
+  });
+}
+async function totalCareerCount(userId,client=pool){
+  const r=await client.query(`
+    SELECT
+      (SELECT COUNT(*) FROM clubs WHERE user_id=$1)::int +
+      (SELECT COUNT(*) FROM player_careers WHERE user_id=$1)::int AS count
+  `,[userId]);
+  return Number(r.rows[0].count||0);
+}
 async function nextCareerSlot(userId,client=pool){
-  const rows=(await client.query(`SELECT career_slot FROM clubs WHERE user_id=$1 AND career_slot IS NOT NULL ORDER BY career_slot`,[userId])).rows;
-  const used=new Set(rows.map(r=>Number(r.career_slot)));
+  const rows=(await client.query(`
+    SELECT career_slot FROM clubs WHERE user_id=$1 AND career_slot IS NOT NULL
+    UNION ALL
+    SELECT career_slot FROM player_careers WHERE user_id=$1 AND career_slot IS NOT NULL
+  `,[userId])).rows;
+  const used=new Set(rows.map(r=>Number(r.career_slot)).filter(Boolean));
   for(let i=1;i<=MAX_CAREERS_PER_USER;i++)if(!used.has(i))return i;
   return null;
+}
+async function activateFirstAvailableCareer(userId){
+  const careers=await listUserCareers(userId);
+  if(!careers.length)return {type:null,club:null,playerCareer:null};
+  const pick=careers.find(x=>x.is_active_career)||careers[0];
+  if(pick.career_type==="player"){
+    const playerCareer=pick.is_active_career?await activePlayerCareer(userId):await activatePlayerCareer(userId,pick.id);
+    return {type:"player",playerCareer,club:null};
+  }
+  const club=pick.is_active_career?await userClub(userId):await activateUserCareer(userId,pick.id);
+  return {type:"club",club,playerCareer:null};
+}
+
+function playerCareerBaseAttributes(position){
+  if(position==="GK")return {overall:60,pace:55,shooting:40,passing:60,defending:66,role:"GK"};
+  if(position==="DEF")return {overall:61,pace:62,shooting:50,passing:58,defending:66,role:"CB"};
+  if(position==="MID")return {overall:61,pace:62,shooting:58,passing:66,defending:57,role:"CM"};
+  return {overall:61,pace:67,shooting:66,passing:58,defending:42,role:"ST"};
+}
+function recomputePlayerOverall(pc){
+  const pace=Number(pc.pace),shoot=Number(pc.shooting),pass=Number(pc.passing),def=Number(pc.defending);
+  let v;
+  if(pc.position==="GK")v=def*.52+pass*.25+pace*.13+shoot*.10;
+  else if(pc.position==="DEF")v=def*.42+pace*.25+pass*.23+shoot*.10;
+  else if(pc.position==="MID")v=pass*.38+pace*.22+shoot*.22+def*.18;
+  else v=shoot*.40+pace*.30+pass*.22+def*.08;
+  return clamp(Math.round(v),40,99);
+}
+async function playerCareerClubChoices(countryCode,division="D"){
+  return (await q(`
+    SELECT id,name,base_rating,country_code,national_seed_division
+    FROM clubs
+    WHERE is_ai=TRUE AND club_kind='national' AND country_code=$1 AND national_seed_division=$2
+    ORDER BY base_rating DESC,name
+    LIMIT 20
+  `,[countryCode,division])).rows;
+}
+async function createPlayerSeasonData(countryCode,division,clubId,seasonNo){
+  let teams=(await q(`
+    SELECT id,name,base_rating FROM clubs
+    WHERE is_ai=TRUE AND club_kind='national' AND country_code=$1 AND national_seed_division=$2 AND id<>$3
+    ORDER BY base_rating DESC,name
+    LIMIT 19
+  `,[countryCode,division,clubId])).rows.map(r=>Number(r.id));
+  teams.push(Number(clubId));
+  teams=[...new Set(teams)];
+  if(teams.length<20){
+    const fill=(await q(`
+      SELECT id FROM clubs
+      WHERE is_ai=TRUE AND club_kind='national' AND country_code=$1 AND id<>ALL($2::bigint[])
+      ORDER BY ABS(COALESCE(base_rating,64)-64),name LIMIT $3
+    `,[countryCode,teams,20-teams.length])).rows.map(r=>Number(r.id));
+    teams.push(...fill);
+  }
+  if(teams.length!==20)throw new Error(`Não foi possível montar a liga de jogador em ${countryName(countryCode)}.`);
+  return {
+    seasonNo,
+    leagueName:leagueName(countryCode,division),
+    league:divisionObject(teams),
+    history:[],
+    payments:[],
+    transferOffers:[],
+    acceptedOffer:null,
+    nextDivision:division
+  };
+}
+async function hydratePlayerCareer(pc){
+  if(!pc)return null;
+  const data=typeof pc.data==="string"?JSON.parse(pc.data):pc.data;
+  const ids=new Set([Number(pc.club_id)]);
+  for(const e of data?.league?.entries||[])ids.add(Number(e.clubId));
+  for(const f of data?.league?.fixtures||[]){ids.add(Number(f.home));ids.add(Number(f.away))}
+  for(const o of data?.transferOffers||[])if(o.clubId)ids.add(Number(o.clubId));
+  const clubs=(await q(`SELECT id,name,base_rating,primary_color,secondary_color,country_code,national_seed_division FROM clubs WHERE id=ANY($1::bigint[])`,[[...ids]])).rows;
+  const map=new Map(clubs.map(c=>[String(c.id),c]));
+  const entries=sortEntries(data?.league?.entries||[]).map(e=>({...e,gd:e.gf-e.ga,club:map.get(String(e.clubId))}));
+  const fixtures=(data?.league?.fixtures||[]).map(f=>({...f,homeClub:map.get(String(f.home)),awayClub:map.get(String(f.away))}));
+  return {
+    career:{
+      id:pc.id,career_slot:pc.career_slot,career_label:pc.career_label,player_name:pc.player_name,
+      nationality_code:pc.nationality_code,country_code:pc.country_code,position:pc.position,role:pc.role,
+      age:pc.age,club_id:pc.club_id,club_name:map.get(String(pc.club_id))?.name||pc.club_name,
+      club_division:pc.club_division,league_name:leagueName(pc.country_code,pc.club_division),
+      season_no:pc.season_no,current_round:pc.current_round,status:pc.status,
+      overall:pc.overall,pace:pc.pace,shooting:pc.shooting,passing:pc.passing,defending:pc.defending,
+      fitness:pc.fitness,morale:pc.morale,appearances:pc.appearances,goals:pc.goals,assists:pc.assists,
+      clean_sheets:pc.clean_sheets,skill_points:pc.skill_points,reputation:pc.reputation,
+      salary:pc.salary,balance:pc.balance,manual_saved_at:pc.manual_saved_at
+    },
+    league:{entries,fixtures},
+    history:data?.history||[],
+    payments:data?.payments||[],
+    transferOffers:(data?.transferOffers||[]).map(o=>({...o,club:map.get(String(o.clubId))})),
+    acceptedOffer:data?.acceptedOffer||null,
+    nextDivision:data?.nextDivision||pc.club_division
+  };
+}
+async function generatePlayerTransferOffers(pc,data){
+  const table=sortEntries(data.league.entries);
+  const pos=Math.max(1,table.findIndex(e=>String(e.clubId)===String(pc.club_id))+1);
+  let target=pc.club_division;
+  if((Number(pc.overall)>=66||Number(pc.reputation)>=28)&&pc.club_division!=="A")target={D:"C",C:"B",B:"A"}[pc.club_division]||pc.club_division;
+  const clubs=(await q(`
+    SELECT id,name,base_rating FROM clubs
+    WHERE is_ai=TRUE AND club_kind='national' AND country_code=$1 AND national_seed_division=$2 AND id<>$3
+    ORDER BY RANDOM() LIMIT 3
+  `,[pc.country_code,target,pc.club_id])).rows;
+  data.transferOffers=clubs.map((c,i)=>({
+    clubId:Number(c.id),
+    clubName:c.name,
+    division:target,
+    salary:Math.max(Number(pc.salary)+150,Math.round((Number(pc.overall)*18+Number(c.base_rating)*8+i*90)/50)*50),
+    status:"pending"
+  }));
+  if(pos<=4&&pc.club_division!=="A")data.nextDivision={D:"C",C:"B",B:"A"}[pc.club_division];
+  else if(pos>=17&&pc.club_division!=="D")data.nextDivision={A:"B",B:"C",C:"D"}[pc.club_division];
+  else data.nextDivision=pc.club_division;
+  return data;
+}
+async function simulatePlayerCareerRound(userId){
+  return tx(async client=>{
+    const pc=(await client.query(`SELECT * FROM player_careers WHERE user_id=$1 AND is_active_career=TRUE FOR UPDATE`,[userId])).rows[0];
+    if(!pc)throw Object.assign(new Error("Carreira de jogador não encontrada."),{status:404});
+    if(pc.status!=="ACTIVE")throw Object.assign(new Error("A temporada terminou. Vá para a próxima temporada."),{status:400});
+
+    const data=typeof pc.data==="string"?JSON.parse(pc.data):pc.data;
+    const round=Number(pc.current_round);
+    const games=data.league.fixtures.filter(f=>Number(f.round)===round&&!f.played);
+    const clubMap=await fastClubSnapshot();
+    let playerMatch=null;
+
+    for(const f of games){
+      const userGame=String(f.home)===String(pc.club_id)||String(f.away)===String(pc.club_id);
+      if(!userGame){
+        const sc=fastScore(f.home,f.away,clubMap);
+        f.played=true;f.hg=sc.hg;f.ag=sc.ag;
+        applyResult(findEntry(data.league.entries,f.home),sc.hg,sc.ag);
+        applyResult(findEntry(data.league.entries,f.away),sc.ag,sc.hg);
+        continue;
+      }
+
+      const home=clubMap.get(String(f.home))||{name:"Mandante",rating:64};
+      const away=clubMap.get(String(f.away))||{name:"Visitante",rating:64};
+      const userHome=String(f.home)===String(pc.club_id);
+      const basePerf=6.35+(Number(pc.overall)-60)*.035+(Number(pc.fitness)-70)*.012+(Math.random()*1.6-.8);
+      const performance=clamp(Math.round(basePerf*10)/10,4.5,10);
+      const attackWeight=pc.position==="ATT"?1:pc.position==="MID"?.65:pc.position==="DEF"?.22:.04;
+      const assistWeight=pc.position==="MID"?1:pc.position==="ATT"?.65:pc.position==="DEF"?.25:.05;
+      let goals=0,assists=0;
+      if(Math.random()<clamp(.08+attackWeight*(Number(pc.overall)-50)/100+performance*.012,.03,.62))goals++;
+      if(pc.position==="ATT"&&performance>8.2&&Math.random()<.22)goals++;
+      if(Math.random()<clamp(.07+assistWeight*(Number(pc.passing)-45)/110+performance*.01,.03,.52))assists++;
+
+      const boost=(Number(pc.overall)-60)*.12+(performance-6.5)*1.5;
+      const hr=Number(home.rating)+(userHome?boost:0);
+      const ar=Number(away.rating)+(userHome?0:boost);
+      const sc=basicScore(hr,ar);
+      if(userHome)sc.hg=Math.max(sc.hg,goals);
+      else sc.ag=Math.max(sc.ag,goals);
+
+      f.played=true;f.hg=sc.hg;f.ag=sc.ag;
+      applyResult(findEntry(data.league.entries,f.home),sc.hg,sc.ag);
+      applyResult(findEntry(data.league.entries,f.away),sc.ag,sc.hg);
+
+      const ug=userHome?sc.hg:sc.ag,og=userHome?sc.ag:sc.hg;
+      const result=ug>og?"win":ug===og?"draw":"loss";
+      const newFitness=clamp(Number(pc.fitness)-rand(7,13),35,100);
+      const newMorale=clamp(Number(pc.morale)+(result==="win"?4:result==="draw"?1:-3),35,100);
+      const skillGain=performance>=8.5?2:performance>=7?1:0;
+      const repGain=performance>=8?2:performance>=6.5?1:0;
+
+      playerMatch={
+        round,
+        home:f.home,away:f.away,
+        homeName:home.name,awayName:away.name,
+        homeGoals:sc.hg,awayGoals:sc.ag,
+        performance,goals,assists,result,
+        date:new Date().toISOString()
+      };
+      data.history.unshift(playerMatch);
+      data.history=data.history.slice(0,40);
+
+      pc.appearances=Number(pc.appearances)+1;
+      pc.goals=Number(pc.goals)+goals;
+      pc.assists=Number(pc.assists)+assists;
+      if(pc.position==="GK"&&og===0)pc.clean_sheets=Number(pc.clean_sheets)+1;
+      pc.fitness=newFitness;
+      pc.morale=newMorale;
+      pc.skill_points=Number(pc.skill_points)+skillGain;
+      pc.reputation=clamp(Number(pc.reputation)+repGain,0,100);
+    }
+
+    let balance=Number(pc.balance);
+    if(round%4===0){
+      balance+=Number(pc.salary);
+      data.payments.unshift({round,amount:Number(pc.salary),season:pc.season_no,date:new Date().toISOString()});
+      data.payments=data.payments.slice(0,20);
+    }
+
+    let nextRound=round+1,status=pc.status;
+    if(round>=38){
+      status="END";
+      nextRound=39;
+      await generatePlayerTransferOffers({...pc,balance},data);
+    }
+
+    await client.query(`
+      UPDATE player_careers SET
+        current_round=$2,status=$3,fitness=$4,morale=$5,appearances=$6,goals=$7,assists=$8,clean_sheets=$9,
+        skill_points=$10,reputation=$11,balance=$12,data=$13::jsonb,updated_at=NOW()
+      WHERE id=$1
+    `,[pc.id,nextRound,status,pc.fitness,pc.morale,pc.appearances,pc.goals,pc.assists,pc.clean_sheets,
+       pc.skill_points,pc.reputation,balance,JSON.stringify(data)]);
+
+    return {match:playerMatch,status,nextRound,skillPoints:pc.skill_points,balance};
+  });
+}
+async function trainPlayerCareer(userId,attribute){
+  const allowed=new Set(["pace","shooting","passing","defending","fitness"]);
+  if(!allowed.has(attribute))throw Object.assign(new Error("Treino inválido."),{status:400});
+  return tx(async client=>{
+    const pc=(await client.query(`SELECT * FROM player_careers WHERE user_id=$1 AND is_active_career=TRUE FOR UPDATE`,[userId])).rows[0];
+    if(!pc)throw Object.assign(new Error("Carreira de jogador não encontrada."),{status:404});
+    if(pc.status!=="ACTIVE")throw Object.assign(new Error("Treinos ficam disponíveis durante a temporada."),{status:400});
+
+    if(attribute==="fitness"){
+      if(Number(pc.fitness)>=100)throw Object.assign(new Error("Seu físico já está em 100%."),{status:400});
+      await client.query(`UPDATE player_careers SET fitness=LEAST(100,fitness+12),morale=LEAST(100,morale+2),updated_at=NOW() WHERE id=$1`,[pc.id]);
+    }else{
+      if(Number(pc.skill_points)<=0)throw Object.assign(new Error("Você precisa de pelo menos 1 ponto de evolução."),{status:400});
+      if(Number(pc[attribute])>=99)throw Object.assign(new Error("Esse atributo já chegou ao máximo."),{status:400});
+      const updated={...pc,[attribute]:Number(pc[attribute])+1};
+      updated.overall=recomputePlayerOverall(updated);
+      await client.query(`UPDATE player_careers SET ${attribute}=${attribute}+1,overall=$2,skill_points=skill_points-1,updated_at=NOW() WHERE id=$1`,[pc.id,updated.overall]);
+    }
+    return (await client.query(`SELECT pc.*,c.name club_name,c.base_rating club_rating FROM player_careers pc JOIN clubs c ON c.id=pc.club_id WHERE pc.id=$1`,[pc.id])).rows[0];
+  });
+}
+async function acceptPlayerCareerOffer(userId,clubId){
+  return tx(async client=>{
+    const pc=(await client.query(`SELECT * FROM player_careers WHERE user_id=$1 AND is_active_career=TRUE FOR UPDATE`,[userId])).rows[0];
+    if(!pc)throw Object.assign(new Error("Carreira de jogador não encontrada."),{status:404});
+    if(pc.status!=="END")throw Object.assign(new Error("As propostas podem ser aceitas no fim da temporada."),{status:400});
+    const data=typeof pc.data==="string"?JSON.parse(pc.data):pc.data;
+    const offer=(data.transferOffers||[]).find(o=>String(o.clubId)===String(clubId)&&o.status==="pending");
+    if(!offer)throw Object.assign(new Error("Proposta não encontrada."),{status:404});
+    data.transferOffers=(data.transferOffers||[]).map(o=>({...o,status:String(o.clubId)===String(clubId)?"accepted":"rejected"}));
+    data.acceptedOffer={...offer,status:"accepted"};
+    // A transferência é confirmada para a próxima temporada.
+    // O clube/posição atual da temporada encerrada permanece intacto até o usuário avançar o calendário.
+    await client.query(`UPDATE player_careers SET data=$2::jsonb,morale=LEAST(100,morale+8),updated_at=NOW() WHERE id=$1`,
+      [pc.id,JSON.stringify(data)]);
+    return {ok:true,offer,message:`Transferência para ${offer.clubName} confirmada para a próxima temporada.`};
+  });
+}
+async function nextPlayerCareerSeason(userId){
+  return tx(async client=>{
+    const pc=(await client.query(`SELECT * FROM player_careers WHERE user_id=$1 AND is_active_career=TRUE FOR UPDATE`,[userId])).rows[0];
+    if(!pc)throw Object.assign(new Error("Carreira de jogador não encontrada."),{status:404});
+    if(pc.status!=="END")throw Object.assign(new Error("A temporada ainda não terminou."),{status:400});
+    const oldData=typeof pc.data==="string"?JSON.parse(pc.data):pc.data;
+    const accepted=oldData.acceptedOffer;
+    const nextDiv=accepted?.division||oldData.nextDivision||pc.club_division;
+    const nextClubId=accepted?.clubId||pc.club_id;
+    const nextSeason=Number(pc.season_no)+1;
+    const data=await createPlayerSeasonData(pc.country_code,nextDiv,nextClubId,nextSeason);
+
+    await client.query(`
+      UPDATE player_careers SET
+        age=age+1,club_id=$2,club_division=$3,season_no=$4,current_round=1,status='ACTIVE',
+        fitness=100,morale=78,data=$5::jsonb,updated_at=NOW()
+      WHERE id=$1
+    `,[pc.id,nextClubId,nextDiv,nextSeason,JSON.stringify(data)]);
+
+    return (await client.query(`SELECT pc.*,c.name club_name,c.base_rating club_rating FROM player_careers pc JOIN clubs c ON c.id=pc.club_id WHERE pc.id=$1`,[pc.id])).rows[0];
+  });
 }
 async function clubRating(clubId,client=pool){
   return (await client.query(`SELECT COALESCE(ROUND(AVG(rating)),64)::int rating FROM players WHERE club_id=$1 AND is_starter=TRUE`,[clubId])).rows[0].rating;
@@ -877,7 +1285,7 @@ async function recordTrophy(client,clubId,seasonNo,competition,title){
 async function maybeRecordDivisionTrophy(client,career,ownerId){
   const div=career.user_division;
   const table=sortEntries(career.data.divisions?.[div]?.entries||[]);
-  if(table[0]&&String(table[0].clubId)===String(ownerId))await recordTrophy(client,ownerId,career.season_no,`SERIE_${div}`,`Campeão da Série ${div}`);
+  if(table[0]&&String(table[0].clubId)===String(ownerId))await recordTrophy(client,ownerId,career.season_no,`LIGA_${div}`,`Campeão — ${leagueName(career.country_code||"BR",div)}`);
 }
 async function generateIncomingOffers(client,clubId,{force=false,playerId=null}={}){
   const pending=Number((await client.query(`SELECT COUNT(*)::int count FROM transfer_offers WHERE selling_club_id=$1 AND status='pending'`,[clubId])).rows[0].count||0);
@@ -893,7 +1301,8 @@ async function generateIncomingOffers(client,clubId,{force=false,playerId=null}=
   const loaned=(await client.query(`SELECT player_id FROM player_loans WHERE borrowing_club_id=$1 AND status='active'`,[clubId])).rows.map(r=>String(r.player_id));
   const eligible=players.filter(p=>!already.includes(String(p.id))&&!loaned.includes(String(p.id))&&(p.transfer_listed||force||Math.random()<.18));
   if(!eligible.length)return 0;
-  const buyers=(await client.query(`SELECT id,name,base_rating FROM clubs WHERE is_ai=TRUE AND country_code='BR' ORDER BY RANDOM() LIMIT 20`)).rows;
+  const seller=(await client.query(`SELECT country_code FROM clubs WHERE id=$1`,[clubId])).rows[0];
+  const buyers=(await client.query(`SELECT id,name,base_rating FROM clubs WHERE is_ai=TRUE AND country_code=$1 ORDER BY RANDOM() LIMIT 20`,[seller?.country_code||"BR"])).rows;
   if(!buyers.length)return 0;
   let created=0;
   for(const p of shuffle(eligible).slice(0,force?2:1)){
@@ -984,11 +1393,19 @@ async function fullMatch(client,homeId,awayId,userId){
     events.unshift({type:"special",clubId:winner.id,minute:1,text:`Modo FELIPE ativado para ${winner.name}: todos os jogadores em 100.`});
   }
   const homeResult=hg>ag?"win":hg===ag?"draw":"loss",awayResult=ag>hg?"win":ag===hg?"draw":"loss";
-  await applyStatsAndCondition(client,home.id,hs,ag,events,homeResult);
-  await applyStatsAndCondition(client,away.id,as,hg,events,awayResult);
-  await client.query(`UPDATE clubs SET team_rating=$2 WHERE id=$1`,[home.id,Math.round(hs.reduce((a,p)=>a+Number(p.rating),0)/hs.length)]);
-  await client.query(`UPDATE clubs SET team_rating=$2 WHERE id=$1`,[away.id,Math.round(as.reduce((a,p)=>a+Number(p.rating),0)/as.length)]);
-  const userHome=String(home.id)===String(userId),ug=userHome?hg:ag,og=userHome?ag:hg;
+  const userHome=String(home.id)===String(userId);
+
+  // A carreira só altera o próprio elenco. Adversários (IA ou outra pessoa)
+  // não recebem fadiga/estatísticas por uma partida iniciada neste save.
+  if(userHome){
+    await applyStatsAndCondition(client,home.id,hs,ag,events,homeResult);
+    await client.query(`UPDATE clubs SET team_rating=$2 WHERE id=$1`,[home.id,Math.round(hs.reduce((a,p)=>a+Number(p.rating),0)/hs.length)]);
+  }else{
+    await applyStatsAndCondition(client,away.id,as,hg,events,awayResult);
+    await client.query(`UPDATE clubs SET team_rating=$2 WHERE id=$1`,[away.id,Math.round(as.reduce((a,p)=>a+Number(p.rating),0)/as.length)]);
+  }
+
+  const ug=userHome?hg:ag,og=userHome?ag:hg;
   return {
     home,away,hg,ag,events,homeLineup:hs,awayLineup:as,
     userMatch:{
@@ -1039,12 +1456,14 @@ function stateObject(name,ids){
 }
 function copaStageLabel(stage){return ({R32:"Primeira fase",R16:"Oitavas de final",QF:"Quartas de final",SF:"Semifinais",FINAL:"Final"})[stage]||stage}
 async function createCopaBrasil(ownerId){
-  const ai=(await q(`SELECT id FROM clubs WHERE is_ai=TRUE AND country_code='BR' ORDER BY base_rating DESC,RANDOM() LIMIT 31`)).rows.map(r=>Number(r.id));
-  if(ai.length<31)throw new Error("Clubes brasileiros insuficientes para a Copa do Brasil.");
+  const owner=(await q(`SELECT country_code FROM clubs WHERE id=$1`,[ownerId])).rows[0];
+  const countryCode=owner?.country_code||"BR";
+  const ai=(await q(`SELECT id FROM clubs WHERE is_ai=TRUE AND country_code=$1 AND club_kind='national' ORDER BY base_rating DESC,RANDOM() LIMIT 31`,[countryCode])).rows.map(r=>Number(r.id));
+  if(ai.length<31)throw new Error(`Clubes insuficientes para ${domesticCupName(countryCode)}.`);
   const teams=shuffle([Number(ownerId),...ai]);
   const fixtures=[];
   for(let i=0;i<teams.length;i+=2)fixtures.push({stage:"R32",slot:i/2+1,home:teams[i],away:teams[i+1],played:false,hg:null,ag:null,pw:null});
-  return {name:"Copa do Brasil",status:"active",stage:"R32",champion:null,userEliminated:false,fixtures};
+  return {name:domesticCupName(countryCode),countryCode,status:"active",stage:"R32",champion:null,userEliminated:false,fixtures};
 }
 function copaWinners(copa,stage){
   return copa.fixtures.filter(f=>f.stage===stage&&f.played).sort((a,b)=>(a.slot||0)-(b.slot||0)).map(f=>f.hg>f.ag?f.home:f.ag>f.hg?f.away:(f.pw||f.home));
@@ -1059,19 +1478,31 @@ async function ensureCopaData(career){
   return career.data.copaBrasil;
 }
 
-async function clubIdsBySeed(div,limit){
-  return (await q(`SELECT id FROM clubs WHERE is_ai=TRUE AND club_kind='national' AND national_seed_division=$1 ORDER BY base_rating DESC,name LIMIT $2`,[div,limit])).rows.map(x=>Number(x.id));
+async function clubIdsBySeed(div,limit,countryCode="BR"){
+  return (await q(`
+    SELECT id FROM clubs
+    WHERE is_ai=TRUE AND club_kind='national' AND national_seed_division=$1 AND country_code=$2
+    ORDER BY base_rating DESC,name
+    LIMIT $3
+  `,[div,countryCode,limit])).rows.map(x=>Number(x.id));
 }
-async function buildSeasonData(ownerId,stateCode,previous=null){
-  const data={state:null,divisions:{},libertadores:null,copaBrasil:null,calendar:initialCalendar(previous?.season_no?Number(previous.season_no)+1:1)};
+async function buildSeasonData(ownerId,stateCode,previous=null,countryCode="BR"){
+  const data={
+    state:null,
+    divisions:{},
+    libertadores:null,
+    copaBrasil:null,
+    countryCode,
+    calendar:initialCalendar(previous?.season_no?Number(previous.season_no)+1:1)
+  };
   let members={A:[],B:[],C:[],D:[]};
 
   if(!previous){
-    for(const d of DIVS) members[d]=await clubIdsBySeed(d,d==="D"?19:20);
+    for(const d of DIVS)members[d]=await clubIdsBySeed(d,d==="D"?19:20,countryCode);
     members.D.push(Number(ownerId));
   }else{
     const t={};
-    for(const d of DIVS) t[d]=sortEntries(previous.divisions[d].entries);
+    for(const d of DIVS)t[d]=sortEntries(previous.divisions[d].entries);
     members.A=[...t.A.slice(0,16).map(x=>x.clubId),...t.B.slice(0,4).map(x=>x.clubId)];
     members.B=[...t.A.slice(16,20).map(x=>x.clubId),...t.B.slice(4,16).map(x=>x.clubId),...t.C.slice(0,4).map(x=>x.clubId)];
     members.C=[...t.B.slice(16,20).map(x=>x.clubId),...t.C.slice(4,16).map(x=>x.clubId),...t.D.slice(0,4).map(x=>x.clubId)];
@@ -1080,29 +1511,42 @@ async function buildSeasonData(ownerId,stateCode,previous=null){
 
   let userDiv="D";
   for(const d of DIVS){
-    if(members[d].length!==20) throw new Error(`Série ${d} ficou com ${members[d].length} clubes.`);
-    if(members[d].some(id=>String(id)===String(ownerId))) userDiv=d;
+    if(members[d].length!==20)throw new Error(`${leagueName(countryCode,d)} ficou com ${members[d].length} clubes.`);
+    if(members[d].some(id=>String(id)===String(ownerId)))userDiv=d;
     data.divisions[d]=divisionObject(members[d]);
   }
 
-  const opp=(await q(`SELECT id FROM clubs WHERE is_ai=TRUE AND country_code='BR' AND state_code=$1 ORDER BY CASE WHEN club_kind='state' THEN 0 ELSE 1 END,RANDOM() LIMIT 7`,[stateCode])).rows.map(x=>Number(x.id));
-  if(opp.length<7) throw new Error("Faltam clubes para o Estadual.");
-  data.state=stateObject(STATE_DATA.championships[stateCode]||`Campeonato ${stateCode}`,[Number(ownerId),...opp]);
-  data.copaBrasil=await createCopaBrasil(ownerId);
+  if(countryCode==="BR"){
+    const opp=(await q(`SELECT id FROM clubs WHERE is_ai=TRUE AND country_code='BR' AND state_code=$1 ORDER BY CASE WHEN club_kind='state' THEN 0 ELSE 1 END,RANDOM() LIMIT 7`,[stateCode])).rows.map(x=>Number(x.id));
+    if(opp.length<7)throw new Error("Faltam clubes para o Estadual.");
+    data.state=stateObject(STATE_DATA.championships[stateCode]||`Campeonato ${stateCode}`,[Number(ownerId),...opp]);
+  }
 
+  data.copaBrasil=await createCopaBrasil(ownerId);
   return {data,userDiv};
 }
 
-async function createCareer(ownerId,stateCode,seasonNo=1,previousData=null){
-  const built=await buildSeasonData(ownerId,stateCode,previousData);
+async function createCareer(ownerId,stateCode="",seasonNo=1,previousData=null,countryCode=null){
+  const club=(await q(`SELECT country_code FROM clubs WHERE id=$1`,[ownerId])).rows[0];
+  countryCode=countryCode||club?.country_code||previousData?.countryCode||"BR";
+  const safeState=countryCode==="BR"?stateCode:"";
+  const built=await buildSeasonData(ownerId,safeState,previousData,countryCode);
   built.data.calendar=initialCalendar(seasonNo);
   await q(`UPDATE transfer_offers SET status='expired',updated_at=NOW() WHERE selling_club_id=$1 AND status='pending'`,[ownerId]);
+  const initialPhase=countryCode==="BR"?"STATE":"NATIONAL";
   await q(`
-    INSERT INTO careers(owner_club_id,season_no,phase,state_code,user_division,current_round,data,updated_at)
-    VALUES($1,$2,'STATE',$3,$4,1,$5::jsonb,NOW())
+    INSERT INTO careers(owner_club_id,season_no,phase,state_code,country_code,user_division,current_round,data,updated_at)
+    VALUES($1,$2,$3,$4,$5,$6,1,$7::jsonb,NOW())
     ON CONFLICT(owner_club_id) DO UPDATE SET
-      season_no=EXCLUDED.season_no,phase='STATE',state_code=EXCLUDED.state_code,user_division=EXCLUDED.user_division,current_round=1,data=EXCLUDED.data,updated_at=NOW()
-  `,[ownerId,seasonNo,stateCode,built.userDiv,JSON.stringify(built.data)]);
+      season_no=EXCLUDED.season_no,
+      phase=EXCLUDED.phase,
+      state_code=EXCLUDED.state_code,
+      country_code=EXCLUDED.country_code,
+      user_division=EXCLUDED.user_division,
+      current_round=1,
+      data=EXCLUDED.data,
+      updated_at=NOW()
+  `,[ownerId,seasonNo,initialPhase,safeState,countryCode,built.userDiv,JSON.stringify(built.data)]);
   return (await q(`SELECT * FROM careers WHERE owner_club_id=$1`,[ownerId])).rows[0];
 }
 async function getCareer(ownerId){
@@ -1123,7 +1567,7 @@ async function fastClubSnapshot(){
   const rows=(await q(`SELECT id,name,team_rating,base_rating,is_ai FROM clubs`)).rows;
   return new Map(rows.map(c=>[String(c.id),{
     id:Number(c.id),name:c.name,
-    rating:Number(c.team_rating||c.base_rating||64),
+    rating:Number(c.is_ai?c.base_rating:(c.team_rating||c.base_rating||64)),
     isAi:Boolean(c.is_ai)
   }]));
 }
@@ -1221,7 +1665,7 @@ function simulateFastNationalRounds(career,ownerId,clubMap,userMatches,roundsToP
     for(const div of DIVS){
       const d=career.data.divisions[div];
       const games=d.fixtures.filter(f=>Number(f.round)===round&&!f.played);
-      games.forEach(f=>playFastFixture(f,d.entries,clubMap,ownerId,`Série ${div}`,userMatches));
+      games.forEach(f=>playFastFixture(f,d.entries,clubMap,ownerId,leagueName(career.country_code||"BR",div),userMatches));
     }
     career.current_round=round+1;
     remaining--;
@@ -1231,11 +1675,15 @@ async function finalizeFastNational(career,ownerId,clubMap,userMatches){
   if(career.phase!=="NATIONAL")return;
   simulateFastNationalRounds(career,ownerId,clubMap,userMatches,100);
   if(career.current_round>38){
-    if(!career.data.libertadores)await makeLibertadores(career);
-    const top4=sortEntries(career.data.divisions.A.entries).slice(0,4);
-    const qualified=career.user_division==="A"&&top4.some(e=>String(e.clubId)===String(ownerId));
-    career.phase=qualified?"LIBERTADORES":"END";
-    if(!qualified)await finishFastLibertadores(career,ownerId,clubMap,userMatches,false);
+    if((career.country_code||"BR")==="BR"){
+      if(!career.data.libertadores)await makeLibertadores(career);
+      const top4=sortEntries(career.data.divisions.A.entries).slice(0,4);
+      const qualified=career.user_division==="A"&&top4.some(e=>String(e.clubId)===String(ownerId));
+      career.phase=qualified?"LIBERTADORES":"END";
+      if(!qualified)await finishFastLibertadores(career,ownerId,clubMap,userMatches,false);
+    }else{
+      career.phase="END";
+    }
   }
 }
 function advanceFastLibGroup(lib,ownerId,clubMap,userMatches,includeUser=true){
@@ -1311,10 +1759,10 @@ async function finishCopaFast(career,ownerId,clubMap){
 async function playCopa(ownerId){
   const career=await getCareer(ownerId);
   if(!career)throw Object.assign(new Error("Carreira não encontrada."),{status:404});
-  if(career.data.state?.stage!=="FINISHED")throw Object.assign(new Error("A Copa do Brasil começa depois do Estadual."),{status:400});
+  if((career.country_code||"BR")==="BR"&&career.data.state?.stage!=="FINISHED")throw Object.assign(new Error(`${domesticCupName(career.country_code||"BR")} começa depois do Estadual.`),{status:400});
   const copa=await ensureCopaData(career);
-  if(copa.status==="finished")throw Object.assign(new Error("A Copa do Brasil desta temporada já terminou."),{status:400});
-  if(copa.userEliminated)throw Object.assign(new Error("Seu clube já foi eliminado da Copa do Brasil."),{status:400});
+  if(copa.status==="finished")throw Object.assign(new Error(`${copa.name} desta temporada já terminou.`),{status:400});
+  if(copa.userEliminated)throw Object.assign(new Error(`Seu clube já foi eliminado de ${copa.name}.`),{status:400});
 
   const stage=copa.stage;
   const games=copa.fixtures.filter(f=>f.stage===stage&&!f.played);
@@ -1330,9 +1778,9 @@ async function playCopa(ownerId){
         if(f.hg===f.ag)f.pw=Math.random()<.5?f.home:f.away;
         const winner=f.hg>f.ag?f.home:f.ag>f.hg?f.away:f.pw;
         userWon=String(winner)===String(ownerId);
-        userMatch=sim.userMatch;userMatch.matchType="Copa do Brasil";userMatch.reward=0;
+        userMatch=sim.userMatch;userMatch.matchType=copa.name;userMatch.reward=0;
         userMatch.finance=await settleMatchFinances(client,ownerId,"CUP",String(f.home)===String(ownerId),userMatch.result);
-        await recordUserMatch(client,ownerId,String(f.home)===String(ownerId)?f.away:f.home,userMatch,sim.events,"copa_brasil",userMatch.finance.performance);
+        await recordUserMatch(client,ownerId,String(f.home)===String(ownerId)?f.away:f.home,userMatch,sim.events,"copa_nacional",userMatch.finance.performance);
       });
     }else{
       const {hg,ag}=fastScore(f.home,f.away,clubMap);f.played=true;f.hg=hg;f.ag=ag;if(hg===ag)f.pw=Math.random()<.5?f.home:f.away;
@@ -1344,8 +1792,8 @@ async function playCopa(ownerId){
     copa.champion=winners[0]||null;copa.status="finished";
     if(String(copa.champion)===String(ownerId)){
       await tx(async client=>{
-        await addFinance(client,ownerId,9000,"prize","Premiação pelo título da Copa do Brasil");
-        await recordTrophy(client,ownerId,career.season_no,"COPA_DO_BRASIL","Campeão da Copa do Brasil");
+        await addFinance(client,ownerId,9000,"prize",`Premiação pelo título — ${copa.name}`);
+        await recordTrophy(client,ownerId,career.season_no,"COPA_NACIONAL",`Campeão — ${copa.name}`);
       });
     }
   }else if(userWon){
@@ -1359,7 +1807,7 @@ async function playCopa(ownerId){
   }
 
   career.data.copaBrasil=copa;
-  await advanceCalendar(career,ownerId,7,`Copa do Brasil — ${copaStageLabel(stage)}`);
+  await advanceCalendar(career,ownerId,7,`${copa.name} — ${copaStageLabel(stage)}`);
   await saveCareer(career);
   return {userMatch,copaStage:stage,finished:copa.status==="finished",champion:copa.champion};
 }
@@ -1553,7 +2001,7 @@ async function autoFinishLib(career){
 async function playNational(ownerId){
   const career=await getCareer(ownerId);
   if(!career||career.phase!=="NATIONAL"){
-    throw Object.assign(new Error("O Brasileirão não está ativo."),{status:400});
+    throw Object.assign(new Error("A liga nacional não está ativa."),{status:400});
   }
 
   const round=Number(career.current_round);
@@ -1586,7 +2034,7 @@ async function playNational(ownerId){
           applyResult(findEntry(d.entries,f.away),sim.ag,sim.hg);
 
           userMatch=sim.userMatch;
-          userMatch.matchType=`Série ${div}`;
+          userMatch.matchType=leagueName(career.country_code||"BR",div);
           userMatch.reward=0;
           userMatch.finance=await settleMatchFinances(
             c,
@@ -1623,27 +2071,29 @@ async function playNational(ownerId){
     if(career.data.copaBrasil?.status!=="finished")await finishCopaFast(career,ownerId,clubMap);
     if(String(career.data.copaBrasil?.champion)===String(ownerId)){
       await tx(async client=>{
-        const fresh=await recordTrophy(client,ownerId,career.season_no,"COPA_DO_BRASIL","Campeão da Copa do Brasil");
-        if(fresh)await addFinance(client,ownerId,9000,"prize","Premiação pelo título da Copa do Brasil");
+        const cupName=career.data.copaBrasil?.name||domesticCupName(career.country_code||"BR");
+        const fresh=await recordTrophy(client,ownerId,career.season_no,"COPA_NACIONAL",`Campeão — ${cupName}`);
+        if(fresh)await addFinance(client,ownerId,9000,"prize",`Premiação pelo título — ${cupName}`);
       });
     }
-    await makeLibertadores(career);
 
-    const tableA=sortEntries(career.data.divisions.A.entries);
-    const userTop4A=career.user_division==="A"&&
-      tableA.slice(0,4).some(e=>String(e.clubId)===String(ownerId));
-
-    if(userTop4A){
-      career.phase="LIBERTADORES";
+    if((career.country_code||"BR")==="BR"){
+      await makeLibertadores(career);
+      const tableA=sortEntries(career.data.divisions.A.entries);
+      const userTop4A=career.user_division==="A"&&tableA.slice(0,4).some(e=>String(e.clubId)===String(ownerId));
+      if(userTop4A)career.phase="LIBERTADORES";
+      else{
+        await finishFastLibertadores(career,ownerId,clubMap,[],false);
+        career.phase="END";
+      }
     }else{
-      await finishFastLibertadores(career,ownerId,clubMap,[],false);
       career.phase="END";
     }
   }else{
     career.current_round=round+1;
   }
 
-  await advanceCalendar(career,ownerId,7,`Brasileirão — rodada ${round}`);
+  await advanceCalendar(career,ownerId,7,`${leagueName(career.country_code||"BR",career.user_division)} — rodada ${round}`);
   await saveCareer(career);
 
   return {
@@ -1690,7 +2140,7 @@ async function nextSeason(ownerId){
     }
   });
 
-  return createCareer(ownerId,club.state_code,career.season_no+1,career.data);
+  return createCareer(ownerId,club.state_code||"",career.season_no+1,career.data,club.country_code||career.country_code||"BR");
 }
 
 async function withCompetitionLock(ownerId,fn){
@@ -1756,16 +2206,21 @@ async function repairCareer(ownerId){
       if(career.data.copaBrasil?.status!=="finished"){
         await finishCopaFast(career,ownerId,await fastClubSnapshot());
         if(String(career.data.copaBrasil?.champion)===String(ownerId))await tx(async client=>{
-          const fresh=await recordTrophy(client,ownerId,career.season_no,"COPA_DO_BRASIL","Campeão da Copa do Brasil");
-          if(fresh)await addFinance(client,ownerId,9000,"prize","Premiação pelo título da Copa do Brasil");
+          const cupName=career.data.copaBrasil?.name||domesticCupName(career.country_code||"BR");
+          const fresh=await recordTrophy(client,ownerId,career.season_no,"COPA_NACIONAL",`Campeão — ${cupName}`);
+          if(fresh)await addFinance(client,ownerId,9000,"prize",`Premiação pelo título — ${cupName}`);
         });
       }
-      if(!career.data.libertadores){await makeLibertadores(career);changed=true}
-      const top4=sortEntries(career.data.divisions.A.entries).slice(0,4);
-      const qualified=career.user_division==="A"&&top4.some(e=>String(e.clubId)===String(ownerId));
-      if(qualified)career.phase="LIBERTADORES";
-      else{
-        if(career.data.libertadores?.status!=="finished")await autoFinishLib(career);
+      if((career.country_code||"BR")==="BR"){
+        if(!career.data.libertadores){await makeLibertadores(career);changed=true}
+        const top4=sortEntries(career.data.divisions.A.entries).slice(0,4);
+        const qualified=career.user_division==="A"&&top4.some(e=>String(e.clubId)===String(ownerId));
+        if(qualified)career.phase="LIBERTADORES";
+        else{
+          if(career.data.libertadores?.status!=="finished")await autoFinishLib(career);
+          career.phase="END";
+        }
+      }else{
         career.phase="END";
       }
       changed=true;
@@ -1803,8 +2258,10 @@ async function hydrateCareer(career){
     career.data.divisions[d].entries.forEach(e=>ids.add(e.clubId));
     career.data.divisions[d].fixtures.forEach(f=>{ids.add(f.home);ids.add(f.away)});
   }
-  career.data.state.entries.forEach(e=>ids.add(e.clubId));
-  career.data.state.fixtures.forEach(f=>{ids.add(f.home);ids.add(f.away)});
+  if(career.data.state){
+    career.data.state.entries.forEach(e=>ids.add(e.clubId));
+    career.data.state.fixtures.forEach(f=>{ids.add(f.home);ids.add(f.away)});
+  }
   if(career.data.libertadores){
     career.data.libertadores.entries.forEach(e=>ids.add(e.clubId));
     career.data.libertadores.fixtures.forEach(f=>{ids.add(f.home);ids.add(f.away)});
@@ -1824,12 +2281,12 @@ async function hydrateCareer(career){
     fixtures:career.data.divisions[d].fixtures.map(hFix)
   };
 
-  const stateObj={
+  const stateObj=career.data.state?{
     ...career.data.state,
     entries:sortEntries(career.data.state.entries).map(hEntry),
     fixtures:career.data.state.fixtures.map(hFix),
     championClub:career.data.state.champion?map.get(String(career.data.state.champion)):null
-  };
+  }:null;
 
   let lib=null;
   if(career.data.libertadores){
@@ -1849,7 +2306,7 @@ async function hydrateCareer(career){
     };
   }
   return {
-    career:{owner_club_id:career.owner_club_id,season_no:career.season_no,phase:career.phase,state_code:career.state_code,user_division:career.user_division,current_round:career.current_round},
+    career:{owner_club_id:career.owner_club_id,season_no:career.season_no,phase:career.phase,state_code:career.state_code,country_code:career.country_code||"BR",user_division:career.user_division,current_round:career.current_round},
     divisions,state:stateObj,libertadores:lib,copaBrasil:copa,calendar:calendarSummary(career,0)
   };
 }
@@ -2065,45 +2522,189 @@ app.post("/api/auth/logout",(_req,res)=>{clearCookie(res);res.json({ok:true})});
 
 app.get("/api/me",auth,async(req,res,next)=>{
   try{
-    const club=await userClub(req.user.id);
+    const active=await activeCareerSummary(req.user.id);
     const careers=await listUserCareers(req.user.id);
-    res.json({user:req.user,club,careers,states:STATE_DATA.names,maxCareers:MAX_CAREERS_PER_USER});
+    res.json({
+      user:req.user,
+      activeType:active.type,
+      club:active.club,
+      playerCareer:active.playerCareer,
+      careers,
+      states:STATE_DATA.names,
+      countries:COUNTRY_DATA,
+      maxCareers:MAX_CAREERS_PER_USER
+    });
   }catch(e){next(e)}
 });
 
 app.get("/api/careers",auth,async(req,res,next)=>{
   try{
-    res.json({careers:await listUserCareers(req.user.id),maxCareers:MAX_CAREERS_PER_USER});
+    const active=await activeCareerSummary(req.user.id);
+    res.json({careers:await listUserCareers(req.user.id),maxCareers:MAX_CAREERS_PER_USER,activeType:active.type});
   }catch(e){next(e)}
 });
 
-app.post("/api/careers/:clubId/activate",auth,async(req,res,next)=>{
+app.post("/api/careers/:careerType/:careerId/activate",auth,async(req,res,next)=>{
   try{
-    const club=await activateUserCareer(req.user.id,String(req.params.clubId));
-    res.json({ok:true,club,careers:await listUserCareers(req.user.id)});
+    const type=String(req.params.careerType||"");
+    let active;
+    if(type==="player")active={type:"player",playerCareer:await activatePlayerCareer(req.user.id,String(req.params.careerId)),club:null};
+    else active={type:"club",club:await activateUserCareer(req.user.id,String(req.params.careerId)),playerCareer:null};
+    res.json({ok:true,...active,careers:await listUserCareers(req.user.id)});
+  }catch(e){next(e)}
+});
+
+app.get("/api/player-career/clubs",auth,async(req,res,next)=>{
+  try{
+    const country=String(req.query.country||"BR").toUpperCase();
+    if(!VALID_COUNTRIES.has(country))return res.status(400).json({error:"País inválido."});
+    const clubs=await playerCareerClubChoices(country,"D");
+    res.json({country,clubs});
+  }catch(e){next(e)}
+});
+
+app.post("/api/player-careers",auth,async(req,res,next)=>{
+  try{
+    const playerName=String(req.body.playerName||"").trim().replace(/\s+/g," ");
+    const careerLabel=String(req.body.careerLabel||"").trim().replace(/\s+/g," ");
+    const nationality=String(req.body.nationalityCode||"BR").toUpperCase();
+    const country=String(req.body.countryCode||"BR").toUpperCase();
+    const position=String(req.body.position||"ATT").toUpperCase();
+    const clubId=String(req.body.clubId||"");
+
+    if(playerName.length<3||playerName.length>32)return res.status(400).json({error:"Nome do jogador deve ter 3 a 32 caracteres."});
+    if(careerLabel.length>40)return res.status(400).json({error:"Nome da carreira deve ter no máximo 40 caracteres."});
+    if(!VALID_COUNTRIES.has(country))return res.status(400).json({error:"Escolha um país de liga válido."});
+    if(!VALID_COUNTRIES.has(nationality))return res.status(400).json({error:"Escolha uma nacionalidade válida."});
+    if(!["GK","DEF","MID","ATT"].includes(position))return res.status(400).json({error:"Posição inválida."});
+
+    const created=await tx(async client=>{
+      const count=await totalCareerCount(req.user.id,client);
+      if(count>=MAX_CAREERS_PER_USER)throw Object.assign(new Error(`Você já possui o limite de ${MAX_CAREERS_PER_USER} carreiras.`),{status:409});
+      const slot=await nextCareerSlot(req.user.id,client);
+      if(!slot)throw Object.assign(new Error("Não há vaga de carreira disponível."),{status:409});
+
+      const club=(await client.query(`
+        SELECT * FROM clubs
+        WHERE id=$1 AND is_ai=TRUE AND club_kind='national' AND country_code=$2 AND national_seed_division='D'
+      `,[clubId,country])).rows[0];
+      if(!club)throw Object.assign(new Error("Escolha um clube inicial válido da quarta divisão."),{status:400});
+
+      const attrs=playerCareerBaseAttributes(position);
+      const label=careerLabel||`Jogador ${slot}`;
+      const data=await createPlayerSeasonData(country,"D",club.id,1);
+
+      await client.query(`UPDATE clubs SET is_active_career=FALSE WHERE user_id=$1`,[req.user.id]);
+      await client.query(`UPDATE player_careers SET is_active_career=FALSE WHERE user_id=$1`,[req.user.id]);
+
+      const row=(await client.query(`
+        INSERT INTO player_careers(
+          user_id,career_slot,career_label,is_active_career,player_name,nationality_code,country_code,
+          position,role,age,club_id,club_division,season_no,current_round,status,
+          overall,pace,shooting,passing,defending,fitness,morale,skill_points,reputation,salary,balance,data
+        )
+        VALUES($1,$2,$3,TRUE,$4,$5,$6,$7,$8,17,$9,'D',1,1,'ACTIVE',$10,$11,$12,$13,$14,100,75,0,10,$15,0,$16::jsonb)
+        RETURNING *
+      `,[
+        req.user.id,slot,label,playerName,nationality,country,position,attrs.role,club.id,
+        attrs.overall,attrs.pace,attrs.shooting,attrs.passing,attrs.defending,
+        Math.max(500,Math.round((attrs.overall*14+club.base_rating*5)/50)*50),
+        JSON.stringify(data)
+      ])).rows[0];
+
+      return row;
+    });
+
+    res.status(201).json({ok:true,activeType:"player",playerCareer:created,careers:await listUserCareers(req.user.id)});
+  }catch(e){next(e)}
+});
+
+app.get("/api/player-career",auth,async(req,res,next)=>{
+  try{
+    const pc=await activePlayerCareer(req.user.id);
+    if(!pc)return res.status(404).json({error:"Nenhuma carreira de jogador está ativa."});
+    res.json(await hydratePlayerCareer(pc));
+  }catch(e){next(e)}
+});
+
+app.post("/api/player-career/play",auth,async(req,res,next)=>{
+  try{
+    res.json(await withCompetitionLock(`player:${req.user.id}`,()=>simulatePlayerCareerRound(req.user.id)));
+  }catch(e){next(e)}
+});
+
+app.post("/api/player-career/train",auth,async(req,res,next)=>{
+  try{
+    const attribute=String(req.body.attribute||"");
+    const pc=await trainPlayerCareer(req.user.id,attribute);
+    res.json({ok:true,career:await hydratePlayerCareer(pc)});
+  }catch(e){next(e)}
+});
+
+app.post("/api/player-career/offers/:clubId/accept",auth,async(req,res,next)=>{
+  try{
+    res.json(await withCompetitionLock(`player:${req.user.id}`,()=>acceptPlayerCareerOffer(req.user.id,String(req.params.clubId))));
+  }catch(e){next(e)}
+});
+
+app.post("/api/player-career/next-season",auth,async(req,res,next)=>{
+  try{
+    const pc=await withCompetitionLock(`player:${req.user.id}`,()=>nextPlayerCareerSeason(req.user.id));
+    res.json({ok:true,career:await hydratePlayerCareer(pc)});
+  }catch(e){next(e)}
+});
+
+app.post("/api/player-career/manual-save",auth,async(req,res,next)=>{
+  try{
+    const pc=await activePlayerCareer(req.user.id);
+    if(!pc)return res.status(404).json({error:"Carreira de jogador não encontrada."});
+    const row=(await q(`UPDATE player_careers SET manual_saved_at=NOW(),updated_at=NOW() WHERE id=$1 RETURNING manual_saved_at`,[pc.id])).rows[0];
+    res.json({ok:true,savedAt:row.manual_saved_at});
+  }catch(e){next(e)}
+});
+
+app.delete("/api/player-careers/:careerId",auth,async(req,res,next)=>{
+  try{
+    const careerId=String(req.params.careerId);
+    const confirmName=String(req.body.confirmName||"").trim();
+    const pc=(await q(`SELECT * FROM player_careers WHERE id=$1 AND user_id=$2`,[careerId,req.user.id])).rows[0];
+    if(!pc)return res.status(404).json({error:"Carreira de jogador não encontrada."});
+    if(confirmName!==pc.player_name)return res.status(400).json({error:"Digite exatamente o nome do jogador para confirmar."});
+    await q(`DELETE FROM player_careers WHERE id=$1 AND user_id=$2`,[careerId,req.user.id]);
+
+    const remaining=await listUserCareers(req.user.id);
+    if(remaining.length&&!remaining.some(x=>x.is_active_career)){
+      const first=remaining[0];
+      if(first.career_type==="player")await activatePlayerCareer(req.user.id,first.id);
+      else await activateUserCareer(req.user.id,first.id);
+    }
+    res.json({ok:true,careers:await listUserCareers(req.user.id)});
   }catch(e){next(e)}
 });
 
 app.post("/api/club",auth,async(req,res,next)=>{
   try{
     const name=String(req.body.name||"").trim().replace(/\s+/g," ");
+    const countryCode=String(req.body.countryCode||"BR").toUpperCase();
     const state=String(req.body.stateCode||"").toUpperCase();
     const pc=String(req.body.primaryColor||"#18864b");
     const sc=String(req.body.secondaryColor||"#f7fafc");
     const requestedLabel=String(req.body.careerLabel||"").trim().replace(/\s+/g," ");
 
     if(name.length<3||name.length>30)return res.status(400).json({error:"Nome deve ter 3 a 30 caracteres."});
-    if(!VALID_STATES.has(state))return res.status(400).json({error:"Escolha um estado."});
+    if(!VALID_COUNTRIES.has(countryCode))return res.status(400).json({error:"Escolha um país válido."});
+    if(countryCode==="BR"&&!VALID_STATES.has(state))return res.status(400).json({error:"Escolha um estado para a carreira no Brasil."});
     if(requestedLabel.length>40)return res.status(400).json({error:"Nome da carreira deve ter no máximo 40 caracteres."});
 
     const club=await tx(async c=>{
-      const count=Number((await c.query(`SELECT COUNT(*)::int count FROM clubs WHERE user_id=$1`,[req.user.id])).rows[0].count);
+      const count=await totalCareerCount(req.user.id,c);
       if(count>=MAX_CAREERS_PER_USER)throw Object.assign(new Error(`Você já possui o limite de ${MAX_CAREERS_PER_USER} carreiras.`),{status:409});
 
       const slot=await nextCareerSlot(req.user.id,c);
       if(!slot)throw Object.assign(new Error("Não há vaga de carreira disponível."),{status:409});
       const label=requestedLabel||`Carreira ${slot}`;
 
+      await c.query(`UPDATE player_careers SET is_active_career=FALSE WHERE user_id=$1`,[req.user.id]);
       await c.query(`UPDATE clubs SET is_active_career=FALSE WHERE user_id=$1`,[req.user.id]);
 
       const x=(await c.query(`
@@ -2111,9 +2712,9 @@ app.post("/api/club",auth,async(req,res,next)=>{
           user_id,name,state_code,country_code,club_kind,base_rating,team_rating,coins,
           primary_color,secondary_color,career_slot,career_label,is_active_career
         )
-        VALUES($1,$2,$3,'BR','user',64,64,30000,$4,$5,$6,$7,TRUE)
+        VALUES($1,$2,$3,$4,'user',64,64,30000,$5,$6,$7,$8,TRUE)
         RETURNING *
-      `,[req.user.id,name,state,pc,sc,slot,label])).rows[0];
+      `,[req.user.id,name,countryCode==="BR"?state:null,countryCode,pc,sc,slot,label])).rows[0];
 
       await ensureFriendCode(c,x.id);
       await createRoster(c,x,true);
@@ -2121,18 +2722,18 @@ app.post("/api/club",auth,async(req,res,next)=>{
       return (await c.query(`SELECT * FROM clubs WHERE id=$1`,[x.id])).rows[0];
     });
 
-    await createCareer(club.id,state,1,null);
-    res.status(201).json({club,careers:await listUserCareers(req.user.id)});
+    await createCareer(club.id,countryCode==="BR"?state:"",1,null,countryCode);
+    res.status(201).json({club,activeType:"club",careers:await listUserCareers(req.user.id)});
   }catch(e){
-    if(e.code==="23505")return res.status(409).json({error:"Nome de clube já utilizado."});
+    if(e.code==="23505")return res.status(409).json({error:"Nome de clube já utilizado. Escolha outro nome."});
     next(e);
   }
 });
-
 app.put("/api/club/state",auth,async(req,res,next)=>{
   try{
     const club=await userClub(req.user.id),state=String(req.body.stateCode||"").toUpperCase();
     if(!club)return res.status(404).json({error:"Clube não encontrado."});
+    if((club.country_code||"BR")!=="BR")return res.status(400).json({error:"Seleção de estado existe apenas para carreiras no Brasil."});
     if(club.state_code)return res.status(409).json({error:"O estado já foi definido."});
     if(!VALID_STATES.has(state))return res.status(400).json({error:"Escolha um estado."});
     await tx(async c=>{
@@ -2167,14 +2768,13 @@ app.delete("/api/club",auth,async(req,res,next)=>{
     });
 
     const remaining=await listUserCareers(req.user.id);
-    let activeClub=null;
-    if(remaining.length){
-      activeClub=await activateUserCareer(req.user.id,remaining[0].id);
-    }
+    const active=remaining.length?await activateFirstAvailableCareer(req.user.id):{type:null,club:null,playerCareer:null};
     res.json({
       ok:true,
-      message:remaining.length?"Carreira apagada. Outra carreira da conta foi ativada.":"Clube apagado. Sua conta foi mantida e você pode criar um novo clube do zero.",
-      club:activeClub,
+      message:remaining.length?"Carreira apagada. Outra carreira da conta foi ativada.":"Clube apagado. Sua conta foi mantida e você pode criar uma nova carreira.",
+      activeType:active.type,
+      club:active.club,
+      playerCareer:active.playerCareer,
       careers:await listUserCareers(req.user.id)
     });
   }catch(e){next(e)}
@@ -2196,12 +2796,8 @@ app.delete("/api/careers/:clubId",auth,async(req,res,next)=>{
     });
 
     const remaining=await listUserCareers(req.user.id);
-    let club=null;
-    if(remaining.length){
-      const existingActive=remaining.find(x=>x.is_active_career);
-      club=existingActive?await userClub(req.user.id):await activateUserCareer(req.user.id,remaining[0].id);
-    }
-    res.json({ok:true,club,careers:await listUserCareers(req.user.id)});
+    const active=remaining.length?await activateFirstAvailableCareer(req.user.id):{type:null,club:null,playerCareer:null};
+    res.json({ok:true,activeType:active.type,club:active.club,playerCareer:active.playerCareer,careers:await listUserCareers(req.user.id)});
   }catch(e){next(e)}
 });
 
@@ -2226,7 +2822,7 @@ app.get("/api/dashboard",auth,async(req,res,next)=>{
   try{
     const c=await userClub(req.user.id);
     if(!c)return res.json({club:null,players:[],market:[],matches:[],friends:[]});
-    if(!c.state_code)return res.json({club:c,players:[],market:[],matches:[],friends:[]});
+    if((c.country_code||"BR")==="BR"&&!c.state_code)return res.json({club:c,players:[],market:[],matches:[],friends:[]});
     await ensureRoster(c.id);await ensureMarket();
     await tx(async client=>{await applyFelipeMode(client,c.id)});
     const freshClub=(await q(`SELECT * FROM clubs WHERE id=$1`,[c.id])).rows[0];
@@ -2344,9 +2940,10 @@ app.post("/api/career/manual-save",auth,async(req,res,next)=>{
 app.get("/api/competitions",auth,async(req,res,next)=>{
   try{
     const c=await userClub(req.user.id);
-    if(!c?.state_code)return res.status(400).json({error:"Defina o estado do clube."});
+    if(!c)return res.status(404).json({error:"Carreira de clube não encontrada."});
+    if((c.country_code||"BR")==="BR"&&!c.state_code)return res.status(400).json({error:"Defina o estado do clube."});
     let career=await repairCareer(c.id);
-    if(!career)career=await createCareer(c.id,c.state_code,1,null);
+    if(!career)career=await createCareer(c.id,c.state_code||"",1,null,c.country_code||"BR");
     res.json(await hydrateCareer(career));
   }catch(e){next(e)}
 });
@@ -2851,7 +3448,8 @@ async function start(){
   await applyV16Migration();
   await applyV17Migration();
   await applyV18Migration();
+  await applyV21Migration();
   await ensureMarket();
-  app.listen(PORT,"0.0.0.0",()=>console.log(`Dono do Clube v12 rodando na porta ${PORT}`));
+  app.listen(PORT,"0.0.0.0",()=>console.log(`Dono do Clube v13 rodando na porta ${PORT}`));
 }
 start().catch(e=>{console.error("Falha ao iniciar:",e);process.exit(1)});

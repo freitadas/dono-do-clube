@@ -1,0 +1,98 @@
+{
+  "BR": {
+    "name": "Brasil",
+    "flag": "🇧🇷",
+    "regional": true,
+    "cup": "Copa do Brasil",
+    "divisions": {
+      "A": "Série A",
+      "B": "Série B",
+      "C": "Série C",
+      "D": "Série D"
+    }
+  },
+  "ENG": {
+    "name": "Inglaterra",
+    "flag": "🏴",
+    "regional": false,
+    "cup": "FA Cup",
+    "divisions": {
+      "A": "Premier League",
+      "B": "Championship",
+      "C": "League One",
+      "D": "League Two"
+    }
+  },
+  "ESP": {
+    "name": "Espanha",
+    "flag": "🇪🇸",
+    "regional": false,
+    "cup": "Copa del Rey",
+    "divisions": {
+      "A": "La Liga",
+      "B": "Segunda División",
+      "C": "Primera Federación",
+      "D": "Segunda Federación"
+    }
+  },
+  "ITA": {
+    "name": "Itália",
+    "flag": "🇮🇹",
+    "regional": false,
+    "cup": "Coppa Italia",
+    "divisions": {
+      "A": "Serie A",
+      "B": "Serie B",
+      "C": "Serie C",
+      "D": "Serie D"
+    }
+  },
+  "GER": {
+    "name": "Alemanha",
+    "flag": "🇩🇪",
+    "regional": false,
+    "cup": "DFB-Pokal",
+    "divisions": {
+      "A": "Bundesliga",
+      "B": "2. Bundesliga",
+      "C": "3. Liga",
+      "D": "Regionalliga"
+    }
+  },
+  "FRA": {
+    "name": "França",
+    "flag": "🇫🇷",
+    "regional": false,
+    "cup": "Coupe de France",
+    "divisions": {
+      "A": "Ligue 1",
+      "B": "Ligue 2",
+      "C": "National",
+      "D": "National 2"
+    }
+  },
+  "POR": {
+    "name": "Portugal",
+    "flag": "🇵🇹",
+    "regional": false,
+    "cup": "Taça de Portugal",
+    "divisions": {
+      "A": "Liga Portugal",
+      "B": "Liga Portugal 2",
+      "C": "Liga 3",
+      "D": "Campeonato de Portugal"
+    }
+  },
+  "ARG": {
+    "name": "Argentina",
+    "flag": "🇦🇷",
+    "regional": false,
+    "cup": "Copa Argentina",
+    "divisions": {
+      "A": "Primera División",
+      "B": "Primera Nacional",
+      "C": "Federal A",
+      "D": "Primera B Metropolitana"
+    }
+  }
+}

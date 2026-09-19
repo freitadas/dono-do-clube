@@ -6,7 +6,9 @@ const state={
   me:null,club:null,players:[],market:[],matches:[],friends:[],competitions:null,
   finance:{wages:0,recent:[],transferBan:{active:false}},clubEvents:[],transferResults:[],
   trophies:[],incomingOffers:[],calendar:null,sponsorship:{active:null,offers:[]},marketProfile:null,
-  careers:[],maxCareers:10,
+  careers:[],maxCareers:10,lineupDirty:false,
+  activeType:null,playerCareer:null,playerData:null,countries:{},creationMode:"club",playerView:"home",
+  playerStarterClubs:[],
   view:"home",authMode:"login",competitionTab:"STATE",roundByDiv:{A:1,B:1,C:1,D:1}
 };
 
@@ -29,18 +31,48 @@ function crestHtml(c,size=""){
 }
 function posName(p){return({GK:"GOL",DEF:"DEF",MID:"MEI",ATT:"ATA"})[p]||p}
 function stateOptions(){return Object.entries(STATES).map(([k,v])=>`<option value="${k}">${esc(v)}</option>`).join("")}
-function phaseName(p){return({STATE:"Estadual",NATIONAL:"Brasileirão",LIBERTADORES:"Libertadores",END:"Temporada encerrada"})[p]||p}
+function countryProfile(code){
+  return state.countries?.[code]||{name:code||"Brasil",flag:"",regional:code==="BR",cup:"Copa Nacional",divisions:{A:"Divisão A",B:"Divisão B",C:"Divisão C",D:"Divisão D"}};
+}
+function countryName(code){return countryProfile(code).name||code}
+function countryOptions(selected="BR"){
+  return Object.entries(state.countries||{}).map(([k,v])=>`<option value="${k}" ${k===selected?"selected":""}>${esc(v.flag||"")} ${esc(v.name)}</option>`).join("");
+}
+function leagueLabel(div,countryCode=null){
+  const code=countryCode||state.competitions?.career?.country_code||state.club?.country_code||"BR";
+  return countryProfile(code).divisions?.[div]||`Divisão ${div}`;
+}
+function locationLabel(club){
+  if(!club)return "";
+  return (club.country_code||"BR")==="BR"&&club.state_code?STATES[club.state_code]:countryName(club.country_code||"BR");
+}
+function phaseName(p){
+  if(p==="STATE")return "Estadual";
+  if(p==="NATIONAL")return state.activeType==="player"?"Liga nacional":(state.competitions?.career?leagueLabel(state.competitions.career.user_division):"Liga nacional");
+  if(p==="LIBERTADORES")return "Libertadores";
+  if(p==="END")return "Temporada encerrada";
+  return p;
+}
 
 async function bootstrap(){
   try{
     const d=await api("/api/me");
     state.me=d.user;
-    state.club=d.club;
+    state.activeType=d.activeType||null;
+    state.club=d.club||null;
+    state.playerCareer=d.playerCareer||null;
     state.careers=d.careers||[];
+    state.countries=d.countries||state.countries||{};
     state.maxCareers=Number(d.maxCareers||10);
     state.transferResults=[];
     state.marketProfile=null;
-    if(state.club?.state_code)await refreshAll();
+    state.playerData=null;
+
+    if(state.activeType==="player"&&state.playerCareer){
+      await refreshPlayerCareer();
+    }else if(state.club&&((state.club.country_code||"BR")!=="BR"||state.club.state_code)){
+      await refreshAll();
+    }
     render();
   }catch{renderAuth()}
 }
@@ -48,12 +80,20 @@ async function refreshCareerList(){
   const d=await api("/api/careers");
   state.careers=d.careers||[];
   state.maxCareers=Number(d.maxCareers||10);
+  if(d.activeType)state.activeType=d.activeType;
+}
+async function refreshPlayerCareer(){
+  const d=await api("/api/player-career");
+  state.playerData=d;
+  state.playerCareer=d.career;
+  state.activeType="player";
 }
 async function refreshAll(){
   const c=await api("/api/competitions");
   const d=await api("/api/dashboard");
   Object.assign(state,d);
   state.competitions=c;
+  state.activeType="club";
   if(c?.career?.phase==="NATIONAL"){
     for(const div of ["A","B","C","D"])state.roundByDiv[div]=Math.min(38,Number(c.career.current_round||1));
   }
@@ -62,8 +102,8 @@ async function refreshAll(){
 function renderAuth(){
   app.innerHTML=`<main class="auth"><section class="authbox">
     <div class="brand"><span class="logo">⚽</span>Dono do Clube</div>
-    <h1>Do Estadual à Série A.</h1>
-    <p>Crie seu clube, comece na Série D e suba até a elite.</p>
+    <h1>Sua carreira, do seu jeito.</h1>
+    <p>Comande um clube em vários países ou viva uma carreira como jogador profissional.</p>
     <div class="switch">
       <button data-mode="login" class="${state.authMode==="login"?"on":""}">Entrar</button>
       <button data-mode="register" class="${state.authMode==="register"?"on":""}">Criar conta</button>
@@ -88,53 +128,153 @@ function renderAuth(){
   };
 }
 
+async function loadPlayerStarterClubs(countryCode){
+  const select=app.querySelector("#playerClub");
+  if(select){
+    select.disabled=true;
+    select.innerHTML=`<option>Carregando clubes...</option>`;
+  }
+  try{
+    const d=await api(`/api/player-career/clubs?country=${encodeURIComponent(countryCode)}`);
+    state.playerStarterClubs=d.clubs||[];
+    const current=app.querySelector("#playerClub");
+    if(current){
+      current.disabled=false;
+      current.innerHTML=state.playerStarterClubs.map(c=>`<option value="${c.id}">${esc(c.name)} · OVR ${c.base_rating}</option>`).join("");
+    }
+  }catch(err){
+    const current=app.querySelector("#playerClub");
+    if(current)current.innerHTML=`<option value="">${esc(err.message)}</option>`;
+  }
+}
+
 function renderCreateClub(){
   const hasCareers=(state.careers||[]).length>0;
   const nextNumber=Math.min(state.maxCareers||10,(state.careers||[]).length+1);
-  app.innerHTML=`<main class="auth"><section class="authbox">
+  const mode=state.creationMode||"club";
+  const defaultLabel=mode==="player"?`Jogador ${nextNumber}`:`Carreira ${nextNumber}`;
+
+  app.innerHTML=`<main class="auth"><section class="authbox career-create-box">
     <div class="brand"><span class="logo">⚽</span>Dono do Clube</div>
-    <h1>${hasCareers?"Nova carreira":"Crie seu clube."}</h1>
-    <p>${hasCareers?`Você pode manter até ${state.maxCareers||10} carreiras separadas nesta conta.`:"Seu time começa na Série D e disputa o Estadual do estado escolhido."}</p>
-    <form id="clubForm" class="stack">
-      <label>Nome da carreira<input id="careerLabel" name="careerLabel" value="Carreira ${nextNumber}" maxlength="40" required></label>
-      <label>Nome do clube<input id="clubName" name="name" value="Meu Clube FC" maxlength="30" required></label>
-      <label>Estado<select name="stateCode" required><option value="">Escolha o estado</option>${stateOptions()}</select></label>
-      <div class="colors">
-        <label>Cor principal<input id="c1" type="color" name="primaryColor" value="#18864b"></label>
-        <label>Cor secundária<input id="c2" type="color" name="secondaryColor" value="#f7fafc"></label>
-      </div>
-      <div id="preview" class="club-preview"></div>
-      <button class="primary">Criar carreira na Série D</button>
-      ${hasCareers?`<button type="button" id="cancelNewCareer" class="secondary">Voltar para minhas carreiras</button>`:""}
-      <div id="clubMsg"></div>
-    </form>
+    <h1>${hasCareers?"Nova carreira":"Comece uma carreira."}</h1>
+    <p>Você pode manter até ${state.maxCareers||10} saves. Escolha se quer comandar um clube ou viver a carreira de um jogador.</p>
+
+    <div class="career-mode-switch">
+      <button type="button" data-create-mode="club" class="${mode==="club"?"on":""}">🏟️ Carreira de Clube</button>
+      <button type="button" data-create-mode="player" class="${mode==="player"?"on":""}">👤 Carreira de Jogador</button>
+    </div>
+
+    ${mode==="club"?`
+      <form id="clubForm" class="stack">
+        <label>Nome da carreira<input id="careerLabel" name="careerLabel" value="${esc(defaultLabel)}" maxlength="40" required></label>
+        <label>Nome do clube<input id="clubName" name="name" value="Meu Clube FC" maxlength="30" required></label>
+        <label>País da carreira<select id="clubCountry" name="countryCode" required>${countryOptions("BR")}</select></label>
+        <label id="stateField">Estado<select name="stateCode"><option value="">Escolha o estado</option>${stateOptions()}</select></label>
+        <div class="country-note" id="clubCountryNote">🇧🇷 No Brasil, seu clube começa na Série D e também disputa o Estadual.</div>
+        <div class="colors">
+          <label>Cor principal<input id="c1" type="color" name="primaryColor" value="#18864b"></label>
+          <label>Cor secundária<input id="c2" type="color" name="secondaryColor" value="#f7fafc"></label>
+        </div>
+        <div id="preview" class="club-preview"></div>
+        <button class="primary">Criar carreira de clube</button>
+        ${hasCareers?`<button type="button" id="cancelNewCareer" class="secondary">Voltar para minhas carreiras</button>`:""}
+        <div id="clubMsg"></div>
+      </form>
+    `:`
+      <form id="playerCareerForm" class="stack">
+        <label>Nome da carreira<input name="careerLabel" value="${esc(defaultLabel)}" maxlength="40" required></label>
+        <label>Nome do jogador<input name="playerName" value="Meu Jogador" maxlength="32" required></label>
+        <div class="two-cols">
+          <label>Nacionalidade<select name="nationalityCode">${countryOptions("BR")}</select></label>
+          <label>País onde vai jogar<select id="playerCountry" name="countryCode">${countryOptions("BR")}</select></label>
+        </div>
+        <label>Posição<select name="position">
+          <option value="GK">Goleiro</option>
+          <option value="DEF">Defensor / Zagueiro</option>
+          <option value="MID">Meio-campista</option>
+          <option value="ATT" selected>Atacante</option>
+        </select></label>
+        <label>Clube inicial da 4ª divisão<select id="playerClub" name="clubId" required><option>Carregando clubes...</option></select></label>
+        <div class="player-career-note">Você começa aos 17 anos, evolui com partidas e treinos, recebe salário e pode receber propostas de transferência ao fim da temporada.</div>
+        <button class="primary">Criar carreira de jogador</button>
+        ${hasCareers?`<button type="button" id="cancelNewCareer" class="secondary">Voltar para minhas carreiras</button>`:""}
+        <div id="playerCareerMsg"></div>
+      </form>
+    `}
   </section></main>`;
-  const sync=()=>{
-    const n=app.querySelector("#clubName").value||"Meu Clube FC";
-    const c1=app.querySelector("#c1").value,c2=app.querySelector("#c2").value;
-    app.querySelector("#preview").style.background=`linear-gradient(135deg,${c1},${c2})`;
-    const felipe=n.trim().toLowerCase()==="felipe";
-    app.querySelector("#preview").innerHTML=`<div><div class="preview-crest">${esc(initials(n))}</div><h2>${esc(n)}</h2><p>${felipe?"⚡ Modo Felipe será ativado":"Começa na Série D"}</p></div>`;
-  };
-  ["clubName","c1","c2"].forEach(id=>app.querySelector("#"+id).oninput=sync);
-  sync();
+
+  app.querySelectorAll("[data-create-mode]").forEach(btn=>btn.onclick=()=>{
+    state.creationMode=btn.dataset.createMode;
+    state.playerStarterClubs=[];
+    renderCreateClub();
+  });
+
   const cancel=app.querySelector("#cancelNewCareer");
   if(cancel)cancel.onclick=()=>{state.view="careers";render()};
-  app.querySelector("#clubForm").onsubmit=async e=>{
-    e.preventDefault();
-    const f=new FormData(e.target);
-    try{
-      await api("/api/club",{method:"POST",body:JSON.stringify({
-        careerLabel:f.get("careerLabel"),
-        name:f.get("name"),stateCode:f.get("stateCode"),
-        primaryColor:f.get("primaryColor"),secondaryColor:f.get("secondaryColor")
-      })});
-      state.view="home";
-      await bootstrap();
-    }catch(err){
-      app.querySelector("#clubMsg").innerHTML=`<div class="msg">${esc(err.message)}</div>`;
-    }
-  };
+
+  if(mode==="club"){
+    const sync=()=>{
+      const n=app.querySelector("#clubName").value||"Meu Clube FC";
+      const c1=app.querySelector("#c1").value,c2=app.querySelector("#c2").value;
+      app.querySelector("#preview").style.background=`linear-gradient(135deg,${c1},${c2})`;
+      const felipe=n.trim().toLowerCase()==="felipe";
+      const country=app.querySelector("#clubCountry").value||"BR";
+      const div=leagueLabel("D",country);
+      app.querySelector("#preview").innerHTML=`<div><div class="preview-crest">${esc(initials(n))}</div><h2>${esc(n)}</h2><p>${felipe?"⚡ Modo Felipe será ativado":`Começa em ${esc(div)}`}</p></div>`;
+    };
+    const syncCountry=()=>{
+      const country=app.querySelector("#clubCountry").value||"BR";
+      const field=app.querySelector("#stateField");
+      field.style.display=country==="BR"?"grid":"none";
+      field.querySelector("select").required=country==="BR";
+      const prof=countryProfile(country);
+      app.querySelector("#clubCountryNote").textContent=country==="BR"
+        ?"🇧🇷 No Brasil, seu clube começa na Série D e também disputa o Estadual."
+        :`${prof.flag||""} Em ${prof.name}, o clube começa em ${prof.divisions?.D||"4ª divisão"} e disputa ${prof.cup||"a copa nacional"}.`;
+      sync();
+    };
+    ["clubName","c1","c2"].forEach(id=>app.querySelector("#"+id).oninput=sync);
+    app.querySelector("#clubCountry").onchange=syncCountry;
+    syncCountry();
+
+    app.querySelector("#clubForm").onsubmit=async e=>{
+      e.preventDefault();
+      const f=new FormData(e.target);
+      try{
+        await api("/api/club",{method:"POST",body:JSON.stringify({
+          careerLabel:f.get("careerLabel"),name:f.get("name"),
+          countryCode:f.get("countryCode"),stateCode:f.get("stateCode"),
+          primaryColor:f.get("primaryColor"),secondaryColor:f.get("secondaryColor")
+        })});
+        state.view="home";
+        state.creationMode="club";
+        await bootstrap();
+      }catch(err){
+        app.querySelector("#clubMsg").innerHTML=`<div class="msg">${esc(err.message)}</div>`;
+      }
+    };
+  }else{
+    const country=app.querySelector("#playerCountry");
+    country.onchange=()=>loadPlayerStarterClubs(country.value);
+    loadPlayerStarterClubs(country.value||"BR");
+
+    app.querySelector("#playerCareerForm").onsubmit=async e=>{
+      e.preventDefault();
+      const f=new FormData(e.target);
+      try{
+        await api("/api/player-careers",{method:"POST",body:JSON.stringify({
+          careerLabel:f.get("careerLabel"),playerName:f.get("playerName"),
+          nationalityCode:f.get("nationalityCode"),countryCode:f.get("countryCode"),
+          position:f.get("position"),clubId:f.get("clubId")
+        })});
+        state.playerView="home";
+        state.creationMode="club";
+        await bootstrap();
+      }catch(err){
+        app.querySelector("#playerCareerMsg").innerHTML=`<div class="msg">${esc(err.message)}</div>`;
+      }
+    };
+  }
 }
 function renderStateSetup(){
   app.innerHTML=`<main class="auth"><section class="authbox">
@@ -199,24 +339,25 @@ function formationQuota(formation){
   if(formation==="3-5-2")return {GK:1,DEF:3,MID:5,ATT:2};
   return {GK:1,DEF:4,MID:3,ATT:3};
 }
-function pitchToken(p){
-  return `<div class="pitch-player ${fitnessClass(p)}" title="${esc(p.name)}">
+function pitchToken(p,interactive=false){
+  return `<button type="button" class="pitch-player ${fitnessClass(p)} ${interactive?"pitch-player-clickable":""}" ${interactive?`data-swap-id="${p.id}"`:""} title="${interactive?`Trocar ${esc(p.name)}`:esc(p.name)}">
     <span class="pitch-rating">${p.rating}</span>
     <b>${esc(p.name.split(" ").slice(-1)[0])}</b>
     <small>${esc(p.role||posName(p.position))} · ${p.fitness??100}%</small>
-  </div>`;
+    ${interactive?`<span class="pitch-swap-hint">TROCAR</span>`:""}
+  </button>`;
 }
-function formationPitch(formation){
+function formationPitch(formation,interactive=false){
   const starters=state.players.filter(p=>p.is_starter);
   const rows={ATT:[],MID:[],DEF:[],GK:[]};
   starters.forEach(p=>(rows[p.position]||rows.MID).push(p));
   for(const k of Object.keys(rows))rows[k].sort((a,b)=>fitScore(b)-fitScore(a));
   return `<div class="pitch">
     <div class="pitch-line center"></div><div class="pitch-circle"></div>
-    <div class="pitch-row attack">${rows.ATT.map(pitchToken).join("")}</div>
-    <div class="pitch-row midfield">${rows.MID.map(pitchToken).join("")}</div>
-    <div class="pitch-row defense">${rows.DEF.map(pitchToken).join("")}</div>
-    <div class="pitch-row goalkeeper">${rows.GK.map(pitchToken).join("")}</div>
+    <div class="pitch-row attack">${rows.ATT.map(p=>pitchToken(p,interactive)).join("")}</div>
+    <div class="pitch-row midfield">${rows.MID.map(p=>pitchToken(p,interactive)).join("")}</div>
+    <div class="pitch-row defense">${rows.DEF.map(p=>pitchToken(p,interactive)).join("")}</div>
+    <div class="pitch-row goalkeeper">${rows.GK.map(p=>pitchToken(p,interactive)).join("")}</div>
     <div class="pitch-caption">${esc(formation)} · ${starters.length}/11 titulares</div>
   </div>`;
 }
@@ -231,6 +372,53 @@ function suggestRotation(formation){
     chosen.push(...state.players.filter(p=>!used.has(String(p.id))&&Number(p.injury_games||0)<=0).sort((a,b)=>fitScore(b)-fitScore(a)).slice(0,11-chosen.length));
   }
   state.players.forEach(p=>p.is_starter=chosen.some(x=>String(x.id)===String(p.id)));
+}
+
+function rebalanceForFormation(formation){
+  const q=formationQuota(formation);
+  const chosen=[];
+
+  for(const pos of ["GK","DEF","MID","ATT"]){
+    const candidates=state.players
+      .filter(p=>p.position===pos&&Number(p.injury_games||0)<=0)
+      .sort((x,y)=>{
+        if(Boolean(x.is_starter)!==Boolean(y.is_starter))return x.is_starter?-1:1;
+        return Number(y.rating)-Number(x.rating) ||
+          Number(y.fitness||100)-Number(x.fitness||100);
+      });
+    chosen.push(...candidates.slice(0,q[pos]));
+  }
+
+  if(chosen.length<11){
+    const used=new Set(chosen.map(p=>String(p.id)));
+    chosen.push(...state.players
+      .filter(p=>!used.has(String(p.id))&&Number(p.injury_games||0)<=0)
+      .sort((x,y)=>Number(y.rating)-Number(x.rating))
+      .slice(0,11-chosen.length));
+  }
+
+  state.players.forEach(p=>p.is_starter=chosen.some(x=>String(x.id)===String(p.id)));
+  state.lineupDirty=true;
+  return chosen.length===11;
+}
+
+function compatibleReserves(starter){
+  return state.players
+    .filter(p=>!p.is_starter&&p.position===starter.position&&Number(p.injury_games||0)<=0)
+    .sort((x,y)=>Number(y.rating)-Number(x.rating) ||
+      Number(y.fitness||100)-Number(x.fitness||100));
+}
+
+function swapStarter(starterId,reserveId){
+  const starter=state.players.find(p=>String(p.id)===String(starterId));
+  const reserve=state.players.find(p=>String(p.id)===String(reserveId));
+  if(!starter||!reserve)return false;
+  if(starter.position!==reserve.position)return false;
+  if(Number(reserve.injury_games||0)>0)return false;
+  starter.is_starter=false;
+  reserve.is_starter=true;
+  state.lineupDirty=true;
+  return true;
 }
 
 function selectBestSquad(formation){
@@ -264,6 +452,7 @@ function selectBestSquad(formation){
   state.players.forEach(p=>{
     p.is_starter=chosen.some(x=>String(x.id)===String(p.id));
   });
+  state.lineupDirty=true;
 
   return chosen.length===11;
 }
@@ -344,9 +533,8 @@ function copaQuickCard(){
   const copa=state.competitions?.copaBrasil,car=state.competitions?.career;
   if(!copa||car?.phase==="STATE")return "";
   const active=copa.status!=="finished"&&!copa.userEliminated;
-  return `<div class="card copa-home"><div><div class="kicker">COPA DO BRASIL</div><h2>${copa.status==="finished"?`🏆 ${esc(copa.championClub?.name||"Encerrada")}`:esc(({R32:"Primeira fase",R16:"Oitavas",QF:"Quartas",SF:"Semifinais",FINAL:"Final"})[copa.stage]||copa.stage)}</h2><p class="muted">Torneio mata-mata em jogo único.</p></div>${active?`<button id="playCopaHome" class="primary">Jogar Copa do Brasil</button>`:""}</div>`;
+  return `<div class="card copa-home"><div><div class="kicker">${esc(copa.name||"COPA NACIONAL")}</div><h2>${copa.status==="finished"?`🏆 ${esc(copa.championClub?.name||"Encerrada")}`:esc(({R32:"Primeira fase",R16:"Oitavas",QF:"Quartas",SF:"Semifinais",FINAL:"Final"})[copa.stage]||copa.stage)}</h2><p class="muted">Torneio mata-mata em jogo único.</p></div>${active?`<button id="playCopaHome" class="primary">Jogar ${esc(copa.name||"Copa")}</button>`:""}</div>`;
 }
-
 function homeView(){
   const c=state.club,car=state.competitions.career,pos=userPosition();
   let action="";
@@ -361,7 +549,7 @@ function homeView(){
     <div class="club-head">${crestHtml(c)}<div>
       <div class="kicker">Temporada ${car.season_no} · ${phaseName(car.phase)}</div>
       <h1>${esc(c.name)}</h1>
-      <p>${esc(STATES[c.state_code])} · Série ${car.user_division}${pos?` · ${pos}º lugar`:""}</p>
+      <p>${esc(locationLabel(c))} · ${esc(leagueLabel(car.user_division,car.country_code||c.country_code))}${pos?` · ${pos}º lugar`:""}</p>
     </div></div>
     ${action}
     <div class="stats">
@@ -375,8 +563,8 @@ function homeView(){
   ${copaQuickCard()}
   ${car.phase==="END"?`<section class="season-end" style="margin-top:14px">
     <div class="kicker">FIM DA TEMPORADA</div>
-    <h2>${nextDivision()!==car.user_division?`Você vai para a Série ${nextDivision()}`:`Você permanece na Série ${car.user_division}`}</h2>
-    <p>A próxima temporada reinicia as tabelas e o Estadual. Seu elenco, dinheiro, escudo e estatísticas de carreira continuam.</p>
+    <h2>${nextDivision()!==car.user_division?`Você vai para ${esc(leagueLabel(nextDivision(),car.country_code||c.country_code))}`:`Você permanece em ${esc(leagueLabel(car.user_division,car.country_code||c.country_code))}`}</h2>
+    <p>A próxima temporada reinicia as tabelas${(car.country_code||c.country_code)==="BR"?" e o Estadual":""}. Seu elenco, dinheiro, escudo e estatísticas de carreira continuam.</p>
     <h3>Troféus conquistados nesta temporada</h3>
     ${trophyCards(seasonTrophies())}
   </section>`:""}
@@ -410,23 +598,38 @@ function startersView(){
       const order={GK:1,DEF:2,MID:3,ATT:4};
       return (order[x.position]||9)-(order[y.position]||9) || Number(y.rating)-Number(x.rating);
     });
+  const reserves=state.players
+    .filter(p=>!p.is_starter)
+    .sort((x,y)=>Number(y.rating)-Number(x.rating));
 
   return `<section class="card starters-page">
     <div class="toolbar">
       <div>
-        <div class="kicker">TIME PRINCIPAL</div>
-        <h2>Titulares</h2>
+        <div class="kicker">ESCALAÇÃO</div>
+        <h2>Monte seu time titular</h2>
       </div>
-      <div class="squad-tools">
-        <label>Formação<select id="starterFormation">${["4-3-3","4-4-2","3-5-2"].map(f=>`<option ${state.club.formation===f?"selected":""}>${f}</option>`).join("")}</select></label>
-        <button id="starterBestSquad" class="primary">⭐ Escalar melhores</button>
-        <button id="starterRotateSquad" class="secondary">Sugerir rodízio</button>
+      <div class="lineup-save-status ${state.lineupDirty?"dirty":"saved"}">
+        ${state.lineupDirty?"● Alterações não salvas":"✓ Escalação salva"}
       </div>
     </div>
 
-    <p class="muted">Esta aba mostra somente os 11 jogadores titulares. A aba <b>ELENCO</b> continua disponível com todos os jogadores, reservas e opções completas de gestão.</p>
+    <div class="lineup-steps">
+      <div><b>1</b><span>Escolha a formação</span></div>
+      <div><b>2</b><span>Clique em um titular para trocar</span></div>
+      <div><b>3</b><span>Salve a escalação</span></div>
+    </div>
 
-    <div id="starterPitchWrap">${formationPitch(state.club.formation)}</div>
+    <div class="lineup-toolbar">
+      <label>Formação
+        <select id="starterFormation">${["4-3-3","4-4-2","3-5-2"].map(f=>`<option ${state.club.formation===f?"selected":""}>${f}</option>`).join("")}</select>
+      </label>
+      <button id="starterBestSquad" class="primary">⭐ Usar os melhores</button>
+      <button id="starterRotateSquad" class="secondary">🔄 Priorizar descansados</button>
+    </div>
+
+    <div class="lineup-tip">💡 Clique diretamente em qualquer jogador no campo para substituí-lo por um reserva da mesma posição.</div>
+
+    <div id="starterPitchWrap">${formationPitch(state.club.formation,true)}</div>
 
     <div class="starter-summary">
       <span><small>TITULARES</small><b>${starters.length}/11</b></span>
@@ -434,10 +637,9 @@ function startersView(){
       <span><small>FÍSICO MÉDIO</small><b>${starters.length?Math.round(starters.reduce((n,p)=>n+Number(p.fitness||100),0)/starters.length):0}%</b></span>
     </div>
 
-    <div class="legend">
-      <span class="good-dot"></span> Bom físico
-      <span class="warn-dot"></span> Cansado
-      <span class="bad-dot"></span> Muito cansado/lesionado
+    <div class="section-title lineup-section-title">
+      <div><div class="kicker">11 INICIAIS</div><h3>Quem começa jogando</h3></div>
+      <span class="badge">${starters.length}</span>
     </div>
 
     <div class="starter-list">
@@ -451,16 +653,27 @@ function startersView(){
           <span>Físico <b>${p.fitness??100}%</b></span>
           <span>Moral <b>${p.morale??70}</b></span>
         </div>
+        <button type="button" class="secondary starter-swap-btn" data-swap-id="${p.id}">Trocar</button>
       </article>`).join(""):`<div class="empty">Nenhum titular definido.</div>`}
     </div>
 
-    <div class="starter-actions">
-      <button id="saveStarters" class="primary">Salvar titulares</button>
-      <button id="goFullSquad" class="secondary">Abrir elenco completo</button>
+    <details class="bench-panel">
+      <summary>Ver reservas disponíveis (${reserves.length})</summary>
+      <div class="bench-grid">
+        ${reserves.map(p=>`<div class="bench-player ${Number(p.injury_games||0)>0?"injured":""}">
+          <span class="bench-rating">${p.rating}</span>
+          <div><b>${esc(p.name)}</b><small>${esc(p.role||posName(p.position))} · físico ${p.fitness??100}%</small></div>
+          ${Number(p.injury_games||0)>0?`<span class="bench-injury">Lesionado</span>`:""}
+        </div>`).join("")}
+      </div>
+    </details>
+
+    <div class="starter-actions sticky-lineup-actions">
+      <button id="saveStarters" class="primary">💾 Salvar escalação</button>
+      <button id="goFullSquad" class="secondary">Ver elenco completo</button>
     </div>
   </section>`;
 }
-
 function squadView(){
   return `<section class="card">
     <div class="toolbar">
@@ -497,7 +710,7 @@ function marketView(){
     </section>
     <hr class="section-divider">
     <div class="kicker">CONTRATAÇÕES</div><h3>Pesquisar jogadores</h3>
-    ${state.marketProfile?`<div class="market-level">Mercado da Série ${esc(state.competitions?.career?.user_division||"D")} · jogadores normalmente entre OVR ${state.marketProfile.min} e ${state.marketProfile.max}. Ao subir de divisão, o nível disponível aumenta.</div>`:""}
+    ${state.marketProfile?`<div class="market-level">Mercado de ${esc(leagueLabel(state.competitions?.career?.user_division||"D",state.competitions?.career?.country_code||state.club?.country_code))} · jogadores normalmente entre OVR ${state.marketProfile.min} e ${state.marketProfile.max}. Ao subir de divisão, o nível disponível aumenta.</div>`:""}
     <p class="muted">Cada carreira possui seu próprio mercado. Você pode contratar os mesmos jogadores em carreiras diferentes, porque cada save mantém sua própria cópia do atleta.</p><p class="muted">O clube vendedor precisa aceitar a proposta e o jogador precisa aceitar o salário e o projeto esportivo. Compras podem ser parceladas em até 24x. Jogadores não essenciais de clubes do jogo podem chegar por empréstimo.</p>
     ${ban?.active?`<p class="muted">A pesquisa continua disponível, mas novas contratações estão bloqueadas pelo transfer ban.</p>`:""}
     <form id="transferSearch" class="transfer-search">
@@ -530,7 +743,7 @@ function transferCards(){
   return state.transferResults.map(p=>`<article class="player">
     <span class="pos">${esc(p.role||posName(p.position))} · ${p.age} anos</span><span class="rating">${p.rating}</span>
     <h4>${esc(p.name)}</h4>
-    <div class="transfer-source">${p.source_club_name?esc(p.source_club_name):"Livre no mercado"}${p.source_division?` · Série ${p.source_division}`:""}</div>
+    <div class="transfer-source">${p.source_club_name?esc(p.source_club_name):"Livre no mercado"}${p.source_division?` · ${esc(leagueLabel(p.source_division,state.competitions?.career?.country_code||state.club?.country_code))}`:""}</div>
     <div class="attrs"><span>VEL <b>${p.pace}</b></span><span>CHU <b>${p.shooting}</b></span><span>PAS <b>${p.passing}</b></span><span>DEF <b>${p.defending}</b></span></div>
     <div class="pstats">
       <span>Valor justo <b>${Number(p.fair_value||0).toLocaleString("pt-BR")}</b></span>
@@ -576,7 +789,7 @@ function divisionView(div){
   const games=d.fixtures.filter(f=>Number(f.round)===Number(round));
   return `<div class="competition-info">
     <span class="badge blue">20 TIMES</span><span class="badge blue">38 RODADAS</span><span class="badge blue">19 CASA + 19 FORA</span>
-    ${div==="A"?`<span class="badge">TOP 4 → LIBERTADORES</span><span class="badge red">4 REBAIXADOS</span>`:
+    ${div==="A"?`${(state.competitions.career.country_code||"BR")==="BR"?`<span class="badge">TOP 4 → LIBERTADORES</span>`:`<span class="badge">ELITE NACIONAL</span>`}<span class="badge red">4 REBAIXADOS</span>`:
       div==="D"?`<span class="badge">4 SOBEM</span><span class="badge blue">SEM REBAIXAMENTO</span>`:
       `<span class="badge">4 SOBEM</span><span class="badge red">4 CAEM</span>`}
   </div>
@@ -649,11 +862,11 @@ function libertadoresView(){
 
 function copaView(){
   const copa=state.competitions.copaBrasil;
-  if(!copa)return `<div class="empty">Copa do Brasil não disponível.</div>`;
+  if(!copa)return `<div class="empty">Copa nacional não disponível.</div>`;
   const stageLabels={R32:"Primeira fase",R16:"Oitavas de final",QF:"Quartas de final",SF:"Semifinais",FINAL:"Final"};
   const active=copa.status!=="finished"&&!copa.userEliminated&&state.competitions.career.phase!=="STATE";
-  return `<div class="section-title"><div><div class="kicker">MATA-MATA · JOGO ÚNICO</div><h2>Copa do Brasil</h2><span class="muted">${copa.status==="finished"?"Encerrada":stageLabels[copa.stage]||copa.stage}</span></div>${active?`<button id="playCopa" class="primary">Jogar próxima fase</button>`:""}</div>
-    ${copa.status==="finished"?`<div class="champion-card"><div class="kicker">CAMPEÃO DA COPA DO BRASIL</div><h2>🏆 ${esc(copa.championClub?.name||"Campeão")}</h2></div>`:""}
+  return `<div class="section-title"><div><div class="kicker">MATA-MATA · JOGO ÚNICO</div><h2>${esc(copa.name||"Copa Nacional")}</h2><span class="muted">${copa.status==="finished"?"Encerrada":stageLabels[copa.stage]||copa.stage}</span></div>${active?`<button id="playCopa" class="primary">Jogar próxima fase</button>`:""}</div>
+    ${copa.status==="finished"?`<div class="champion-card"><div class="kicker">CAMPEÃO DA COPA</div><h2>🏆 ${esc(copa.championClub?.name||"Campeão")}</h2></div>`:""}
     ${copa.userEliminated?`<div class="msg">Seu clube foi eliminado. O restante do torneio foi simulado automaticamente.</div>`:""}
     <div class="knockout-grid copa-grid">${[["R32","1ª fase"],["R16","Oitavas"],["QF","Quartas"],["SF","Semifinais"],["FINAL","Final"]].map(([code,label])=>{
       const fs=copa.fixtures.filter(f=>f.stage===code);if(!fs.length)return "";
@@ -663,17 +876,191 @@ function copaView(){
 
 function competitionsView(){
   const car=state.competitions.career;
+  const isBR=(car.country_code||state.club.country_code||"BR")==="BR";
   if(!["STATE","COPA","A","B","C","D","LIB"].includes(state.competitionTab))state.competitionTab=car.user_division;
+  if(!isBR&&(state.competitionTab==="STATE"||state.competitionTab==="LIB"))state.competitionTab=car.user_division;
   const content=state.competitionTab==="STATE"?stateView():state.competitionTab==="COPA"?copaView():state.competitionTab==="LIB"?libertadoresView():divisionView(state.competitionTab);
   return `<section class="card">
     <div class="competition-tabs">
-      <button data-comp="STATE" class="${state.competitionTab==="STATE"?"on":""}">ESTADUAL</button>
-      <button data-comp="COPA" class="${state.competitionTab==="COPA"?"on":""}">COPA DO BRASIL</button>
-      ${["A","B","C","D"].map(d=>`<button data-comp="${d}" class="${state.competitionTab===d?"on":""}">SÉRIE ${d}</button>`).join("")}
-      <button data-comp="LIB" class="${state.competitionTab==="LIB"?"on":""}">LIBERTADORES</button>
+      ${isBR?`<button data-comp="STATE" class="${state.competitionTab==="STATE"?"on":""}">ESTADUAL</button>`:""}
+      <button data-comp="COPA" class="${state.competitionTab==="COPA"?"on":""}">${esc(state.competitions.copaBrasil?.name||"COPA NACIONAL")}</button>
+      ${["A","B","C","D"].map(d=>`<button data-comp="${d}" class="${state.competitionTab===d?"on":""}">${esc(leagueLabel(d,car.country_code||state.club.country_code))}</button>`).join("")}
+      ${isBR?`<button data-comp="LIB" class="${state.competitionTab==="LIB"?"on":""}">LIBERTADORES</button>`:""}
     </div>
     ${content}
   </section>`;
+}
+function playerCareerPosition(){
+  const pc=state.playerData?.career;
+  const table=state.playerData?.league?.entries||[];
+  const i=table.findIndex(e=>String(e.clubId)===String(pc?.club_id));
+  return i>=0?i+1:null;
+}
+function playerPositionLabel(p){
+  return ({GK:"Goleiro",DEF:"Defensor",MID:"Meio-campista",ATT:"Atacante"})[p]||p;
+}
+function playerTransferOffersView(){
+  const offers=state.playerData?.transferOffers||[];
+  if(!offers.length)return `<section class="card"><div class="kicker">MERCADO</div><h2>Sem propostas por enquanto</h2><p class="muted">Você pode continuar no clube e iniciar a próxima temporada.</p></section>`;
+  return `<section class="card player-offers">
+    <div class="kicker">PROPOSTAS DE TRANSFERÊNCIA</div><h2>Escolha seu próximo passo</h2>
+    <div class="player-offer-grid">
+      ${offers.map(o=>`<article class="player-offer ${o.status!=="pending"?"decided":""}">
+        <b>${esc(o.club?.name||o.clubName)}</b>
+        <span>${esc(leagueLabel(o.division,state.playerData.career.country_code))}</span>
+        <span>Salário <strong>${Number(o.salary).toLocaleString("pt-BR")}/mês</strong></span>
+        ${o.status==="pending"?`<button class="primary accept-player-offer" data-club="${o.clubId}">Aceitar proposta</button>`:`<em>${o.status==="accepted"?"Aceita":"Recusada"}</em>`}
+      </article>`).join("")}
+    </div>
+  </section>`;
+}
+function playerCareerHome(){
+  const d=state.playerData,pc=d?.career;
+  if(!pc)return `<div class="empty">Carreira de jogador não carregada.</div>`;
+  const pos=playerCareerPosition();
+  const last=d.history?.[0];
+  const statusEnd=pc.status==="END";
+  return `<section class="player-career-hero">
+    <div class="player-avatar">${esc(initials(pc.player_name))}</div>
+    <div class="player-identity">
+      <div class="kicker">TEMPORADA ${pc.season_no} · ${esc(countryName(pc.country_code))}</div>
+      <h1>${esc(pc.player_name)}</h1>
+      <p>${esc(playerPositionLabel(pc.position))} · ${esc(pc.club_name)} · ${esc(pc.league_name)}${pos?` · ${pos}º`:""}</p>
+    </div>
+    <div class="player-overall"><small>OVR</small><b>${pc.overall}</b></div>
+    ${!statusEnd?`<button id="playerPlayNext" class="primary player-main-action">⚽ JOGAR RODADA ${pc.current_round}/38</button>`:`<button id="playerNextSeason" class="primary player-main-action">📅 IR PARA A PRÓXIMA TEMPORADA</button>`}
+  </section>
+  <section class="player-career-stats">
+    <div class="stat"><small>Idade</small><b>${pc.age}</b></div>
+    <div class="stat"><small>Jogos</small><b>${pc.appearances}</b></div>
+    <div class="stat"><small>Gols</small><b>${pc.goals}</b></div>
+    <div class="stat"><small>Assistências</small><b>${pc.assists}</b></div>
+    <div class="stat"><small>Físico</small><b>${pc.fitness}%</b></div>
+    <div class="stat"><small>Moral</small><b>${pc.morale}</b></div>
+    <div class="stat"><small>Evolução</small><b>${pc.skill_points}</b></div>
+    <div class="stat"><small>Saldo pessoal</small><b>${Number(pc.balance).toLocaleString("pt-BR")}</b></div>
+  </section>
+  ${last?`<section class="card">
+    <div class="kicker">ÚLTIMA PARTIDA</div>
+    <div class="player-last-match">
+      <span>${esc(last.homeName)}</span><b>${last.homeGoals} × ${last.awayGoals}</b><span>${esc(last.awayName)}</span>
+    </div>
+    <div class="player-match-performance">
+      <span>Nota <b>${last.performance}</b></span><span>Gols <b>${last.goals}</b></span><span>Assistências <b>${last.assists}</b></span>
+    </div>
+  </section>`:""}
+  ${statusEnd?playerTransferOffersView():""}
+  <section class="grid">
+    <div class="card"><div class="kicker">CONTRATO</div><h2>${esc(pc.club_name)}</h2>
+      <div class="finance-row"><span>Salário</span><b class="income">+${Number(pc.salary).toLocaleString("pt-BR")}/mês</b></div>
+      <p class="muted">O salário entra no saldo pessoal a cada 4 rodadas.</p>
+    </div>
+    <div class="card"><div class="kicker">EVOLUÇÃO</div><h2>${pc.skill_points} ponto(s)</h2>
+      <p class="muted">Boas atuações geram pontos. Use a aba TREINO para melhorar os atributos.</p>
+      <button class="secondary" id="goPlayerTraining">Abrir treino</button>
+    </div>
+  </section>`;
+}
+function playerSeasonView(){
+  const d=state.playerData,pc=d.career;
+  const round=Math.min(38,Number(pc.current_round||1));
+  const table=d.league?.entries||[];
+  const games=(d.league?.fixtures||[]).filter(f=>Number(f.round)===round);
+  return `<section class="card">
+    <div class="section-title"><div><div class="kicker">${esc(pc.league_name)}</div><h2>Temporada ${pc.season_no}</h2></div><span class="badge">Rodada ${round}/38</span></div>
+    <div class="table-wrap"><table><thead><tr><th>#</th><th>Clube</th><th>J</th><th>V</th><th>E</th><th>D</th><th>SG</th><th>Pts</th></tr></thead><tbody>
+      ${table.map((e,i)=>`<tr class="${String(e.clubId)===String(pc.club_id)?"user-row":""}"><td>${i+1}</td><td>${esc(e.club?.name||"Clube")}</td><td>${e.p??e.wins+e.draws+e.losses}</td><td>${e.w??e.wins}</td><td>${e.d??e.draws}</td><td>${e.l??e.losses}</td><td>${e.gd}</td><td><b>${e.pts??e.points}</b></td></tr>`).join("")}
+    </tbody></table></div>
+    <h3>Rodada ${round}</h3>
+    <div class="fixtures">${games.map(f=>`<div class="match"><span>${esc(f.homeClub?.name||"")}</span><b>${f.played?`${f.hg} × ${f.ag}`:"×"}</b><span class="right">${esc(f.awayClub?.name||"")}</span></div>`).join("")}</div>
+    <h3>Seus últimos jogos</h3>
+    ${(d.history||[]).slice(0,10).map(m=>`<div class="match"><span>${esc(m.homeName)}</span><b>${m.homeGoals} × ${m.awayGoals}</b><span class="right">${esc(m.awayName)}<br><small>Nota ${m.performance}</small></span></div>`).join("")||`<div class="empty">Nenhum jogo disputado.</div>`}
+  </section>`;
+}
+function playerTrainingView(){
+  const pc=state.playerData.career;
+  const attrs=[["pace","VEL",pc.pace],["shooting","CHU",pc.shooting],["passing","PAS",pc.passing],["defending","DEF",pc.defending]];
+  return `<section class="card">
+    <div class="section-title"><div><div class="kicker">DESENVOLVIMENTO</div><h2>Treino individual</h2></div><span class="badge blue">${pc.skill_points} ponto(s)</span></div>
+    <p class="muted">Cada ponto de evolução aumenta um atributo em +1. Recuperação física não gasta ponto.</p>
+    <div class="player-training-grid">
+      ${attrs.map(([key,label,val])=>`<div class="training-card"><small>${label}</small><b>${val}</b><button class="secondary player-train" data-attr="${key}" ${pc.skill_points<=0||val>=99?"disabled":""}>+1</button></div>`).join("")}
+      <div class="training-card"><small>FÍSICO</small><b>${pc.fitness}%</b><button class="secondary player-train" data-attr="fitness" ${pc.fitness>=100?"disabled":""}>Recuperar +12</button></div>
+    </div>
+    <div class="player-ovr-big"><small>OVERALL ATUAL</small><b>${pc.overall}</b></div>
+  </section>`;
+}
+function bindPlayerCareer(){
+  const play=app.querySelector("#playerPlayNext");
+  if(play)play.onclick=async()=>{
+    play.disabled=true;play.textContent="JOGANDO...";
+    try{
+      const r=await api("/api/player-career/play",{method:"POST",body:"{}"});
+      await refreshPlayerCareer();renderPlayerCareer();
+      if(r.match)alert(`${r.match.homeName} ${r.match.homeGoals} x ${r.match.awayGoals} ${r.match.awayName}\nSua nota: ${r.match.performance} · Gols: ${r.match.goals} · Assistências: ${r.match.assists}`);
+    }catch(err){alert(err.message);play.disabled=false}
+  };
+  const next=app.querySelector("#playerNextSeason");
+  if(next)next.onclick=async()=>{
+    if(!confirm("Iniciar a próxima temporada?"))return;
+    next.disabled=true;
+    try{await api("/api/player-career/next-season",{method:"POST",body:"{}"});await refreshPlayerCareer();state.playerView="home";renderPlayerCareer()}catch(err){alert(err.message);next.disabled=false}
+  };
+  const training=app.querySelector("#goPlayerTraining");
+  if(training)training.onclick=()=>{state.playerView="training";renderPlayerCareer()};
+  app.querySelectorAll(".player-train").forEach(btn=>btn.onclick=async()=>{
+    btn.disabled=true;
+    try{await api("/api/player-career/train",{method:"POST",body:JSON.stringify({attribute:btn.dataset.attr})});await refreshPlayerCareer();renderPlayerCareer()}catch(err){alert(err.message);btn.disabled=false}
+  });
+  app.querySelectorAll(".accept-player-offer").forEach(btn=>btn.onclick=async()=>{
+    if(!confirm("Aceitar esta transferência?"))return;
+    btn.disabled=true;
+    try{
+      const d=await api(`/api/player-career/offers/${btn.dataset.club}/accept`,{method:"POST",body:"{}"});
+      await refreshPlayerCareer();renderPlayerCareer();
+      alert(d.message||"Transferência confirmada para a próxima temporada.");
+    }catch(err){alert(err.message);btn.disabled=false}
+  });
+}
+function renderPlayerCareer(){
+  if(!state.playerData||!state.playerCareer)return renderCreateClub();
+  const pc=state.playerData.career;
+  const body=state.playerView==="season"?playerSeasonView():
+    state.playerView==="training"?playerTrainingView():
+    state.playerView==="careers"?careersView():playerCareerHome();
+  app.innerHTML=`<div class="shell">
+    <header class="topbar"><div class="brand"><span class="logo">⚽</span>Dono do Clube</div>
+      <div class="top-actions">
+        <button class="career-top-btn" data-player-view="careers">${esc(pc.career_label||"Carreira de Jogador")}</button>
+        <button id="playerManualSave" class="manual-save-btn">💾 SALVAR</button>
+        <span class="coins">● ${Number(pc.balance).toLocaleString("pt-BR")}</span>
+        <button id="logout" class="icon-btn">↪</button>
+      </div>
+    </header>${body}
+  </div>
+  <nav class="nav player-nav">
+    <button data-player-view="home" class="${state.playerView==="home"?"on":""}">INÍCIO</button>
+    <button data-player-view="season" class="${state.playerView==="season"?"on":""}">TEMPORADA</button>
+    <button data-player-view="training" class="${state.playerView==="training"?"on":""}">TREINO</button>
+    <button data-player-view="careers" class="${state.playerView==="careers"?"on":""}">CARREIRAS</button>
+  </nav>`;
+  app.querySelectorAll("[data-player-view]").forEach(btn=>btn.onclick=async()=>{
+    state.playerView=btn.dataset.playerView;
+    if(state.playerView==="careers")await refreshCareerList().catch(()=>{});
+    renderPlayerCareer();
+  });
+  app.querySelector("#logout").onclick=logout;
+  app.querySelector("#playerManualSave").onclick=async()=>{
+    const b=app.querySelector("#playerManualSave");b.disabled=true;b.textContent="SALVANDO...";
+    try{
+      const d=await api("/api/player-career/manual-save",{method:"POST",body:"{}"});
+      state.playerData.career.manual_saved_at=d.savedAt;
+      b.textContent="✓ SALVO";
+      setTimeout(()=>{const x=app.querySelector("#playerManualSave");if(x){x.disabled=false;x.textContent="💾 SALVAR"}},1400);
+    }catch(err){alert(err.message);b.disabled=false;b.textContent="💾 SALVAR"}
+  };
+  bindPlayerCareer();
+  if(state.playerView==="careers")bindCareers();
 }
 
 function careersView(){
@@ -684,34 +1071,46 @@ function careersView(){
       <div><div class="kicker">SAVES</div><h2>Minhas carreiras</h2></div>
       <span class="badge blue">${careers.length}/${state.maxCareers||10}</span>
     </div>
-    <p class="muted">Cada carreira é totalmente independente: clube, elenco, dinheiro, competições, troféus, calendário e transferências. O mesmo jogador pode ser contratado em carreiras diferentes sem desaparecer das outras.</p>
+    <p class="muted">Você pode misturar carreiras de clube e de jogador, em países diferentes. Cada save é totalmente independente.</p>
     <div class="career-grid">
-      ${careers.map(c=>`<article class="career-card ${c.is_active_career?"active":""}">
-        <div class="career-slot">CARREIRA ${c.career_slot||"—"}</div>
-        <div class="career-head">${crestHtml(c,"small")}<div><h3>${esc(c.career_label||`Carreira ${c.career_slot}`)}</h3><b>${esc(c.name)}</b><span>${esc(STATES[c.state_code]||c.state_code||"Estado não definido")}</span></div></div>
-        <div class="career-stats">
-          <span>Temporada <b>${c.season_no||1}</b></span>
-          <span>Divisão <b>Série ${c.user_division||"D"}</b></span>
-          <span>Caixa <b>${Number(c.coins||0).toLocaleString("pt-BR")}</b></span>
-          <span>Último save manual <b>${esc(formatSaveDate(c.manual_saved_at))}</b></span>
-        </div>
-        <div class="career-actions">
-          ${c.is_active_career?`<button class="primary" disabled>Carreira ativa</button>`:`<button class="primary activate-career" data-id="${c.id}">Jogar esta carreira</button>`}
-          <button class="danger delete-career" data-id="${c.id}" data-name="${esc(c.name)}">Apagar</button>
-        </div>
-      </article>`).join("")}
-      ${canCreate?`<button class="career-new" id="newCareer"><span>＋</span><b>Nova carreira</b><small>Criar outro clube e começar na Série D</small></button>`:""}
+      ${careers.map(c=>{
+        const isPlayer=c.career_type==="player";
+        const location=countryName(c.country_code||"BR");
+        const title=isPlayer?(c.player_name||c.name):c.name;
+        const subtitle=isPlayer?`${playerPositionLabel(c.player_position)} · ${c.club_name||"Clube"}`:locationLabel(c);
+        const div=leagueLabel(c.user_division||"D",c.country_code||"BR");
+        return `<article class="career-card ${c.is_active_career?"active":""}">
+          <div class="career-card-top">
+            <div class="career-slot">CARREIRA ${c.career_slot||"—"}</div>
+            <span class="career-type-badge ${isPlayer?"player":"club"}">${isPlayer?"👤 JOGADOR":"🏟️ CLUBE"}</span>
+          </div>
+          <div class="career-head">
+            ${isPlayer?`<div class="career-player-avatar">${esc(initials(title))}</div>`:crestHtml(c,"small")}
+            <div><h3>${esc(c.career_label||`Carreira ${c.career_slot}`)}</h3><b>${esc(title)}</b><span>${esc(subtitle)} · ${esc(location)}</span></div>
+          </div>
+          <div class="career-stats">
+            <span>Temporada <b>${c.season_no||1}</b></span>
+            <span>${isPlayer?"Liga":"Divisão"} <b>${esc(div)}</b></span>
+            <span>${isPlayer?"OVR":"Caixa"} <b>${isPlayer?Number(c.overall||c.team_rating||0):Number(c.coins||0).toLocaleString("pt-BR")}</b></span>
+            <span>Último save manual <b>${esc(formatSaveDate(c.manual_saved_at))}</b></span>
+          </div>
+          <div class="career-actions">
+            ${c.is_active_career?`<button class="primary" disabled>Carreira ativa</button>`:`<button class="primary activate-career" data-id="${c.id}" data-type="${c.career_type}">Jogar esta carreira</button>`}
+            <button class="danger delete-career" data-id="${c.id}" data-type="${c.career_type}" data-name="${esc(title)}">Apagar</button>
+          </div>
+        </article>`;
+      }).join("")}
+      ${canCreate?`<button class="career-new" id="newCareer"><span>＋</span><b>Nova carreira</b><small>Clube ou jogador, em qualquer país disponível</small></button>`:""}
     </div>
     ${!canCreate?`<div class="msg">Você atingiu o limite de ${state.maxCareers||10} carreiras. Apague uma carreira para criar outra.</div>`:""}
   </section>`;
 }
-
 function clubView(){
   const c=state.club;
   return `<section class="custom-grid">
     <div class="card"><div id="clubPreview" class="club-preview" style="background:linear-gradient(135deg,${c.primary_color},${c.secondary_color})">
       <div><div id="crestPreview" class="preview-crest">${c.crest_data?`<img src="${c.crest_data}" alt="">`:esc(initials(c.name))}</div>
-      <h2 id="namePreview">${esc(c.name)}</h2><p>${esc(STATES[c.state_code])}</p><p>Código: <b>${esc(c.friend_code||"")}</b></p></div>
+      <h2 id="namePreview">${esc(c.name)}</h2><p>${esc(locationLabel(c))}</p><p>Código: <b>${esc(c.friend_code||"")}</b></p></div>
     </div></div>
     <div class="card"><div class="kicker">Identidade do clube</div><h2>Personalização</h2>
       <form id="customForm" class="stack">
@@ -721,7 +1120,8 @@ function clubView(){
           <label>Novo nome<input id="customName" value="${esc(c.name)}" maxlength="30" required></label>
         </div>
         ${String(c.name||"").trim().toLowerCase()==="felipe"?`<div class="felipe-banner">⚡ MODO FELIPE ATIVO — elenco 100 e goleadas especiais.</div>`:""}
-        <label>Estado<input value="${esc(STATES[c.state_code])}" disabled></label>
+        <label>País<input value="${esc(countryName(c.country_code||"BR"))}" disabled></label>
+        ${(c.country_code||"BR")==="BR"?`<label>Estado<input value="${esc(STATES[c.state_code])}" disabled></label>`:""}
         <div class="colors"><label>Cor principal<input id="customPrimary" type="color" value="${c.primary_color}"></label>
         <label>Cor secundária<input id="customSecondary" type="color" value="${c.secondary_color}"></label></div>
         <label class="filebox">Escudo<input id="crestFile" type="file" accept="image/png,image/jpeg,image/webp"><span class="muted">PNG, JPG ou WebP.</span></label>
@@ -735,7 +1135,7 @@ function clubView(){
         <div>
           <div class="kicker danger-kicker">ZONA DE PERIGO</div>
           <h3>Apagar time e reiniciar do início</h3>
-          <p class="muted">Apaga o clube, elenco, carreira, partidas, amigos, finanças e progresso esportivo. Sua conta continua existindo para você criar um novo clube na Série D.</p>
+          <p class="muted">Apaga este clube, elenco, partidas, finanças e progresso esportivo. As outras carreiras da conta continuam intactas.</p>
         </div>
         <button type="button" id="deleteClub" class="danger">Apagar meu time</button>
       </div>
@@ -792,8 +1192,9 @@ async function manualSaveCareer(){
 
 function render(){
   if(!state.me)return renderAuth();
+  if(state.activeType==="player"&&state.playerCareer)return renderPlayerCareer();
   if(!state.club)return renderCreateClub();
-  if(!state.club.state_code)return renderStateSetup();
+  if((state.club.country_code||"BR")==="BR"&&!state.club.state_code)return renderStateSetup();
 
   const body=state.view==="starters"?startersView():
     state.view==="squad"?squadView():
@@ -862,7 +1263,7 @@ async function showClub(id){
     const d=await api(`/api/clubs/${id}`),c=d.club,bg=document.createElement("div");bg.className="modal-bg";
     bg.innerHTML=`<div class="modal">
       <div class="modal-head"><div class="friend-top">${crestHtml(c,"medium")}<div><h2 style="margin:2px 0">${esc(c.name)}</h2>
-      <span class="muted">${c.state_code?esc(STATES[c.state_code]):esc(c.country_code)} · OVR ${c.team_rating}</span></div></div><button class="secondary close-modal">Fechar</button></div>
+      <span class="muted">${c.state_code?esc(STATES[c.state_code]):esc(countryName(c.country_code||"BR"))} · OVR ${c.team_rating}</span></div></div><button class="secondary close-modal">Fechar</button></div>
       <h3>Elenco</h3><div class="club-modal-player head"><span>Jogador</span><span>OVR</span><span>J</span><span>G</span><span>A</span></div>
       ${d.players.map(p=>`<div class="club-modal-player"><span>${p.is_starter?"★ ":""}${esc(p.name)} · ${posName(p.position)}</span><b>${p.rating}</b><span>${p.appearances}</span><span>${p.goals}</span><span>${p.assists}</span></div>`).join("")}
     </div>`;
@@ -900,12 +1301,56 @@ function bindHome(){
     }catch(err){alert(err.message);btn.disabled=false}
   });
 }
+function openStarterSwap(starterId){
+  const starter=state.players.find(p=>String(p.id)===String(starterId));
+  if(!starter)return;
+  const reserves=compatibleReserves(starter);
+
+  const bg=document.createElement("div");
+  bg.className="modal-bg";
+  bg.innerHTML=`<div class="modal lineup-swap-modal">
+    <div class="modal-head">
+      <div>
+        <div class="kicker">SUBSTITUIR TITULAR</div>
+        <h2>${esc(starter.name)}</h2>
+        <span class="muted">${esc(starter.role||posName(starter.position))} · OVR ${starter.rating}</span>
+      </div>
+      <button class="secondary close-modal">Fechar</button>
+    </div>
+
+    <p class="muted">Escolha abaixo quem entra no lugar dele. Só aparecem jogadores compatíveis e sem lesão.</p>
+
+    <div class="swap-options">
+      ${reserves.length?reserves.map(p=>`<button type="button" class="swap-option" data-reserve-id="${p.id}">
+        <span class="swap-rating">${p.rating}</span>
+        <span class="swap-info"><b>${esc(p.name)}</b><small>${esc(p.role||posName(p.position))} · físico ${p.fitness??100}% · moral ${p.morale??70}</small></span>
+        <span class="swap-arrow">ENTRAR →</span>
+      </button>`).join(""):`<div class="empty">Não há reserva disponível para esta posição.</div>`}
+    </div>
+  </div>`;
+
+  document.body.appendChild(bg);
+  bg.querySelector(".close-modal").onclick=()=>bg.remove();
+  bg.onclick=e=>{if(e.target===bg)bg.remove()};
+  bg.querySelectorAll(".swap-option").forEach(btn=>btn.onclick=()=>{
+    if(swapStarter(starter.id,btn.dataset.reserveId)){
+      bg.remove();
+      render();
+    }
+  });
+}
+
 function bindStarters(){
   const formation=app.querySelector("#starterFormation");
 
   if(formation)formation.onchange=()=>{
+    const chosen=rebalanceForFormation(formation.value);
+    if(!chosen){
+      alert("Não há jogadores suficientes para usar essa formação.");
+      return;
+    }
     state.club.formation=formation.value;
-    app.querySelector("#starterPitchWrap").innerHTML=formationPitch(formation.value);
+    render();
   };
 
   const best=app.querySelector("#starterBestSquad");
@@ -928,6 +1373,8 @@ function bindStarters(){
     render();
   };
 
+  app.querySelectorAll("[data-swap-id]").forEach(el=>el.onclick=()=>openStarterSwap(el.dataset.swapId));
+
   const save=app.querySelector("#saveStarters");
   if(save)save.onclick=async()=>{
     const starterIds=state.players.filter(p=>p.is_starter).map(p=>p.id);
@@ -942,13 +1389,14 @@ function bindStarters(){
         starterIds,
         formation:formation?.value||state.club.formation
       })});
+      state.lineupDirty=false;
       await refreshAll();
       state.view="starters";
       render();
     }catch(err){
       alert(err.message);
       save.disabled=false;
-      save.textContent="Salvar titulares";
+      save.textContent="💾 Salvar escalação";
     }
   };
 
@@ -958,7 +1406,6 @@ function bindStarters(){
     render();
   };
 }
-
 function bindSquad(){
   const formation=app.querySelector("#formation");
   if(formation)formation.onchange=()=>{app.querySelector("#pitchWrap").innerHTML=formationPitch(formation.value)};
@@ -984,7 +1431,7 @@ function bindSquad(){
     const p=state.players.find(x=>String(x.id)===String(b.dataset.id));if(!p)return;
     if(Number(p.injury_games||0)>0&&!p.is_starter){alert(`${p.name} está lesionado por ${p.injury_games} jogo(s).`);return}
     if(!p.is_starter&&state.players.filter(x=>x.is_starter).length>=11){alert("Já existem 11 titulares.");return}
-    p.is_starter=!p.is_starter;render();
+    p.is_starter=!p.is_starter;state.lineupDirty=true;render();
   });
   app.querySelectorAll(".list-player").forEach(b=>b.onclick=async()=>{
     const p=state.players.find(x=>String(x.id)===String(b.dataset.id));if(!p)return;
@@ -1005,6 +1452,7 @@ function bindSquad(){
         starterIds:state.players.filter(p=>p.is_starter).map(p=>p.id),
         formation:formation?.value||state.club.formation
       })});
+      state.lineupDirty=false;
       await refreshAll();render();
     }catch(err){alert(err.message)}
   };
@@ -1177,35 +1625,42 @@ function bindCompetitions(){
 let pendingCrest;
 function bindCareers(){
   const newBtn=app.querySelector("#newCareer");
-  if(newBtn)newBtn.onclick=()=>renderCreateClub();
+  if(newBtn)newBtn.onclick=()=>{
+    state.creationMode="club";
+    renderCreateClub();
+  };
 
   app.querySelectorAll(".activate-career").forEach(btn=>btn.onclick=async()=>{
     btn.disabled=true;btn.textContent="CARREGANDO...";
     try{
-      await api(`/api/careers/${btn.dataset.id}/activate`,{method:"POST",body:"{}"});
+      await api(`/api/careers/${btn.dataset.type}/${btn.dataset.id}/activate`,{method:"POST",body:"{}"});
       state.view="home";
+      state.playerView="home";
       await bootstrap();
     }catch(err){alert(err.message);btn.disabled=false;btn.textContent="Jogar esta carreira"}
   });
 
   app.querySelectorAll(".delete-career").forEach(btn=>btn.onclick=async()=>{
-    const career=(state.careers||[]).find(x=>String(x.id)===String(btn.dataset.id));
+    const career=(state.careers||[]).find(x=>String(x.id)===String(btn.dataset.id)&&x.career_type===btn.dataset.type);
     if(!career)return;
-    const typed=prompt(`Para apagar esta carreira, digite exatamente o nome do clube:\\n\\n${career.name}`);
+    const expected=career.career_type==="player"?(career.player_name||career.name):career.name;
+    const kind=career.career_type==="player"?"jogador":"clube";
+    const typed=prompt(`Para apagar esta carreira de ${kind}, digite exatamente:\\n\\n${expected}`);
     if(typed===null)return;
-    if(typed!==career.name){alert("O nome digitado não corresponde ao clube.");return}
-    if(!confirm(`Apagar definitivamente a carreira "${career.career_label||career.name}"?`))return;
+    if(typed!==expected){alert("O nome digitado não corresponde.");return}
+    if(!confirm(`Apagar definitivamente a carreira "${career.career_label||expected}"?`))return;
     btn.disabled=true;
     try{
-      await api(`/api/careers/${career.id}`,{method:"DELETE",body:JSON.stringify({confirmName:typed})});
-      state.view="careers";
+      const url=career.career_type==="player"?`/api/player-careers/${career.id}`:`/api/careers/${career.id}`;
+      await api(url,{method:"DELETE",body:JSON.stringify({confirmName:typed})});
+      state.view="careers";state.playerView="careers";
       await bootstrap();
       if(!(state.careers||[]).length)renderCreateClub();
+      else if(state.activeType==="player"){state.playerView="careers";renderPlayerCareer()}
       else{state.view="careers";render()}
     }catch(err){alert(err.message);btn.disabled=false}
   });
 }
-
 function bindClub(){
   pendingCrest=state.club.crest_data||null;
   const name=app.querySelector("#customName"),c1=app.querySelector("#customPrimary"),c2=app.querySelector("#customSecondary");
@@ -1288,6 +1743,6 @@ function resizeImage(file,maxW,maxH){
 }
 async function logout(){
   await api("/api/auth/logout",{method:"POST",body:"{}"}).catch(()=>{});
-  state.me=null;state.club=null;state.careers=[];state.players=[];state.competitions=null;renderAuth();
+  state.me=null;state.club=null;state.playerCareer=null;state.playerData=null;state.activeType=null;state.careers=[];state.players=[];state.competitions=null;renderAuth();
 }
 bootstrap();
