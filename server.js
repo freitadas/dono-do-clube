@@ -16,6 +16,8 @@ const PORT = Number(process.env.PORT || 3000);
 const SECRET = process.env.APP_SECRET || "dev-secret-change-me";
 const COOKIE = "ddc_session";
 const RESET_KEY = "v7_brasileirao_estaduais_reset_20260919";
+const ECONOMY_MIGRATION_KEY = "v8_economy_fitness_transfer_20260919";
+const competitionLocks = new Set();
 const DIVS = ["A","B","C","D"];
 const VALID_STATES = new Set(Object.keys(STATE_DATA.names));
 
@@ -129,6 +131,24 @@ async function initDb(){
       updated_at TIMESTAMPTZ NOT NULL DEFAULT NOW()
     );
 
+    CREATE TABLE IF NOT EXISTS club_finance_events(
+      id BIGSERIAL PRIMARY KEY,
+      club_id BIGINT NOT NULL REFERENCES clubs(id) ON DELETE CASCADE,
+      amount INTEGER NOT NULL,
+      category TEXT NOT NULL,
+      description TEXT NOT NULL,
+      created_at TIMESTAMPTZ NOT NULL DEFAULT NOW()
+    );
+
+    CREATE TABLE IF NOT EXISTS club_events(
+      id BIGSERIAL PRIMARY KEY,
+      club_id BIGINT NOT NULL REFERENCES clubs(id) ON DELETE CASCADE,
+      event_type TEXT NOT NULL,
+      title TEXT NOT NULL,
+      description TEXT NOT NULL,
+      created_at TIMESTAMPTZ NOT NULL DEFAULT NOW()
+    );
+
     CREATE TABLE IF NOT EXISTS app_meta(
       key TEXT PRIMARY KEY,
       value TEXT NOT NULL,
@@ -145,8 +165,17 @@ async function initDb(){
     `ALTER TABLE clubs ADD COLUMN IF NOT EXISTS country_code TEXT NOT NULL DEFAULT 'BR'`,
     `ALTER TABLE clubs ADD COLUMN IF NOT EXISTS club_kind TEXT NOT NULL DEFAULT 'user'`,
     `ALTER TABLE clubs ADD COLUMN IF NOT EXISTS national_seed_division TEXT`,
-    `ALTER TABLE clubs ADD COLUMN IF NOT EXISTS base_rating INTEGER NOT NULL DEFAULT 64`
+    `ALTER TABLE clubs ADD COLUMN IF NOT EXISTS base_rating INTEGER NOT NULL DEFAULT 64`,
+    `ALTER TABLE clubs ADD COLUMN IF NOT EXISTS fans INTEGER NOT NULL DEFAULT 5000`,
+    `ALTER TABLE players ADD COLUMN IF NOT EXISTS role TEXT`,
+    `ALTER TABLE players ADD COLUMN IF NOT EXISTS salary INTEGER NOT NULL DEFAULT 0`,
+    `ALTER TABLE players ADD COLUMN IF NOT EXISTS contract_seasons INTEGER NOT NULL DEFAULT 2`,
+    `ALTER TABLE players ADD COLUMN IF NOT EXISTS fitness INTEGER NOT NULL DEFAULT 100`,
+    `ALTER TABLE players ADD COLUMN IF NOT EXISTS morale INTEGER NOT NULL DEFAULT 70`,
+    `ALTER TABLE players ADD COLUMN IF NOT EXISTS injury_games INTEGER NOT NULL DEFAULT 0`
   ]) await q(sql);
+
+  await q(`ALTER TABLE clubs DROP CONSTRAINT IF EXISTS clubs_coins_check`);
 }
 
 const firstNames=["Caio","Davi","Lucas","Rafael","Bruno","Henrique","Matheus","Pedro","Gustavo","Felipe","André","Vitor","Diego","Gabriel","João","Thiago","Arthur","Murilo","Igor","Renan","Enzo","Samuel","Daniel","Leandro","Vinícius","Nicolas","Heitor","Bernardo","Yuri","Otávio","Mateo","Santiago","Emiliano","Joaquín","Facundo","Lautaro"];
@@ -211,33 +240,95 @@ async function oneTimeReset(){
   });
 }
 
+
+function salaryForRating(rating){
+  const value=((rating-45)*(rating-45)*0.35)+(rating*1.5);
+  return Math.max(50,Math.round(value/10)*10);
+}
+function roleFor(position){
+  const roles={
+    GK:["GK"],
+    DEF:["CB","CB","RB","LB"],
+    MID:["CM","CDM","CAM","RM","LM"],
+    ATT:["ST","ST","RW","LW"]
+  };
+  const a=roles[position]||[position];
+  return a[rand(0,a.length-1)];
+}
+async function applyEconomyMigration(){
+  const done=await q(`SELECT 1 FROM app_meta WHERE key=$1`,[ECONOMY_MIGRATION_KEY]);
+  if(done.rowCount)return;
+  await tx(async c=>{
+    await c.query(`UPDATE clubs SET coins=GREATEST(coins,25000) WHERE is_ai=FALSE`);
+    const rows=(await c.query(`SELECT id,position,rating,age FROM players`)).rows;
+    for(const p of rows){
+      await c.query(`
+        UPDATE players SET
+          role=COALESCE(role,$2),
+          salary=CASE WHEN salary<=0 THEN $3 ELSE salary END,
+          contract_seasons=CASE WHEN contract_seasons<=0 THEN $4 ELSE contract_seasons END,
+          fitness=GREATEST(70,LEAST(100,fitness)),
+          morale=GREATEST(50,LEAST(100,morale))
+        WHERE id=$1
+      `,[p.id,roleFor(p.position),salaryForRating(p.rating),rand(1,4)]);
+    }
+    await c.query(`INSERT INTO app_meta(key,value) VALUES($1,$2)`,[ECONOMY_MIGRATION_KEY,new Date().toISOString()]);
+  });
+}
+
 function makePlayer(position,lo=61,hi=68){
   const rating=rand(lo,hi);
-  const variance=()=>clamp(rating+rand(-7,7),25,95);
+  const variance=()=>clamp(rating+rand(-6,6),25,95);
   let pace=variance(),shooting=variance(),passing=variance(),defending=variance();
-  if(position==="GK"){shooting=clamp(rating-rand(22,30),20,55);defending=clamp(rating+rand(-2,6),40,95)}
-  if(position==="DEF"){defending=clamp(rating+rand(0,6),40,95);shooting=clamp(rating-rand(8,15),20,85)}
-  if(position==="MID") passing=clamp(rating+rand(1,6),40,95);
-  if(position==="ATT"){shooting=clamp(rating+rand(1,6),40,95);defending=clamp(rating-rand(12,20),20,80)}
-  const price=Math.round((rating*rating*.40+rand(0,350))/50)*50;
-  return {name:randomName(),position,rating,pace,shooting,passing,defending,price,age:rand(18,31)};
+  if(position==="GK"){shooting=clamp(rating-rand(24,31),20,52);defending=clamp(rating+rand(0,6),40,95)}
+  if(position==="DEF"){defending=clamp(rating+rand(1,6),40,95);shooting=clamp(rating-rand(9,15),20,84)}
+  if(position==="MID"){passing=clamp(rating+rand(1,6),40,95);shooting=clamp(rating+rand(-4,4),25,92)}
+  if(position==="ATT"){shooting=clamp(rating+rand(1,7),40,95);defending=clamp(rating-rand(13,20),20,78)}
+  const price=Math.max(500,Math.round((((rating-48)**2)*55 + rating*110 + rand(0,1800))/100)*100);
+  return {
+    name:randomName(),position,role:roleFor(position),rating,pace,shooting,passing,defending,price,
+    age:rand(18,31),salary:salaryForRating(rating),contract_seasons:rand(1,4),
+    fitness:100,morale:rand(66,82),injury_games:0
+  };
 }
 
 async function createRoster(client, club, force=false){
-  const count=await client.query(`SELECT COUNT(*)::int count FROM players WHERE club_id=$1`,[club.id]);
-  if(!force && count.rows[0].count>=18) return;
-  await client.query(`DELETE FROM players WHERE club_id=$1`,[club.id]);
+  const count=Number((await client.query(`SELECT COUNT(*)::int count FROM players WHERE club_id=$1`,[club.id])).rows[0].count);
+  if(!force){
+    if(!club.is_ai&&count>0)return;
+    if(club.is_ai&&count>=18)return;
+  }
+  if(force)await client.query(`DELETE FROM players WHERE club_id=$1`,[club.id]);
+
   const base=club.is_ai?Number(club.base_rating||64):64;
   const lo=club.is_ai?Math.max(52,base-4):61;
   const hi=club.is_ai?Math.min(85,base+3):68;
-  const plan=[["GK",2,1],["DEF",6,4],["MID",6,3],["ATT",4,3]];
-  for(const [pos,n,starters] of plan){
-    for(let i=0;i<n;i++){
+  const target={GK:2,DEF:6,MID:6,ATT:4};
+  const starterTarget={GK:1,DEF:4,MID:3,ATT:3};
+  const rolePlan={
+    GK:["GK","GK"],
+    DEF:["CB","CB","RB","LB","CB","CB"],
+    MID:["CM","CDM","CM","CAM","RM","LM"],
+    ATT:["ST","RW","LW","ST"]
+  };
+  const existing=force?[]:(await client.query(`SELECT position,COUNT(*)::int count FROM players WHERE club_id=$1 GROUP BY position`,[club.id])).rows;
+  const have=Object.fromEntries(existing.map(x=>[x.position,Number(x.count)]));
+
+  for(const pos of ["GK","DEF","MID","ATT"]){
+    const missing=Math.max(0,target[pos]-(have[pos]||0));
+    for(let i=0;i<missing;i++){
       const p=makePlayer(pos,lo,hi);
+      p.role=rolePlan[pos][((have[pos]||0)+i)%rolePlan[pos].length];
+      const startersNow=Number((await client.query(`SELECT COUNT(*)::int count FROM players WHERE club_id=$1 AND position=$2 AND is_starter=TRUE`,[club.id,pos])).rows[0].count);
+      const isStarter=startersNow<starterTarget[pos];
       await client.query(`
-        INSERT INTO players(club_id,name,position,rating,pace,shooting,passing,defending,price,is_starter,age)
-        VALUES($1,$2,$3,$4,$5,$6,$7,$8,$9,$10,$11)
-      `,[club.id,p.name,p.position,p.rating,p.pace,p.shooting,p.passing,p.defending,p.price,i<starters,p.age]);
+        INSERT INTO players(
+          club_id,name,position,role,rating,pace,shooting,passing,defending,price,is_starter,age,
+          salary,contract_seasons,fitness,morale,injury_games
+        )
+        VALUES($1,$2,$3,$4,$5,$6,$7,$8,$9,$10,$11,$12,$13,$14,$15,$16,$17)
+      `,[club.id,p.name,p.position,p.role,p.rating,p.pace,p.shooting,p.passing,p.defending,p.price,isStarter,p.age,
+         p.salary,p.contract_seasons,p.fitness,p.morale,p.injury_games]);
     }
   }
 }
@@ -256,9 +347,9 @@ async function ensureMarket(){
   for(let i=r.rows[0].count;i<40;i++){
     const p=makePlayer(pos[rand(0,3)],59,77);
     await q(`
-      INSERT INTO players(name,position,rating,pace,shooting,passing,defending,price,age)
-      VALUES($1,$2,$3,$4,$5,$6,$7,$8,$9)
-    `,[p.name,p.position,p.rating,p.pace,p.shooting,p.passing,p.defending,p.price,p.age]);
+      INSERT INTO players(name,position,role,rating,pace,shooting,passing,defending,price,age,salary,contract_seasons,fitness,morale,injury_games)
+      VALUES($1,$2,$3,$4,$5,$6,$7,$8,$9,$10,$11,$12,$13,$14,$15)
+    `,[p.name,p.position,p.role,p.rating,p.pace,p.shooting,p.passing,p.defending,p.price,p.age,p.salary,p.contract_seasons,p.fitness,p.morale,p.injury_games]);
   }
 }
 
@@ -323,11 +414,58 @@ function poisson(lambda){
   do{k++;p*=Math.random()}while(p>L);
   return k-1;
 }
+function effectiveRating(p){
+  const fitnessPenalty=(100-Number(p.fitness||100))*0.12;
+  const moraleBonus=(Number(p.morale||70)-70)*0.07;
+  return Number(p.rating)-fitnessPenalty+moraleBonus;
+}
 function basicScore(hr,ar){
   return {
-    hg:Math.min(7,poisson(clamp(1.34+(hr-ar)*.045,.25,3.6))),
-    ag:Math.min(7,poisson(clamp(1.12+(ar-hr)*.045,.25,3.4)))
+    hg:Math.min(6,poisson(clamp(1.28+(hr-ar)*.032,.28,3.15))),
+    ag:Math.min(6,poisson(clamp(1.08+(ar-hr)*.032,.24,2.95)))
   };
+}
+function formationQuotas(formation){
+  if(formation==="4-4-2")return {GK:1,DEF:4,MID:4,ATT:2};
+  if(formation==="3-5-2")return {GK:1,DEF:3,MID:5,ATT:2};
+  return {GK:1,DEF:4,MID:3,ATT:3};
+}
+function sortForSelection(players,preferManual){
+  return [...players].sort((a,b)=>{
+    if(preferManual&&Boolean(a.is_starter)!==Boolean(b.is_starter))return a.is_starter?-1:1;
+    return effectiveRating(b)-effectiveRating(a);
+  });
+}
+async function matchStarters(client,club,isUser){
+  await createRoster(client,club,false);
+  const all=(await client.query(`SELECT * FROM players WHERE club_id=$1 ORDER BY rating DESC`,[club.id])).rows;
+  const healthy=all.filter(p=>Number(p.injury_games||0)<=0);
+  if(healthy.length<11)throw Object.assign(new Error(`${club.name} não possui 11 jogadores disponíveis.`),{status:400});
+  const q=formationQuotas(club.formation);
+  const chosen=[];
+  for(const position of ["GK","DEF","MID","ATT"]){
+    const pool=sortForSelection(healthy.filter(p=>p.position===position),isUser);
+    chosen.push(...pool.slice(0,q[position]));
+  }
+  if(chosen.length<11){
+    const used=new Set(chosen.map(p=>String(p.id)));
+    const remaining=sortForSelection(healthy.filter(p=>!used.has(String(p.id))),isUser);
+    chosen.push(...remaining.slice(0,11-chosen.length));
+  }
+  if(!chosen.some(p=>p.position==="GK"))throw Object.assign(new Error(`${club.name} está sem goleiro disponível.`),{status:400});
+  return chosen.slice(0,11);
+}
+function teamMetrics(players){
+  const strength=players.reduce((a,p)=>a+effectiveRating(p),0)/players.length;
+  const attack=players.reduce((a,p)=>a+(Number(p.shooting)*.48+Number(p.passing)*.32+Number(p.pace)*.20),0)/players.length;
+  const defense=players.reduce((a,p)=>a+(Number(p.defending)*.72+Number(p.passing)*.12+effectiveRating(p)*.16),0)/players.length;
+  return {strength,attack,defense};
+}
+function realisticScore(homePlayers,awayPlayers){
+  const h=teamMetrics(homePlayers),a=teamMetrics(awayPlayers);
+  const homeLambda=clamp(1.22+(h.strength-a.strength)*.028+(h.attack-a.defense)*.012+.16,.22,3.05);
+  const awayLambda=clamp(1.02+(a.strength-h.strength)*.028+(a.attack-h.defense)*.012,.20,2.85);
+  return {hg:Math.min(6,poisson(homeLambda)),ag:Math.min(6,poisson(awayLambda)),hr:Math.round(h.strength),ar:Math.round(a.strength)};
 }
 function weightedPick(players){
   const x=[];
@@ -337,19 +475,6 @@ function weightedPick(players){
   }
   return x[rand(0,x.length-1)]||players[0];
 }
-async function starters(client,clubId){
-  let r=await client.query(`SELECT * FROM players WHERE club_id=$1 AND is_starter=TRUE ORDER BY rating DESC`,[clubId]);
-  if(r.rowCount===11&&r.rows.some(p=>p.position==="GK")) return r.rows;
-  const club=(await client.query(`SELECT * FROM clubs WHERE id=$1`,[clubId])).rows[0];
-  await createRoster(client,club,false);
-  const all=(await client.query(`SELECT * FROM players WHERE club_id=$1 ORDER BY CASE position WHEN 'GK' THEN 1 WHEN 'DEF' THEN 2 WHEN 'MID' THEN 3 ELSE 4 END,rating DESC`,[clubId])).rows;
-  const gk=all.find(p=>p.position==="GK");
-  const chosen=[gk];
-  for(const p of all){if(chosen.length>=11)break;if(String(p.id)!==String(gk.id))chosen.push(p)}
-  await client.query(`UPDATE players SET is_starter=FALSE WHERE club_id=$1`,[clubId]);
-  await client.query(`UPDATE players SET is_starter=TRUE WHERE id=ANY($1::bigint[])`,[chosen.map(p=>p.id)]);
-  return chosen;
-}
 function eventsFor(clubId,startersList,goals){
   const ev=[];
   for(let i=0;i<goals;i++){
@@ -358,52 +483,123 @@ function eventsFor(clubId,startersList,goals){
     const assist=pool.length&&Math.random()<.7?weightedPick(pool):null;
     ev.push({type:"goal",clubId,minute:rand(3,89),scorerId:scorer.id,assistId:assist?.id||null,text:`Gol de ${scorer.name}${assist?` (assistência de ${assist.name})`:""}`});
   }
-  if(Math.random()<.55){
+  if(Math.random()<.52){
     const p=startersList[rand(0,startersList.length-1)];
     ev.push({type:"yellow",clubId,minute:rand(15,87),playerId:p.id,text:`Cartão amarelo para ${p.name}`});
   }
   return ev;
 }
-async function applyStats(client,clubId,startersList,conceded,events){
-  await client.query(`UPDATE players SET appearances=appearances+1 WHERE id=ANY($1::bigint[])`,[startersList.map(p=>p.id)]);
+async function applyStatsAndCondition(client,clubId,startersList,conceded,events,result){
+  const selectedIds=startersList.map(p=>p.id);
+  await client.query(`UPDATE players SET appearances=appearances+1 WHERE id=ANY($1::bigint[])`,[selectedIds]);
   if(conceded===0){
     const gk=startersList.find(p=>p.position==="GK");
-    if(gk) await client.query(`UPDATE players SET clean_sheets=clean_sheets+1 WHERE id=$1`,[gk.id]);
+    if(gk)await client.query(`UPDATE players SET clean_sheets=clean_sheets+1 WHERE id=$1`,[gk.id]);
   }
   for(const e of events.filter(x=>String(x.clubId)===String(clubId))){
     if(e.type==="goal"){
       await client.query(`UPDATE players SET goals=goals+1 WHERE id=$1`,[e.scorerId]);
-      if(e.assistId) await client.query(`UPDATE players SET assists=assists+1 WHERE id=$1`,[e.assistId]);
+      if(e.assistId)await client.query(`UPDATE players SET assists=assists+1 WHERE id=$1`,[e.assistId]);
     }
-    if(e.type==="yellow") await client.query(`UPDATE players SET yellow_cards=yellow_cards+1 WHERE id=$1`,[e.playerId]);
+    if(e.type==="yellow")await client.query(`UPDATE players SET yellow_cards=yellow_cards+1 WHERE id=$1`,[e.playerId]);
   }
+  for(const p of startersList){
+    const fatigue=rand(8,14);
+    const moraleDelta=result==="win"?3:result==="draw"?1:-2;
+    await client.query(`UPDATE players SET fitness=GREATEST(25,fitness-$2),morale=GREATEST(35,LEAST(100,morale+$3)) WHERE id=$1`,[p.id,fatigue,moraleDelta]);
+  }
+  await client.query(`UPDATE players SET fitness=LEAST(100,fitness+$2) WHERE club_id=$1 AND NOT(id=ANY($3::bigint[]))`,[clubId,rand(7,11),selectedIds]);
+  await client.query(`UPDATE players SET injury_games=GREATEST(0,injury_games-1) WHERE club_id=$1 AND injury_games>0`,[clubId]);
 }
 async function recordUserMatch(client,ownerId,opponentId,m,events,type,reward=0){
   await client.query(`INSERT INTO matches(user_club_id,opponent_club_id,user_goals,opponent_goals,reward,user_rating,opponent_rating,events,match_type)
     VALUES($1,$2,$3,$4,$5,$6,$7,$8::jsonb,$9)`,
     [ownerId,opponentId,m.userGoals,m.opponentGoals,reward,m.userRating,m.opponentRating,JSON.stringify(events),type]);
 }
+async function addFinance(client,clubId,amount,category,description){
+  await client.query(`UPDATE clubs SET coins=coins+$2 WHERE id=$1`,[clubId,amount]);
+  await client.query(`INSERT INTO club_finance_events(club_id,amount,category,description) VALUES($1,$2,$3,$4)`,[clubId,amount,category,description]);
+}
+async function wageBill(client,clubId){
+  return Number((await client.query(`SELECT COALESCE(SUM(salary),0)::int total FROM players WHERE club_id=$1`,[clubId])).rows[0].total||0);
+}
+function financeRates(context){
+  const key=String(context||"D").toUpperCase();
+  if(key==="A")return {sponsor:5200,gate:4700};
+  if(key==="B")return {sponsor:3900,gate:3400};
+  if(key==="C")return {sponsor:3000,gate:2600};
+  if(key==="D")return {sponsor:2400,gate:2100};
+  if(key==="LIB")return {sponsor:6200,gate:5600};
+  return {sponsor:1900,gate:1500};
+}
+async function unexpectedClubEvent(client,clubId){
+  if(Math.random()>.22)return null;
+  const players=(await client.query(`SELECT id,name,age,rating FROM players WHERE club_id=$1 ORDER BY RANDOM() LIMIT 6`,[clubId])).rows;
+  if(!players.length)return null;
+  const p=players[rand(0,players.length-1)];
+  const type=rand(1,5);
+  let title,description;
+  if(type===1){
+    const games=rand(1,3);
+    await client.query(`UPDATE players SET injury_games=GREATEST(injury_games,$2),fitness=GREATEST(30,fitness-15) WHERE id=$1`,[p.id,games]);
+    title="Lesão inesperada";description=`${p.name} sofreu uma lesão e ficará fora por ${games} jogo(s).`;
+  }else if(type===2){
+    const bonus=rand(12,35)*100;
+    await addFinance(client,clubId,bonus,"bonus","Bônus comercial inesperado");
+    title="Novo bônus comercial";description=`O clube recebeu ${bonus.toLocaleString("pt-BR")} moedas de uma ação com patrocinadores.`;
+  }else if(type===3){
+    await client.query(`UPDATE players SET morale=LEAST(100,morale+12) WHERE id=$1`,[p.id]);
+    title="Jogador motivado";description=`${p.name} ganhou confiança e melhorou o moral.`;
+  }else if(type===4&&Number(p.age)<=24){
+    await client.query(`UPDATE players SET rating=LEAST(95,rating+1),price=ROUND(price*1.08)::int WHERE id=$1`,[p.id]);
+    title="Evolução no treino";description=`${p.name} evoluiu e ganhou +1 de overall.`;
+  }else{
+    await client.query(`UPDATE players SET fitness=LEAST(100,fitness+12) WHERE club_id=$1`,[clubId]);
+    title="Semana leve";description="A comissão técnica recuperou melhor o elenco. O condicionamento físico subiu.";
+  }
+  await client.query(`INSERT INTO club_events(club_id,event_type,title,description) VALUES($1,$2,$3,$4)`,[clubId,"unexpected",title,description]);
+  return {title,description};
+}
+async function settleMatchFinances(client,clubId,context,isHome,result){
+  const rates=financeRates(context);
+  const sponsor=rates.sponsor;
+  const gate=isHome?Math.round(rates.gate*(rand(85,115)/100)):0;
+  const performance=result==="win"?650:result==="draw"?250:80;
+  const wages=await wageBill(client,clubId);
+  await addFinance(client,clubId,sponsor,"sponsor","Receita de patrocinadores");
+  if(gate)await addFinance(client,clubId,gate,"tickets","Bilheteria da partida em casa");
+  await addFinance(client,clubId,performance,"performance","Bônus pelo resultado");
+  await addFinance(client,clubId,-wages,"wages","Pagamento dos salários do elenco");
+  const balance=Number((await client.query(`SELECT coins FROM clubs WHERE id=$1`,[clubId])).rows[0].coins);
+  if(balance<0){
+    await client.query(`UPDATE players SET morale=GREATEST(35,morale-4) WHERE club_id=$1`,[clubId]);
+    await client.query(`INSERT INTO club_events(club_id,event_type,title,description) VALUES($1,'finance','Caixa no vermelho','O clube terminou a rodada com saldo negativo e o moral do elenco caiu.')`,[clubId]);
+  }
+  const event=await unexpectedClubEvent(client,clubId);
+  return {sponsor,gate,performance,wages,net:sponsor+gate+performance-wages,event};
+}
 
 async function fullMatch(client,homeId,awayId,userId){
   const cs=(await client.query(`SELECT * FROM clubs WHERE id=ANY($1::bigint[])`,[[homeId,awayId]])).rows;
   const home=cs.find(c=>String(c.id)===String(homeId)),away=cs.find(c=>String(c.id)===String(awayId));
-  await createRoster(client,home,false);await createRoster(client,away,false);
-  const hs=await starters(client,home.id),as=await starters(client,away.id);
-  const hr=await clubRating(home.id,client),ar=await clubRating(away.id,client);
-  const {hg,ag}=basicScore(hr,ar);
+  const hs=await matchStarters(client,home,String(home.id)===String(userId));
+  const as=await matchStarters(client,away,String(away.id)===String(userId));
+  const sim=realisticScore(hs,as),hg=sim.hg,ag=sim.ag;
   const events=[...eventsFor(home.id,hs,hg),...eventsFor(away.id,as,ag)].sort((a,b)=>a.minute-b.minute);
-  await applyStats(client,home.id,hs,ag,events);await applyStats(client,away.id,as,hg,events);
-  await client.query(`UPDATE clubs SET team_rating=$2 WHERE id=$1`,[home.id,hr]);
-  await client.query(`UPDATE clubs SET team_rating=$2 WHERE id=$1`,[away.id,ar]);
+  const homeResult=hg>ag?"win":hg===ag?"draw":"loss",awayResult=ag>hg?"win":ag===hg?"draw":"loss";
+  await applyStatsAndCondition(client,home.id,hs,ag,events,homeResult);
+  await applyStatsAndCondition(client,away.id,as,hg,events,awayResult);
+  await client.query(`UPDATE clubs SET team_rating=$2 WHERE id=$1`,[home.id,Math.round(hs.reduce((a,p)=>a+Number(p.rating),0)/hs.length)]);
+  await client.query(`UPDATE clubs SET team_rating=$2 WHERE id=$1`,[away.id,Math.round(as.reduce((a,p)=>a+Number(p.rating),0)/as.length)]);
   const userHome=String(home.id)===String(userId),ug=userHome?hg:ag,og=userHome?ag:hg;
   return {
-    home,away,hg,ag,events,
+    home,away,hg,ag,events,homeLineup:hs,awayLineup:as,
     userMatch:{
       result:ug>og?"win":ug===og?"draw":"loss",
       userClub:userHome?home.name:away.name,
       opponent:userHome?away.name:home.name,
       userGoals:ug,opponentGoals:og,
-      userRating:userHome?hr:ar,opponentRating:userHome?ar:hr,
+      userRating:userHome?sim.hr:sim.ar,opponentRating:userHome?sim.ar:sim.hr,
       events:events.map(e=>({minute:e.minute,text:e.text,type:e.type,clubId:e.clubId}))
     }
   };
@@ -515,10 +711,9 @@ async function playState(ownerId){
       for(const f of games){
         let hg,ag,events=[];
         if(String(f.home)===String(ownerId)||String(f.away)===String(ownerId)){
-          const sim=await fullMatch(c,f.home,f.away,ownerId);hg=sim.hg;ag=sim.ag;events=sim.events;userMatch=sim.userMatch;userMatch.matchType="Estadual";
-          const reward=userMatch.result==="win"?80:userMatch.result==="draw"?40:20;userMatch.reward=reward;
-          await c.query(`UPDATE clubs SET coins=coins+$2 WHERE id=$1`,[ownerId,reward]);
-          await recordUserMatch(c,ownerId,String(f.home)===String(ownerId)?f.away:f.home,userMatch,events,"state",reward);
+          const sim=await fullMatch(c,f.home,f.away,ownerId);hg=sim.hg;ag=sim.ag;events=sim.events;userMatch=sim.userMatch;userMatch.matchType="Estadual";userMatch.reward=0;
+          userMatch.finance=await settleMatchFinances(c,ownerId,"STATE",String(f.home)===String(ownerId),userMatch.result);
+          await recordUserMatch(c,ownerId,String(f.home)===String(ownerId)?f.away:f.home,userMatch,events,"state",userMatch.finance.performance);
         }else{
           ({hg,ag}=basicScore(ratings.get(String(f.home))||60,ratings.get(String(f.away))||60));
         }
@@ -541,7 +736,8 @@ async function playState(ownerId){
         let hg,ag;
         if(String(f.home)===String(ownerId)||String(f.away)===String(ownerId)){
           const sim=await fullMatch(c,f.home,f.away,ownerId);hg=sim.hg;ag=sim.ag;userMatch=sim.userMatch;userMatch.matchType="Estadual";userMatch.reward=0;
-          await recordUserMatch(c,ownerId,String(f.home)===String(ownerId)?f.away:f.home,userMatch,sim.events,"state",0);
+          userMatch.finance=await settleMatchFinances(c,ownerId,"STATE",String(f.home)===String(ownerId),userMatch.result);
+          await recordUserMatch(c,ownerId,String(f.home)===String(ownerId)?f.away:f.home,userMatch,sim.events,"state",userMatch.finance.performance);
         }else ({hg,ag}=basicScore(ratings.get(String(f.home))||60,ratings.get(String(f.away))||60));
         f.played=true;f.hg=hg;f.ag=ag;
         const winner=hg>ag?f.home:ag>hg?f.away:(Math.random()<.5?f.home:f.away);
@@ -556,7 +752,9 @@ async function playState(ownerId){
     }else{
       s.champion=winners[0];s.stage="FINISHED";
       career.phase="NATIONAL";
-      if(String(s.champion)===String(ownerId)) await q(`UPDATE clubs SET coins=coins+500 WHERE id=$1`,[ownerId]);
+      if(String(s.champion)===String(ownerId)){
+        await tx(async c=>{await addFinance(c,ownerId,4000,"prize","Premiação pelo título estadual");});
+      }
     }
   }
 
@@ -625,7 +823,8 @@ async function simulateLibStep(career,allowUserDetail){
         let hg,ag;
         if(allowUserDetail&&(String(f.home)===String(career.owner_club_id)||String(f.away)===String(career.owner_club_id))){
           const sim=await fullMatch(c,f.home,f.away,career.owner_club_id);hg=sim.hg;ag=sim.ag;userMatch=sim.userMatch;userMatch.matchType="Libertadores";userMatch.reward=0;
-          await recordUserMatch(c,career.owner_club_id,String(f.home)===String(career.owner_club_id)?f.away:f.home,userMatch,sim.events,"libertadores",0);
+          userMatch.finance=await settleMatchFinances(c,career.owner_club_id,"LIB",String(f.home)===String(career.owner_club_id),userMatch.result);
+          await recordUserMatch(c,career.owner_club_id,String(f.home)===String(career.owner_club_id)?f.away:f.home,userMatch,sim.events,"libertadores",userMatch.finance.performance);
         }else ({hg,ag}=basicScore(ratings.get(String(f.home))||72,ratings.get(String(f.away))||72));
         f.played=true;f.hg=hg;f.ag=ag;
         applyResult(findEntry(lib.entries,f.home),hg,ag);applyResult(findEntry(lib.entries,f.away),ag,hg);
@@ -645,7 +844,8 @@ async function simulateLibStep(career,allowUserDetail){
         let hg,ag;
         if(allowUserDetail&&(String(f.home)===String(career.owner_club_id)||String(f.away)===String(career.owner_club_id))){
           const sim=await fullMatch(c,f.home,f.away,career.owner_club_id);hg=sim.hg;ag=sim.ag;userMatch=sim.userMatch;userMatch.matchType="Libertadores";userMatch.reward=0;
-          await recordUserMatch(c,career.owner_club_id,String(f.home)===String(career.owner_club_id)?f.away:f.home,userMatch,sim.events,"libertadores",0);
+          userMatch.finance=await settleMatchFinances(c,career.owner_club_id,"LIB",String(f.home)===String(career.owner_club_id),userMatch.result);
+          await recordUserMatch(c,career.owner_club_id,String(f.home)===String(career.owner_club_id)?f.away:f.home,userMatch,sim.events,"libertadores",userMatch.finance.performance);
         }else ({hg,ag}=basicScore(ratings.get(String(f.home))||72,ratings.get(String(f.away))||72));
         f.played=true;f.hg=hg;f.ag=ag;
       }
@@ -687,10 +887,9 @@ async function playNational(ownerId){
       for(const f of games){
         let hg,ag,events=[];
         if(String(f.home)===String(ownerId)||String(f.away)===String(ownerId)){
-          const sim=await fullMatch(c,f.home,f.away,ownerId);hg=sim.hg;ag=sim.ag;events=sim.events;userMatch=sim.userMatch;userMatch.matchType=`Série ${div}`;
-          const reward=userMatch.result==="win"?180:userMatch.result==="draw"?90:50;userMatch.reward=reward;
-          await c.query(`UPDATE clubs SET coins=coins+$2 WHERE id=$1`,[ownerId,reward]);
-          await recordUserMatch(c,ownerId,String(f.home)===String(ownerId)?f.away:f.home,userMatch,events,`serie_${div.toLowerCase()}`,reward);
+          const sim=await fullMatch(c,f.home,f.away,ownerId);hg=sim.hg;ag=sim.ag;events=sim.events;userMatch=sim.userMatch;userMatch.matchType=`Série ${div}`;userMatch.reward=0;
+          userMatch.finance=await settleMatchFinances(c,ownerId,div,String(f.home)===String(ownerId),userMatch.result);
+          await recordUserMatch(c,ownerId,String(f.home)===String(ownerId)?f.away:f.home,userMatch,events,`serie_${div.toLowerCase()}`,userMatch.finance.performance);
         }else ({hg,ag}=basicScore(ratings.get(String(f.home))||64,ratings.get(String(f.away))||64));
         f.played=true;f.hg=hg;f.ag=ag;
         applyResult(findEntry(d.entries,f.home),hg,ag);applyResult(findEntry(d.entries,f.away),ag,hg);
@@ -726,14 +925,104 @@ async function nextSeason(ownerId){
   const club=(await q(`SELECT * FROM clubs WHERE id=$1`,[ownerId])).rows[0];
 
   await tx(async c=>{
-    const ps=(await c.query(`SELECT id,age FROM players WHERE club_id=$1`,[ownerId])).rows;
+    const ps=(await c.query(`SELECT id,name,age,contract_seasons FROM players WHERE club_id=$1`,[ownerId])).rows;
     for(const p of ps){
       let delta=0;if(p.age<=24&&Math.random()<.35)delta=1;if(p.age>=31&&Math.random()<.25)delta=-1;
-      await c.query(`UPDATE players SET age=age+1,rating=GREATEST(45,LEAST(95,rating+$2)),pace=GREATEST(25,LEAST(95,pace+$2)),shooting=GREATEST(20,LEAST(95,shooting+$2)),passing=GREATEST(20,LEAST(95,passing+$2)),defending=GREATEST(20,LEAST(95,defending+$2)) WHERE id=$1`,[p.id,delta]);
+      const remaining=Math.max(0,Number(p.contract_seasons||1)-1);
+      if(remaining===0){
+        await c.query(`UPDATE players SET age=age+1,contract_seasons=1,salary=ROUND(salary*1.06)::int,fitness=100,morale=LEAST(100,morale+2),rating=GREATEST(45,LEAST(95,rating+$2)),pace=GREATEST(25,LEAST(95,pace+$2)),shooting=GREATEST(20,LEAST(95,shooting+$2)),passing=GREATEST(20,LEAST(95,passing+$2)),defending=GREATEST(20,LEAST(95,defending+$2)) WHERE id=$1`,[p.id,delta]);
+        await c.query(`INSERT INTO club_events(club_id,event_type,title,description) VALUES($1,'contract','Renovação automática',$2)`,[ownerId,`${p.name} renovou por mais 1 temporada com reajuste salarial.`]);
+      }else{
+        await c.query(`UPDATE players SET age=age+1,contract_seasons=$3,fitness=100,rating=GREATEST(45,LEAST(95,rating+$2)),pace=GREATEST(25,LEAST(95,pace+$2)),shooting=GREATEST(20,LEAST(95,shooting+$2)),passing=GREATEST(20,LEAST(95,passing+$2)),defending=GREATEST(20,LEAST(95,defending+$2)) WHERE id=$1`,[p.id,delta,remaining]);
+      }
     }
   });
 
   return createCareer(ownerId,club.state_code,career.season_no+1,career.data);
+}
+
+async function withCompetitionLock(ownerId,fn){
+  const key=String(ownerId);
+  if(competitionLocks.has(key))throw Object.assign(new Error("Já existe uma simulação em andamento. Aguarde alguns segundos."),{status:409});
+  competitionLocks.add(key);
+  try{return await fn()}finally{competitionLocks.delete(key)}
+}
+
+async function repairCareer(ownerId){
+  let career=await getCareer(ownerId);
+  if(!career||!career.data)return career;
+  let changed=false;
+  const s=career.data.state;
+
+  if(career.phase==="STATE"&&s){
+    if(s.stage==="GROUP"){
+      const current=s.fixtures.filter(f=>f.stage==="GROUP"&&Number(f.round)===Number(s.round));
+      if(current.length&&current.every(f=>f.played)){
+        if(Number(s.round)>=7){
+          if(!s.fixtures.some(f=>f.stage==="SF")){
+            const t=sortEntries(s.entries);
+            [[t[0].clubId,t[3].clubId],[t[1].clubId,t[2].clubId]].forEach(([home,away],i)=>s.fixtures.push({stage:"SF",round:8,slot:i+1,home,away,played:false,hg:null,ag:null,pw:null}));
+          }
+          s.stage="SF";s.round=8;
+        }else s.round=Number(s.round)+1;
+        changed=true;
+      }
+    }
+    if(s.stage==="SF"){
+      const semis=s.fixtures.filter(f=>f.stage==="SF");
+      if(semis.length===2&&semis.every(f=>f.played)){
+        if(!s.fixtures.some(f=>f.stage==="FINAL")){
+          const winners=semis.map(f=>f.hg>f.ag?f.home:f.ag>f.hg?f.away:(f.pw||f.home));
+          s.fixtures.push({stage:"FINAL",round:9,slot:1,home:winners[0],away:winners[1],played:false,hg:null,ag:null,pw:null});
+        }
+        s.stage="FINAL";s.round=9;changed=true;
+      }
+    }
+    if(s.stage==="FINAL"){
+      const final=s.fixtures.find(f=>f.stage==="FINAL");
+      if(final?.played){
+        s.champion=final.hg>final.ag?final.home:final.ag>final.hg?final.away:(final.pw||final.home);
+        s.stage="FINISHED";career.phase="NATIONAL";changed=true;
+      }
+    }
+    if(s.stage==="FINISHED"&&career.phase==="STATE"){career.phase="NATIONAL";changed=true}
+    career.data.state=s;
+  }
+
+  if(career.phase==="NATIONAL"){
+    while(Number(career.current_round)<=38){
+      const all=[];
+      for(const d of DIVS)all.push(...career.data.divisions[d].fixtures.filter(f=>Number(f.round)===Number(career.current_round)));
+      if(all.length===40&&all.every(f=>f.played)){career.current_round=Number(career.current_round)+1;changed=true}
+      else break;
+    }
+    if(Number(career.current_round)>38){
+      if(!career.data.libertadores){await makeLibertadores(career);changed=true}
+      const top4=sortEntries(career.data.divisions.A.entries).slice(0,4);
+      const qualified=career.user_division==="A"&&top4.some(e=>String(e.clubId)===String(ownerId));
+      if(qualified)career.phase="LIBERTADORES";
+      else{
+        if(career.data.libertadores?.status!=="finished")await autoFinishLib(career);
+        career.phase="END";
+      }
+      changed=true;
+    }
+  }
+
+  if(career.phase==="LIBERTADORES"){
+    const lib=career.data.libertadores;
+    if(lib?.status==="finished"){career.phase="END";changed=true}
+    else if(lib&&lib.stage!=="GROUP"){
+      const active=lib.fixtures.some(f=>f.stage===lib.stage&&!f.played&&(String(f.home)===String(ownerId)||String(f.away)===String(ownerId)));
+      if(!active){
+        await autoFinishLib(career);
+        career.phase="END";changed=true;
+      }
+    }
+  }
+
+  if(changed)await saveCareer(career);
+  return career;
 }
 
 async function hydrateCareer(career){
@@ -782,6 +1071,48 @@ async function hydrateCareer(career){
   };
 }
 
+
+function divisionRank(div){return {D:1,C:2,B:3,A:4}[div]||1}
+function divisionOfClub(career,clubId){
+  if(!career?.data?.divisions)return null;
+  for(const d of DIVS){
+    if(career.data.divisions[d].entries.some(e=>String(e.clubId)===String(clubId)))return d;
+  }
+  return null;
+}
+function askingPrice(player){
+  if(!player.club_id)return 0;
+  const contract=Math.max(1,Number(player.contract_seasons||1));
+  return Math.max(500,Math.round((Number(player.price)*(1.08+contract*.09))/100)*100);
+}
+function suggestedSalary(player){
+  return Math.max(Number(player.salary||0),salaryForRating(Number(player.rating||60)));
+}
+function interestChance(player,userClub,userDiv,sourceDiv,salaryOffer,years){
+  const suggested=suggestedSalary(player);
+  const salaryBoost=((Number(salaryOffer)/Math.max(1,suggested))-1)*58;
+  const ratingGap=Math.max(0,Number(player.rating)-Number(userClub.team_rating||64))*2.25;
+  const divisionBoost=(divisionRank(userDiv)-divisionRank(sourceDiv||userDiv))*7;
+  const freeBonus=player.club_id?0:12;
+  const contractBoost=Math.max(0,Math.min(4,Number(years))-2)*3;
+  const elitePenalty=userDiv==="D"&&Number(player.rating)>=74?14:0;
+  return clamp(Math.round(58+salaryBoost+divisionBoost+freeBonus+contractBoost-ratingGap-elitePenalty),5,95);
+}
+async function ensureTransferPool(ownerId){
+  await ensureMarket();
+  const career=await getCareer(ownerId);
+  if(!career)return;
+  const div=career.user_division||"D";
+  const ids=(career.data?.divisions?.[div]?.entries||[])
+    .map(e=>Number(e.clubId)).filter(id=>String(id)!==String(ownerId));
+  for(const id of shuffle(ids).slice(0,10))await ensureRoster(id);
+}
+async function financeSummary(clubId){
+  const wages=await q(`SELECT COALESCE(SUM(salary),0)::int total FROM players WHERE club_id=$1`,[clubId]);
+  const recent=await q(`SELECT amount,category,description,created_at FROM club_finance_events WHERE club_id=$1 ORDER BY created_at DESC,id DESC LIMIT 12`,[clubId]);
+  return {wages:Number(wages.rows[0].total||0),recent:recent.rows};
+}
+
 app.get("/health",async(_req,res,next)=>{try{await q("SELECT 1");res.json({ok:true})}catch(e){next(e)}});
 
 app.post("/api/auth/register",async(req,res,next)=>{
@@ -815,7 +1146,7 @@ app.post("/api/club",auth,async(req,res,next)=>{
     if(!VALID_STATES.has(state))return res.status(400).json({error:"Escolha um estado."});
     const club=await tx(async c=>{
       const ex=await c.query(`SELECT id FROM clubs WHERE user_id=$1`,[req.user.id]);if(ex.rowCount)throw Object.assign(new Error("Você já tem um clube."),{status:409});
-      const x=(await c.query(`INSERT INTO clubs(user_id,name,state_code,country_code,club_kind,base_rating,team_rating,coins,primary_color,secondary_color) VALUES($1,$2,$3,'BR','user',64,64,3500,$4,$5) RETURNING *`,[req.user.id,name,state,pc,sc])).rows[0];
+      const x=(await c.query(`INSERT INTO clubs(user_id,name,state_code,country_code,club_kind,base_rating,team_rating,coins,primary_color,secondary_color) VALUES($1,$2,$3,'BR','user',64,64,30000,$4,$5) RETURNING *`,[req.user.id,name,state,pc,sc])).rows[0];
       await ensureFriendCode(c,x.id);await createRoster(c,x,true);return x;
     });
     await createCareer(club.id,state,1,null);res.status(201).json({club});
@@ -829,7 +1160,7 @@ app.put("/api/club/state",auth,async(req,res,next)=>{
     if(club.state_code)return res.status(409).json({error:"O estado já foi definido."});
     if(!VALID_STATES.has(state))return res.status(400).json({error:"Escolha um estado."});
     await tx(async c=>{
-      await c.query(`UPDATE clubs SET state_code=$2,coins=3500,base_rating=64,team_rating=64 WHERE id=$1`,[club.id,state]);
+      await c.query(`UPDATE clubs SET state_code=$2,coins=30000,base_rating=64,team_rating=64 WHERE id=$1`,[club.id,state]);
       const fresh=(await c.query(`SELECT * FROM clubs WHERE id=$1`,[club.id])).rows[0];
       await createRoster(c,fresh,true);
     });
@@ -857,13 +1188,15 @@ app.get("/api/dashboard",auth,async(req,res,next)=>{
     if(!c.state_code)return res.json({club:c,players:[],market:[],matches:[],friends:[]});
     await ensureRoster(c.id);await ensureMarket();
     c.team_rating=await clubRating(c.id);
-    const [ps,mk,mt,fr]=await Promise.all([
+    const [ps,mk,mt,fr,fin,events]=await Promise.all([
       q(`SELECT * FROM players WHERE club_id=$1 ORDER BY is_starter DESC,CASE position WHEN 'GK' THEN 1 WHEN 'DEF' THEN 2 WHEN 'MID' THEN 3 ELSE 4 END,rating DESC`,[c.id]),
       q(`SELECT * FROM players WHERE club_id IS NULL ORDER BY rating DESC,price DESC LIMIT 40`),
       q(`SELECT m.*,o.name opponent_name FROM matches m JOIN clubs o ON o.id=m.opponent_club_id WHERE m.user_club_id=$1 ORDER BY played_at DESC LIMIT 30`,[c.id]),
-      q(`SELECT c.id,c.name,c.primary_color,c.secondary_color,c.crest_data,c.friend_code,c.team_rating FROM friendships f JOIN clubs c ON c.id=CASE WHEN f.club_a_id=$1 THEN f.club_b_id ELSE f.club_a_id END WHERE f.club_a_id=$1 OR f.club_b_id=$1 ORDER BY c.name`,[c.id])
+      q(`SELECT c.id,c.name,c.primary_color,c.secondary_color,c.crest_data,c.friend_code,c.team_rating FROM friendships f JOIN clubs c ON c.id=CASE WHEN f.club_a_id=$1 THEN f.club_b_id ELSE f.club_a_id END WHERE f.club_a_id=$1 OR f.club_b_id=$1 ORDER BY c.name`,[c.id]),
+      financeSummary(c.id),
+      q(`SELECT event_type,title,description,created_at FROM club_events WHERE club_id=$1 ORDER BY created_at DESC,id DESC LIMIT 10`,[c.id])
     ]);
-    res.json({club:c,players:ps.rows,market:mk.rows,matches:mt.rows,friends:fr.rows});
+    res.json({club:c,players:ps.rows,market:mk.rows,matches:mt.rows,friends:fr.rows,finance:fin,clubEvents:events.rows});
   }catch(e){next(e)}
 });
 
@@ -871,16 +1204,36 @@ app.get("/api/competitions",auth,async(req,res,next)=>{
   try{
     const c=await userClub(req.user.id);
     if(!c?.state_code)return res.status(400).json({error:"Defina o estado do clube."});
-    let career=await getCareer(c.id);
+    let career=await repairCareer(c.id);
     if(!career)career=await createCareer(c.id,c.state_code,1,null);
     res.json(await hydrateCareer(career));
   }catch(e){next(e)}
 });
 
-app.post("/api/state/play-next",auth,async(req,res,next)=>{try{const c=await userClub(req.user.id);res.json(await playState(c.id))}catch(e){next(e)}});
-app.post("/api/national/play-round",auth,async(req,res,next)=>{try{const c=await userClub(req.user.id);res.json(await playNational(c.id))}catch(e){next(e)}});
-app.post("/api/libertadores/play-next",auth,async(req,res,next)=>{try{const c=await userClub(req.user.id);res.json(await playLib(c.id))}catch(e){next(e)}});
-app.post("/api/career/next-season",auth,async(req,res,next)=>{try{const c=await userClub(req.user.id);res.json({career:await nextSeason(c.id)})}catch(e){next(e)}});
+app.post("/api/state/play-next",auth,async(req,res,next)=>{
+  try{
+    const c=await userClub(req.user.id);
+    res.json(await withCompetitionLock(c.id,async()=>{await repairCareer(c.id);return playState(c.id)}));
+  }catch(e){next(e)}
+});
+app.post("/api/national/play-round",auth,async(req,res,next)=>{
+  try{
+    const c=await userClub(req.user.id);
+    res.json(await withCompetitionLock(c.id,async()=>{await repairCareer(c.id);return playNational(c.id)}));
+  }catch(e){next(e)}
+});
+app.post("/api/libertadores/play-next",auth,async(req,res,next)=>{
+  try{
+    const c=await userClub(req.user.id);
+    res.json(await withCompetitionLock(c.id,async()=>{await repairCareer(c.id);return playLib(c.id)}));
+  }catch(e){next(e)}
+});
+app.post("/api/career/next-season",auth,async(req,res,next)=>{
+  try{
+    const c=await userClub(req.user.id);
+    res.json({career:await withCompetitionLock(c.id,async()=>{await repairCareer(c.id);return nextSeason(c.id)})});
+  }catch(e){next(e)}
+});
 
 app.get("/api/clubs/:id",auth,async(req,res,next)=>{
   try{
@@ -896,8 +1249,12 @@ app.put("/api/lineup",auth,async(req,res,next)=>{
   try{
     const c=await userClub(req.user.id),ids=Array.isArray(req.body.starterIds)?req.body.starterIds.map(String):[],formation=String(req.body.formation||"4-3-3");
     if(ids.length!==11||new Set(ids).size!==11)return res.status(400).json({error:"Selecione exatamente 11 titulares."});
-    const own=await q(`SELECT id,position FROM players WHERE club_id=$1 AND id=ANY($2::bigint[])`,[c.id,ids]);
+    const own=await q(`SELECT id,position,injury_games FROM players WHERE club_id=$1 AND id=ANY($2::bigint[])`,[c.id,ids]);
     if(own.rowCount!==11||!own.rows.some(p=>p.position==="GK"))return res.status(400).json({error:"Inclua um goleiro."});
+    if(own.rows.some(p=>Number(p.injury_games||0)>0))return res.status(400).json({error:"Jogadores lesionados não podem ser titulares."});
+    const quota=formationQuotas(formation),counts={GK:0,DEF:0,MID:0,ATT:0};
+    own.rows.forEach(p=>counts[p.position]=(counts[p.position]||0)+1);
+    if(Object.keys(quota).some(k=>counts[k]!==quota[k]))return res.status(400).json({error:`A formação ${formation} exige ${quota.DEF} defensores, ${quota.MID} meio-campistas e ${quota.ATT} atacantes.`});
     await tx(async x=>{await x.query(`UPDATE players SET is_starter=FALSE WHERE club_id=$1`,[c.id]);await x.query(`UPDATE players SET is_starter=TRUE WHERE club_id=$1 AND id=ANY($2::bigint[])`,[c.id,ids]);await x.query(`UPDATE clubs SET formation=$2 WHERE id=$1`,[c.id,formation])});
     res.json({ok:true});
   }catch(e){next(e)}
@@ -911,22 +1268,127 @@ app.post("/api/players/:id/release",auth,async(req,res,next)=>{
       if(!p.rowCount)throw Object.assign(new Error("Jogador não encontrado."),{status:404});
       if(p.rows[0].is_starter)throw Object.assign(new Error("Tire o jogador dos titulares antes de rescindir."),{status:400});
       const count=await x.query(`SELECT COUNT(*)::int count FROM players WHERE club_id=$1`,[c.id]);if(count.rows[0].count<=12)throw Object.assign(new Error("Mantenha pelo menos 12 jogadores."),{status:400});
-      await x.query(`UPDATE players SET club_id=NULL,is_starter=FALSE,price=GREATEST(100,ROUND(price*0.9)) WHERE id=$1`,[pid]);
+      const severance=Math.max(100,Number(p.rows[0].salary||0)*2);
+      await x.query(`UPDATE clubs SET coins=coins-$2 WHERE id=$1`,[c.id,severance]);
+      await x.query(`INSERT INTO club_finance_events(club_id,amount,category,description) VALUES($1,$2,'severance',$3)`,[c.id,-severance,`Rescisão de ${p.rows[0].name}`]);
+      await x.query(`UPDATE players SET club_id=NULL,is_starter=FALSE,price=GREATEST(100,ROUND(price*0.9)::int),contract_seasons=1 WHERE id=$1`,[pid]);
     });
     res.json({ok:true});
   }catch(e){next(e)}
 });
 
-app.post("/api/market/buy",auth,async(req,res,next)=>{
+
+app.get("/api/transfers/search",auth,async(req,res,next)=>{
   try{
-    const c=await userClub(req.user.id),pid=String(req.body.playerId||"");
-    await tx(async x=>{
-      const p=await x.query(`SELECT * FROM players WHERE id=$1 AND club_id IS NULL FOR UPDATE`,[pid]);if(!p.rowCount)throw Object.assign(new Error("Jogador indisponível."),{status:409});
-      const cc=await x.query(`SELECT coins FROM clubs WHERE id=$1 FOR UPDATE`,[c.id]);if(cc.rows[0].coins<p.rows[0].price)throw Object.assign(new Error("Moedas insuficientes."),{status:400});
-      await x.query(`UPDATE clubs SET coins=coins-$2 WHERE id=$1`,[c.id,p.rows[0].price]);await x.query(`UPDATE players SET club_id=$2,is_starter=FALSE WHERE id=$1`,[pid,c.id]);
+    const c=await userClub(req.user.id);
+    if(!c)return res.status(404).json({error:"Clube não encontrado."});
+    await ensureTransferPool(c.id);
+    const career=await getCareer(c.id);
+    const qText=String(req.query.q||"").trim().toLowerCase();
+    const position=String(req.query.position||"").trim().toUpperCase();
+    const minRating=Number(req.query.minRating||0);
+    const maxPrice=Number(req.query.maxPrice||999999999);
+    const rows=(await q(`
+      SELECT p.*,sc.name source_club_name,sc.id source_club_id,sc.is_ai source_is_ai
+      FROM players p
+      LEFT JOIN clubs sc ON sc.id=p.club_id
+      WHERE (p.club_id IS NULL OR sc.is_ai=TRUE) AND (p.club_id IS NULL OR p.club_id<>$1)
+      ORDER BY p.rating DESC,p.price DESC
+      LIMIT 300
+    `,[c.id])).rows;
+
+    const userDiv=career?.user_division||"D";
+    const filtered=rows.filter(p=>{
+      if(qText&&!String(p.name).toLowerCase().includes(qText))return false;
+      if(position&&p.position!==position&&p.role!==position)return false;
+      if(Number(p.rating)<minRating)return false;
+      if(askingPrice(p)>maxPrice)return false;
+      return true;
+    }).slice(0,60).map(p=>{
+      const sourceDiv=p.source_club_id?divisionOfClub(career,p.source_club_id):null;
+      const salary=suggestedSalary(p);
+      const chance=interestChance(p,c,userDiv,sourceDiv,Math.round(salary*1.1/10)*10,3);
+      return {
+        ...p,
+        asking_price:askingPrice(p),
+        suggested_salary:salary,
+        source_division:sourceDiv,
+        interest:chance>=70?"Alta":chance>=45?"Média":"Baixa"
+      };
     });
-    await ensureMarket();res.json({ok:true});
+    res.json({players:filtered});
   }catch(e){next(e)}
+});
+
+app.post("/api/transfers/offer",auth,async(req,res,next)=>{
+  try{
+    const c=await userClub(req.user.id);
+    if(!c)return res.status(404).json({error:"Clube não encontrado."});
+    const playerId=String(req.body.playerId||"");
+    const feeOffer=Math.max(0,Number(req.body.feeOffer||0));
+    const salaryOffer=Math.max(0,Number(req.body.salaryOffer||0));
+    const years=clamp(Number(req.body.years||3),1,4);
+    const career=await getCareer(c.id);
+    const userDiv=career?.user_division||"D";
+
+    const result=await tx(async client=>{
+      const p=(await client.query(`
+        SELECT p.*,sc.name source_club_name,sc.id source_club_id,sc.is_ai source_is_ai
+        FROM players p LEFT JOIN clubs sc ON sc.id=p.club_id
+        WHERE p.id=$1 FOR UPDATE OF p
+      `,[playerId])).rows[0];
+      if(!p)throw Object.assign(new Error("Jogador não encontrado."),{status:404});
+      if(String(p.club_id)===String(c.id))throw Object.assign(new Error("Esse jogador já é do seu clube."),{status:400});
+      if(p.club_id&&!p.source_is_ai)throw Object.assign(new Error("Jogador de outro usuário não está disponível para compra direta."),{status:400});
+
+      const squad=(await client.query(`SELECT COUNT(*)::int count FROM players WHERE club_id=$1`,[c.id])).rows[0].count;
+      if(squad>=30)throw Object.assign(new Error("Seu elenco já possui 30 jogadores."),{status:400});
+
+      const ask=askingPrice(p);
+      const suggested=suggestedSalary(p);
+      const sourceDiv=p.source_club_id?divisionOfClub(career,p.source_club_id):null;
+
+      if(p.club_id){
+        if(feeOffer<Math.round(ask*.90)){
+          return {accepted:false,stage:"club",message:`${p.source_club_name} recusou. O clube pede aproximadamente ${ask.toLocaleString("pt-BR")} moedas.`,askingPrice:ask,suggestedSalary:suggested};
+        }
+        if(feeOffer<ask&&Math.random()>.55){
+          return {accepted:false,stage:"club",message:`${p.source_club_name} recusou a proposta e quer um valor mais próximo de ${ask.toLocaleString("pt-BR")} moedas.`,askingPrice:ask,suggestedSalary:suggested};
+        }
+      }
+
+      const currentTeamRating=await clubRating(c.id,client);
+      const chance=interestChance(p,{...c,team_rating:currentTeamRating},userDiv,sourceDiv,salaryOffer,years);
+      if(salaryOffer<Math.round(suggested*.82)||Math.random()*100>chance){
+        const reason=salaryOffer<suggested?"O salário oferecido foi considerado baixo.":"O jogador preferiu aguardar uma proposta esportivamente melhor.";
+        return {accepted:false,stage:"player",message:`${p.name} recusou. ${reason}`,chance,askingPrice:ask,suggestedSalary:suggested};
+      }
+
+      const signingBonus=salaryOffer*2;
+      const total=feeOffer+signingBonus;
+      const balance=Number((await client.query(`SELECT coins FROM clubs WHERE id=$1 FOR UPDATE`,[c.id])).rows[0].coins);
+      if(balance<total)throw Object.assign(new Error(`Caixa insuficiente. Custo imediato: ${total.toLocaleString("pt-BR")} moedas.`),{status:400});
+
+      await client.query(`UPDATE clubs SET coins=coins-$2 WHERE id=$1`,[c.id,total]);
+      await client.query(`INSERT INTO club_finance_events(club_id,amount,category,description) VALUES($1,$2,'transfer',$3)`,
+        [c.id,-total,`Contratação de ${p.name}: transferência + luvas`]);
+      if(p.club_id)await client.query(`UPDATE clubs SET coins=coins+$2 WHERE id=$1`,[p.club_id,feeOffer]);
+      await client.query(`
+        UPDATE players SET club_id=$2,is_starter=FALSE,salary=$3,contract_seasons=$4,fitness=GREATEST(fitness,82),morale=78
+        WHERE id=$1
+      `,[p.id,c.id,Math.round(salaryOffer),years]);
+
+      await client.query(`INSERT INTO club_events(club_id,event_type,title,description) VALUES($1,'transfer','Contratação confirmada',$2)`,
+        [c.id,`${p.name} aceitou contrato de ${years} temporada(s), com salário de ${Math.round(salaryOffer).toLocaleString("pt-BR")} moedas por rodada.`]);
+
+      return {accepted:true,message:`${p.name} aceitou a proposta e é o novo reforço do clube.`,playerId:p.id,cost:total};
+    });
+    res.json(result);
+  }catch(e){next(e)}
+});
+
+app.post("/api/market/buy",auth,async(_req,res)=>{
+  res.status(410).json({error:"Compra direta desativada. Use a negociação de transferências."});
 });
 
 app.post("/api/friends/add",auth,async(req,res,next)=>{
@@ -968,7 +1430,8 @@ async function start(){
   await initDb();
   await seedClubs();
   await oneTimeReset();
+  await applyEconomyMigration();
   await ensureMarket();
-  app.listen(PORT,"0.0.0.0",()=>console.log(`Dono do Clube v4 rodando na porta ${PORT}`));
+  app.listen(PORT,"0.0.0.0",()=>console.log(`Dono do Clube v5 rodando na porta ${PORT}`));
 }
 start().catch(e=>{console.error("Falha ao iniciar:",e);process.exit(1)});

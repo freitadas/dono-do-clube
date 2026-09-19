@@ -4,6 +4,7 @@ const STATES={"AC": "Acre", "AL": "Alagoas", "AP": "Amapá", "AM": "Amazonas", "
 
 const state={
   me:null,club:null,players:[],market:[],matches:[],friends:[],competitions:null,
+  finance:{wages:0,recent:[]},clubEvents:[],transferResults:[],
   view:"home",authMode:"login",competitionTab:"STATE",roundByDiv:{A:1,B:1,C:1,D:1}
 };
 
@@ -135,25 +136,78 @@ function renderStateSetup(){
   };
 }
 
+function fitnessClass(p){
+  if(Number(p.injury_games||0)>0)return "bad";
+  if(Number(p.fitness||100)>=75)return "good";
+  if(Number(p.fitness||100)>=50)return "warn";
+  return "bad";
+}
 function playerCard(p){
+  const severance=Math.max(100,Number(p.salary||0)*2);
   return `<article class="player ${p.is_starter?"starter":""}">
-    <span class="pos">${posName(p.position)} · ${p.age} anos</span>
+    <span class="pos">${esc(p.role||posName(p.position))} · ${p.age} anos</span>
     <span class="rating">${p.rating}</span>
     <h4>${esc(p.name)}</h4>
+    <div class="condition-line ${fitnessClass(p)}">
+      <span>Físico <b>${p.fitness??100}%</b></span>
+      <span>Moral <b>${p.morale??70}</b></span>
+      ${Number(p.injury_games||0)>0?`<span>🩹 <b>${p.injury_games} jogo(s)</b></span>`:""}
+    </div>
     <div class="attrs">
       <span>VEL <b>${p.pace}</b></span><span>CHU <b>${p.shooting}</b></span>
       <span>PAS <b>${p.passing}</b></span><span>DEF <b>${p.defending}</b></span>
     </div>
     <div class="pstats">
       <span>J <b>${p.appearances}</b></span><span>G <b>${p.goals}</b></span>
-      <span>A <b>${p.assists}</b></span><span>🟨 <b>${p.yellow_cards}</b></span>
-      <span>🟥 <b>${p.red_cards}</b></span><span>SG <b>${p.clean_sheets}</b></span>
+      <span>A <b>${p.assists}</b></span><span>Sal. <b>${Number(p.salary||0).toLocaleString("pt-BR")}</b></span>
+      <span>Contrato <b>${p.contract_seasons||1}T</b></span><span>Rescisão <b>${severance.toLocaleString("pt-BR")}</b></span>
     </div>
     <div class="player-actions">
-      <button class="${p.is_starter?"primary":"secondary"} toggle-player" data-id="${p.id}">${p.is_starter?"Titular":"Reserva"}</button>
+      <button class="${p.is_starter?"primary":"secondary"} toggle-player" data-id="${p.id}" ${Number(p.injury_games||0)>0&&!p.is_starter?"disabled":""}>${p.is_starter?"Titular":"Reserva"}</button>
       <button class="danger release-player" data-id="${p.id}" ${p.is_starter?"disabled":""}>Rescindir</button>
     </div>
   </article>`;
+}
+function fitScore(p){
+  return Number(p.rating)+(Number(p.fitness||100)-70)*.12+(Number(p.morale||70)-70)*.05-(Number(p.injury_games||0)>0?100:0);
+}
+function formationQuota(formation){
+  if(formation==="4-4-2")return {GK:1,DEF:4,MID:4,ATT:2};
+  if(formation==="3-5-2")return {GK:1,DEF:3,MID:5,ATT:2};
+  return {GK:1,DEF:4,MID:3,ATT:3};
+}
+function pitchToken(p){
+  return `<div class="pitch-player ${fitnessClass(p)}" title="${esc(p.name)}">
+    <span class="pitch-rating">${p.rating}</span>
+    <b>${esc(p.name.split(" ").slice(-1)[0])}</b>
+    <small>${esc(p.role||posName(p.position))} · ${p.fitness??100}%</small>
+  </div>`;
+}
+function formationPitch(formation){
+  const starters=state.players.filter(p=>p.is_starter);
+  const rows={ATT:[],MID:[],DEF:[],GK:[]};
+  starters.forEach(p=>(rows[p.position]||rows.MID).push(p));
+  for(const k of Object.keys(rows))rows[k].sort((a,b)=>fitScore(b)-fitScore(a));
+  return `<div class="pitch">
+    <div class="pitch-line center"></div><div class="pitch-circle"></div>
+    <div class="pitch-row attack">${rows.ATT.map(pitchToken).join("")}</div>
+    <div class="pitch-row midfield">${rows.MID.map(pitchToken).join("")}</div>
+    <div class="pitch-row defense">${rows.DEF.map(pitchToken).join("")}</div>
+    <div class="pitch-row goalkeeper">${rows.GK.map(pitchToken).join("")}</div>
+    <div class="pitch-caption">${esc(formation)} · ${starters.length}/11 titulares</div>
+  </div>`;
+}
+function suggestRotation(formation){
+  const q=formationQuota(formation);
+  const chosen=[];
+  for(const pos of ["GK","DEF","MID","ATT"]){
+    chosen.push(...state.players.filter(p=>p.position===pos&&Number(p.injury_games||0)<=0).sort((a,b)=>fitScore(b)-fitScore(a)).slice(0,q[pos]));
+  }
+  if(chosen.length<11){
+    const used=new Set(chosen.map(p=>String(p.id)));
+    chosen.push(...state.players.filter(p=>!used.has(String(p.id))&&Number(p.injury_games||0)<=0).sort((a,b)=>fitScore(b)-fitScore(a)).slice(0,11-chosen.length));
+  }
+  state.players.forEach(p=>p.is_starter=chosen.some(x=>String(x.id)===String(p.id)));
 }
 
 function userPosition(){
@@ -179,6 +233,8 @@ function homeView(){
   if(car.phase==="NATIONAL")action=`<button id="careerAction" data-action="national" class="primary">⚽ JOGAR RODADA ${car.current_round}/38</button>`;
   if(car.phase==="LIBERTADORES")action=`<button id="careerAction" data-action="lib" class="primary">🏆 JOGAR PRÓXIMA FASE DA LIBERTADORES</button>`;
   if(car.phase==="END")action=`<button id="careerAction" data-action="next" class="primary">📅 IR PARA A PRÓXIMA TEMPORADA</button>`;
+  const tired=state.players.filter(p=>p.is_starter&&Number(p.fitness||100)<55).length;
+  const injured=state.players.filter(p=>Number(p.injury_games||0)>0).length;
 
   return `<section class="hero">
     <div class="club-head">${crestHtml(c)}<div>
@@ -189,9 +245,9 @@ function homeView(){
     ${action}
     <div class="stats">
       <div class="stat"><small>Overall</small><b>${c.team_rating}</b></div>
-      <div class="stat"><small>Divisão</small><b>Série ${car.user_division}</b></div>
-      <div class="stat"><small>Fase</small><b>${phaseName(car.phase)}</b></div>
-      <div class="stat"><small>Temporada</small><b>${car.season_no}</b></div>
+      <div class="stat"><small>Caixa</small><b>${Number(c.coins).toLocaleString("pt-BR")}</b></div>
+      <div class="stat"><small>Salários/rodada</small><b>${Number(state.finance?.wages||0).toLocaleString("pt-BR")}</b></div>
+      <div class="stat"><small>Elenco</small><b>${tired} cansados · ${injured} lesionados</b></div>
     </div>
   </section>
   ${car.phase==="END"?`<section class="season-end" style="margin-top:14px">
@@ -201,42 +257,80 @@ function homeView(){
   </section>`:""}
   <section class="grid">
     <div class="card"><div class="section-title"><h2>Últimos jogos</h2><span class="badge">${state.matches.length}</span></div>
-      ${state.matches.length?state.matches.slice(0,8).map(m=>`<div class="match">
+      ${state.matches.length?state.matches.slice(0,7).map(m=>`<div class="match">
         <b>${esc(c.name)}</b><span class="score">${m.user_goals} × ${m.opponent_goals}</span>
         <span class="right">${esc(m.opponent_name)}<br><small class="muted">${esc(m.match_type)}</small></span>
       </div>`).join(""):`<div class="empty">Nenhum jogo ainda.</div>`}
     </div>
-    <div class="card">
-      <h2>Carreira</h2>
-      <p class="muted">Série D → Série C → Série B → Série A.</p>
-      <p class="muted">4 sobem e 4 caem em A, B e C. A Série D não tem rebaixamento.</p>
-      <p class="muted">Somente os 4 primeiros da Série A vão para a Libertadores.</p>
+    <div class="card"><div class="section-title"><h2>Finanças</h2><span class="badge">${Number(c.coins).toLocaleString("pt-BR")}</span></div>
+      ${(state.finance?.recent||[]).length?(state.finance.recent||[]).slice(0,6).map(x=>`<div class="finance-row"><span>${esc(x.description)}</span><b class="${Number(x.amount)>=0?"income":"expense"}">${Number(x.amount)>=0?"+":""}${Number(x.amount).toLocaleString("pt-BR")}</b></div>`).join(""):`<p class="muted">As receitas e despesas aparecerão após os jogos.</p>`}
+    </div>
+  </section>
+  <section class="grid">
+    <div class="card"><h2>Eventos inesperados</h2>
+      ${(state.clubEvents||[]).length?(state.clubEvents||[]).slice(0,6).map(e=>`<div class="club-event"><b>${esc(e.title)}</b><span>${esc(e.description)}</span></div>`).join(""):`<p class="muted">Nenhum evento recente.</p>`}
+    </div>
+    <div class="card"><h2>Gestão do elenco</h2>
+      <p class="muted">Jogadores cansados perdem rendimento. Use a escalação e o botão de rodízio para preservar o time.</p>
+      <button class="secondary" id="goSquad">Ver escalação e físico</button>
     </div>
   </section>`;
 }
-
 function squadView(){
   return `<section class="card">
-    <div class="toolbar"><div><div class="kicker">Gestão do time</div><h2>Elenco e estatísticas</h2></div>
-      <label>Formação<select id="formation">${["4-3-3","4-4-2","3-5-2"].map(f=>`<option ${state.club.formation===f?"selected":""}>${f}</option>`).join("")}</select></label>
+    <div class="toolbar">
+      <div><div class="kicker">Gestão do time</div><h2>Formação, físico e rodízio</h2></div>
+      <div class="squad-tools">
+        <label>Formação<select id="formation">${["4-3-3","4-4-2","3-5-2"].map(f=>`<option ${state.club.formation===f?"selected":""}>${f}</option>`).join("")}</select></label>
+        <button id="rotateSquad" class="secondary">Sugerir rodízio</button>
+      </div>
     </div>
-    <p class="muted">Seu elenco inicial é equilibrado para a Série D. A força dos adversários aumenta nas divisões superiores.</p>
-    <div class="players">${state.players.map(playerCard).join("")}</div>
+    <p class="muted">O campo abaixo mostra sua escalação. Físico baixo reduz o rendimento; lesionados não podem ser escalados.</p>
+    <div id="pitchWrap">${formationPitch(state.club.formation)}</div>
+    <div class="legend"><span class="good-dot"></span> Bom físico <span class="warn-dot"></span> Cansado <span class="bad-dot"></span> Muito cansado/lesionado</div>
+    <div class="players" style="margin-top:16px">${state.players.map(playerCard).join("")}</div>
     <button id="saveLineup" class="primary" style="margin-top:14px">Salvar escalação</button>
   </section>`;
 }
-
 function marketView(){
   return `<section class="card">
-    <div class="section-title"><div><div class="kicker">Transferências</div><h2>Mercado</h2></div><span class="coins">● ${Number(state.club.coins).toLocaleString("pt-BR")}</span></div>
-    <div class="market-grid">${state.market.map(p=>`<article class="player">
-      <span class="pos">${posName(p.position)} · ${p.age} anos</span><span class="rating">${p.rating}</span><h4>${esc(p.name)}</h4>
-      <div class="attrs"><span>VEL <b>${p.pace}</b></span><span>CHU <b>${p.shooting}</b></span><span>PAS <b>${p.passing}</b></span><span>DEF <b>${p.defending}</b></span></div>
-      <div class="player-actions"><button class="primary buy-player" data-id="${p.id}">Comprar · ${Number(p.price).toLocaleString("pt-BR")}</button></div>
-    </article>`).join("")}</div>
+    <div class="section-title">
+      <div><div class="kicker">Scout e negociações</div><h2>Pesquisar jogadores</h2></div>
+      <div class="finance-chips"><span class="coins">Caixa ● ${Number(state.club.coins).toLocaleString("pt-BR")}</span><span class="badge red">Folha ${Number(state.finance?.wages||0).toLocaleString("pt-BR")}/rodada</span></div>
+    </div>
+    <p class="muted">O clube vendedor precisa aceitar a taxa de transferência e o jogador precisa aceitar salário e projeto esportivo.</p>
+    <form id="transferSearch" class="transfer-search">
+      <input id="searchName" placeholder="Nome do jogador">
+      <select id="searchPosition">
+        <option value="">Todas as posições</option>
+        <option value="GK">Goleiro</option><option value="DEF">Defesa</option><option value="MID">Meio</option><option value="ATT">Ataque</option>
+        <option value="CB">Zagueiro</option><option value="RB">Lateral direito</option><option value="LB">Lateral esquerdo</option>
+        <option value="CDM">Volante</option><option value="CM">Meia central</option><option value="CAM">Meia ofensivo</option>
+        <option value="RW">Ponta direita</option><option value="LW">Ponta esquerda</option><option value="ST">Centroavante</option>
+      </select>
+      <input id="searchMinRating" type="number" min="40" max="99" value="58" placeholder="OVR mínimo">
+      <input id="searchMaxPrice" type="number" min="0" value="150000" placeholder="Valor máximo">
+      <button class="primary">Pesquisar</button>
+    </form>
+    <div id="transferMsg"></div>
+    <div id="transferResults" class="market-grid">${transferCards()}</div>
   </section>`;
 }
-
+function transferCards(){
+  if(!state.transferResults?.length)return `<div class="empty">Use a pesquisa para encontrar jogadores livres e atletas de outros clubes.</div>`;
+  return state.transferResults.map(p=>`<article class="player">
+    <span class="pos">${esc(p.role||posName(p.position))} · ${p.age} anos</span><span class="rating">${p.rating}</span>
+    <h4>${esc(p.name)}</h4>
+    <div class="transfer-source">${p.source_club_name?esc(p.source_club_name):"Livre no mercado"}${p.source_division?` · Série ${p.source_division}`:""}</div>
+    <div class="attrs"><span>VEL <b>${p.pace}</b></span><span>CHU <b>${p.shooting}</b></span><span>PAS <b>${p.passing}</b></span><span>DEF <b>${p.defending}</b></span></div>
+    <div class="pstats">
+      <span>Pedido <b>${Number(p.asking_price||0).toLocaleString("pt-BR")}</b></span>
+      <span>Salário base <b>${Number(p.suggested_salary||0).toLocaleString("pt-BR")}</b></span>
+      <span>Interesse <b>${esc(p.interest)}</b></span><span>Contrato <b>${p.contract_seasons||1}T atual</b></span>
+    </div>
+    <div class="player-actions"><button class="primary negotiate-player" data-id="${p.id}">Negociar</button></div>
+  </article>`).join("");
+}
 function friendsView(){
   return `<section class="card">
     <div class="section-title"><div><div class="kicker">Multiplayer assíncrono</div><h2>Jogar contra amigos</h2></div><span class="badge">${state.friends.length} amigos</span></div>
@@ -416,6 +510,7 @@ function showMatch(m){
     <button class="secondary close-modal">Fechar</button></div>
     <div class="board"><span>${esc(m.userClub)}<br><small class="muted">OVR ${m.userRating}</small></span><b>${m.userGoals} × ${m.opponentGoals}</b>
     <span>${esc(m.opponent)}<br><small class="muted">OVR ${m.opponentRating}</small></span></div>
+    ${m.finance?`<div class="finance-match"><span>Patrocínio +${Number(m.finance.sponsor).toLocaleString("pt-BR")}</span><span>Bilheteria +${Number(m.finance.gate).toLocaleString("pt-BR")}</span><span>Resultado +${Number(m.finance.performance).toLocaleString("pt-BR")}</span><span>Salários -${Number(m.finance.wages).toLocaleString("pt-BR")}</span><b>Saldo da rodada ${Number(m.finance.net)>=0?"+":""}${Number(m.finance.net).toLocaleString("pt-BR")}</b></div>${m.finance.event?`<div class="msg ok"><b>${esc(m.finance.event.title)}</b><br>${esc(m.finance.event.description)}</div>`:""}`:""}
     <h3>Lances</h3>${m.events?.length?m.events.map(e=>`<div class="event"><b>${e.minute}'</b> ${esc(e.text)}</div>`).join(""):`<div class="empty">Sem lances relevantes.</div>`}
   </div>`;
   document.body.appendChild(bg);bg.querySelector(".close-modal").onclick=()=>bg.remove();bg.onclick=e=>{if(e.target===bg)bg.remove()};
@@ -450,34 +545,100 @@ async function careerAction(action){
 function bindHome(){
   const b=app.querySelector("#careerAction");
   if(b)b.onclick=async()=>{b.disabled=true;b.textContent="SIMULANDO...";await careerAction(b.dataset.action)};
+  const gs=app.querySelector("#goSquad");if(gs)gs.onclick=()=>{state.view="squad";render()};
 }
 function bindSquad(){
+  const formation=app.querySelector("#formation");
+  if(formation)formation.onchange=()=>{app.querySelector("#pitchWrap").innerHTML=formationPitch(formation.value)};
+  const rotate=app.querySelector("#rotateSquad");
+  if(rotate)rotate.onclick=()=>{
+    suggestRotation(formation?.value||state.club.formation);
+    render();
+  };
   app.querySelectorAll(".toggle-player").forEach(b=>b.onclick=()=>{
     const p=state.players.find(x=>String(x.id)===String(b.dataset.id));if(!p)return;
+    if(Number(p.injury_games||0)>0&&!p.is_starter){alert(`${p.name} está lesionado por ${p.injury_games} jogo(s).`);return}
     if(!p.is_starter&&state.players.filter(x=>x.is_starter).length>=11){alert("Já existem 11 titulares.");return}
     p.is_starter=!p.is_starter;render();
   });
   app.querySelectorAll(".release-player").forEach(b=>b.onclick=async()=>{
     const p=state.players.find(x=>String(x.id)===String(b.dataset.id));
-    if(!p||!confirm(`Rescindir com ${p.name}?`))return;
+    const severance=Math.max(100,Number(p?.salary||0)*2);
+    if(!p||!confirm(`Rescindir com ${p.name}? A multa de rescisão será de ${severance.toLocaleString("pt-BR")} moedas.`))return;
     try{await api(`/api/players/${p.id}/release`,{method:"POST",body:"{}"});await refreshAll();render()}catch(err){alert(err.message)}
   });
   app.querySelector("#saveLineup").onclick=async()=>{
     try{
       await api("/api/lineup",{method:"PUT",body:JSON.stringify({
         starterIds:state.players.filter(p=>p.is_starter).map(p=>p.id),
-        formation:app.querySelector("#formation").value
+        formation:formation?.value||state.club.formation
       })});
       await refreshAll();render();
     }catch(err){alert(err.message)}
   };
 }
-function bindMarket(){
-  app.querySelectorAll(".buy-player").forEach(b=>b.onclick=async()=>{
-    b.disabled=true;
-    try{await api("/api/market/buy",{method:"POST",body:JSON.stringify({playerId:b.dataset.id})});await refreshAll();render()}
-    catch(err){alert(err.message);b.disabled=false}
+async function searchTransfers(){
+  const qv=encodeURIComponent(app.querySelector("#searchName")?.value||"");
+  const pos=encodeURIComponent(app.querySelector("#searchPosition")?.value||"");
+  const min=encodeURIComponent(app.querySelector("#searchMinRating")?.value||"0");
+  const max=encodeURIComponent(app.querySelector("#searchMaxPrice")?.value||"999999999");
+  const box=app.querySelector("#transferResults");
+  if(box)box.innerHTML=`<div class="empty">Procurando jogadores...</div>`;
+  try{
+    const d=await api(`/api/transfers/search?q=${qv}&position=${pos}&minRating=${min}&maxPrice=${max}`);
+    state.transferResults=d.players||[];
+    if(box)box.innerHTML=transferCards();
+    bindTransferButtons();
+  }catch(err){
+    if(box)box.innerHTML=`<div class="msg">${esc(err.message)}</div>`;
+  }
+}
+function bindTransferButtons(){
+  app.querySelectorAll(".negotiate-player").forEach(b=>b.onclick=()=>{
+    const p=state.transferResults.find(x=>String(x.id)===String(b.dataset.id));
+    if(p)openTransferOffer(p);
   });
+}
+function openTransferOffer(p){
+  const fee=Number(p.asking_price||0),salary=Math.max(Number(p.suggested_salary||0),Math.round(Number(p.suggested_salary||0)*1.1/10)*10);
+  const bg=document.createElement("div");bg.className="modal-bg";
+  bg.innerHTML=`<div class="modal">
+    <div class="modal-head"><div><div class="kicker">NEGOCIAÇÃO</div><h2>${esc(p.name)}</h2><span class="muted">${esc(p.source_club_name||"Jogador livre")} · ${esc(p.role||p.position)} · OVR ${p.rating}</span></div><button class="secondary close-modal">Fechar</button></div>
+    <form id="offerForm" class="stack" style="margin-top:16px">
+      <label>Oferta ao clube<input id="offerFee" type="number" min="0" value="${fee}"></label>
+      <label>Salário por rodada<input id="offerSalary" type="number" min="10" value="${salary}"></label>
+      <label>Duração do contrato<select id="offerYears"><option value="1">1 temporada</option><option value="2">2 temporadas</option><option value="3" selected>3 temporadas</option><option value="4">4 temporadas</option></select></label>
+      <div class="offer-summary">Pedido aproximado: <b>${fee.toLocaleString("pt-BR")}</b> · Salário sugerido: <b>${Number(p.suggested_salary||0).toLocaleString("pt-BR")}</b> · Interesse atual: <b>${esc(p.interest)}</b></div>
+      <div id="offerMsg"></div>
+      <button class="primary">Enviar proposta</button>
+    </form>
+  </div>`;
+  document.body.appendChild(bg);
+  bg.querySelector(".close-modal").onclick=()=>bg.remove();
+  bg.onclick=e=>{if(e.target===bg)bg.remove()};
+  bg.querySelector("#offerForm").onsubmit=async e=>{
+    e.preventDefault();
+    const btn=e.target.querySelector("button.primary");btn.disabled=true;btn.textContent="NEGOCIANDO...";
+    try{
+      const d=await api("/api/transfers/offer",{method:"POST",body:JSON.stringify({
+        playerId:p.id,feeOffer:Number(bg.querySelector("#offerFee").value||0),
+        salaryOffer:Number(bg.querySelector("#offerSalary").value||0),years:Number(bg.querySelector("#offerYears").value||3)
+      })});
+      bg.querySelector("#offerMsg").innerHTML=`<div class="msg ${d.accepted?"ok":""}">${esc(d.message)}</div>`;
+      if(d.accepted){
+        await refreshAll();
+        setTimeout(()=>{bg.remove();state.view="market";render()},700);
+      }else{btn.disabled=false;btn.textContent="Enviar proposta"}
+    }catch(err){
+      bg.querySelector("#offerMsg").innerHTML=`<div class="msg">${esc(err.message)}</div>`;btn.disabled=false;btn.textContent="Enviar proposta";
+    }
+  };
+}
+function bindMarket(){
+  const form=app.querySelector("#transferSearch");
+  if(form)form.onsubmit=async e=>{e.preventDefault();await searchTransfers()};
+  bindTransferButtons();
+  if(!state.transferResults?.length)searchTransfers();
 }
 function bindFriends(){
   app.querySelector("#copyCode").onclick=async()=>{try{await navigator.clipboard.writeText(state.club.friend_code);app.querySelector("#friendMsg").innerHTML=`<div class="msg ok">Código copiado.</div>`}catch{alert(state.club.friend_code)}};

@@ -1,8 +1,8 @@
 {
   "name": "dono-do-clube",
-  "version": "4.0.0",
+  "version": "5.0.0",
   "private": true,
-  "description": "Manager de futebol com estaduais, Séries A/B/C/D, acesso, rebaixamento e Libertadores.",
+  "description": "Dono do Clube com escalação visual, fadiga, salários, finanças, negociações realistas e competições estáveis.",
   "main": "server.js",
   "scripts": {
     "start": "node server.js"

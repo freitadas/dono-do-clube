@@ -1,51 +1,75 @@
-# Dono do Clube v4 — Brasileirão A/B/C/D + Estaduais
+# Dono do Clube v5 — gestão, mercado e partidas aprimorados
 
-Esta versão reinicia uma única vez o progresso esportivo no primeiro deploy desta versão.
+Esta versão mantém a carreira A/B/C/D + Estaduais + Libertadores e adiciona uma camada de gestão mais completa.
 
-## Carreira
-- O clube do usuário começa sempre na Série D.
-- Antes do Brasileirão, disputa o Campeonato Estadual do estado escolhido.
-- Ao fim da temporada aparece o botão para iniciar a próxima temporada.
-- Elenco, moedas, escudo, amigos e estatísticas acumuladas continuam entre temporadas.
+## Novidades
 
-## Séries do jogo
-Todas usam 20 clubes e 38 rodadas, com turno e returno:
-- Série A: top 4 vai à Libertadores; 4 últimos caem para B.
-- Série B: top 4 sobe para A; 4 últimos caem para C.
-- Série C: top 4 sobe para B; 4 últimos caem para D.
-- Série D: top 4 sobe para C; sem rebaixamento.
+- Campo visual da escalação na aba **Elenco**.
+- Jogadores aparecem no gramado de acordo com a formação.
+- Botão **Sugerir rodízio**.
+- Físico/fadiga de 0 a 100.
+- Moral dos jogadores.
+- Lesões por número de jogos.
+- Jogadores cansados perdem rendimento.
+- IA também monta times considerando condição física.
+- Resultados com força do elenco, ataque, defesa, físico, moral e vantagem de jogar em casa.
+- Posições mais detalhadas: GK, CB, RB, LB, CDM, CM, CAM, RM, LM, RW, LW e ST.
+- Elencos novos com distribuição de posições mais equilibrada.
 
-A composição inicial das divisões é uma estrutura própria do jogo. As Séries C e D reais da CBF usam formatos diferentes; aqui elas foram uniformizadas para o formato de 20 clubes/38 rodadas solicitado.
+## Dinheiro e salários
 
-## Estaduais
-- O estado é escolhido ao criar o clube.
-- Usuários antigos desta versão anterior escolhem o estado novamente após o reset.
-- 8 clubes por Estadual.
-- 7 rodadas classificatórias.
-- Top 4 para semifinais.
-- Final em jogo único.
+- Caixa inicial de novos clubes: 30.000 moedas.
+- Migração de clubes existentes para um caixa mínimo de 25.000 moedas.
+- Salário individual por rodada.
+- Folha salarial total.
+- Receita de patrocinadores.
+- Bilheteria em jogos em casa.
+- Bônus por resultado.
+- Registro de receitas e despesas.
+- Rescisão custa duas rodadas de salário.
+- Contratos de 1 a 4 temporadas.
+- Renovação automática de segurança no fim do contrato para não deixar a equipe sem jogadores.
 
-## Dificuldade
-- Série D: adversários mais acessíveis.
-- Série C: dificuldade intermediária.
-- Série B: nível forte.
-- Série A: nível mais alto.
-- Jogadores iniciais do usuário foram equilibrados para competir na Série D.
+## Transferências
 
-## Libertadores
-- 32 clubes.
-- Os 4 primeiros da Série A + 28 clubes continentais.
-- 8 grupos de 4.
-- 6 jogos por clube na fase de grupos.
-- Top 2 de cada grupo avança.
-- Oitavas, quartas e semifinais em ida e volta.
-- Final em jogo único.
-- Clubes de divisões inferiores não ganham vaga direta na Libertadores.
+A compra direta foi removida.
 
-## Recursos mantidos
-- Login e dados persistentes no PostgreSQL.
-- Personalização com escudo.
-- Mercado e rescisão.
-- Estatísticas de jogadores.
-- Visualização de elencos.
-- Amigos e amistosos.
+Na aba **Mercado** existe pesquisa por:
+- nome;
+- posição;
+- overall mínimo;
+- preço máximo.
+
+O sistema encontra:
+- jogadores livres;
+- jogadores de clubes controlados pelo jogo.
+
+Para contratar:
+1. o clube vendedor pode aceitar ou recusar a taxa;
+2. o jogador avalia salário, duração do contrato, força do seu clube e divisão;
+3. o atleta pode recusar a proposta;
+4. em caso de aceite, taxa + luvas são descontadas imediatamente;
+5. o salário passa a integrar a folha salarial.
+
+## Eventos inesperados
+
+Podem ocorrer:
+- lesões;
+- bônus comercial;
+- melhora de moral;
+- evolução no treino;
+- recuperação física do elenco;
+- impacto de caixa negativo no moral.
+
+## Competições
+
+Foram adicionados:
+- trava contra clique duplo/simulações simultâneas;
+- reparo automático de estado quando uma rodada/fase já foi concluída;
+- recuperação de progressão do Estadual;
+- recuperação de rodada do Brasileirão;
+- recuperação da Libertadores quando o estado da competição fica inconsistente.
+
+## Persistência
+
+Conta, clube, carreira, finanças, jogadores e demais dados continuam no PostgreSQL do Render.
