@@ -336,7 +336,7 @@ app.post("/api/matches/play",auth,async(req,res,next)=>{
   }catch(e){next(e);}
 });
 
-const html = String.raw`<!doctype html>
+const html = `<!doctype html>
 <html lang="pt-BR"><head>
 <meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1">
 <meta name="theme-color" content="#07110d"><title>Dono do Clube</title>
