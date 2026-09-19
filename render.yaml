@@ -1,0 +1,24 @@
+databases:
+  - name: dono-do-clube-db
+    plan: free
+    databaseName: dono_do_clube
+    user: dono_do_clube
+
+services:
+  - type: web
+    name: dono-do-clube
+    runtime: node
+    plan: free
+    buildCommand: npm install
+    startCommand: npm start
+    healthCheckPath: /health
+    autoDeploy: true
+    envVars:
+      - key: NODE_ENV
+        value: production
+      - key: APP_SECRET
+        generateValue: true
+      - key: DATABASE_URL
+        fromDatabase:
+          name: dono-do-clube-db
+          property: connectionString
