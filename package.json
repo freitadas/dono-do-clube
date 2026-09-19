@@ -1,8 +1,8 @@
 {
   "name": "dono-do-clube",
-  "version": "7.0.0",
+  "version": "9.0.0",
   "private": true,
-  "description": "Dono do Clube com opção segura de apagar o time e reiniciar a carreira do zero.",
+  "description": "Dono do Clube com simulação otimizada de uma rodada por vez e todos os recursos de gestão.",
   "main": "server.js",
   "scripts": {
     "start": "node server.js"

@@ -559,7 +559,7 @@ async function careerAction(action){
 
 function bindHome(){
   const b=app.querySelector("#careerAction");
-  if(b)b.onclick=async()=>{b.disabled=true;b.textContent="SIMULANDO...";await careerAction(b.dataset.action)};
+  if(b)b.onclick=async()=>{b.disabled=true;b.textContent=b.dataset.action==="national"?"SIMULANDO RODADA...":"SIMULANDO...";await careerAction(b.dataset.action)};
   const gs=app.querySelector("#goSquad");if(gs)gs.onclick=()=>{state.view="squad";render()};
 }
 function bindSquad(){

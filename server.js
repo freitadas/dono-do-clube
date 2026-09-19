@@ -753,6 +753,259 @@ async function ratingsMap(ids){
 }
 function findEntry(entries,id){return entries.find(e=>String(e.clubId)===String(id))}
 
+
+async function fastClubSnapshot(){
+  const rows=(await q(`SELECT id,name,team_rating,base_rating,is_ai FROM clubs`)).rows;
+  return new Map(rows.map(c=>[String(c.id),{
+    id:Number(c.id),name:c.name,
+    rating:Number(c.team_rating||c.base_rating||64),
+    isAi:Boolean(c.is_ai)
+  }]));
+}
+function fastScore(homeId,awayId,clubMap){
+  const home=clubMap.get(String(homeId))||{name:"Mandante",rating:64};
+  const away=clubMap.get(String(awayId))||{name:"Visitante",rating:64};
+  const homeFelipe=isFelipeName(home.name),awayFelipe=isFelipeName(away.name);
+  if(homeFelipe&&!awayFelipe){
+    const sc=felipeScore();return {hg:sc.winner,ag:sc.loser};
+  }
+  if(awayFelipe&&!homeFelipe){
+    const sc=felipeScore();return {hg:sc.loser,ag:sc.winner};
+  }
+  return basicScore(home.rating,away.rating);
+}
+function fastUserSummary(ownerId,f,hg,ag,clubMap,matchType){
+  const home=clubMap.get(String(f.home))||{name:"Mandante",rating:64};
+  const away=clubMap.get(String(f.away))||{name:"Visitante",rating:64};
+  const userHome=String(f.home)===String(ownerId);
+  const ug=userHome?hg:ag,og=userHome?ag:hg;
+  return {
+    opponentId:userHome?f.away:f.home,
+    isHome:userHome,
+    result:ug>og?"win":ug===og?"draw":"loss",
+    userClub:userHome?home.name:away.name,
+    opponent:userHome?away.name:home.name,
+    userGoals:ug,opponentGoals:og,
+    userRating:userHome?home.rating:away.rating,
+    opponentRating:userHome?away.rating:home.rating,
+    matchType,
+    events:[]
+  };
+}
+function playFastFixture(f,entries,clubMap,ownerId,matchType,userMatches){
+  if(f.played)return;
+  const {hg,ag}=fastScore(f.home,f.away,clubMap);
+  f.played=true;f.hg=hg;f.ag=ag;
+  if(entries){
+    applyResult(findEntry(entries,f.home),hg,ag);
+    applyResult(findEntry(entries,f.away),ag,hg);
+  }
+  if(String(f.home)===String(ownerId)||String(f.away)===String(ownerId)){
+    userMatches.push(fastUserSummary(ownerId,f,hg,ag,clubMap,matchType));
+  }
+}
+function finishFastState(career,ownerId,clubMap,userMatches){
+  const st=career.data.state;
+  if(st.stage==="FINISHED"){career.phase="NATIONAL";return}
+  while(st.stage!=="FINISHED"){
+    if(st.stage==="GROUP"){
+      while(st.round<=7){
+        const games=st.fixtures.filter(f=>f.stage==="GROUP"&&Number(f.round)===Number(st.round));
+        games.forEach(f=>playFastFixture(f,st.entries,clubMap,ownerId,"Estadual",userMatches));
+        if(st.round>=7){
+          const t=sortEntries(st.entries);
+          if(!st.fixtures.some(f=>f.stage==="SF")){
+            [[t[0].clubId,t[3].clubId],[t[1].clubId,t[2].clubId]].forEach(([home,away],i)=>
+              st.fixtures.push({stage:"SF",round:8,slot:i+1,home,away,played:false,hg:null,ag:null,pw:null})
+            );
+          }
+          st.stage="SF";st.round=8;
+          break;
+        }
+        st.round++;
+      }
+    }else if(st.stage==="SF"){
+      const games=st.fixtures.filter(f=>f.stage==="SF");
+      const winners=[];
+      for(const f of games){
+        playFastFixture(f,null,clubMap,ownerId,"Estadual",userMatches);
+        const winner=f.hg>f.ag?f.home:f.ag>f.hg?f.away:(Math.random()<.5?f.home:f.away);
+        if(f.hg===f.ag)f.pw=winner;
+        winners.push(winner);
+      }
+      if(!st.fixtures.some(f=>f.stage==="FINAL")){
+        st.fixtures.push({stage:"FINAL",round:9,slot:1,home:winners[0],away:winners[1],played:false,hg:null,ag:null,pw:null});
+      }
+      st.stage="FINAL";st.round=9;
+    }else if(st.stage==="FINAL"){
+      const f=st.fixtures.find(x=>x.stage==="FINAL");
+      playFastFixture(f,null,clubMap,ownerId,"Estadual",userMatches);
+      st.champion=f.hg>f.ag?f.home:f.ag>f.hg?f.away:(Math.random()<.5?f.home:f.away);
+      if(f.hg===f.ag)f.pw=st.champion;
+      st.stage="FINISHED";career.phase="NATIONAL";
+    }else{
+      st.stage="FINISHED";career.phase="NATIONAL";
+    }
+  }
+  career.data.state=st;
+}
+function simulateFastNationalRounds(career,ownerId,clubMap,userMatches,roundsToPlay){
+  let remaining=Math.max(0,Math.min(Number(roundsToPlay||1),39-Number(career.current_round||1)));
+  while(career.phase==="NATIONAL"&&remaining>0&&career.current_round<=38){
+    const round=Number(career.current_round);
+    for(const div of DIVS){
+      const d=career.data.divisions[div];
+      const games=d.fixtures.filter(f=>Number(f.round)===round&&!f.played);
+      games.forEach(f=>playFastFixture(f,d.entries,clubMap,ownerId,`Série ${div}`,userMatches));
+    }
+    career.current_round=round+1;
+    remaining--;
+  }
+}
+async function finalizeFastNational(career,ownerId,clubMap,userMatches){
+  if(career.phase!=="NATIONAL")return;
+  simulateFastNationalRounds(career,ownerId,clubMap,userMatches,100);
+  if(career.current_round>38){
+    if(!career.data.libertadores)await makeLibertadores(career);
+    const top4=sortEntries(career.data.divisions.A.entries).slice(0,4);
+    const qualified=career.user_division==="A"&&top4.some(e=>String(e.clubId)===String(ownerId));
+    career.phase=qualified?"LIBERTADORES":"END";
+    if(!qualified)await finishFastLibertadores(career,ownerId,clubMap,userMatches,false);
+  }
+}
+function advanceFastLibGroup(lib,ownerId,clubMap,userMatches,includeUser=true){
+  while(lib.stage==="GROUP"&&lib.matchday<=6){
+    const games=lib.fixtures.filter(f=>f.stage==="GROUP"&&Number(f.matchday)===Number(lib.matchday)&&!f.played);
+    games.forEach(f=>{
+      const list=includeUser?userMatches:[];
+      playFastFixture(f,lib.entries,clubMap,ownerId,"Libertadores",list);
+    });
+    if(lib.matchday>=6){
+      createR16(lib);
+      break;
+    }
+    lib.matchday++;
+  }
+}
+function advanceFastLibKnockout(lib,ownerId,clubMap,userMatches,includeUser=true){
+  while(lib.status!=="finished"&&lib.stage!=="GROUP"){
+    const stage=lib.stage;
+    const leg=stage==="FINAL"?1:Number(lib.leg||1);
+    const games=lib.fixtures.filter(f=>f.stage===stage&&Number(f.leg)===leg&&!f.played);
+    games.forEach(f=>{
+      const list=includeUser?userMatches:[];
+      playFastFixture(f,null,clubMap,ownerId,"Libertadores",list);
+    });
+    if(stage==="FINAL"){
+      const f=games[0]||lib.fixtures.find(x=>x.stage==="FINAL");
+      if(!f){lib.status="finished";break}
+      let champ=f.hg>f.ag?f.home:f.ag>f.hg?f.away:(Math.random()<.5?f.home:f.away);
+      if(f.hg===f.ag)f.pw=champ;
+      lib.champion=champ;lib.status="finished";
+      break;
+    }
+    if(leg===1){
+      lib.leg=2;
+    }else{
+      const winners=koWinners(lib,stage);
+      const next=stage==="R16"?"QF":stage==="QF"?"SF":"FINAL";
+      addKoStage(lib,next,winners);
+      lib.stage=next;lib.leg=1;
+    }
+  }
+}
+async function finishFastLibertadores(career,ownerId,clubMap,userMatches,includeUser=true){
+  const lib=career.data.libertadores;
+  if(!lib)return;
+  if(lib.stage==="GROUP")advanceFastLibGroup(lib,ownerId,clubMap,userMatches,includeUser);
+  if(lib.status!=="finished")advanceFastLibKnockout(lib,ownerId,clubMap,userMatches,includeUser);
+  career.data.libertadores=lib;
+  if(includeUser||career.phase==="LIBERTADORES")career.phase="END";
+}
+async function applyFastSimulationEffects(ownerId,userMatches,career){
+  if(!userMatches.length)return {matches:0,net:0};
+  return tx(async client=>{
+    const wage=await wageBill(client,ownerId);
+    let totalNet=0,totalSponsor=0,totalGate=0,totalPerformance=0,totalWages=0;
+    let totalGoals=0;
+    for(const m of userMatches){
+      const context=m.matchType.startsWith("Série ")?m.matchType.slice(-1):m.matchType==="Libertadores"?"LIB":"STATE";
+      const rates=financeRates(context);
+      const sponsor=rates.sponsor;
+      const gate=m.isHome?Math.round(rates.gate*(rand(88,112)/100)):0;
+      const performance=m.result==="win"?650:m.result==="draw"?250:80;
+      const net=sponsor+gate+performance-wage;
+      totalSponsor+=sponsor;totalGate+=gate;totalPerformance+=performance;totalWages+=wage;totalNet+=net;
+      totalGoals+=Number(m.userGoals||0);
+      await client.query(`INSERT INTO matches(user_club_id,opponent_club_id,user_goals,opponent_goals,reward,user_rating,opponent_rating,events,match_type)
+        VALUES($1,$2,$3,$4,$5,$6,$7,'[]'::jsonb,$8)`,
+        [ownerId,m.opponentId,m.userGoals,m.opponentGoals,performance,m.userRating,m.opponentRating,
+         m.matchType==="Estadual"?"state":m.matchType==="Libertadores"?"libertadores":`serie_${m.matchType.slice(-1).toLowerCase()}`]);
+    }
+    await client.query(`UPDATE clubs SET coins=coins+$2 WHERE id=$1`,[ownerId,totalNet]);
+    await client.query(`INSERT INTO club_finance_events(club_id,amount,category,description) VALUES($1,$2,'fast_simulation',$3)`,
+      [ownerId,totalNet,`Simulação rápida de ${userMatches.length} partida(s): patrocínio ${totalSponsor}, bilheteria ${totalGate}, bônus ${totalPerformance}, salários ${totalWages}`]);
+
+    const players=(await client.query(`SELECT * FROM players WHERE club_id=$1 ORDER BY is_starter DESC,rating DESC`,[ownerId])).rows;
+    const healthy=players.filter(p=>Number(p.injury_games||0)<=0);
+    const starters=healthy.filter(p=>p.is_starter).slice(0,11);
+    const bench=healthy.filter(p=>!p.is_starter);
+    const n=userMatches.length;
+    for(const p of starters){
+      const apps=Math.max(1,Math.round(n*(rand(70,92)/100)));
+      await client.query(`UPDATE players SET appearances=appearances+$2,fitness=$3,morale=GREATEST(45,LEAST(100,morale+$4)) WHERE id=$1`,
+        [p.id,apps,rand(72,96),rand(-3,6)]);
+    }
+    for(const p of bench){
+      const apps=Math.round(n*(rand(18,52)/100));
+      if(apps>0)await client.query(`UPDATE players SET appearances=appearances+$2,fitness=$3,morale=GREATEST(45,LEAST(100,morale+$4)) WHERE id=$1`,
+        [p.id,apps,rand(80,100),rand(-2,5)]);
+    }
+    const scorers=healthy.filter(p=>p.position!=="GK");
+    for(let i=0;i<Math.min(totalGoals,180);i++){
+      const p=weightedPick(scorers);
+      if(p)await client.query(`UPDATE players SET goals=goals+1 WHERE id=$1`,[p.id]);
+    }
+    const eventCount=Math.min(3,Math.max(1,Math.floor(n/10)));
+    for(let i=0;i<eventCount;i++)await unexpectedClubEvent(client,ownerId);
+    await applyFelipeMode(client,ownerId);
+    return {matches:n,net:totalNet};
+  });
+}
+async function fastSimulate(ownerId,mode="season",rounds=5){
+  let career=await repairCareer(ownerId);
+  if(!career)throw Object.assign(new Error("Carreira não encontrada."),{status:404});
+  if(career.phase==="END")return {message:"A temporada já terminou.",matches:0,phase:"END"};
+  const clubMap=await fastClubSnapshot();
+  const userMatches=[];
+  const startPhase=career.phase;
+  const startRound=career.current_round;
+
+  if(mode==="rounds"){
+    if(career.phase!=="NATIONAL")throw Object.assign(new Error("Simular rodadas está disponível durante o Brasileirão."),{status:400});
+    simulateFastNationalRounds(career,ownerId,clubMap,userMatches,clamp(Number(rounds||5),1,10));
+    if(career.current_round>38)await finalizeFastNational(career,ownerId,clubMap,userMatches);
+  }else if(mode==="competition"){
+    if(career.phase==="STATE")finishFastState(career,ownerId,clubMap,userMatches);
+    else if(career.phase==="NATIONAL")await finalizeFastNational(career,ownerId,clubMap,userMatches);
+    else if(career.phase==="LIBERTADORES")await finishFastLibertadores(career,ownerId,clubMap,userMatches,true);
+  }else{
+    if(career.phase==="STATE")finishFastState(career,ownerId,clubMap,userMatches);
+    if(career.phase==="NATIONAL")await finalizeFastNational(career,ownerId,clubMap,userMatches);
+    if(career.phase==="LIBERTADORES")await finishFastLibertadores(career,ownerId,clubMap,userMatches,true);
+  }
+
+  const effects=await applyFastSimulationEffects(ownerId,userMatches,career);
+  await saveCareer(career);
+  const end=await repairCareer(ownerId);
+  return {
+    message:mode==="season"?"Temporada simulada.":mode==="competition"?"Competição simulada.":`${effects.matches} partida(s) do seu clube simuladas.`,
+    mode,matches:effects.matches,net:effects.net,
+    startPhase,startRound,endPhase:end.phase,endRound:end.current_round,
+    seasonNo:end.season_no,userDivision:end.user_division
+  };
+}
+
 async function playState(ownerId){
   const career=await getCareer(ownerId);
   if(!career||career.phase!=="STATE") throw Object.assign(new Error("O Estadual não está ativo."),{status:400});
@@ -930,41 +1183,101 @@ async function autoFinishLib(career){
 
 async function playNational(ownerId){
   const career=await getCareer(ownerId);
-  if(!career||career.phase!=="NATIONAL") throw Object.assign(new Error("O Brasileirão não está ativo."),{status:400});
-  const round=career.current_round;
-  let userMatch=null;
-
-  for(const div of DIVS){
-    const d=career.data.divisions[div];
-    const games=d.fixtures.filter(f=>f.round===round&&!f.played);
-    const ids=[...new Set(games.flatMap(f=>[f.home,f.away]))],ratings=await ratingsMap(ids);
-
-    await tx(async c=>{
-      for(const f of games){
-        let hg,ag,events=[];
-        if(String(f.home)===String(ownerId)||String(f.away)===String(ownerId)){
-          const sim=await fullMatch(c,f.home,f.away,ownerId);hg=sim.hg;ag=sim.ag;events=sim.events;userMatch=sim.userMatch;userMatch.matchType=`Série ${div}`;userMatch.reward=0;
-          userMatch.finance=await settleMatchFinances(c,ownerId,div,String(f.home)===String(ownerId),userMatch.result);
-          await recordUserMatch(c,ownerId,String(f.home)===String(ownerId)?f.away:f.home,userMatch,events,`serie_${div.toLowerCase()}`,userMatch.finance.performance);
-        }else ({hg,ag}=basicScore(ratings.get(String(f.home))||64,ratings.get(String(f.away))||64));
-        f.played=true;f.hg=hg;f.ag=ag;
-        applyResult(findEntry(d.entries,f.home),hg,ag);applyResult(findEntry(d.entries,f.away),ag,hg);
-      }
-    });
+  if(!career||career.phase!=="NATIONAL"){
+    throw Object.assign(new Error("O Brasileirão não está ativo."),{status:400});
   }
 
+  const round=Number(career.current_round);
+  if(round<1||round>38){
+    await repairCareer(ownerId);
+    const repaired=await getCareer(ownerId);
+    if(repaired?.phase!=="NATIONAL"){
+      return {round:Math.min(round,38),userMatch:null,advanced:true};
+    }
+  }
+
+  const clubMap=await fastClubSnapshot();
+  let userMatch=null;
+
+  // Calcula todos os jogos das quatro divisões em memória.
+  for(const div of DIVS){
+    const d=career.data.divisions[div];
+    const games=d.fixtures.filter(f=>Number(f.round)===round&&!f.played);
+
+    for(const f of games){
+      const isUserGame=String(f.home)===String(ownerId)||String(f.away)===String(ownerId);
+
+      if(isUserGame){
+        // Apenas a partida do usuário usa o motor detalhado com escalação,
+        // físico, moral, eventos, estatísticas e finanças.
+        await tx(async c=>{
+          const sim=await fullMatch(c,f.home,f.away,ownerId);
+          f.played=true;f.hg=sim.hg;f.ag=sim.ag;
+          applyResult(findEntry(d.entries,f.home),sim.hg,sim.ag);
+          applyResult(findEntry(d.entries,f.away),sim.ag,sim.hg);
+
+          userMatch=sim.userMatch;
+          userMatch.matchType=`Série ${div}`;
+          userMatch.reward=0;
+          userMatch.finance=await settleMatchFinances(
+            c,
+            ownerId,
+            div,
+            String(f.home)===String(ownerId),
+            userMatch.result
+          );
+
+          await recordUserMatch(
+            c,
+            ownerId,
+            String(f.home)===String(ownerId)?f.away:f.home,
+            userMatch,
+            sim.events,
+            `serie_${div.toLowerCase()}`,
+            userMatch.finance.performance
+          );
+        });
+      }else{
+        // Jogos da IA: cálculo instantâneo sem operações individuais no banco.
+        const {hg,ag}=fastScore(f.home,f.away,clubMap);
+        f.played=true;f.hg=hg;f.ag=ag;
+        applyResult(findEntry(d.entries,f.home),hg,ag);
+        applyResult(findEntry(d.entries,f.away),ag,hg);
+      }
+    }
+  }
+
+  // Avança exatamente UMA rodada.
   if(round>=38){
+    career.current_round=39;
     await makeLibertadores(career);
+
     const tableA=sortEntries(career.data.divisions.A.entries);
-    const userTop4A=career.user_division==="A"&&tableA.slice(0,4).some(e=>String(e.clubId)===String(ownerId));
-    if(userTop4A) career.phase="LIBERTADORES";
-    else{ await autoFinishLib(career);career.phase="END"; }
-  }else career.current_round++;
+    const userTop4A=career.user_division==="A"&&
+      tableA.slice(0,4).some(e=>String(e.clubId)===String(ownerId));
 
+    if(userTop4A){
+      career.phase="LIBERTADORES";
+    }else{
+      // A Libertadores sem participação do usuário é resolvida rapidamente,
+      // sem atrasar a transição para o fim da temporada.
+      await finishFastLibertadores(career,ownerId,clubMap,[],false);
+      career.phase="END";
+    }
+  }else{
+    career.current_round=round+1;
+  }
+
+  // Uma única gravação consolidada do estado da competição.
   await saveCareer(career);
-  return {round,userMatch};
-}
 
+  return {
+    round,
+    userMatch,
+    nextRound:career.current_round,
+    phase:career.phase
+  };
+}
 async function playLib(ownerId){
   const career=await getCareer(ownerId);
   if(!career||career.phase!=="LIBERTADORES") throw Object.assign(new Error("Você não está na Libertadores agora."),{status:400});
@@ -1525,6 +1838,6 @@ async function start(){
   await oneTimeReset();
   await applyEconomyMigration();
   await ensureMarket();
-  app.listen(PORT,"0.0.0.0",()=>console.log(`Dono do Clube v6 rodando na porta ${PORT}`));
+  app.listen(PORT,"0.0.0.0",()=>console.log(`Dono do Clube v8 rodando na porta ${PORT}`));
 }
 start().catch(e=>{console.error("Falha ao iniciar:",e);process.exit(1)});

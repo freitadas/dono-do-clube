@@ -58,3 +58,5 @@ repeating-linear-gradient(0deg,#1e7d43 0,#1e7d43 56px,#237f47 56px,#237f47 112px
 .danger-zone{display:grid;grid-template-columns:1fr auto;gap:16px;align-items:center;margin-top:22px;padding:16px;border:1px solid #743139;background:linear-gradient(135deg,#2f1518,#17100f);border-radius:16px}
 .danger-zone h3{margin:4px 0 6px}.danger-zone p{margin:0;max-width:680px}.danger-kicker{color:#ff999f}
 @media(max-width:650px){.danger-zone{grid-template-columns:1fr}.danger-zone .danger{width:100%}}
+
+

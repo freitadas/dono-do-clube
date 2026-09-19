@@ -101,3 +101,24 @@ Ao usar essa opção:
 - a conta de login é preservada;
 - em seguida o usuário volta à tela de criação de clube;
 - o novo clube começa novamente na Série D e escolhe o estado do zero.
+
+
+
+
+## Simulação de rodada mais rápida
+
+A simulação continua avançando **somente uma rodada por clique**.
+
+Não existem mais botões para:
+- simular 3, 5 ou 10 rodadas;
+- simular uma competição inteira;
+- simular uma temporada inteira.
+
+O botão normal **JOGAR RODADA** foi otimizado:
+- os jogos dos outros clubes são calculados em memória;
+- apenas a partida do usuário usa o motor detalhado;
+- a tabela das quatro divisões é atualizada de uma vez;
+- o estado da carreira é gravado apenas uma vez ao final da rodada;
+- físico, moral, salários, eventos e estatísticas do jogo do usuário continuam funcionando normalmente.
+
+Todos os demais recursos da versão anterior foram mantidos.
