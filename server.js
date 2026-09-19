@@ -270,7 +270,7 @@ app.get("/api/standings", requireAuth, async (_req, res, next) => {
   }
 });
 
-app.get("*splat", (_req, res) => {
+app.get("/{*splat}", (_req, res) => {
   res.sendFile(path.join(__dirname, "public", "index.html"));
 });
 
