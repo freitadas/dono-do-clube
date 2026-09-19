@@ -192,3 +192,20 @@ repeating-linear-gradient(0deg,#1e7d43 0,#1e7d43 56px,#237f47 56px,#237f47 112px
   .player-last-match{grid-template-columns:1fr auto 1fr;font-size:11px}
   .player-nav{grid-template-columns:repeat(4,minmax(78px,1fr));overflow-x:auto}
 }
+
+
+/* v22 — mercado real, Champions e Super Mundial */
+.real-filter{display:flex!important;align-items:center!important;gap:7px!important;padding:8px 10px;border:1px solid var(--line);border-radius:10px;background:#0a1710;font-size:10px;font-weight:900;color:#c7d7cc;white-space:nowrap}
+.real-filter input{width:auto!important;margin:0}
+.real-player-badge{display:inline-block;vertical-align:middle;margin-left:5px;padding:3px 5px;border-radius:999px;background:#163a69;color:#cfe4ff;font-size:7px;font-weight:1000;letter-spacing:.07em}
+.world-allocation{display:grid;grid-template-columns:repeat(7,minmax(0,1fr));gap:7px;margin:12px 0 16px}
+.world-allocation span{display:grid;gap:3px;justify-items:center;padding:9px 6px;border-radius:11px;border:1px solid var(--line);background:#09150e;font-size:9px;color:var(--muted);text-align:center}
+.world-allocation b{font-size:18px;color:#fff}
+.world-home{display:flex;justify-content:space-between;gap:12px;align-items:center;margin-top:12px}
+.world-home h2{margin:3px 0}.compact-world-home{padding:11px 14px}
+.champions-table tr.qualified td{background:rgba(34,126,77,.16)}
+.champions-table tr.playoff-zone td{background:rgba(129,100,27,.11)}
+.champions-table tr.eliminated-zone td{opacity:.72}
+.world-empty{padding:22px}
+@media(max-width:900px){.world-allocation{grid-template-columns:repeat(4,minmax(0,1fr))}}
+@media(max-width:620px){.world-allocation{grid-template-columns:repeat(2,minmax(0,1fr))}.world-home{align-items:stretch;flex-direction:column}.real-filter{width:100%}}

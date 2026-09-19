@@ -1,8 +1,8 @@
 {
   "name": "dono-do-clube",
-  "version": "21.0.0",
+  "version": "22.0.0",
   "private": true,
-  "description": "Dono do Clube com carreiras de clube em vários países e modo carreira de jogador.",
+  "description": "Dono do Clube com jogadores reais no mercado, Champions League, Super Mundial e transferências internacionais no modo jogador.",
   "main": "server.js",
   "scripts": {
     "start": "node server.js"

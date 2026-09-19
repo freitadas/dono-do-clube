@@ -330,3 +330,99 @@ O limite continua sendo de **10 carreiras por conta**, somando:
 ### Independência dos saves
 
 Cada carreira continua independente. Uma carreira em outro país ou uma carreira de jogador não altera elenco, dinheiro, tabela, troféus ou progresso das demais.
+
+
+## Mercado real + Champions + Super Mundial — v22
+
+### Mercado com nomes de jogadores reais
+
+O mercado agora recebe um catálogo adicional com nomes de jogadores reais.
+
+Características:
+- pesquisa pelo nome;
+- filtro **Só jogadores reais**;
+- jogadores reais aparecem com selo **REAL**;
+- os mesmos jogadores podem existir em carreiras independentes;
+- contratar em um save não remove o jogador dos demais saves;
+- o nível disponível aumenta conforme a divisão;
+- na elite, o mercado pode exibir jogadores de nível mundial.
+
+Importante: os **ratings, atributos, idades de jogo, preços e salários são parâmetros internos de balanceamento** e não representam uma base oficial, um videogame comercial ou dados de mercado ao vivo.
+
+### UEFA Champions League
+
+Carreiras de clube em Inglaterra, Espanha, Itália, Alemanha, França e Portugal agora podem disputar a UEFA Champions League.
+
+Regra de classificação do jogo:
+- terminar entre os 4 primeiros da primeira divisão nacional.
+
+Formato usado:
+- 36 clubes;
+- fase de liga;
+- 8 partidas por clube;
+- 1º ao 8º avançam diretamente às oitavas;
+- 9º ao 24º disputam playoff;
+- mata-mata em ida e volta;
+- final em jogo único.
+
+A Champions possui:
+- tabela própria;
+- playoff;
+- oitavas;
+- quartas;
+- semifinais;
+- final;
+- premiação e troféu.
+
+### Super Mundial de Clubes
+
+Foi incluído o **Super Mundial de Clubes com 32 participantes**.
+
+Distribuição das 32 vagas:
+- UEFA: **12**
+- CONMEBOL: **6**
+- AFC: **4**
+- CAF: **4**
+- CONCACAF: **4**
+- OFC: **1**
+- País-sede: **1**
+
+Total: **32 clubes**.
+
+Formato do jogo:
+- 8 grupos de 4;
+- 3 partidas por clube na fase de grupos;
+- os 2 primeiros de cada grupo avançam;
+- oitavas de final;
+- quartas de final;
+- semifinais;
+- final;
+- mata-mata em jogo único.
+
+O Super Mundial ocorre em ciclo de quatro temporadas, nas temporadas **1, 5, 9, 13...**, acompanhando o calendário quadrienal iniciado na primeira temporada da carreira.
+
+Para o clube do usuário, a qualificação foi simplificada para o jogo:
+- campeão da primeira divisão nacional; ou
+- campeão da Libertadores/Champions na temporada do Super Mundial.
+
+Os demais participantes são preenchidos respeitando exatamente o número de vagas por confederação informado acima.
+
+### Carreira de jogador — propostas internacionais
+
+Ao terminar cada temporada da carreira de jogador, o atleta recebe **3 propostas**.
+
+As ofertas podem vir:
+- de clubes do país atual;
+- de clubes de outros países disponíveis no jogo.
+
+Cada proposta informa:
+- clube;
+- país;
+- divisão;
+- salário.
+
+Ao aceitar uma proposta internacional:
+- a transferência fica acertada para a temporada seguinte;
+- ao avançar a temporada, o jogador muda de país, liga e clube;
+- a nacionalidade do atleta não muda.
+

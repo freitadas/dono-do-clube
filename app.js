@@ -50,6 +50,8 @@ function phaseName(p){
   if(p==="STATE")return "Estadual";
   if(p==="NATIONAL")return state.activeType==="player"?"Liga nacional":(state.competitions?.career?leagueLabel(state.competitions.career.user_division):"Liga nacional");
   if(p==="LIBERTADORES")return "Libertadores";
+  if(p==="CHAMPIONS")return "Champions League";
+  if(p==="CLUB_WORLD_CUP")return "Super Mundial";
   if(p==="END")return "Temporada encerrada";
   return p;
 }
@@ -535,12 +537,31 @@ function copaQuickCard(){
   const active=copa.status!=="finished"&&!copa.userEliminated;
   return `<div class="card copa-home"><div><div class="kicker">${esc(copa.name||"COPA NACIONAL")}</div><h2>${copa.status==="finished"?`🏆 ${esc(copa.championClub?.name||"Encerrada")}`:esc(({R32:"Primeira fase",R16:"Oitavas",QF:"Quartas",SF:"Semifinais",FINAL:"Final"})[copa.stage]||copa.stage)}</h2><p class="muted">Torneio mata-mata em jogo único.</p></div>${active?`<button id="playCopaHome" class="primary">Jogar ${esc(copa.name||"Copa")}</button>`:""}</div>`;
 }
+function superWorldQuickCard(){
+  const car=state.competitions?.career;
+  if(!car)return "";
+  if(car.super_world_season){
+    return `<div class="card world-home">
+      <div><div class="kicker">🌍 SUPER MUNDIAL</div><h2>Temporada de Mundial de Clubes</h2>
+      <p class="muted">32 clubes: UEFA 12 · CONMEBOL 6 · AFC 4 · CAF 4 · CONCACAF 4 · OFC 1 · país-sede 1.</p></div>
+      <button class="secondary" id="goWorldCompetition">Ver Mundial</button>
+    </div>`;
+  }
+  const season=Number(car.season_no||1);
+  const next=season<=1?1:1+Math.ceil((season-1)/4)*4;
+  return `<div class="card world-home compact-world-home">
+    <div><div class="kicker">PRÓXIMO SUPER MUNDIAL</div><b>Temporada ${next}</b><span class="muted"> · ciclo de 4 temporadas</span></div>
+  </div>`;
+}
+
 function homeView(){
   const c=state.club,car=state.competitions.career,pos=userPosition();
   let action="";
   if(car.phase==="STATE")action=`<button id="careerAction" data-action="state" class="primary">🏟️ JOGAR PRÓXIMA FASE DO ESTADUAL</button>`;
   if(car.phase==="NATIONAL")action=`<button id="careerAction" data-action="national" class="primary">⚽ JOGAR RODADA ${car.current_round}/38</button>`;
   if(car.phase==="LIBERTADORES")action=`<button id="careerAction" data-action="lib" class="primary">🏆 JOGAR PRÓXIMA FASE DA LIBERTADORES</button>`;
+  if(car.phase==="CHAMPIONS")action=`<button id="careerAction" data-action="champions" class="primary">⭐ JOGAR PRÓXIMA FASE DA CHAMPIONS</button>`;
+  if(car.phase==="CLUB_WORLD_CUP")action=`<button id="careerAction" data-action="world" class="primary">🌍 JOGAR PRÓXIMA FASE DO SUPER MUNDIAL</button>`;
   if(car.phase==="END")action=`<button id="careerAction" data-action="next" class="primary">📅 IR PARA A PRÓXIMA TEMPORADA</button>`;
   const tired=state.players.filter(p=>p.is_starter&&Number(p.fitness||100)<55).length;
   const injured=state.players.filter(p=>Number(p.injury_games||0)>0).length;
@@ -561,6 +582,7 @@ function homeView(){
   </section>
   ${transferBanBanner()}
   ${copaQuickCard()}
+  ${superWorldQuickCard()}
   ${car.phase==="END"?`<section class="season-end" style="margin-top:14px">
     <div class="kicker">FIM DA TEMPORADA</div>
     <h2>${nextDivision()!==car.user_division?`Você vai para ${esc(leagueLabel(nextDivision(),car.country_code||c.country_code))}`:`Você permanece em ${esc(leagueLabel(car.user_division,car.country_code||c.country_code))}`}</h2>
@@ -711,7 +733,7 @@ function marketView(){
     <hr class="section-divider">
     <div class="kicker">CONTRATAÇÕES</div><h3>Pesquisar jogadores</h3>
     ${state.marketProfile?`<div class="market-level">Mercado de ${esc(leagueLabel(state.competitions?.career?.user_division||"D",state.competitions?.career?.country_code||state.club?.country_code))} · jogadores normalmente entre OVR ${state.marketProfile.min} e ${state.marketProfile.max}. Ao subir de divisão, o nível disponível aumenta.</div>`:""}
-    <p class="muted">Cada carreira possui seu próprio mercado. Você pode contratar os mesmos jogadores em carreiras diferentes, porque cada save mantém sua própria cópia do atleta.</p><p class="muted">O clube vendedor precisa aceitar a proposta e o jogador precisa aceitar o salário e o projeto esportivo. Compras podem ser parceladas em até 24x. Jogadores não essenciais de clubes do jogo podem chegar por empréstimo.</p>
+    <p class="muted">O mercado agora inclui jogadores com nomes reais. Os atributos, preços e salários são valores de jogo balanceados e não representam uma base oficial ao vivo. Cada carreira mantém sua própria cópia do atleta.</p><p class="muted">O clube vendedor precisa aceitar a proposta e o jogador precisa aceitar o salário e o projeto esportivo. Compras podem ser parceladas em até 24x. Jogadores não essenciais de clubes do jogo podem chegar por empréstimo.</p>
     ${ban?.active?`<p class="muted">A pesquisa continua disponível, mas novas contratações estão bloqueadas pelo transfer ban.</p>`:""}
     <form id="transferSearch" class="transfer-search">
       <input id="searchName" placeholder="Nome do jogador">
@@ -723,7 +745,8 @@ function marketView(){
         <option value="RW">Ponta direita</option><option value="LW">Ponta esquerda</option><option value="ST">Centroavante</option>
       </select>
       <input id="searchMinRating" type="number" min="40" max="100" value="58" placeholder="OVR mínimo">
-      <input id="searchMaxPrice" type="number" min="0" value="150000" placeholder="Valor máximo">
+      <input id="searchMaxPrice" type="number" min="0" value="500000" placeholder="Valor máximo">
+      <label class="real-filter"><input id="searchRealOnly" type="checkbox"> Só jogadores reais</label>
       <button class="primary">Pesquisar</button>
     </form>
     <div id="transferMsg"></div>
@@ -741,9 +764,9 @@ function incomingOfferCards(){
 function transferCards(){
   if(!state.transferResults?.length)return `<div class="empty">Use a pesquisa para encontrar jogadores livres e atletas de outros clubes. A qualidade do mercado aumenta conforme sua divisão.</div>`;
   return state.transferResults.map(p=>`<article class="player">
-    <span class="pos">${esc(p.role||posName(p.position))} · ${p.age} anos</span><span class="rating">${p.rating}</span>
-    <h4>${esc(p.name)}</h4>
-    <div class="transfer-source">${p.source_club_name?esc(p.source_club_name):"Livre no mercado"}${p.source_division?` · ${esc(leagueLabel(p.source_division,state.competitions?.career?.country_code||state.club?.country_code))}`:""}</div>
+    <span class="pos">${esc(p.role||posName(p.position))} · ${p.age} anos${p.nationality_code?` · ${esc(p.nationality_code)}`:""}</span><span class="rating">${p.rating}</span>
+    <h4>${esc(p.name)} ${p.is_real_name?`<span class="real-player-badge">REAL</span>`:""}</h4>
+    <div class="transfer-source">${p.source_club_name?esc(p.source_club_name):(p.is_real_name?"Mercado global":"Livre no mercado")}${p.source_division?` · ${esc(leagueLabel(p.source_division,state.competitions?.career?.country_code||state.club?.country_code))}`:""}</div>
     <div class="attrs"><span>VEL <b>${p.pace}</b></span><span>CHU <b>${p.shooting}</b></span><span>PAS <b>${p.passing}</b></span><span>DEF <b>${p.defending}</b></span></div>
     <div class="pstats">
       <span>Valor justo <b>${Number(p.fair_value||0).toLocaleString("pt-BR")}</b></span>
@@ -789,7 +812,11 @@ function divisionView(div){
   const games=d.fixtures.filter(f=>Number(f.round)===Number(round));
   return `<div class="competition-info">
     <span class="badge blue">20 TIMES</span><span class="badge blue">38 RODADAS</span><span class="badge blue">19 CASA + 19 FORA</span>
-    ${div==="A"?`${(state.competitions.career.country_code||"BR")==="BR"?`<span class="badge">TOP 4 → LIBERTADORES</span>`:`<span class="badge">ELITE NACIONAL</span>`}<span class="badge red">4 REBAIXADOS</span>`:
+    ${div==="A"?`${(state.competitions.career.country_code||"BR")==="BR"
+      ?`<span class="badge">TOP 4 → LIBERTADORES</span>`
+      :["ENG","ESP","ITA","GER","FRA","POR"].includes(state.competitions.career.country_code||"")
+        ?`<span class="badge">TOP 4 → CHAMPIONS LEAGUE</span>`
+        :`<span class="badge">ELITE NACIONAL</span>`}<span class="badge red">4 REBAIXADOS</span>`:
       div==="D"?`<span class="badge">4 SOBEM</span><span class="badge blue">SEM REBAIXAMENTO</span>`:
       `<span class="badge">4 SOBEM</span><span class="badge red">4 CAEM</span>`}
   </div>
@@ -860,6 +887,105 @@ function libertadoresView(){
   return `<div class="section-title"><div><div class="kicker">MATA-MATA</div><h2>${({R16:"Oitavas",QF:"Quartas",SF:"Semifinais",FINAL:"Final"})[lib.stage]}</h2></div>${button}</div>${knockoutList(lib)}`;
 }
 
+function championsTableRows(){
+  const ch=state.competitions.championsLeague;
+  if(!ch)return [];
+  return [...ch.entries].sort((x,y)=>y.points-x.points||(y.gd-x.gd)||y.gf-x.gf);
+}
+function championsKnockoutList(ch){
+  return `<div class="knockout-grid">${[["PLAYOFF","Playoff"],["R16","Oitavas"],["QF","Quartas"],["SF","Semifinais"],["FINAL","Final"]].map(([code,label])=>{
+    const fs=ch.fixtures.filter(f=>f.stage===code);if(!fs.length)return "";
+    return `<div class="knockout-stage"><h3>${label}</h3>${fs.map(f=>`<div class="ko-match">
+      <small>${code==="FINAL"?"Final":`Chave ${f.slot} · jogo ${f.leg}`}</small>
+      <span>${esc(f.homeClub?.name||"")} ${f.played?`<b>${f.hg}</b>`:""}</span>
+      <span>${esc(f.awayClub?.name||"")} ${f.played?`<b>${f.ag}</b>`:""}</span>
+      ${f.pw?`<em>Decidido nos pênaltis</em>`:""}
+    </div>`).join("")}</div>`;
+  }).join("")}</div>`;
+}
+function championsView(){
+  const ch=state.competitions.championsLeague;
+  const country=state.competitions.career.country_code||"BR";
+  if(!ch)return `<div class="empty"><h2>⭐ UEFA Champions League</h2><p>Nas carreiras europeias, os 4 primeiros da elite nacional se classificam.</p></div>`;
+
+  const rows=championsTableRows();
+  const button=state.competitions.career.phase==="CHAMPIONS"?`<button id="playChampions" class="primary">Jogar próxima fase</button>`:"";
+
+  if(ch.status==="finished"){
+    return `<div class="champion-card"><div class="kicker">CAMPEÃO DA CHAMPIONS LEAGUE</div><h2>⭐ ${esc(ch.championClub?.name||"Campeão")}</h2></div>
+      ${championsKnockoutList(ch)}`;
+  }
+
+  if(ch.stage==="LEAGUE"){
+    return `<div class="section-title"><div>
+      <div class="kicker">36 CLUBES · FASE DE LIGA</div>
+      <h2>UEFA Champions League</h2>
+      <span class="muted">8 jogos por clube · top 8 direto às oitavas · 9º ao 24º no playoff</span>
+    </div>${button}</div>
+    <div class="table-wrap champions-table"><table>
+      <thead><tr><th>#</th><th>Clube</th><th>PTS</th><th>J</th><th>V</th><th>E</th><th>D</th><th>SG</th></tr></thead>
+      <tbody>${rows.map((e,i)=>`<tr class="clickable ${i<8?"qualified":i<24?"playoff-zone":"eliminated-zone"} ${String(e.clubId)===String(state.club.id)?"me":""}" data-club="${e.clubId}">
+        <td>${i+1}</td><td>${esc(e.club?.name||"")}</td><td><b>${e.points}</b></td><td>${e.wins+e.draws+e.losses}</td><td>${e.wins}</td><td>${e.draws}</td><td>${e.losses}</td><td>${e.gd>0?"+":""}${e.gd}</td>
+      </tr>`).join("")}</tbody>
+    </table></div>`;
+  }
+
+  return `<div class="section-title"><div><div class="kicker">MATA-MATA</div><h2>Champions League — ${esc(({PLAYOFF:"Playoff",R16:"Oitavas",QF:"Quartas",SF:"Semifinais",FINAL:"Final"})[ch.stage]||ch.stage)}</h2></div>${button}</div>
+    ${championsKnockoutList(ch)}`;
+}
+function worldGroupCard(group){
+  const world=state.competitions.clubWorldCup;
+  const rows=world.entries.filter(e=>e.group===group).sort((a,b)=>b.points-a.points||(b.gd-a.gd)||b.gf-a.gf);
+  return `<div class="group-card"><h3>Grupo ${group}</h3>
+    <table class="mini-table"><thead><tr><th>#</th><th>Clube</th><th>PTS</th><th>J</th><th>SG</th></tr></thead>
+    <tbody>${rows.map((e,i)=>`<tr class="${i<2?"qualified":""} clickable" data-club="${e.clubId}">
+      <td>${i+1}</td><td>${esc(e.club?.name||"")}</td><td>${e.points}</td><td>${e.wins+e.draws+e.losses}</td><td>${e.gd>0?"+":""}${e.gd}</td>
+    </tr>`).join("")}</tbody></table>
+  </div>`;
+}
+function worldKnockoutList(world){
+  return `<div class="knockout-grid">${[["R16","Oitavas"],["QF","Quartas"],["SF","Semifinais"],["FINAL","Final"]].map(([code,label])=>{
+    const fs=world.fixtures.filter(f=>f.stage===code);if(!fs.length)return "";
+    return `<div class="knockout-stage"><h3>${label}</h3>${fs.map(f=>`<div class="ko-match">
+      <small>${code==="FINAL"?"Final":`Chave ${f.slot}`}</small>
+      <span>${esc(f.homeClub?.name||"")} ${f.played?`<b>${f.hg}</b>`:""}</span>
+      <span>${esc(f.awayClub?.name||"")} ${f.played?`<b>${f.ag}</b>`:""}</span>
+      ${f.pw?`<em>Decidido nos pênaltis</em>`:""}
+    </div>`).join("")}</div>`;
+  }).join("")}</div>`;
+}
+function clubWorldCupView(){
+  const world=state.competitions.clubWorldCup;
+  const car=state.competitions.career;
+  const allocation=`<div class="world-allocation">
+    <span>🇪🇺 UEFA <b>12</b></span><span>🌎 CONMEBOL <b>6</b></span><span>🌏 AFC <b>4</b></span>
+    <span>🌍 CAF <b>4</b></span><span>🌎 CONCACAF <b>4</b></span><span>🌊 OFC <b>1</b></span><span>🏟️ País-sede <b>1</b></span>
+  </div>`;
+
+  if(!world){
+    const season=Number(car.season_no||1);const next=season<=1?1:1+Math.ceil((season-1)/4)*4;
+    return `<div class="empty world-empty"><h2>🌍 Super Mundial de Clubes</h2>
+      <p>32 clubes. O torneio acontece a cada 4 temporadas neste modo carreira.</p>
+      ${allocation}
+      <p>Próxima edição no calendário da carreira: temporada ${next}.</p>
+    </div>`;
+  }
+
+  const button=car.phase==="CLUB_WORLD_CUP"?`<button id="playWorld" class="primary">Jogar próxima fase</button>`:"";
+  if(world.status==="finished"){
+    return `<div class="champion-card"><div class="kicker">CAMPEÃO MUNDIAL DE CLUBES</div><h2>🌍🏆 ${esc(world.championClub?.name||"Campeão")}</h2></div>${allocation}${worldKnockoutList(world)}`;
+  }
+
+  if(world.stage==="GROUP"){
+    return `<div class="section-title"><div><div class="kicker">32 CLUBES · 8 GRUPOS</div><h2>Super Mundial de Clubes</h2><span class="muted">3 jogos por clube · os 2 melhores de cada grupo avançam</span></div>${button}</div>
+      ${allocation}
+      <div class="groups-grid">${"ABCDEFGH".split("").map(worldGroupCard).join("")}</div>`;
+  }
+
+  return `<div class="section-title"><div><div class="kicker">SUPER MUNDIAL · MATA-MATA</div><h2>${esc(({R16:"Oitavas",QF:"Quartas",SF:"Semifinais",FINAL:"Final"})[world.stage]||world.stage)}</h2></div>${button}</div>
+    ${allocation}${worldKnockoutList(world)}`;
+}
+
 function copaView(){
   const copa=state.competitions.copaBrasil;
   if(!copa)return `<div class="empty">Copa nacional não disponível.</div>`;
@@ -876,16 +1002,32 @@ function copaView(){
 
 function competitionsView(){
   const car=state.competitions.career;
-  const isBR=(car.country_code||state.club.country_code||"BR")==="BR";
-  if(!["STATE","COPA","A","B","C","D","LIB"].includes(state.competitionTab))state.competitionTab=car.user_division;
-  if(!isBR&&(state.competitionTab==="STATE"||state.competitionTab==="LIB"))state.competitionTab=car.user_division;
-  const content=state.competitionTab==="STATE"?stateView():state.competitionTab==="COPA"?copaView():state.competitionTab==="LIB"?libertadoresView():divisionView(state.competitionTab);
+  const country=car.country_code||state.club.country_code||"BR";
+  const isBR=country==="BR";
+  const isEurope=["ENG","ESP","ITA","GER","FRA","POR"].includes(country);
+  const allowed=["STATE","COPA","A","B","C","D","LIB","CHAMPIONS","WORLD"];
+
+  if(!allowed.includes(state.competitionTab))state.competitionTab=car.user_division;
+  if(!isBR&&state.competitionTab==="STATE")state.competitionTab=car.user_division;
+  if(!isBR&&state.competitionTab==="LIB")state.competitionTab=car.user_division;
+  if(!isEurope&&state.competitionTab==="CHAMPIONS")state.competitionTab=car.user_division;
+
+  const content=
+    state.competitionTab==="STATE"?stateView():
+    state.competitionTab==="COPA"?copaView():
+    state.competitionTab==="LIB"?libertadoresView():
+    state.competitionTab==="CHAMPIONS"?championsView():
+    state.competitionTab==="WORLD"?clubWorldCupView():
+    divisionView(state.competitionTab);
+
   return `<section class="card">
     <div class="competition-tabs">
       ${isBR?`<button data-comp="STATE" class="${state.competitionTab==="STATE"?"on":""}">ESTADUAL</button>`:""}
       <button data-comp="COPA" class="${state.competitionTab==="COPA"?"on":""}">${esc(state.competitions.copaBrasil?.name||"COPA NACIONAL")}</button>
-      ${["A","B","C","D"].map(d=>`<button data-comp="${d}" class="${state.competitionTab===d?"on":""}">${esc(leagueLabel(d,car.country_code||state.club.country_code))}</button>`).join("")}
+      ${["A","B","C","D"].map(d=>`<button data-comp="${d}" class="${state.competitionTab===d?"on":""}">${esc(leagueLabel(d,country))}</button>`).join("")}
       ${isBR?`<button data-comp="LIB" class="${state.competitionTab==="LIB"?"on":""}">LIBERTADORES</button>`:""}
+      ${isEurope?`<button data-comp="CHAMPIONS" class="${state.competitionTab==="CHAMPIONS"?"on":""}">CHAMPIONS</button>`:""}
+      <button data-comp="WORLD" class="${state.competitionTab==="WORLD"?"on":""}">MUNDIAL</button>
     </div>
     ${content}
   </section>`;
@@ -903,11 +1045,11 @@ function playerTransferOffersView(){
   const offers=state.playerData?.transferOffers||[];
   if(!offers.length)return `<section class="card"><div class="kicker">MERCADO</div><h2>Sem propostas por enquanto</h2><p class="muted">Você pode continuar no clube e iniciar a próxima temporada.</p></section>`;
   return `<section class="card player-offers">
-    <div class="kicker">PROPOSTAS DE TRANSFERÊNCIA</div><h2>Escolha seu próximo passo</h2>
+    <div class="kicker">3 PROPOSTAS POR TEMPORADA</div><h2>Escolha seu próximo passo</h2><p class="muted">As propostas podem vir do seu país atual ou de outra liga disponível no jogo.</p>
     <div class="player-offer-grid">
       ${offers.map(o=>`<article class="player-offer ${o.status!=="pending"?"decided":""}">
         <b>${esc(o.club?.name||o.clubName)}</b>
-        <span>${esc(leagueLabel(o.division,state.playerData.career.country_code))}</span>
+        <span>${esc(countryName(o.countryCode||state.playerData.career.country_code))} · ${esc(leagueLabel(o.division,o.countryCode||state.playerData.career.country_code))}</span>
         <span>Salário <strong>${Number(o.salary).toLocaleString("pt-BR")}/mês</strong></span>
         ${o.status==="pending"?`<button class="primary accept-player-offer" data-club="${o.clubId}">Aceitar proposta</button>`:`<em>${o.status==="accepted"?"Aceita":"Recusada"}</em>`}
       </article>`).join("")}
@@ -1272,7 +1414,15 @@ async function showClub(id){
 }
 
 async function careerAction(action){
-  const endpoints={state:"/api/state/play-next",national:"/api/national/play-round",copa:"/api/copa/play-next",lib:"/api/libertadores/play-next",next:"/api/career/next-season"};
+  const endpoints={
+    state:"/api/state/play-next",
+    national:"/api/national/play-round",
+    copa:"/api/copa/play-next",
+    lib:"/api/libertadores/play-next",
+    champions:"/api/champions/play-next",
+    world:"/api/club-world-cup/play-next",
+    next:"/api/career/next-season"
+  };
   try{
     const d=await api(endpoints[action],{method:"POST",body:"{}"});
     await refreshAll();render();
@@ -1289,6 +1439,7 @@ function bindHome(){
   if(b)b.onclick=async()=>{b.disabled=true;b.textContent=b.dataset.action==="national"?"SIMULANDO RODADA...":"SIMULANDO...";await careerAction(b.dataset.action)};
   const gs=app.querySelector("#goSquad");if(gs)gs.onclick=()=>{state.view="squad";render()};
   const cup=app.querySelector("#playCopaHome");if(cup)cup.onclick=async()=>{cup.disabled=true;await careerAction("copa")};
+  const world=app.querySelector("#goWorldCompetition");if(world)world.onclick=()=>{state.view="league";state.competitionTab="WORLD";render()};
   app.querySelectorAll(".sponsor-offer").forEach(btn=>btn.onclick=async()=>{
     const sponsor=(state.sponsorship?.offers||[]).find(x=>x.id===btn.dataset.sponsor);
     if(!sponsor)return;
@@ -1462,10 +1613,11 @@ async function searchTransfers(){
   const pos=encodeURIComponent(app.querySelector("#searchPosition")?.value||"");
   const min=encodeURIComponent(app.querySelector("#searchMinRating")?.value||"0");
   const max=encodeURIComponent(app.querySelector("#searchMaxPrice")?.value||"999999999");
+  const realOnly=app.querySelector("#searchRealOnly")?.checked?"1":"0";
   const box=app.querySelector("#transferResults");
   if(box)box.innerHTML=`<div class="empty">Procurando jogadores...</div>`;
   try{
-    const d=await api(`/api/transfers/search?q=${qv}&position=${pos}&minRating=${min}&maxPrice=${max}`);
+    const d=await api(`/api/transfers/search?q=${qv}&position=${pos}&minRating=${min}&maxPrice=${max}&realOnly=${realOnly}`);
     state.transferResults=d.players||[];
     state.marketProfile=d.marketProfile||state.marketProfile;
     if(state.finance&&d.transferBan)state.finance.transferBan=d.transferBan;
@@ -1620,6 +1772,8 @@ function bindCompetitions(){
   const ps=app.querySelector("#playState");if(ps)ps.onclick=async()=>{ps.disabled=true;await careerAction("state")};
   const pc=app.querySelector("#playCopa");if(pc)pc.onclick=async()=>{pc.disabled=true;await careerAction("copa")};
   const pl=app.querySelector("#playLib");if(pl)pl.onclick=async()=>{pl.disabled=true;await careerAction("lib")};
+  const pcg=app.querySelector("#playChampions");if(pcg)pcg.onclick=async()=>{pcg.disabled=true;await careerAction("champions")};
+  const pw=app.querySelector("#playWorld");if(pw)pw.onclick=async()=>{pw.disabled=true;await careerAction("world")};
 }
 
 let pendingCrest;
