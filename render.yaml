@@ -1,9 +1,3 @@
-databases:
-  - name: dono-do-clube-db
-    plan: free
-    databaseName: dono_do_clube
-    user: dono_do_clube
-
 services:
   - type: web
     name: dono-do-clube
@@ -22,3 +16,9 @@ services:
         fromDatabase:
           name: dono-do-clube-db
           property: connectionString
+
+databases:
+  - name: dono-do-clube-db
+    plan: free
+    databaseName: dono_do_clube
+    user: dono_do_clube

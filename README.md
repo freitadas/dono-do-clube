@@ -1,113 +1,31 @@
-# Dono do Clube — MVP
+# Dono do Clube — versão flat
 
-Jogo de manager de futebol para navegador. Esta versão foi construída para ser simples de publicar com GitHub + Render.
+Esta versão foi feita especificamente para evitar problemas de upload de pastas no GitHub.
 
-## O que já funciona
+A raiz do repositório precisa ter somente estes arquivos principais:
 
-- Cadastro e login por e-mail/senha.
-- Sessão em cookie HttpOnly assinado.
-- Criação de clube com nome e cores.
-- Geração automática de 18 jogadores.
-- 3 formações: 4-3-3, 4-4-2 e 3-5-2.
-- Escolha dos 11 titulares.
-- Simulação de partidas contra clubes controlados pelo sistema.
-- Eventos de gols e recompensa por resultado.
-- Moedas.
-- Mercado de jogadores.
-- Classificação da liga.
-- Histórico dos últimos jogos.
-- Layout responsivo para celular e computador.
-- PostgreSQL.
-- `render.yaml` para Blueprint do Render.
-- Endpoint `/health`.
+- `server.js`
+- `package.json`
+- `render.yaml`
+- `README.md`
 
-## Publicação no GitHub
+Não existe pasta `src/`.
+Não existe pasta `public/`.
 
-1. Crie um repositório vazio no GitHub, por exemplo `dono-do-clube`.
-2. Extraia este ZIP.
-3. Envie **o conteúdo da pasta `dono-do-clube`** para a raiz do repositório.
-4. Confirme que `render.yaml`, `package.json`, `server.js`, `src/` e `public/` aparecem na raiz.
+O `server.js` contém backend, banco, regras do jogo e interface.
 
-## Publicação no Render usando Blueprint
+## Para atualizar o repositório já existente
 
-1. Entre no Render.
-2. Crie um novo Blueprint.
-3. Conecte o repositório GitHub.
-4. O Render lerá `render.yaml`.
-5. O Blueprint cria:
-   - um Web Service Node;
-   - um PostgreSQL;
-   - `DATABASE_URL` ligada automaticamente ao banco;
-   - `APP_SECRET` gerada automaticamente.
-6. Aplique o Blueprint e aguarde o deploy.
-7. Abra a URL `*.onrender.com` fornecida pelo Render.
+1. Apague os arquivos antigos do repositório ou substitua-os.
+2. Envie os quatro arquivos desta versão para a raiz do repositório.
+3. Faça commit na branch `main`.
+4. O Render deverá iniciar novo deploy automaticamente.
+5. Não crie outro banco.
+6. Não crie outro Blueprint.
 
-Não é necessário criar tabelas manualmente: o servidor cria o schema na inicialização.
+## Erro que esta versão elimina
 
-## Rodar localmente
+A versão anterior dependia de `./src/db`, `./src/auth` e `./src/game`.
+Se a pasta `src` não fosse enviada pelo navegador, o Render encerrava com `MODULE_NOT_FOUND`.
 
-Você precisa de Node.js 20+ e PostgreSQL.
-
-```bash
-npm install
-```
-
-Copie `.env.example` para `.env`, ajuste `DATABASE_URL` e `APP_SECRET`, exporte as variáveis no seu terminal e rode:
-
-```bash
-npm start
-```
-
-Abra:
-
-```text
-http://localhost:3000
-```
-
-## Estrutura
-
-```text
-dono-do-clube/
-├── public/
-│   ├── app.js
-│   ├── index.html
-│   └── styles.css
-├── src/
-│   ├── auth.js
-│   ├── db.js
-│   └── game.js
-├── .env.example
-├── .gitignore
-├── package.json
-├── render.yaml
-├── server.js
-└── README.md
-```
-
-## Antes de monetizar de verdade
-
-Este é um MVP funcional. Antes de abrir pagamentos reais, é necessário acrescentar, no mínimo:
-
-- rate limiting;
-- recuperação de senha;
-- verificação de e-mail;
-- logs/auditoria;
-- política de privacidade e termos;
-- proteção antiabuso/antibot;
-- pagamentos com webhooks idempotentes;
-- painel administrativo;
-- backups e política de retenção;
-- testes automatizados;
-- regras de economia para impedir exploração infinita de moedas.
-
-## Próxima versão sugerida
-
-1. Temporadas com início e fim.
-2. Energia ou limite de partidas competitivo.
-3. Venda de jogadores.
-4. Treino/evolução.
-5. Lesões e cartões.
-6. Competições entre clubes de usuários.
-7. Convites e ligas privadas.
-8. Personalização de escudo/uniforme.
-9. Passe de temporada e itens cosméticos.
+Esta versão não possui dependências locais.

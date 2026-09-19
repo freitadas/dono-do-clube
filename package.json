@@ -1,19 +1,17 @@
 {
   "name": "dono-do-clube",
-  "version": "1.0.0",
+  "version": "1.1.0",
   "private": true,
-  "description": "MVP de manager de futebol para web, pronto para GitHub + Render.",
+  "description": "Dono do Clube - MVP flat para GitHub + Render",
   "main": "server.js",
   "scripts": {
-    "start": "node server.js",
-    "dev": "node --watch server.js",
-    "check": "node --check server.js && node --check src/db.js && node --check src/auth.js && node --check src/game.js && node --check public/app.js"
+    "start": "node server.js"
   },
   "engines": {
-    "node": ">=20"
+    "node": ">=20 <27"
   },
   "dependencies": {
-    "express": "^5.1.0",
-    "pg": "^8.16.3"
+    "express": "5.1.0",
+    "pg": "8.16.3"
   }
 }
