@@ -403,6 +403,64 @@ function homeView(){
   <section class="grid calendar-grid">${calendarCard()}${sponsorshipCard()}</section>
   <section class="card" style="margin-top:14px"><div class="kicker">GALERIA</div><h2>Troféus do clube</h2>${trophyCards((state.trophies||[]).slice(0,6))}</section>`;
 }
+function startersView(){
+  const starters=state.players
+    .filter(p=>p.is_starter)
+    .sort((x,y)=>{
+      const order={GK:1,DEF:2,MID:3,ATT:4};
+      return (order[x.position]||9)-(order[y.position]||9) || Number(y.rating)-Number(x.rating);
+    });
+
+  return `<section class="card starters-page">
+    <div class="toolbar">
+      <div>
+        <div class="kicker">TIME PRINCIPAL</div>
+        <h2>Titulares</h2>
+      </div>
+      <div class="squad-tools">
+        <label>Formação<select id="starterFormation">${["4-3-3","4-4-2","3-5-2"].map(f=>`<option ${state.club.formation===f?"selected":""}>${f}</option>`).join("")}</select></label>
+        <button id="starterBestSquad" class="primary">⭐ Escalar melhores</button>
+        <button id="starterRotateSquad" class="secondary">Sugerir rodízio</button>
+      </div>
+    </div>
+
+    <p class="muted">Esta aba mostra somente os 11 jogadores titulares. A aba <b>ELENCO</b> continua disponível com todos os jogadores, reservas e opções completas de gestão.</p>
+
+    <div id="starterPitchWrap">${formationPitch(state.club.formation)}</div>
+
+    <div class="starter-summary">
+      <span><small>TITULARES</small><b>${starters.length}/11</b></span>
+      <span><small>OVR MÉDIO</small><b>${starters.length?Math.round(starters.reduce((n,p)=>n+Number(p.rating),0)/starters.length):0}</b></span>
+      <span><small>FÍSICO MÉDIO</small><b>${starters.length?Math.round(starters.reduce((n,p)=>n+Number(p.fitness||100),0)/starters.length):0}%</b></span>
+    </div>
+
+    <div class="legend">
+      <span class="good-dot"></span> Bom físico
+      <span class="warn-dot"></span> Cansado
+      <span class="bad-dot"></span> Muito cansado/lesionado
+    </div>
+
+    <div class="starter-list">
+      ${starters.length?starters.map(p=>`<article class="starter-row ${fitnessClass(p)}">
+        <div class="starter-number">${p.rating}</div>
+        <div class="starter-info">
+          <b>${esc(p.name)}</b>
+          <span>${esc(p.role||posName(p.position))} · ${p.age} anos</span>
+        </div>
+        <div class="starter-condition">
+          <span>Físico <b>${p.fitness??100}%</b></span>
+          <span>Moral <b>${p.morale??70}</b></span>
+        </div>
+      </article>`).join(""):`<div class="empty">Nenhum titular definido.</div>`}
+    </div>
+
+    <div class="starter-actions">
+      <button id="saveStarters" class="primary">Salvar titulares</button>
+      <button id="goFullSquad" class="secondary">Abrir elenco completo</button>
+    </div>
+  </section>`;
+}
+
 function squadView(){
   return `<section class="card">
     <div class="toolbar">
@@ -737,7 +795,8 @@ function render(){
   if(!state.club)return renderCreateClub();
   if(!state.club.state_code)return renderStateSetup();
 
-  const body=state.view==="squad"?squadView():
+  const body=state.view==="starters"?startersView():
+    state.view==="squad"?squadView():
     state.view==="market"?marketView():
     state.view==="friends"?friendsView():
     state.view==="league"?competitionsView():
@@ -755,6 +814,7 @@ function render(){
   </div>
   <nav class="nav">
     <button data-view="home" class="${state.view==="home"?"on":""}">INÍCIO</button>
+    <button data-view="starters" class="${state.view==="starters"?"on":""}">TITULARES</button>
     <button data-view="squad" class="${state.view==="squad"?"on":""}">ELENCO</button>
     <button data-view="market" class="${state.view==="market"?"on":""}">MERCADO</button>
     <button data-view="friends" class="${state.view==="friends"?"on":""}">AMIGOS</button>
@@ -774,6 +834,7 @@ function render(){
   const saveBtn=app.querySelector("#manualSave");
   if(saveBtn)saveBtn.onclick=manualSaveCareer;
   if(state.view==="home")bindHome();
+  if(state.view==="starters")bindStarters();
   if(state.view==="squad")bindSquad();
   if(state.view==="market")bindMarket();
   if(state.view==="friends")bindFriends();
@@ -839,6 +900,65 @@ function bindHome(){
     }catch(err){alert(err.message);btn.disabled=false}
   });
 }
+function bindStarters(){
+  const formation=app.querySelector("#starterFormation");
+
+  if(formation)formation.onchange=()=>{
+    state.club.formation=formation.value;
+    app.querySelector("#starterPitchWrap").innerHTML=formationPitch(formation.value);
+  };
+
+  const best=app.querySelector("#starterBestSquad");
+  if(best)best.onclick=()=>{
+    const currentFormation=formation?.value||state.club.formation;
+    const complete=selectBestSquad(currentFormation);
+    if(!complete){
+      alert("Não há 11 jogadores disponíveis para montar a escalação.");
+      return;
+    }
+    state.club.formation=currentFormation;
+    render();
+  };
+
+  const rotate=app.querySelector("#starterRotateSquad");
+  if(rotate)rotate.onclick=()=>{
+    const currentFormation=formation?.value||state.club.formation;
+    suggestRotation(currentFormation);
+    state.club.formation=currentFormation;
+    render();
+  };
+
+  const save=app.querySelector("#saveStarters");
+  if(save)save.onclick=async()=>{
+    const starterIds=state.players.filter(p=>p.is_starter).map(p=>p.id);
+    if(starterIds.length!==11){
+      alert("A escalação precisa ter exatamente 11 titulares.");
+      return;
+    }
+    save.disabled=true;
+    save.textContent="SALVANDO...";
+    try{
+      await api("/api/lineup",{method:"PUT",body:JSON.stringify({
+        starterIds,
+        formation:formation?.value||state.club.formation
+      })});
+      await refreshAll();
+      state.view="starters";
+      render();
+    }catch(err){
+      alert(err.message);
+      save.disabled=false;
+      save.textContent="Salvar titulares";
+    }
+  };
+
+  const full=app.querySelector("#goFullSquad");
+  if(full)full.onclick=()=>{
+    state.view="squad";
+    render();
+  };
+}
+
 function bindSquad(){
   const formation=app.querySelector("#formation");
   if(formation)formation.onchange=()=>{app.querySelector("#pitchWrap").innerHTML=formationPitch(formation.value)};

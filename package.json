@@ -1,8 +1,8 @@
 {
   "name": "dono-do-clube",
-  "version": "18.0.0",
+  "version": "19.0.0",
   "private": true,
-  "description": "Dono do Clube com até 10 carreiras independentes e botão de salvamento manual.",
+  "description": "Dono do Clube com aba Titulares separada, mantendo a aba Elenco completa.",
   "main": "server.js",
   "scripts": {
     "start": "node server.js"

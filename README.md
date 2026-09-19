@@ -207,3 +207,22 @@ O jogo continua salvando automaticamente as ações normais, mas agora existe ta
 - quando usado dentro da aba **ELENCO**, também grava a formação e os 11 titulares selecionados, se a escalação estiver válida.
 
 Cada uma das até 10 carreiras mantém seu próprio horário de último save manual.
+
+
+## Aba TITULARES — v19
+
+Foi adicionada uma nova aba **TITULARES** na barra inferior, ao lado de **INÍCIO** e **ELENCO**.
+
+A aba **ELENCO** foi mantida.
+
+Na nova aba TITULARES é possível:
+- ver somente os 11 titulares;
+- visualizar a formação no campo;
+- conferir overall, físico e moral;
+- usar **Escalar melhores**;
+- usar **Sugerir rodízio**;
+- trocar a formação;
+- salvar os titulares;
+- abrir rapidamente o elenco completo.
+
+A aba ELENCO continua contendo todos os jogadores, reservas e as opções completas de gestão.
