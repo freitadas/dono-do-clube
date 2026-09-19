@@ -1,6 +1,7 @@
 const express = require("express");
 const { Pool } = require("pg");
 const crypto = require("crypto");
+const path = require("path");
 
 if (!process.env.DATABASE_URL) {
   console.error("DATABASE_URL não configurada.");
@@ -19,7 +20,7 @@ const pool = new Pool({
 });
 
 app.disable("x-powered-by");
-app.use(express.json({ limit: "100kb" }));
+app.use(express.json({ limit: "1mb" }));
 
 async function q(text, params = []) {
   return pool.query(text, params);
@@ -97,42 +98,158 @@ async function initDb() {
       played_at TIMESTAMPTZ NOT NULL DEFAULT NOW()
     );
 
+    CREATE TABLE IF NOT EXISTS friendships (
+      id BIGSERIAL PRIMARY KEY,
+      club_a_id BIGINT NOT NULL REFERENCES clubs(id) ON DELETE CASCADE,
+      club_b_id BIGINT NOT NULL REFERENCES clubs(id) ON DELETE CASCADE,
+      created_at TIMESTAMPTZ NOT NULL DEFAULT NOW(),
+      UNIQUE (club_a_id, club_b_id),
+      CHECK (club_a_id < club_b_id)
+    );
+
     CREATE INDEX IF NOT EXISTS idx_players_club ON players(club_id);
     CREATE INDEX IF NOT EXISTS idx_matches_user_club ON matches(user_club_id, played_at DESC);
   `);
+
+  await q(`ALTER TABLE clubs ADD COLUMN IF NOT EXISTS crest_data TEXT`);
+  await q(`ALTER TABLE clubs ADD COLUMN IF NOT EXISTS friend_code TEXT`);
+  await q(`CREATE UNIQUE INDEX IF NOT EXISTS idx_clubs_friend_code ON clubs(friend_code) WHERE friend_code IS NOT NULL`);
+
+  await q(`ALTER TABLE players ADD COLUMN IF NOT EXISTS appearances INTEGER NOT NULL DEFAULT 0`);
+  await q(`ALTER TABLE players ADD COLUMN IF NOT EXISTS goals INTEGER NOT NULL DEFAULT 0`);
+  await q(`ALTER TABLE players ADD COLUMN IF NOT EXISTS assists INTEGER NOT NULL DEFAULT 0`);
+  await q(`ALTER TABLE players ADD COLUMN IF NOT EXISTS yellow_cards INTEGER NOT NULL DEFAULT 0`);
+  await q(`ALTER TABLE players ADD COLUMN IF NOT EXISTS red_cards INTEGER NOT NULL DEFAULT 0`);
+  await q(`ALTER TABLE players ADD COLUMN IF NOT EXISTS clean_sheets INTEGER NOT NULL DEFAULT 0`);
+  await q(`ALTER TABLE players ADD COLUMN IF NOT EXISTS age INTEGER NOT NULL DEFAULT 24`);
+
+  await q(`ALTER TABLE matches ADD COLUMN IF NOT EXISTS match_type TEXT NOT NULL DEFAULT 'league'`);
 }
 
-const first = ["Caio","Davi","Lucas","Rafael","Bruno","Henrique","Matheus","Pedro","Gustavo","Felipe","André","Vitor","Diego","Gabriel","João","Thiago","Arthur","Murilo","Igor","Renan","Enzo","Samuel","Daniel","Leandro","Vinícius","Nicolas"];
-const last = ["Almeida","Rocha","Ferreira","Souza","Lima","Costa","Mendes","Silva","Ribeiro","Gomes","Martins","Barbosa","Nunes","Teixeira","Moraes","Cardoso","Pires","Campos","Vieira","Freitas"];
-const aiClubs = [["Aurora FC",69],["Atlético Vale",67],["Real Serra",72],["União Azul",66],["Estrela do Sul",71],["Nacional 11",68],["Ferroviário City",70],["Imperial FC",73],["Vila Central",65]];
+const first = [
+  "Caio","Davi","Lucas","Rafael","Bruno","Henrique","Matheus","Pedro","Gustavo","Felipe",
+  "André","Vitor","Diego","Gabriel","João","Thiago","Arthur","Murilo","Igor","Renan",
+  "Enzo","Samuel","Daniel","Leandro","Vinícius","Nicolas","Heitor","Bernardo","Yuri","Otávio"
+];
+const last = [
+  "Almeida","Rocha","Ferreira","Souza","Lima","Costa","Mendes","Silva","Ribeiro","Gomes",
+  "Martins","Barbosa","Nunes","Teixeira","Moraes","Cardoso","Pires","Campos","Vieira","Freitas",
+  "Monteiro","Azevedo","Duarte","Rezende"
+];
 
-const rand = (a,b) => Math.floor(Math.random()*(b-a+1))+a;
-const clamp = (n,a,b) => Math.max(a,Math.min(b,n));
-const name = () => `${first[rand(0,first.length-1)]} ${last[rand(0,last.length-1)]}`;
+const aiClubs = [
+  ["Aurora FC",69,"#0f766e","#f8fafc"],
+  ["Atlético Vale",67,"#b91c1c","#f8fafc"],
+  ["Real Serra",72,"#1d4ed8","#f8fafc"],
+  ["União Azul",66,"#0369a1","#facc15"],
+  ["Estrela do Sul",71,"#7c3aed","#f8fafc"],
+  ["Nacional 11",68,"#166534","#fde047"],
+  ["Ferroviário City",70,"#9a3412","#f8fafc"],
+  ["Imperial FC",73,"#111827","#f59e0b"],
+  ["Vila Central",65,"#be123c","#f8fafc"]
+];
 
-function player(position, lo=58, hi=73) {
+const rand = (a,b) => Math.floor(Math.random() * (b-a+1)) + a;
+const clamp = (n,a,b) => Math.max(a, Math.min(b,n));
+const randomName = () => `${first[rand(0,first.length-1)]} ${last[rand(0,last.length-1)]}`;
+
+function makeFriendCode() {
+  return crypto.randomBytes(4).toString("hex").toUpperCase().slice(0, 6);
+}
+
+async function ensureFriendCode(client, clubId) {
+  const r = await client.query(`SELECT friend_code FROM clubs WHERE id=$1`, [clubId]);
+  if (r.rows[0]?.friend_code) return r.rows[0].friend_code;
+  for (let i=0; i<20; i++) {
+    const code = makeFriendCode();
+    try {
+      await client.query(`UPDATE clubs SET friend_code=$2 WHERE id=$1`, [clubId, code]);
+      return code;
+    } catch (e) {
+      if (e.code !== "23505") throw e;
+    }
+  }
+  throw new Error("Não foi possível gerar código de amizade.");
+}
+
+function makePlayer(position, lo=58, hi=73) {
   const rating = rand(lo,hi);
   const variance = () => clamp(rating + rand(-11,11),20,95);
   let pace=variance(), shooting=variance(), passing=variance(), defending=variance();
-  if (position==="GK") { shooting=clamp(rating-rand(22,34),20,60); defending=clamp(rating+rand(-4,7),40,95); }
-  if (position==="DEF") { defending=clamp(rating+rand(-1,8),40,95); shooting=clamp(rating-rand(8,18),20,85); }
+
+  if (position==="GK") {
+    shooting=clamp(rating-rand(22,34),20,60);
+    defending=clamp(rating+rand(-4,7),40,95);
+  }
+  if (position==="DEF") {
+    defending=clamp(rating+rand(-1,8),40,95);
+    shooting=clamp(rating-rand(8,18),20,85);
+  }
   if (position==="MID") passing=clamp(rating+rand(0,7),40,95);
-  if (position==="ATT") { shooting=clamp(rating+rand(0,8),40,95); defending=clamp(rating-rand(12,24),20,80); }
+  if (position==="ATT") {
+    shooting=clamp(rating+rand(0,8),40,95);
+    defending=clamp(rating-rand(12,24),20,80);
+  }
+
   const price=Math.round((rating*rating*.42+rand(0,450))/50)*50;
-  return {name:name(),position,rating,pace,shooting,passing,defending,price};
+  return {
+    name: randomName(),
+    position,
+    rating,
+    pace,
+    shooting,
+    passing,
+    defending,
+    price,
+    age: rand(18,33)
+  };
+}
+
+async function insertRoster(client, clubId, lo=58, hi=73) {
+  const plan=[["GK",2,1],["DEF",6,4],["MID",6,3],["ATT",4,3]];
+  for (const [pos,count,starters] of plan) {
+    for (let i=0; i<count; i++) {
+      const p=makePlayer(pos,lo,hi);
+      await client.query(`
+        INSERT INTO players(
+          club_id,name,position,rating,pace,shooting,passing,defending,price,is_starter,age
+        ) VALUES($1,$2,$3,$4,$5,$6,$7,$8,$9,$10,$11)
+      `,[clubId,p.name,p.position,p.rating,p.pace,p.shooting,p.passing,p.defending,p.price,i<starters,p.age]);
+    }
+  }
 }
 
 async function seed() {
-  for (const [n,r] of aiClubs) {
-    await q(`INSERT INTO clubs(name,is_ai,team_rating,coins) VALUES($1,TRUE,$2,0) ON CONFLICT(name) DO NOTHING`, [n,r]);
-  }
-  const c = await q(`SELECT COUNT(*)::int count FROM players WHERE club_id IS NULL`);
+  await tx(async client => {
+    for (const [name,rating,primary,secondary] of aiClubs) {
+      const c = await client.query(`
+        INSERT INTO clubs(name,is_ai,team_rating,coins,primary_color,secondary_color)
+        VALUES($1,TRUE,$2,0,$3,$4)
+        ON CONFLICT(name) DO UPDATE SET team_rating=EXCLUDED.team_rating
+        RETURNING id
+      `,[name,rating,primary,secondary]);
+
+      const clubId=c.rows[0].id;
+      await ensureFriendCode(client, clubId);
+      const count=await client.query(`SELECT COUNT(*)::int count FROM players WHERE club_id=$1`,[clubId]);
+      if (count.rows[0].count < 18) {
+        await client.query(`DELETE FROM players WHERE club_id=$1`,[clubId]);
+        await insertRoster(client,clubId,Math.max(56,rating-7),Math.min(82,rating+6));
+      }
+    }
+
+    const clubs = await client.query(`SELECT id FROM clubs WHERE friend_code IS NULL`);
+    for (const c of clubs.rows) await ensureFriendCode(client, c.id);
+  });
+
+  const free = await q(`SELECT COUNT(*)::int count FROM players WHERE club_id IS NULL`);
   const positions=["GK","DEF","MID","ATT"];
-  for (let i=c.rows[0].count;i<30;i++) {
-    const p=player(positions[rand(0,3)],62,81);
-    await q(`INSERT INTO players(name,position,rating,pace,shooting,passing,defending,price)
-             VALUES($1,$2,$3,$4,$5,$6,$7,$8)`,
-            [p.name,p.position,p.rating,p.pace,p.shooting,p.passing,p.defending,p.price]);
+  for (let i=free.rows[0].count; i<32; i++) {
+    const p=makePlayer(positions[rand(0,3)],62,82);
+    await q(`
+      INSERT INTO players(name,position,rating,pace,shooting,passing,defending,price,age)
+      VALUES($1,$2,$3,$4,$5,$6,$7,$8,$9)
+    `,[p.name,p.position,p.rating,p.pace,p.shooting,p.passing,p.defending,p.price,p.age]);
   }
 }
 
@@ -181,27 +298,237 @@ async function auth(req,res,next) {
     if(!s) return res.status(401).json({error:"Não autenticado."});
     const u=await q(`SELECT id,email FROM users WHERE id=$1`,[s.uid]);
     if(!u.rowCount) return res.status(401).json({error:"Sessão inválida."});
-    req.user=u.rows[0]; next();
+    req.user=u.rows[0];
+    next();
   } catch(e){ next(e); }
 }
-async function club(userId) {
+
+async function getClubForUser(userId) {
   const r=await q(`SELECT * FROM clubs WHERE user_id=$1`,[userId]);
   return r.rows[0]||null;
 }
-async function rating(clubId) {
-  const r=await q(`SELECT COALESCE(ROUND(AVG(rating)),60)::int rating FROM players WHERE club_id=$1 AND is_starter=TRUE`,[clubId]);
+
+async function getClubRating(clubId, client=pool) {
+  const r=await client.query(`
+    SELECT COALESCE(ROUND(AVG(rating)),60)::int rating
+    FROM players WHERE club_id=$1 AND is_starter=TRUE
+  `,[clubId]);
   return r.rows[0].rating;
 }
+
 function poisson(lambda) {
-  const L=Math.exp(-lambda); let k=0,p=1;
+  const L=Math.exp(-lambda);
+  let k=0,p=1;
   do { k++; p*=Math.random(); } while(p>L);
   return k-1;
 }
 
-app.get("/health", async (_req,res,next)=>{ try { await q("SELECT 1"); res.json({ok:true}); } catch(e){next(e);} });
+function weightedPick(players) {
+  const weighted=[];
+  for (const p of players) {
+    const base = p.position==="ATT" ? 7 : p.position==="MID" ? 4 : p.position==="DEF" ? 2 : 1;
+    const extra = Math.max(1, Math.floor((p.rating-50)/10));
+    for(let i=0;i<base+extra;i++) weighted.push(p);
+  }
+  return weighted[rand(0,weighted.length-1)] || players[0];
+}
 
-app.post("/api/auth/register", async (req,res,next)=>{
-  try {
+async function startersForClub(client, clubId) {
+  let r=await client.query(`
+    SELECT * FROM players WHERE club_id=$1 AND is_starter=TRUE
+    ORDER BY rating DESC
+  `,[clubId]);
+
+  if (r.rowCount===11 && r.rows.some(p=>p.position==="GK")) return r.rows;
+
+  const all=await client.query(`
+    SELECT * FROM players WHERE club_id=$1
+    ORDER BY CASE position WHEN 'GK' THEN 1 WHEN 'DEF' THEN 2 WHEN 'MID' THEN 3 ELSE 4 END, rating DESC
+  `,[clubId]);
+
+  if (all.rowCount<11) throw Object.assign(new Error("O clube não possui jogadores suficientes."),{status:400});
+
+  const selected=[];
+  const gk=all.rows.find(p=>p.position==="GK");
+  if(!gk) throw Object.assign(new Error("O clube não possui goleiro."),{status:400});
+  selected.push(gk);
+  for(const p of all.rows) {
+    if(selected.length>=11) break;
+    if(String(p.id)!==String(gk.id)) selected.push(p);
+  }
+
+  await client.query(`UPDATE players SET is_starter=FALSE WHERE club_id=$1`,[clubId]);
+  await client.query(`UPDATE players SET is_starter=TRUE WHERE id=ANY($1::bigint[])`,[selected.map(p=>p.id)]);
+  return selected;
+}
+
+async function applyPlayerStats(client, clubId, starters, goals, conceded, events) {
+  if (!starters.length) return;
+  await client.query(`
+    UPDATE players SET appearances=appearances+1
+    WHERE id=ANY($1::bigint[])
+  `,[starters.map(p=>p.id)]);
+
+  if (conceded===0) {
+    const gk=starters.find(p=>p.position==="GK");
+    if(gk) await client.query(`UPDATE players SET clean_sheets=clean_sheets+1 WHERE id=$1`,[gk.id]);
+  }
+
+  for(const ev of events.filter(e=>e.clubId===clubId)) {
+    if(ev.type==="goal" && ev.scorerId) {
+      await client.query(`UPDATE players SET goals=goals+1 WHERE id=$1`,[ev.scorerId]);
+      if(ev.assistId) await client.query(`UPDATE players SET assists=assists+1 WHERE id=$1`,[ev.assistId]);
+    }
+    if(ev.type==="yellow" && ev.playerId) {
+      await client.query(`UPDATE players SET yellow_cards=yellow_cards+1 WHERE id=$1`,[ev.playerId]);
+    }
+    if(ev.type==="red" && ev.playerId) {
+      await client.query(`UPDATE players SET red_cards=red_cards+1 WHERE id=$1`,[ev.playerId]);
+    }
+  }
+}
+
+function buildEvents(clubId, starters, goals, opponentClubId, opponentName) {
+  const events=[];
+  for(let i=0;i<goals;i++) {
+    const scorer=weightedPick(starters.filter(p=>p.position!=="GK"));
+    const assistPool=starters.filter(p=>String(p.id)!==String(scorer.id) && p.position!=="GK");
+    const assist=assistPool.length && Math.random()<0.72 ? weightedPick(assistPool) : null;
+    events.push({
+      type:"goal",
+      clubId,
+      minute:rand(3,89),
+      scorerId:scorer.id,
+      scorerName:scorer.name,
+      assistId:assist?.id || null,
+      assistName:assist?.name || null,
+      text:`Gol de ${scorer.name}${assist ? ` (assistência de ${assist.name})` : ""}`
+    });
+  }
+
+  const yellowCount = Math.random()<0.7 ? rand(0,2) : 0;
+  for(let i=0;i<yellowCount;i++) {
+    const p=starters[rand(0,starters.length-1)];
+    events.push({
+      type:"yellow",clubId,minute:rand(10,88),playerId:p.id,playerName:p.name,
+      text:`Cartão amarelo para ${p.name}`
+    });
+  }
+  if(Math.random()<0.08) {
+    const p=starters[rand(0,starters.length-1)];
+    events.push({
+      type:"red",clubId,minute:rand(35,88),playerId:p.id,playerName:p.name,
+      text:`Cartão vermelho para ${p.name}`
+    });
+  }
+  return events;
+}
+
+async function simulateMatch(homeClubId, awayClubId, options={}) {
+  const matchType=options.matchType || "league";
+  const recordForClubId=options.recordForClubId || homeClubId;
+  const rewardEnabled=options.rewardEnabled !== false;
+  const updateStandings=options.updateStandings !== false;
+
+  return tx(async client=>{
+    const clubs=await client.query(`SELECT * FROM clubs WHERE id=ANY($1::bigint[])`,[[homeClubId,awayClubId]]);
+    const home=clubs.rows.find(c=>String(c.id)===String(homeClubId));
+    const away=clubs.rows.find(c=>String(c.id)===String(awayClubId));
+    if(!home||!away) throw Object.assign(new Error("Clube adversário não encontrado."),{status:404});
+
+    const homeStarters=await startersForClub(client,home.id);
+    const awayStarters=await startersForClub(client,away.id);
+    const homeRating=await getClubRating(home.id,client);
+    const awayRating=await getClubRating(away.id,client);
+
+    const hg=Math.min(7,poisson(clamp(1.35+(homeRating-awayRating)*.045,.35,3.7)));
+    const ag=Math.min(7,poisson(clamp(1.25+(awayRating-homeRating)*.045,.35,3.7)));
+
+    const events=[
+      ...buildEvents(home.id,homeStarters,hg,away.id,away.name),
+      ...buildEvents(away.id,awayStarters,ag,home.id,home.name)
+    ].sort((a,b)=>a.minute-b.minute);
+
+    const homeResult=hg>ag?"win":hg===ag?"draw":"loss";
+    const awayResult=ag>hg?"win":ag===hg?"draw":"loss";
+    const homePts=homeResult==="win"?3:homeResult==="draw"?1:0;
+    const awayPts=awayResult==="win"?3:awayResult==="draw"?1:0;
+
+    if(updateStandings) {
+      await client.query(`
+        UPDATE clubs SET points=points+$2,wins=wins+$3,draws=draws+$4,losses=losses+$5,
+        goals_for=goals_for+$6,goals_against=goals_against+$7,team_rating=$8 WHERE id=$1
+      `,[home.id,homePts,homeResult==="win"?1:0,homeResult==="draw"?1:0,homeResult==="loss"?1:0,hg,ag,homeRating]);
+      await client.query(`
+        UPDATE clubs SET points=points+$2,wins=wins+$3,draws=draws+$4,losses=losses+$5,
+        goals_for=goals_for+$6,goals_against=goals_against+$7,team_rating=$8 WHERE id=$1
+      `,[away.id,awayPts,awayResult==="win"?1:0,awayResult==="draw"?1:0,awayResult==="loss"?1:0,ag,hg,awayRating]);
+    } else {
+      await client.query(`UPDATE clubs SET team_rating=$2 WHERE id=$1`,[home.id,homeRating]);
+      await client.query(`UPDATE clubs SET team_rating=$2 WHERE id=$1`,[away.id,awayRating]);
+    }
+
+    await applyPlayerStats(client,home.id,homeStarters,hg,ag,events);
+    await applyPlayerStats(client,away.id,awayStarters,ag,hg,events);
+
+    let userClub, opponentClub, userGoals, opponentGoals, userRating, opponentRating, userResult;
+    if(String(recordForClubId)===String(home.id)) {
+      userClub=home; opponentClub=away; userGoals=hg; opponentGoals=ag; userRating=homeRating; opponentRating=awayRating; userResult=homeResult;
+    } else {
+      userClub=away; opponentClub=home; userGoals=ag; opponentGoals=hg; userRating=awayRating; opponentRating=homeRating; userResult=awayResult;
+    }
+
+    const reward = rewardEnabled ? (userResult==="win"?180:userResult==="draw"?90:50) : 0;
+    if(reward>0) await client.query(`UPDATE clubs SET coins=coins+$2 WHERE id=$1`,[userClub.id,reward]);
+
+    await client.query(`
+      INSERT INTO matches(
+        user_club_id,opponent_club_id,user_goals,opponent_goals,reward,user_rating,opponent_rating,events,match_type
+      ) VALUES($1,$2,$3,$4,$5,$6,$7,$8::jsonb,$9)
+    `,[userClub.id,opponentClub.id,userGoals,opponentGoals,reward,userRating,opponentRating,JSON.stringify(events),matchType]);
+
+    return {
+      result:userResult,
+      reward,
+      userClub:userClub.name,
+      opponent:opponentClub.name,
+      userGoals,
+      opponentGoals,
+      userRating,
+      opponentRating,
+      matchType,
+      events:events.map(e=>({minute:e.minute,text:e.text,type:e.type,clubId:e.clubId}))
+    };
+  });
+}
+
+async function simulateAiRound(excludeClubIds=[]) {
+  const ai=await q(`
+    SELECT id FROM clubs
+    WHERE is_ai=TRUE AND NOT (id=ANY($1::bigint[]))
+    ORDER BY RANDOM()
+  `,[excludeClubIds.length?excludeClubIds:[-1]]);
+
+  const ids=ai.rows.map(r=>r.id);
+  const results=[];
+  for(let i=0;i+1<ids.length;i+=2) {
+    const result=await simulateMatch(ids[i],ids[i+1],{
+      matchType:"simulation",
+      rewardEnabled:false,
+      updateStandings:true,
+      recordForClubId:ids[i]
+    });
+    results.push(result);
+  }
+  return results;
+}
+
+app.get("/health",async(_req,res,next)=>{
+  try{await q("SELECT 1");res.json({ok:true});}catch(e){next(e);}
+});
+
+app.post("/api/auth/register",async(req,res,next)=>{
+  try{
     const email=String(req.body.email||"").trim().toLowerCase();
     const password=String(req.body.password||"");
     if(!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email)) return res.status(400).json({error:"E-mail inválido."});
@@ -210,98 +537,196 @@ app.post("/api/auth/register", async (req,res,next)=>{
     const r=await q(`INSERT INTO users(email,password_hash,password_salt) VALUES($1,$2,$3) RETURNING id,email`,[email,h.hash,h.salt]);
     setCookie(res,r.rows[0].id);
     res.status(201).json({user:r.rows[0]});
-  } catch(e) {
+  }catch(e){
     if(e.code==="23505") return res.status(409).json({error:"Este e-mail já está cadastrado."});
     next(e);
   }
 });
 
-app.post("/api/auth/login", async (req,res,next)=>{
-  try {
+app.post("/api/auth/login",async(req,res,next)=>{
+  try{
     const email=String(req.body.email||"").trim().toLowerCase();
     const password=String(req.body.password||"");
     const r=await q(`SELECT * FROM users WHERE email=$1`,[email]);
-    if(!r.rowCount||!verifyPassword(password,r.rows[0].password_salt,r.rows[0].password_hash)) return res.status(401).json({error:"E-mail ou senha incorretos."});
+    if(!r.rowCount||!verifyPassword(password,r.rows[0].password_salt,r.rows[0].password_hash)) {
+      return res.status(401).json({error:"E-mail ou senha incorretos."});
+    }
     setCookie(res,r.rows[0].id);
     res.json({ok:true});
-  } catch(e){next(e);}
+  }catch(e){next(e);}
 });
+
 app.post("/api/auth/logout",(_req,res)=>{clearCookie(res);res.json({ok:true});});
 
-app.get("/api/me",auth,async(req,res,next)=>{try{res.json({user:req.user,club:await club(req.user.id)});}catch(e){next(e);}});
+app.get("/api/me",auth,async(req,res,next)=>{
+  try{res.json({user:req.user,club:await getClubForUser(req.user.id)});}catch(e){next(e);}
+});
 
 app.post("/api/club",auth,async(req,res,next)=>{
-  try {
+  try{
     const n=String(req.body.name||"").trim().replace(/\s+/g," ");
-    const pc=String(req.body.primaryColor||"#18864b"), sc=String(req.body.secondaryColor||"#f7fafc");
+    const pc=String(req.body.primaryColor||"#18864b");
+    const sc=String(req.body.secondaryColor||"#f7fafc");
     if(n.length<3||n.length>30) return res.status(400).json({error:"Nome deve ter 3 a 30 caracteres."});
     if(!/^#[0-9a-fA-F]{6}$/.test(pc)||!/^#[0-9a-fA-F]{6}$/.test(sc)) return res.status(400).json({error:"Cor inválida."});
-    const created=await tx(async c=>{
-      const ex=await c.query(`SELECT id FROM clubs WHERE user_id=$1`,[req.user.id]);
+
+    const created=await tx(async client=>{
+      const ex=await client.query(`SELECT id FROM clubs WHERE user_id=$1`,[req.user.id]);
       if(ex.rowCount) throw Object.assign(new Error("Você já tem um clube."),{status:409});
-      const cr=await c.query(`INSERT INTO clubs(user_id,name,primary_color,secondary_color) VALUES($1,$2,$3,$4) RETURNING *`,[req.user.id,n,pc,sc]);
-      const cid=cr.rows[0].id;
-      const plan=[["GK",2,1],["DEF",6,4],["MID",6,3],["ATT",4,3]];
-      for(const [pos,count,starters] of plan) for(let i=0;i<count;i++){
-        const p=player(pos);
-        await c.query(`INSERT INTO players(club_id,name,position,rating,pace,shooting,passing,defending,price,is_starter)
-                       VALUES($1,$2,$3,$4,$5,$6,$7,$8,$9,$10)`,
-                       [cid,p.name,p.position,p.rating,p.pace,p.shooting,p.passing,p.defending,p.price,i<starters]);
-      }
-      return cr.rows[0];
+      const cr=await client.query(`
+        INSERT INTO clubs(user_id,name,primary_color,secondary_color)
+        VALUES($1,$2,$3,$4) RETURNING *
+      `,[req.user.id,n,pc,sc]);
+      await ensureFriendCode(client,cr.rows[0].id);
+      await insertRoster(client,cr.rows[0].id,58,73);
+      const final=await client.query(`SELECT * FROM clubs WHERE id=$1`,[cr.rows[0].id]);
+      return final.rows[0];
     });
     res.status(201).json({club:created});
-  } catch(e) {
+  }catch(e){
     if(e.code==="23505") return res.status(409).json({error:"Nome de clube já utilizado."});
     next(e);
   }
 });
 
+app.put("/api/club/customize",auth,async(req,res,next)=>{
+  try{
+    const c=await getClubForUser(req.user.id);
+    if(!c) return res.status(404).json({error:"Clube não encontrado."});
+
+    const name=String(req.body.name||c.name).trim().replace(/\s+/g," ");
+    const primary=String(req.body.primaryColor||c.primary_color);
+    const secondary=String(req.body.secondaryColor||c.secondary_color);
+    const crest=req.body.crestData===null ? null : String(req.body.crestData||c.crest_data||"");
+
+    if(name.length<3||name.length>30) return res.status(400).json({error:"Nome deve ter 3 a 30 caracteres."});
+    if(!/^#[0-9a-fA-F]{6}$/.test(primary)||!/^#[0-9a-fA-F]{6}$/.test(secondary)) return res.status(400).json({error:"Cor inválida."});
+    if(crest && !/^data:image\/(png|jpeg|webp);base64,/i.test(crest)) return res.status(400).json({error:"Formato de escudo inválido."});
+    if(crest.length>700000) return res.status(400).json({error:"O escudo ficou grande demais. Use uma imagem menor."});
+
+    const r=await q(`
+      UPDATE clubs SET name=$2,primary_color=$3,secondary_color=$4,crest_data=$5
+      WHERE id=$1 RETURNING *
+    `,[c.id,name,primary,secondary,crest||null]);
+
+    res.json({club:r.rows[0]});
+  }catch(e){
+    if(e.code==="23505") return res.status(409).json({error:"Esse nome de clube já está sendo usado."});
+    next(e);
+  }
+});
+
 app.get("/api/dashboard",auth,async(req,res,next)=>{
-  try {
-    const c=await club(req.user.id);
-    if(!c) return res.json({club:null,players:[],market:[],standings:[],matches:[]});
-    c.team_rating=await rating(c.id);
-    const [ps,mk,st,mt]=await Promise.all([
-      q(`SELECT * FROM players WHERE club_id=$1 ORDER BY is_starter DESC, CASE position WHEN 'GK' THEN 1 WHEN 'DEF' THEN 2 WHEN 'MID' THEN 3 ELSE 4 END, rating DESC`,[c.id]),
-      q(`SELECT * FROM players WHERE club_id IS NULL ORDER BY rating DESC LIMIT 30`),
-      q(`SELECT id,name,points,wins,draws,losses,goals_for,goals_against,(goals_for-goals_against) goal_difference,is_ai FROM clubs ORDER BY points DESC,(goals_for-goals_against) DESC,goals_for DESC,name LIMIT 30`),
-      q(`SELECT m.*,o.name opponent_name FROM matches m JOIN clubs o ON o.id=m.opponent_club_id WHERE m.user_club_id=$1 ORDER BY played_at DESC LIMIT 20`,[c.id])
+  try{
+    const c=await getClubForUser(req.user.id);
+    if(!c) return res.json({club:null,players:[],market:[],standings:[],matches:[],friends:[]});
+    c.team_rating=await getClubRating(c.id);
+
+    const [ps,mk,st,mt,fr]=await Promise.all([
+      q(`SELECT * FROM players WHERE club_id=$1 ORDER BY is_starter DESC,CASE position WHEN 'GK' THEN 1 WHEN 'DEF' THEN 2 WHEN 'MID' THEN 3 ELSE 4 END,rating DESC`,[c.id]),
+      q(`SELECT * FROM players WHERE club_id IS NULL ORDER BY rating DESC,price DESC LIMIT 36`),
+      q(`
+        SELECT id,name,primary_color,secondary_color,crest_data,friend_code,points,wins,draws,losses,
+        goals_for,goals_against,(goals_for-goals_against) goal_difference,team_rating,is_ai
+        FROM clubs ORDER BY points DESC,(goals_for-goals_against) DESC,goals_for DESC,name LIMIT 40
+      `),
+      q(`
+        SELECT m.*,o.name opponent_name,o.crest_data opponent_crest
+        FROM matches m JOIN clubs o ON o.id=m.opponent_club_id
+        WHERE m.user_club_id=$1 ORDER BY played_at DESC LIMIT 30
+      `,[c.id]),
+      q(`
+        SELECT c.id,c.name,c.primary_color,c.secondary_color,c.crest_data,c.friend_code,c.team_rating,c.points
+        FROM friendships f
+        JOIN clubs c ON c.id=CASE WHEN f.club_a_id=$1 THEN f.club_b_id ELSE f.club_a_id END
+        WHERE f.club_a_id=$1 OR f.club_b_id=$1
+        ORDER BY c.name
+      `,[c.id])
     ]);
-    res.json({club:c,players:ps.rows,market:mk.rows,standings:st.rows,matches:mt.rows});
-  } catch(e){next(e);}
+
+    res.json({club:c,players:ps.rows,market:mk.rows,standings:st.rows,matches:mt.rows,friends:fr.rows});
+  }catch(e){next(e);}
+});
+
+app.get("/api/clubs/:id",auth,async(req,res,next)=>{
+  try{
+    const id=String(req.params.id||"");
+    const c=await q(`
+      SELECT id,name,primary_color,secondary_color,crest_data,friend_code,team_rating,points,wins,draws,losses,
+      goals_for,goals_against,is_ai,formation FROM clubs WHERE id=$1
+    `,[id]);
+    if(!c.rowCount) return res.status(404).json({error:"Clube não encontrado."});
+    const players=await q(`
+      SELECT id,name,position,rating,pace,shooting,passing,defending,price,is_starter,age,
+      appearances,goals,assists,yellow_cards,red_cards,clean_sheets
+      FROM players WHERE club_id=$1
+      ORDER BY is_starter DESC,CASE position WHEN 'GK' THEN 1 WHEN 'DEF' THEN 2 WHEN 'MID' THEN 3 ELSE 4 END,rating DESC
+    `,[id]);
+    res.json({club:c.rows[0],players:players.rows});
+  }catch(e){next(e);}
 });
 
 app.put("/api/lineup",auth,async(req,res,next)=>{
   try{
-    const c=await club(req.user.id); if(!c) return res.status(404).json({error:"Clube não encontrado."});
+    const c=await getClubForUser(req.user.id);
+    if(!c) return res.status(404).json({error:"Clube não encontrado."});
     const ids=Array.isArray(req.body.starterIds)?req.body.starterIds.map(String):[];
     const formation=String(req.body.formation||"4-3-3");
     if(ids.length!==11||new Set(ids).size!==11) return res.status(400).json({error:"Selecione exatamente 11 titulares."});
     if(!["4-3-3","4-4-2","3-5-2"].includes(formation)) return res.status(400).json({error:"Formação inválida."});
     const own=await q(`SELECT id,position FROM players WHERE club_id=$1 AND id=ANY($2::bigint[])`,[c.id,ids]);
     if(own.rowCount!==11||!own.rows.some(p=>p.position==="GK")) return res.status(400).json({error:"Escalação inválida; inclua um goleiro."});
-    await tx(async x=>{
-      await x.query(`UPDATE players SET is_starter=FALSE WHERE club_id=$1`,[c.id]);
-      await x.query(`UPDATE players SET is_starter=TRUE WHERE club_id=$1 AND id=ANY($2::bigint[])`,[c.id,ids]);
-      await x.query(`UPDATE clubs SET formation=$2 WHERE id=$1`,[c.id,formation]);
+
+    await tx(async client=>{
+      await client.query(`UPDATE players SET is_starter=FALSE WHERE club_id=$1`,[c.id]);
+      await client.query(`UPDATE players SET is_starter=TRUE WHERE club_id=$1 AND id=ANY($2::bigint[])`,[c.id,ids]);
+      await client.query(`UPDATE clubs SET formation=$2 WHERE id=$1`,[c.id,formation]);
     });
+    res.json({ok:true});
+  }catch(e){next(e);}
+});
+
+app.post("/api/players/:id/release",auth,async(req,res,next)=>{
+  try{
+    const c=await getClubForUser(req.user.id);
+    if(!c) return res.status(404).json({error:"Clube não encontrado."});
+    const pid=String(req.params.id||"");
+
+    await tx(async client=>{
+      const p=await client.query(`SELECT * FROM players WHERE id=$1 AND club_id=$2 FOR UPDATE`,[pid,c.id]);
+      if(!p.rowCount) throw Object.assign(new Error("Jogador não encontrado no seu clube."),{status:404});
+      if(p.rows[0].is_starter) throw Object.assign(new Error("Tire o jogador dos titulares antes de rescindir."),{status:400});
+
+      const count=await client.query(`SELECT COUNT(*)::int count FROM players WHERE club_id=$1`,[c.id]);
+      if(count.rows[0].count<=12) throw Object.assign(new Error("Você precisa manter pelo menos 12 jogadores no elenco."),{status:400});
+
+      if(p.rows[0].position==="GK") {
+        const gk=await client.query(`SELECT COUNT(*)::int count FROM players WHERE club_id=$1 AND position='GK'`,[c.id]);
+        if(gk.rows[0].count<=1) throw Object.assign(new Error("Você precisa manter pelo menos um goleiro."),{status:400});
+      }
+
+      await client.query(`UPDATE players SET club_id=NULL,is_starter=FALSE,price=GREATEST(100,ROUND(price*0.9)) WHERE id=$1`,[pid]);
+    });
+
     res.json({ok:true});
   }catch(e){next(e);}
 });
 
 app.post("/api/market/buy",auth,async(req,res,next)=>{
   try{
-    const c=await club(req.user.id); if(!c) return res.status(404).json({error:"Clube não encontrado."});
+    const c=await getClubForUser(req.user.id);
+    if(!c) return res.status(404).json({error:"Clube não encontrado."});
     const pid=String(req.body.playerId||"");
-    await tx(async x=>{
-      const p=await x.query(`SELECT * FROM players WHERE id=$1 AND club_id IS NULL FOR UPDATE`,[pid]);
+
+    await tx(async client=>{
+      const p=await client.query(`SELECT * FROM players WHERE id=$1 AND club_id IS NULL FOR UPDATE`,[pid]);
       if(!p.rowCount) throw Object.assign(new Error("Jogador indisponível."),{status:409});
-      const cc=await x.query(`SELECT coins FROM clubs WHERE id=$1 FOR UPDATE`,[c.id]);
+      const cc=await client.query(`SELECT coins FROM clubs WHERE id=$1 FOR UPDATE`,[c.id]);
       if(cc.rows[0].coins<p.rows[0].price) throw Object.assign(new Error("Moedas insuficientes."),{status:400});
-      await x.query(`UPDATE clubs SET coins=coins-$2 WHERE id=$1`,[c.id,p.rows[0].price]);
-      await x.query(`UPDATE players SET club_id=$2,is_starter=FALSE WHERE id=$1`,[pid,c.id]);
+      await client.query(`UPDATE clubs SET coins=coins-$2 WHERE id=$1`,[c.id,p.rows[0].price]);
+      await client.query(`UPDATE players SET club_id=$2,is_starter=FALSE WHERE id=$1`,[pid,c.id]);
     });
+
     await seed();
     res.json({ok:true});
   }catch(e){next(e);}
@@ -309,65 +734,81 @@ app.post("/api/market/buy",auth,async(req,res,next)=>{
 
 app.post("/api/matches/play",auth,async(req,res,next)=>{
   try{
-    const c=await club(req.user.id); if(!c) return res.status(400).json({error:"Crie seu clube primeiro."});
-    const starters=await q(`SELECT id,position,name FROM players WHERE club_id=$1 AND is_starter=TRUE`,[c.id]);
-    if(starters.rowCount!==11||!starters.rows.some(p=>p.position==="GK")) return res.status(400).json({error:"Escalação precisa de 11 titulares e um goleiro."});
-    const op=(await q(`SELECT * FROM clubs WHERE is_ai=TRUE ORDER BY RANDOM() LIMIT 1`)).rows[0];
-    const ur=await rating(c.id), or=op.team_rating;
-    const ug=Math.min(7,poisson(clamp(1.35+(ur-or)*.045,.35,3.7)));
-    const og=Math.min(7,poisson(clamp(1.25+(or-ur)*.045,.35,3.7)));
-    const result=ug>og?"win":ug===og?"draw":"loss";
-    const reward=result==="win"?180:result==="draw"?90:50, pts=result==="win"?3:result==="draw"?1:0;
-    const scorers=starters.rows.filter(p=>p.position!=="GK");
-    const events=[];
-    for(let i=0;i<ug;i++) events.push({minute:rand(3,89),text:`Gol de ${scorers[rand(0,scorers.length-1)].name}`});
-    for(let i=0;i<og;i++) events.push({minute:rand(3,89),text:`Gol do ${op.name}`});
-    events.sort((a,b)=>a.minute-b.minute);
-    await tx(async x=>{
-      await x.query(`UPDATE clubs SET coins=coins+$2,points=points+$3,wins=wins+$4,draws=draws+$5,losses=losses+$6,goals_for=goals_for+$7,goals_against=goals_against+$8,team_rating=$9 WHERE id=$1`,
-        [c.id,reward,pts,result==="win"?1:0,result==="draw"?1:0,result==="loss"?1:0,ug,og,ur]);
-      const opts=og>ug?3:og===ug?1:0;
-      await x.query(`UPDATE clubs SET points=points+$2,wins=wins+$3,draws=draws+$4,losses=losses+$5,goals_for=goals_for+$6,goals_against=goals_against+$7 WHERE id=$1`,
-        [op.id,opts,og>ug?1:0,og===ug?1:0,og<ug?1:0,og,ug]);
-      await x.query(`INSERT INTO matches(user_club_id,opponent_club_id,user_goals,opponent_goals,reward,user_rating,opponent_rating,events) VALUES($1,$2,$3,$4,$5,$6,$7,$8::jsonb)`,
-        [c.id,op.id,ug,og,reward,ur,or,JSON.stringify(events)]);
+    const c=await getClubForUser(req.user.id);
+    if(!c) return res.status(400).json({error:"Crie seu clube primeiro."});
+    const opponent=(await q(`SELECT id FROM clubs WHERE is_ai=TRUE ORDER BY RANDOM() LIMIT 1`)).rows[0];
+    if(!opponent) return res.status(500).json({error:"Nenhum adversário disponível."});
+
+    const match=await simulateMatch(c.id,opponent.id,{
+      matchType:"league",
+      rewardEnabled:true,
+      updateStandings:true,
+      recordForClubId:c.id
     });
-    res.json({match:{result,reward,userClub:c.name,opponent:op.name,userGoals:ug,opponentGoals:og,userRating:ur,opponentRating:or,events}});
+    await simulateAiRound([opponent.id]);
+    res.json({match});
   }catch(e){next(e);}
 });
 
-const html = `<!doctype html>
-<html lang="pt-BR"><head>
-<meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1">
-<meta name="theme-color" content="#07110d"><title>Dono do Clube</title>
-<style>
-:root{--bg:#07110d;--panel:#0e1d16;--panel2:#13271d;--line:#244333;--text:#f4f8f5;--muted:#9eb3a7;--green:#49d17d;--green2:#20a95a;--yellow:#f6c84c}
-*{box-sizing:border-box}body{margin:0;min-height:100vh;background:radial-gradient(circle at top,#123522,#07110d 50%);color:var(--text);font-family:Inter,system-ui,sans-serif}button,input,select{font:inherit}button{cursor:pointer}
-.wrap{width:min(1100px,100%);margin:auto;padding:18px 18px 90px}.top{display:flex;justify-content:space-between;align-items:center;margin-bottom:16px}.brand{display:flex;gap:10px;align-items:center;font-size:22px;font-weight:900}.logo{width:42px;height:42px;border-radius:14px;display:grid;place-items:center;background:linear-gradient(135deg,var(--green),var(--green2))}.coins{padding:9px 12px;border-radius:999px;background:#2a240c;color:#ffe28a;font-weight:800}.hero,.card{background:rgba(14,29,22,.95);border:1px solid var(--line);border-radius:22px;padding:20px}.hero{background:linear-gradient(135deg,#17452b,#0d2519);padding:28px}.hero h1{font-size:clamp(30px,7vw,54px);margin:4px 0 10px}.muted{color:var(--muted)}.primary,.secondary{border:0;border-radius:13px;padding:11px 15px;font-weight:900}.primary{background:linear-gradient(135deg,var(--green),var(--green2));color:#04150a}.secondary{background:var(--panel2);color:white;border:1px solid var(--line)}.grid{display:grid;grid-template-columns:1.2fr .8fr;gap:14px;margin-top:14px}.stats{display:flex;flex-wrap:wrap;gap:8px;margin-top:16px}.stat{background:rgba(0,0,0,.2);border:1px solid rgba(255,255,255,.1);padding:9px 12px;border-radius:12px}.stat small{display:block;color:#a9c1b2}.stat b{font-size:18px}.nav{position:fixed;left:50%;bottom:12px;transform:translateX(-50%);width:min(650px,calc(100% - 20px));display:flex;padding:6px;background:rgba(7,17,13,.94);border:1px solid var(--line);border-radius:17px}.nav button{flex:1;border:0;background:transparent;color:var(--muted);padding:10px 5px;border-radius:11px;font-weight:800}.nav button.on{background:var(--panel2);color:white}.auth{min-height:100vh;display:grid;place-items:center;padding:18px}.authbox{width:min(450px,100%);background:var(--panel);border:1px solid var(--line);border-radius:24px;padding:25px}.stack{display:grid;gap:11px}label{display:grid;gap:6px;color:#cbd9d1;font-size:13px;font-weight:700}input,select{width:100%;background:#09150e;color:white;border:1px solid #2a4c39;border-radius:11px;padding:11px}.switch{display:grid;grid-template-columns:1fr 1fr;background:#09150e;padding:4px;border-radius:12px;margin:17px 0}.switch button{border:0;background:transparent;color:var(--muted);padding:9px;border-radius:9px}.switch .on{background:var(--panel2);color:white}.msg{padding:10px;border-radius:11px;background:#34191b;color:#ffc2c2}.players{display:grid;grid-template-columns:repeat(3,1fr);gap:10px}.player{position:relative;background:#0a1710;border:1px solid #284a37;border-radius:16px;padding:14px}.player.starter{border-color:var(--green)}.rating{position:absolute;right:13px;top:11px;font-size:25px;font-weight:950}.player h4{margin:24px 0 10px}.attrs{display:grid;grid-template-columns:1fr 1fr;gap:4px;color:var(--muted);font-size:11px}.attrs b{color:white}.player button{width:100%;margin-top:10px}.toolbar{display:flex;justify-content:space-between;gap:10px;align-items:end;flex-wrap:wrap}.toolbar label{min-width:160px}.table{overflow:auto}.table table{width:100%;border-collapse:collapse;min-width:600px}.table th,.table td{padding:10px;border-bottom:1px solid #1d3427;text-align:left;font-size:13px}.me{background:#163522}.match{display:grid;grid-template-columns:1fr auto 1fr;gap:8px;align-items:center;background:#09150e;border:1px solid #1e392a;padding:10px;border-radius:12px;margin:7px 0}.score{font-size:22px;font-weight:900}.right{text-align:right}.modalbg{position:fixed;inset:0;background:rgba(0,0,0,.7);display:grid;place-items:center;padding:16px;z-index:99}.modal{width:min(520px,100%);max-height:88vh;overflow:auto;background:#0d1d15;border:1px solid #315640;border-radius:22px;padding:22px}.board{display:grid;grid-template-columns:1fr auto 1fr;text-align:center;align-items:center;gap:10px;margin:18px 0}.board b{font-size:38px}.event{padding:7px;border-bottom:1px solid #1f392a}.clubpreview{height:140px;border-radius:16px;display:grid;place-items:center;font-size:26px;font-weight:900}.colors{display:flex;gap:10px}.colors label{flex:1}
-@media(max-width:800px){.grid{grid-template-columns:1fr}.players{grid-template-columns:repeat(2,1fr)}}@media(max-width:520px){.players{grid-template-columns:1fr}.wrap{padding:12px 12px 86px}}
-</style></head><body><div id="app"></div>
-<script>
-const A=document.querySelector("#app"); const S={me:null,club:null,players:[],market:[],standings:[],matches:[],view:"home",mode:"login"};
-const E=s=>String(s??"").replace(/[&<>"']/g,c=>({"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;","'":"&#039;"}[c]));
-async function api(url,o={}){const r=await fetch(url,{credentials:"same-origin",headers:{"Content-Type":"application/json",...(o.headers||{})},...o});const d=await r.json().catch(()=>({}));if(!r.ok)throw new Error(d.error||"Erro.");return d}
-async function boot(){try{const m=await api("/api/me");S.me=m.user;if(m.club)await refresh();else S.club=null;render()}catch{auth()}}
-async function refresh(){const d=await api("/api/dashboard");Object.assign(S,d)}
-function auth(){A.innerHTML=\`<main class="auth"><section class="authbox"><div class="brand"><span class="logo">⚽</span>Dono do Clube</div><h1>Seu clube começa aqui.</h1><p class="muted">Monte seu elenco e suba na liga.</p><div class="switch"><button data-m="login" class="\${S.mode==="login"?"on":""}">Entrar</button><button data-m="register" class="\${S.mode==="register"?"on":""}">Criar conta</button></div><form id="f" class="stack"><label>E-mail<input name="email" type="email" required></label><label>Senha<input name="password" type="password" minlength="6" required></label><button class="primary">\${S.mode==="login"?"Entrar":"Criar conta"}</button><div id="m"></div></form></section></main>\`;A.querySelectorAll("[data-m]").forEach(b=>b.onclick=()=>{S.mode=b.dataset.m;auth()});A.querySelector("#f").onsubmit=async e=>{e.preventDefault();const f=new FormData(e.target);try{await api("/api/auth/"+S.mode,{method:"POST",body:JSON.stringify({email:f.get("email"),password:f.get("password")})});await boot()}catch(x){A.querySelector("#m").innerHTML='<div class="msg">'+E(x.message)+'</div>'}}}
-function createClub(){A.innerHTML=\`<main class="auth"><section class="authbox"><div class="brand"><span class="logo">⚽</span>Dono do Clube</div><h1>Crie seu clube</h1><p class="muted">Você começa com 18 jogadores e 3.500 moedas.</p><form id="cf" class="stack"><label>Nome<input id="cn" name="name" value="Meu Clube FC" maxlength="30" required></label><div class="colors"><label>Cor 1<input id="c1" name="primaryColor" type="color" value="#18864b"></label><label>Cor 2<input id="c2" name="secondaryColor" type="color" value="#f7fafc"></label></div><div id="prev" class="clubpreview">Meu Clube FC</div><button class="primary">Fundar clube</button><div id="cm"></div></form></section></main>\`;const sync=()=>{const p=A.querySelector("#prev");p.textContent=A.querySelector("#cn").value;p.style.background=\`linear-gradient(135deg,\${A.querySelector("#c1").value},\${A.querySelector("#c2").value})\`};["cn","c1","c2"].forEach(id=>A.querySelector("#"+id).oninput=sync);sync();A.querySelector("#cf").onsubmit=async e=>{e.preventDefault();const f=new FormData(e.target);try{await api("/api/club",{method:"POST",body:JSON.stringify({name:f.get("name"),primaryColor:f.get("primaryColor"),secondaryColor:f.get("secondaryColor")})});await refresh();render()}catch(x){A.querySelector("#cm").innerHTML='<div class="msg">'+E(x.message)+'</div>'}}}
-function card(p,actions){return \`<article class="player \${p.is_starter?"starter":""}"><span>\${p.position}</span><span class="rating">\${p.rating}</span><h4>\${E(p.name)}</h4><div class="attrs"><span>VEL <b>\${p.pace}</b></span><span>CHU <b>\${p.shooting}</b></span><span>PAS <b>\${p.passing}</b></span><span>DEF <b>\${p.defending}</b></span></div>\${actions?'<button class="'+(p.is_starter?"primary":"secondary")+' tog" data-id="'+p.id+'">'+(p.is_starter?"Titular":"Reserva")+"</button>":""}</article>\`}
-function home(){const c=S.club;return \`<section class="hero"><small>Temporada atual</small><h1>\${E(c.name)}</h1><p class="muted">Jogue, ganhe moedas e reforce seu elenco.</p><button id="play" class="primary">⚽ JOGAR PARTIDA</button><div class="stats"><div class="stat"><small>Overall</small><b>\${c.team_rating}</b></div><div class="stat"><small>Formação</small><b>\${c.formation}</b></div><div class="stat"><small>Pontos</small><b>\${c.points}</b></div><div class="stat"><small>Campanha</small><b>\${c.wins}V \${c.draws}E \${c.losses}D</b></div></div></section><div class="grid"><section class="card"><h2>Últimos jogos</h2>\${S.matches.length?S.matches.slice(0,6).map(m=>\`<div class="match"><b>\${E(c.name)}</b><span class="score">\${m.user_goals} × \${m.opponent_goals}</span><span class="right">\${E(m.opponent_name)}</span></div>\`).join(""):'<p class="muted">Nenhuma partida ainda.</p>'}</section><section class="card"><h2>Recompensas</h2><p class="muted">Vitória: 180 moedas</p><p class="muted">Empate: 90 moedas</p><p class="muted">Derrota: 50 moedas</p></section></div>\`}
-function squad(){return \`<section class="card"><div class="toolbar"><div><small>GESTÃO DO TIME</small><h2>Escalação</h2></div><label>Formação<select id="formation">\${["4-3-3","4-4-2","3-5-2"].map(f=>'<option '+(S.club.formation===f?"selected":"")+'>'+f+"</option>").join("")}</select></label></div><p class="muted">Selecione 11 titulares, incluindo um goleiro.</p><div id="sm"></div><div class="players">\${S.players.map(p=>card(p,true)).join("")}</div><button id="save" class="primary" style="margin-top:12px">Salvar escalação</button></section>\`}
-function market(){return \`<section class="card"><h2>Mercado</h2><p class="muted">Saldo: \${Number(S.club.coins).toLocaleString("pt-BR")} moedas</p><div id="mm"></div><div class="players">\${S.market.map(p=>\`<article class="player"><span>\${p.position}</span><span class="rating">\${p.rating}</span><h4>\${E(p.name)}</h4><div class="attrs"><span>VEL <b>\${p.pace}</b></span><span>CHU <b>\${p.shooting}</b></span><span>PAS <b>\${p.passing}</b></span><span>DEF <b>\${p.defending}</b></span></div><button class="primary buy" data-id="\${p.id}">Comprar · \${Number(p.price).toLocaleString("pt-BR")}</button></article>\`).join("")}</div></section>\`}
-function league(){return \`<section class="card"><h2>Classificação</h2><div class="table"><table><thead><tr><th>#</th><th>Clube</th><th>PTS</th><th>V</th><th>E</th><th>D</th><th>SG</th></tr></thead><tbody>\${S.standings.map((c,i)=>\`<tr class="\${String(c.id)===String(S.club.id)?"me":""}"><td>\${i+1}</td><td><b>\${E(c.name)}</b></td><td>\${c.points}</td><td>\${c.wins}</td><td>\${c.draws}</td><td>\${c.losses}</td><td>\${c.goal_difference>0?"+":""}\${c.goal_difference}</td></tr>\`).join("")}</tbody></table></div></section>\`}
-function render(){if(!S.me)return auth();if(!S.club)return createClub();const body=S.view==="squad"?squad():S.view==="market"?market():S.view==="league"?league():home();A.innerHTML=\`<div class="wrap"><header class="top"><div class="brand"><span class="logo">⚽</span>Dono do Clube</div><span class="coins">● \${Number(S.club.coins).toLocaleString("pt-BR")}</span></header>\${body}</div><nav class="nav"><button data-v="home" class="\${S.view==="home"?"on":""}">INÍCIO</button><button data-v="squad" class="\${S.view==="squad"?"on":""}">ELENCO</button><button data-v="market" class="\${S.view==="market"?"on":""}">MERCADO</button><button data-v="league" class="\${S.view==="league"?"on":""}">LIGA</button></nav>\`;A.querySelectorAll("[data-v]").forEach(b=>b.onclick=()=>{S.view=b.dataset.v;render()});if(S.view==="home")bindHome();if(S.view==="squad")bindSquad();if(S.view==="market")bindMarket()}
-function bindHome(){A.querySelector("#play").onclick=async e=>{e.target.disabled=true;try{const d=await api("/api/matches/play",{method:"POST",body:"{}"});modal(d.match);await refresh()}catch(x){alert(x.message)}finally{render()}}}
-function bindSquad(){A.querySelectorAll(".tog").forEach(b=>b.onclick=()=>{const p=S.players.find(x=>String(x.id)===b.dataset.id);if(!p)return;if(!p.is_starter&&S.players.filter(x=>x.is_starter).length>=11){alert("Já existem 11 titulares.");return}p.is_starter=!p.is_starter;render()});A.querySelector("#save").onclick=async()=>{try{await api("/api/lineup",{method:"PUT",body:JSON.stringify({starterIds:S.players.filter(p=>p.is_starter).map(p=>p.id),formation:A.querySelector("#formation").value})});await refresh();render()}catch(x){alert(x.message)}}}
-function bindMarket(){A.querySelectorAll(".buy").forEach(b=>b.onclick=async()=>{try{await api("/api/market/buy",{method:"POST",body:JSON.stringify({playerId:b.dataset.id})});await refresh();render()}catch(x){alert(x.message)}})}
-function modal(m){const d=document.createElement("div");d.className="modalbg";d.innerHTML=\`<div class="modal"><small>+\${m.reward} moedas</small><div class="board"><span>\${E(m.userClub)}</span><b>\${m.userGoals} × \${m.opponentGoals}</b><span>\${E(m.opponent)}</span></div><h3>Lances</h3>\${m.events.length?m.events.map(e=>'<div class="event"><b>'+e.minute+"'</b> "+E(e.text)+"</div>").join(""):'<p class="muted">Partida sem gols.</p>'}<button id="close" class="primary" style="width:100%;margin-top:12px">Continuar</button></div>\`;document.body.appendChild(d);d.querySelector("#close").onclick=()=>d.remove()}
-boot();
-</script></body></html>`;
+app.post("/api/league/simulate",auth,async(req,res,next)=>{
+  try{
+    const results=await simulateAiRound([]);
+    res.json({results});
+  }catch(e){next(e);}
+});
 
-app.get("/", (_req,res)=>res.type("html").send(html));
+app.post("/api/friends/add",auth,async(req,res,next)=>{
+  try{
+    const c=await getClubForUser(req.user.id);
+    if(!c) return res.status(404).json({error:"Clube não encontrado."});
+
+    const code=String(req.body.code||"").trim().toUpperCase();
+    if(!code) return res.status(400).json({error:"Informe o código do amigo."});
+    const target=await q(`SELECT id,name,is_ai FROM clubs WHERE friend_code=$1`,[code]);
+    if(!target.rowCount) return res.status(404).json({error:"Nenhum clube encontrado com esse código."});
+    if(String(target.rows[0].id)===String(c.id)) return res.status(400).json({error:"Esse é o código do seu próprio clube."});
+    if(target.rows[0].is_ai) return res.status(400).json({error:"Esse código pertence a um clube do sistema."});
+
+    const a=Math.min(Number(c.id),Number(target.rows[0].id));
+    const b=Math.max(Number(c.id),Number(target.rows[0].id));
+    await q(`INSERT INTO friendships(club_a_id,club_b_id) VALUES($1,$2) ON CONFLICT DO NOTHING`,[a,b]);
+    res.json({ok:true,friend:target.rows[0]});
+  }catch(e){next(e);}
+});
+
+app.delete("/api/friends/:clubId",auth,async(req,res,next)=>{
+  try{
+    const c=await getClubForUser(req.user.id);
+    if(!c) return res.status(404).json({error:"Clube não encontrado."});
+    const id=Number(req.params.clubId);
+    const a=Math.min(Number(c.id),id), b=Math.max(Number(c.id),id);
+    await q(`DELETE FROM friendships WHERE club_a_id=$1 AND club_b_id=$2`,[a,b]);
+    res.json({ok:true});
+  }catch(e){next(e);}
+});
+
+app.post("/api/friends/:clubId/play",auth,async(req,res,next)=>{
+  try{
+    const c=await getClubForUser(req.user.id);
+    if(!c) return res.status(404).json({error:"Clube não encontrado."});
+    const friendId=Number(req.params.clubId);
+    const a=Math.min(Number(c.id),friendId), b=Math.max(Number(c.id),friendId);
+    const f=await q(`SELECT id FROM friendships WHERE club_a_id=$1 AND club_b_id=$2`,[a,b]);
+    if(!f.rowCount) return res.status(403).json({error:"Esse clube ainda não está na sua lista de amigos."});
+
+    const match=await simulateMatch(c.id,friendId,{
+      matchType:"friendly",
+      rewardEnabled:false,
+      updateStandings:false,
+      recordForClubId:c.id
+    });
+    res.json({match});
+  }catch(e){next(e);}
+});
+
+app.get("/styles.css",(_req,res)=>res.sendFile(path.join(__dirname,"styles.css")));
+app.get("/app.js",(_req,res)=>res.sendFile(path.join(__dirname,"app.js")));
+app.get("/",(_req,res)=>res.sendFile(path.join(__dirname,"index.html")));
 
 app.use((err,_req,res,_next)=>{
   console.error(err);
@@ -375,9 +816,13 @@ app.use((err,_req,res,_next)=>{
   res.status(status).json({error:status>=500?"Erro interno do servidor.":err.message});
 });
 
-async function start(){
+async function start() {
   await initDb();
   await seed();
-  app.listen(PORT,"0.0.0.0",()=>console.log(`Dono do Clube rodando na porta ${PORT}`));
+  app.listen(PORT,"0.0.0.0",()=>console.log(`Dono do Clube v2 rodando na porta ${PORT}`));
 }
-start().catch(e=>{console.error("Falha ao iniciar:",e);process.exit(1)});
+
+start().catch(e=>{
+  console.error("Falha ao iniciar:",e);
+  process.exit(1);
+});

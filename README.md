@@ -1,31 +1,39 @@
-# Dono do Clube — versão flat
+# Dono do Clube v2
 
-Esta versão foi feita especificamente para evitar problemas de upload de pastas no GitHub.
+Versão com:
 
-A raiz do repositório precisa ter somente estes arquivos principais:
+- dados persistentes no PostgreSQL;
+- cadastro/login;
+- criação do clube;
+- personalização de nome, cores e escudo;
+- upload de escudo redimensionado no navegador;
+- elenco com estatísticas individuais;
+- escalação;
+- rescisão de jogadores;
+- mercado;
+- partidas de liga;
+- simulação de jogos dos outros clubes;
+- classificação;
+- visualização do elenco e estatísticas de qualquer clube;
+- código de amizade;
+- adicionar/remover amigos;
+- amistosos contra amigos mesmo quando eles estiverem offline.
+
+## Arquivos
+
+Todos ficam na raiz do repositório:
 
 - `server.js`
+- `index.html`
+- `app.js`
+- `styles.css`
 - `package.json`
 - `render.yaml`
 - `README.md`
 
-Não existe pasta `src/`.
-Não existe pasta `public/`.
+## Atualização do projeto já existente
 
-O `server.js` contém backend, banco, regras do jogo e interface.
+Substitua os arquivos da raiz pelos arquivos desta versão e faça commit na branch `main`.
+O Render conectado ao GitHub deve fazer Auto-Deploy.
 
-## Para atualizar o repositório já existente
-
-1. Apague os arquivos antigos do repositório ou substitua-os.
-2. Envie os quatro arquivos desta versão para a raiz do repositório.
-3. Faça commit na branch `main`.
-4. O Render deverá iniciar novo deploy automaticamente.
-5. Não crie outro banco.
-6. Não crie outro Blueprint.
-
-## Erro que esta versão elimina
-
-A versão anterior dependia de `./src/db`, `./src/auth` e `./src/game`.
-Se a pasta `src` não fosse enviada pelo navegador, o Render encerrava com `MODULE_NOT_FOUND`.
-
-Esta versão não possui dependências locais.
+O banco existente é reutilizado. As colunas e tabelas novas são criadas automaticamente no início do servidor.
