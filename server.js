@@ -19,6 +19,10 @@ const RESET_KEY = "v7_brasileirao_estaduais_reset_20260919";
 const ECONOMY_MIGRATION_KEY = "v8_economy_fitness_transfer_20260919";
 const V14_MIGRATION_KEY = "v14_copa_calendar_trophies_sales_20260919";
 const V15_MIGRATION_KEY = "v15_sponsors_installments_loans_market_20260919";
+const V16_MIGRATION_KEY = "v16_multi_career_shared_market_20260919";
+const V17_MIGRATION_KEY = "v17_independent_career_market_20260919";
+const V18_MIGRATION_KEY = "v18_manual_career_save_20260919";
+const MAX_CAREERS_PER_USER = 10;
 const TRANSFER_BAN_THRESHOLD = -10000;
 const competitionLocks = new Set();
 const DIVS = ["A","B","C","D"];
@@ -60,7 +64,7 @@ async function initDb(){
 
     CREATE TABLE IF NOT EXISTS clubs(
       id BIGSERIAL PRIMARY KEY,
-      user_id BIGINT UNIQUE REFERENCES users(id) ON DELETE CASCADE,
+      user_id BIGINT REFERENCES users(id) ON DELETE CASCADE,
       name TEXT UNIQUE NOT NULL,
       primary_color TEXT NOT NULL DEFAULT '#18864b',
       secondary_color TEXT NOT NULL DEFAULT '#f7fafc',
@@ -131,6 +135,7 @@ async function initDb(){
       user_division TEXT NOT NULL DEFAULT 'D',
       current_round INTEGER NOT NULL DEFAULT 1,
       data JSONB NOT NULL DEFAULT '{}'::jsonb,
+      manual_saved_at TIMESTAMPTZ,
       updated_at TIMESTAMPTZ NOT NULL DEFAULT NOW()
     );
 
@@ -226,7 +231,7 @@ async function initDb(){
       ON clubs(friend_code) WHERE friend_code IS NOT NULL;
     CREATE INDEX IF NOT EXISTS idx_players_club ON players(club_id);
     CREATE INDEX IF NOT EXISTS idx_transfer_offers_seller_status ON transfer_offers(selling_club_id,status);
-    CREATE UNIQUE INDEX IF NOT EXISTS idx_transfer_offers_pending_player ON transfer_offers(selling_club_id,player_id) WHERE status='pending';
+    CREATE UNIQUE INDEX IF NOT EXISTS idx_transfer_offers_pending_buyer_player ON transfer_offers(player_id,buying_club_id) WHERE status='pending';
     CREATE INDEX IF NOT EXISTS idx_trophies_club_season ON club_trophies(club_id,season_no);
     CREATE UNIQUE INDEX IF NOT EXISTS idx_sponsorship_active_club ON sponsorship_contracts(club_id) WHERE status='active';
     CREATE INDEX IF NOT EXISTS idx_installments_buying_status ON transfer_installments(buying_club_id,status);
@@ -240,16 +245,31 @@ async function initDb(){
     `ALTER TABLE clubs ADD COLUMN IF NOT EXISTS national_seed_division TEXT`,
     `ALTER TABLE clubs ADD COLUMN IF NOT EXISTS base_rating INTEGER NOT NULL DEFAULT 64`,
     `ALTER TABLE clubs ADD COLUMN IF NOT EXISTS fans INTEGER NOT NULL DEFAULT 5000`,
+    `ALTER TABLE clubs ADD COLUMN IF NOT EXISTS career_slot INTEGER`,
+    `ALTER TABLE clubs ADD COLUMN IF NOT EXISTS career_label TEXT`,
+    `ALTER TABLE clubs ADD COLUMN IF NOT EXISTS is_active_career BOOLEAN NOT NULL DEFAULT FALSE`,
+    `ALTER TABLE transfer_offers ADD COLUMN IF NOT EXISTS offer_kind TEXT NOT NULL DEFAULT 'ai'`,
+    `ALTER TABLE transfer_offers ADD COLUMN IF NOT EXISTS buyer_salary INTEGER`,
+    `ALTER TABLE transfer_offers ADD COLUMN IF NOT EXISTS buyer_years INTEGER`,
+    `ALTER TABLE transfer_offers ADD COLUMN IF NOT EXISTS buyer_installments INTEGER`,
     `ALTER TABLE players ADD COLUMN IF NOT EXISTS role TEXT`,
     `ALTER TABLE players ADD COLUMN IF NOT EXISTS salary INTEGER NOT NULL DEFAULT 0`,
     `ALTER TABLE players ADD COLUMN IF NOT EXISTS contract_seasons INTEGER NOT NULL DEFAULT 2`,
     `ALTER TABLE players ADD COLUMN IF NOT EXISTS fitness INTEGER NOT NULL DEFAULT 100`,
     `ALTER TABLE players ADD COLUMN IF NOT EXISTS morale INTEGER NOT NULL DEFAULT 70`,
     `ALTER TABLE players ADD COLUMN IF NOT EXISTS injury_games INTEGER NOT NULL DEFAULT 0`,
-    `ALTER TABLE players ADD COLUMN IF NOT EXISTS transfer_listed BOOLEAN NOT NULL DEFAULT FALSE`
+    `ALTER TABLE players ADD COLUMN IF NOT EXISTS transfer_listed BOOLEAN NOT NULL DEFAULT FALSE`,
+    `ALTER TABLE players ADD COLUMN IF NOT EXISTS market_template_id BIGINT`,
+    `ALTER TABLE careers ADD COLUMN IF NOT EXISTS manual_saved_at TIMESTAMPTZ`
   ]) await q(sql);
 
   await q(`ALTER TABLE clubs DROP CONSTRAINT IF EXISTS clubs_coins_check`);
+  await q(`ALTER TABLE clubs DROP CONSTRAINT IF EXISTS clubs_user_id_key`);
+  await q(`DROP INDEX IF EXISTS idx_transfer_offers_pending_player`);
+  await q(`CREATE UNIQUE INDEX IF NOT EXISTS idx_clubs_user_career_slot ON clubs(user_id,career_slot) WHERE user_id IS NOT NULL AND career_slot IS NOT NULL`);
+  await q(`CREATE UNIQUE INDEX IF NOT EXISTS idx_clubs_one_active_career ON clubs(user_id) WHERE user_id IS NOT NULL AND is_active_career=TRUE`);
+  await q(`CREATE UNIQUE INDEX IF NOT EXISTS idx_transfer_offers_pending_buyer_player ON transfer_offers(player_id,buying_club_id) WHERE status='pending'`);
+  await q(`CREATE UNIQUE INDEX IF NOT EXISTS idx_players_career_market_template ON players(club_id,market_template_id) WHERE club_id IS NOT NULL AND market_template_id IS NOT NULL`);
 
   for(const sql of [
     `ALTER TABLE players DROP CONSTRAINT IF EXISTS players_rating_check`,
@@ -349,6 +369,60 @@ async function applyV15Migration(){
   await tx(async c=>{
     await c.query(`UPDATE transfer_installments SET status='paid',amount_remaining=0 WHERE status='active' AND amount_remaining<=0`);
     await c.query(`INSERT INTO app_meta(key,value) VALUES($1,$2)`,[V15_MIGRATION_KEY,new Date().toISOString()]);
+  });
+}
+
+async function applyV16Migration(){
+  const done=await q(`SELECT 1 FROM app_meta WHERE key=$1`,[V16_MIGRATION_KEY]);
+  if(done.rowCount)return;
+  await tx(async c=>{
+    await c.query(`ALTER TABLE clubs DROP CONSTRAINT IF EXISTS clubs_user_id_key`);
+    await c.query(`DROP INDEX IF EXISTS idx_transfer_offers_pending_player`);
+
+    const users=(await c.query(`SELECT DISTINCT user_id FROM clubs WHERE user_id IS NOT NULL`)).rows;
+    for(const u of users){
+      const clubs=(await c.query(`SELECT id,name,career_slot,is_active_career FROM clubs WHERE user_id=$1 ORDER BY created_at,id FOR UPDATE`,[u.user_id])).rows;
+      const used=new Set(clubs.map(x=>Number(x.career_slot)).filter(Boolean));
+      let next=1;
+      for(const club of clubs){
+        let slot=Number(club.career_slot||0);
+        if(!slot){
+          while(used.has(next))next++;
+          slot=next;used.add(slot);next++;
+        }
+        await c.query(`UPDATE clubs SET career_slot=$2,career_label=COALESCE(NULLIF(career_label,''),$3),is_active_career=FALSE WHERE id=$1`,
+          [club.id,slot,`Carreira ${slot}`]);
+      }
+      if(clubs.length){
+        const chosen=clubs.find(x=>x.is_active_career)||clubs[0];
+        await c.query(`UPDATE clubs SET is_active_career=TRUE WHERE id=$1`,[chosen.id]);
+      }
+    }
+
+    await c.query(`CREATE UNIQUE INDEX IF NOT EXISTS idx_clubs_user_career_slot ON clubs(user_id,career_slot) WHERE user_id IS NOT NULL AND career_slot IS NOT NULL`);
+    await c.query(`CREATE UNIQUE INDEX IF NOT EXISTS idx_clubs_one_active_career ON clubs(user_id) WHERE user_id IS NOT NULL AND is_active_career=TRUE`);
+    await c.query(`CREATE UNIQUE INDEX IF NOT EXISTS idx_transfer_offers_pending_buyer_player ON transfer_offers(player_id,buying_club_id) WHERE status='pending'`);
+    await c.query(`INSERT INTO app_meta(key,value) VALUES($1,$2)`,[V16_MIGRATION_KEY,new Date().toISOString()]);
+  });
+}
+
+async function applyV17Migration(){
+  const done=await q(`SELECT 1 FROM app_meta WHERE key=$1`,[V17_MIGRATION_KEY]);
+  if(done.rowCount)return;
+  await tx(async c=>{
+    // O mercado compartilhado da v16 foi removido.
+    await c.query(`UPDATE transfer_offers SET status='expired',updated_at=NOW() WHERE status='pending' AND offer_kind='human'`);
+    await c.query(`CREATE UNIQUE INDEX IF NOT EXISTS idx_players_career_market_template ON players(club_id,market_template_id) WHERE club_id IS NOT NULL AND market_template_id IS NOT NULL`);
+    await c.query(`INSERT INTO app_meta(key,value) VALUES($1,$2)`,[V17_MIGRATION_KEY,new Date().toISOString()]);
+  });
+}
+
+async function applyV18Migration(){
+  const done=await q(`SELECT 1 FROM app_meta WHERE key=$1`,[V18_MIGRATION_KEY]);
+  if(done.rowCount)return;
+  await tx(async c=>{
+    await c.query(`ALTER TABLE careers ADD COLUMN IF NOT EXISTS manual_saved_at TIMESTAMPTZ`);
+    await c.query(`INSERT INTO app_meta(key,value) VALUES($1,$2)`,[V18_MIGRATION_KEY,new Date().toISOString()]);
   });
 }
 
@@ -488,6 +562,36 @@ async function ensureMarket(){
   }
 }
 
+async function clonePlayerForCareer(client,source,clubId,{salary=null,years=null,fitness=100,morale=78}={}){
+  const templateId=Number(source.market_template_id||source.id);
+  const existing=(await client.query(
+    `SELECT id FROM players WHERE club_id=$1 AND market_template_id=$2 LIMIT 1`,
+    [clubId,templateId]
+  )).rows[0];
+  if(existing)throw Object.assign(new Error("Esse jogador já pertence a esta carreira."),{status:409});
+
+  const r=await client.query(`
+    INSERT INTO players(
+      club_id,name,position,role,rating,pace,shooting,passing,defending,price,is_starter,age,
+      appearances,goals,assists,yellow_cards,red_cards,clean_sheets,
+      salary,contract_seasons,fitness,morale,injury_games,transfer_listed,market_template_id
+    )
+    VALUES(
+      $1,$2,$3,$4,$5,$6,$7,$8,$9,$10,FALSE,$11,
+      0,0,0,0,0,0,
+      $12,$13,$14,$15,0,FALSE,$16
+    )
+    RETURNING *
+  `,[
+    clubId,source.name,source.position,source.role,source.rating,source.pace,source.shooting,
+    source.passing,source.defending,source.price,source.age,
+    salary===null?Number(source.salary||salaryForRating(source.rating)):Number(salary),
+    years===null?Number(source.contract_seasons||2):Number(years),
+    Number(fitness),Number(morale),templateId
+  ]);
+  return r.rows[0];
+}
+
 function hashPassword(password,salt=crypto.randomBytes(16).toString("hex")){
   return {salt,hash:crypto.scryptSync(password,salt,64).toString("hex")};
 }
@@ -539,7 +643,41 @@ async function auth(req,res,next){
 }
 
 async function userClub(userId){
-  return (await q(`SELECT * FROM clubs WHERE user_id=$1`,[userId])).rows[0]||null;
+  let r=await q(`SELECT * FROM clubs WHERE user_id=$1 AND is_active_career=TRUE ORDER BY career_slot,id LIMIT 1`,[userId]);
+  if(r.rowCount)return r.rows[0];
+  r=await q(`SELECT * FROM clubs WHERE user_id=$1 ORDER BY career_slot NULLS LAST,created_at,id LIMIT 1`,[userId]);
+  if(!r.rowCount)return null;
+  await tx(async c=>{
+    await c.query(`UPDATE clubs SET is_active_career=FALSE WHERE user_id=$1`,[userId]);
+    await c.query(`UPDATE clubs SET is_active_career=TRUE WHERE id=$1`,[r.rows[0].id]);
+  });
+  return (await q(`SELECT * FROM clubs WHERE id=$1`,[r.rows[0].id])).rows[0]||null;
+}
+async function listUserCareers(userId){
+  return (await q(`
+    SELECT c.id,c.name,c.state_code,c.primary_color,c.secondary_color,c.crest_data,c.coins,c.team_rating,
+      c.career_slot,c.career_label,c.is_active_career,c.created_at,
+      cr.season_no,cr.phase,cr.user_division,cr.current_round,cr.manual_saved_at
+    FROM clubs c
+    LEFT JOIN careers cr ON cr.owner_club_id=c.id
+    WHERE c.user_id=$1
+    ORDER BY c.career_slot NULLS LAST,c.created_at,c.id
+  `,[userId])).rows;
+}
+async function activateUserCareer(userId,clubId){
+  return tx(async c=>{
+    const target=(await c.query(`SELECT * FROM clubs WHERE id=$1 AND user_id=$2 FOR UPDATE`,[clubId,userId])).rows[0];
+    if(!target)throw Object.assign(new Error("Carreira não encontrada."),{status:404});
+    await c.query(`UPDATE clubs SET is_active_career=FALSE WHERE user_id=$1`,[userId]);
+    await c.query(`UPDATE clubs SET is_active_career=TRUE WHERE id=$1`,[target.id]);
+    return (await c.query(`SELECT * FROM clubs WHERE id=$1`,[target.id])).rows[0];
+  });
+}
+async function nextCareerSlot(userId,client=pool){
+  const rows=(await client.query(`SELECT career_slot FROM clubs WHERE user_id=$1 AND career_slot IS NOT NULL ORDER BY career_slot`,[userId])).rows;
+  const used=new Set(rows.map(r=>Number(r.career_slot)));
+  for(let i=1;i<=MAX_CAREERS_PER_USER;i++)if(!used.has(i))return i;
+  return null;
 }
 async function clubRating(clubId,client=pool){
   return (await client.query(`SELECT COALESCE(ROUND(AVG(rating)),64)::int rating FROM players WHERE club_id=$1 AND is_starter=TRUE`,[clubId])).rows[0].rating;
@@ -1534,9 +1672,9 @@ async function nextSeason(ownerId){
   await tx(async c=>{
     const borrowed=(await c.query(`SELECT l.player_id,l.parent_club_id,p.name FROM player_loans l JOIN players p ON p.id=l.player_id WHERE l.borrowing_club_id=$1 AND l.status='active' FOR UPDATE OF l`,[ownerId])).rows;
     for(const l of borrowed){
-      await c.query(`UPDATE players SET club_id=$2,is_starter=FALSE,transfer_listed=FALSE,fitness=100,morale=72 WHERE id=$1`,[l.player_id,l.parent_club_id]);
       await c.query(`UPDATE player_loans SET status='ended' WHERE player_id=$1 AND borrowing_club_id=$2 AND status='active'`,[l.player_id,ownerId]);
-      await c.query(`INSERT INTO club_events(club_id,event_type,title,description) VALUES($1,'loan','Fim de empréstimo',$2)`,[ownerId,`${l.name} retornou ao clube de origem no fim da temporada.`]);
+      await c.query(`UPDATE players SET club_id=NULL,is_starter=FALSE,transfer_listed=FALSE,fitness=100,morale=72 WHERE id=$1`,[l.player_id]);
+      await c.query(`INSERT INTO club_events(club_id,event_type,title,description) VALUES($1,'loan','Fim de empréstimo',$2)`,[ownerId,`${l.name} deixou esta carreira ao fim da temporada.`]);
     }
 
     const ps=(await c.query(`SELECT id,name,age,contract_seasons FROM players WHERE club_id=$1`,[ownerId])).rows;
@@ -1875,9 +2013,9 @@ async function processLoanMonth(client,clubId,month){
     }
     const elapsed=Number(l.months_elapsed||0)+1;
     if(elapsed>=Number(l.months_total||0)){
-      await client.query(`UPDATE players SET club_id=$2,is_starter=FALSE,fitness=100,morale=72 WHERE id=$1`,[l.player_id,l.parent_club_id]);
       await client.query(`UPDATE player_loans SET months_elapsed=$2,status='ended' WHERE id=$1`,[l.id,elapsed]);
-      await client.query(`INSERT INTO club_events(club_id,event_type,title,description) VALUES($1,'loan','Fim de empréstimo',$2)`,[clubId,`${l.player_name} retornou ao clube de origem.`]);
+      await client.query(`UPDATE players SET club_id=NULL,is_starter=FALSE,transfer_listed=FALSE,fitness=100,morale=72 WHERE id=$1`,[l.player_id]);
+      await client.query(`INSERT INTO club_events(club_id,event_type,title,description) VALUES($1,'loan','Fim de empréstimo',$2)`,[clubId,`${l.player_name} deixou esta carreira ao fim do empréstimo.`]);
     }else{
       await client.query(`UPDATE player_loans SET months_elapsed=$2 WHERE id=$1`,[l.id,elapsed]);
     }
@@ -1926,21 +2064,69 @@ app.post("/api/auth/login",async(req,res,next)=>{
 app.post("/api/auth/logout",(_req,res)=>{clearCookie(res);res.json({ok:true})});
 
 app.get("/api/me",auth,async(req,res,next)=>{
-  try{res.json({user:req.user,club:await userClub(req.user.id),states:STATE_DATA.names})}catch(e){next(e)}
+  try{
+    const club=await userClub(req.user.id);
+    const careers=await listUserCareers(req.user.id);
+    res.json({user:req.user,club,careers,states:STATE_DATA.names,maxCareers:MAX_CAREERS_PER_USER});
+  }catch(e){next(e)}
+});
+
+app.get("/api/careers",auth,async(req,res,next)=>{
+  try{
+    res.json({careers:await listUserCareers(req.user.id),maxCareers:MAX_CAREERS_PER_USER});
+  }catch(e){next(e)}
+});
+
+app.post("/api/careers/:clubId/activate",auth,async(req,res,next)=>{
+  try{
+    const club=await activateUserCareer(req.user.id,String(req.params.clubId));
+    res.json({ok:true,club,careers:await listUserCareers(req.user.id)});
+  }catch(e){next(e)}
 });
 
 app.post("/api/club",auth,async(req,res,next)=>{
   try{
-    const name=String(req.body.name||"").trim().replace(/\s+/g," "),state=String(req.body.stateCode||"").toUpperCase(),pc=String(req.body.primaryColor||"#18864b"),sc=String(req.body.secondaryColor||"#f7fafc");
+    const name=String(req.body.name||"").trim().replace(/\s+/g," ");
+    const state=String(req.body.stateCode||"").toUpperCase();
+    const pc=String(req.body.primaryColor||"#18864b");
+    const sc=String(req.body.secondaryColor||"#f7fafc");
+    const requestedLabel=String(req.body.careerLabel||"").trim().replace(/\s+/g," ");
+
     if(name.length<3||name.length>30)return res.status(400).json({error:"Nome deve ter 3 a 30 caracteres."});
     if(!VALID_STATES.has(state))return res.status(400).json({error:"Escolha um estado."});
+    if(requestedLabel.length>40)return res.status(400).json({error:"Nome da carreira deve ter no máximo 40 caracteres."});
+
     const club=await tx(async c=>{
-      const ex=await c.query(`SELECT id FROM clubs WHERE user_id=$1`,[req.user.id]);if(ex.rowCount)throw Object.assign(new Error("Você já tem um clube."),{status:409});
-      const x=(await c.query(`INSERT INTO clubs(user_id,name,state_code,country_code,club_kind,base_rating,team_rating,coins,primary_color,secondary_color) VALUES($1,$2,$3,'BR','user',64,64,30000,$4,$5) RETURNING *`,[req.user.id,name,state,pc,sc])).rows[0];
-      await ensureFriendCode(c,x.id);await createRoster(c,x,true);await applyFelipeMode(c,x.id);return (await c.query(`SELECT * FROM clubs WHERE id=$1`,[x.id])).rows[0];
+      const count=Number((await c.query(`SELECT COUNT(*)::int count FROM clubs WHERE user_id=$1`,[req.user.id])).rows[0].count);
+      if(count>=MAX_CAREERS_PER_USER)throw Object.assign(new Error(`Você já possui o limite de ${MAX_CAREERS_PER_USER} carreiras.`),{status:409});
+
+      const slot=await nextCareerSlot(req.user.id,c);
+      if(!slot)throw Object.assign(new Error("Não há vaga de carreira disponível."),{status:409});
+      const label=requestedLabel||`Carreira ${slot}`;
+
+      await c.query(`UPDATE clubs SET is_active_career=FALSE WHERE user_id=$1`,[req.user.id]);
+
+      const x=(await c.query(`
+        INSERT INTO clubs(
+          user_id,name,state_code,country_code,club_kind,base_rating,team_rating,coins,
+          primary_color,secondary_color,career_slot,career_label,is_active_career
+        )
+        VALUES($1,$2,$3,'BR','user',64,64,30000,$4,$5,$6,$7,TRUE)
+        RETURNING *
+      `,[req.user.id,name,state,pc,sc,slot,label])).rows[0];
+
+      await ensureFriendCode(c,x.id);
+      await createRoster(c,x,true);
+      await applyFelipeMode(c,x.id);
+      return (await c.query(`SELECT * FROM clubs WHERE id=$1`,[x.id])).rows[0];
     });
-    await createCareer(club.id,state,1,null);res.status(201).json({club});
-  }catch(e){if(e.code==="23505")return res.status(409).json({error:"Nome já utilizado."});next(e)}
+
+    await createCareer(club.id,state,1,null);
+    res.status(201).json({club,careers:await listUserCareers(req.user.id)});
+  }catch(e){
+    if(e.code==="23505")return res.status(409).json({error:"Nome de clube já utilizado."});
+    next(e);
+  }
 });
 
 app.put("/api/club/state",auth,async(req,res,next)=>{
@@ -1971,14 +2157,8 @@ app.delete("/api/club",auth,async(req,res,next)=>{
 
     await withCompetitionLock(club.id,async()=>{
       await tx(async client=>{
-        // Devolve primeiro os jogadores que pertencem a outros clubes e estão emprestados.
-        const borrowed=(await client.query(`SELECT player_id,parent_club_id FROM player_loans WHERE borrowing_club_id=$1 AND status='active' FOR UPDATE`,[club.id])).rows;
-        for(const l of borrowed){
-          await client.query(`UPDATE players SET club_id=$2,is_starter=FALSE,transfer_listed=FALSE,fitness=100,morale=72 WHERE id=$1`,[l.player_id,l.parent_club_id]);
-          await client.query(`UPDATE player_loans SET status='ended' WHERE player_id=$1 AND borrowing_club_id=$2 AND status='active'`,[l.player_id,club.id]);
-        }
-
-        // Remove somente os jogadores que permaneceram como patrimônio do clube.
+        // Cada carreira possui suas próprias instâncias de jogadores.
+        // Ao apagar o save, o elenco desse save é removido sem afetar outras carreiras.
         await client.query(`DELETE FROM players WHERE club_id=$1`,[club.id]);
 
         // As demais estruturas vinculadas ao clube usam ON DELETE CASCADE.
@@ -1986,10 +2166,42 @@ app.delete("/api/club",auth,async(req,res,next)=>{
       });
     });
 
+    const remaining=await listUserCareers(req.user.id);
+    let activeClub=null;
+    if(remaining.length){
+      activeClub=await activateUserCareer(req.user.id,remaining[0].id);
+    }
     res.json({
       ok:true,
-      message:"Clube apagado. Sua conta foi mantida e você pode criar um novo clube do zero."
+      message:remaining.length?"Carreira apagada. Outra carreira da conta foi ativada.":"Clube apagado. Sua conta foi mantida e você pode criar um novo clube do zero.",
+      club:activeClub,
+      careers:await listUserCareers(req.user.id)
     });
+  }catch(e){next(e)}
+});
+
+app.delete("/api/careers/:clubId",auth,async(req,res,next)=>{
+  try{
+    const clubId=String(req.params.clubId);
+    const confirmName=String(req.body.confirmName||"").trim();
+    const target=(await q(`SELECT * FROM clubs WHERE id=$1 AND user_id=$2`,[clubId,req.user.id])).rows[0];
+    if(!target)return res.status(404).json({error:"Carreira não encontrada."});
+    if(confirmName!==target.name)return res.status(400).json({error:"Digite exatamente o nome do clube para confirmar."});
+
+    await withCompetitionLock(target.id,async()=>{
+      await tx(async client=>{
+        await client.query(`DELETE FROM players WHERE club_id=$1`,[target.id]);
+        await client.query(`DELETE FROM clubs WHERE id=$1 AND user_id=$2`,[target.id,req.user.id]);
+      });
+    });
+
+    const remaining=await listUserCareers(req.user.id);
+    let club=null;
+    if(remaining.length){
+      const existingActive=remaining.find(x=>x.is_active_career);
+      club=existingActive?await userClub(req.user.id):await activateUserCareer(req.user.id,remaining[0].id);
+    }
+    res.json({ok:true,club,careers:await listUserCareers(req.user.id)});
   }catch(e){next(e)}
 });
 
@@ -2030,7 +2242,7 @@ app.get("/api/dashboard",auth,async(req,res,next)=>{
       financeSummary(c.id),
       q(`SELECT event_type,title,description,created_at FROM club_events WHERE club_id=$1 ORDER BY created_at DESC,id DESC LIMIT 10`,[c.id]),
       q(`SELECT id,season_no,competition,title,won_at FROM club_trophies WHERE club_id=$1 ORDER BY season_no DESC,won_at DESC`,[c.id]),
-      q(`SELECT o.id,o.amount,o.status,o.created_at,p.id player_id,p.name player_name,p.position,p.role,p.rating,p.age,p.transfer_listed,b.id buying_club_id,b.name buying_club_name FROM transfer_offers o JOIN players p ON p.id=o.player_id JOIN clubs b ON b.id=o.buying_club_id WHERE o.selling_club_id=$1 AND o.status='pending' ORDER BY o.amount DESC,o.created_at DESC`,[c.id]),
+      q(`SELECT o.id,o.amount,o.status,o.offer_kind,o.created_at,p.id player_id,p.name player_name,p.position,p.role,p.rating,p.age,p.transfer_listed,b.id buying_club_id,b.name buying_club_name FROM transfer_offers o JOIN players p ON p.id=o.player_id JOIN clubs b ON b.id=o.buying_club_id WHERE o.selling_club_id=$1 AND o.status='pending' AND b.is_ai=TRUE AND o.offer_kind<>'human' ORDER BY o.amount DESC,o.created_at DESC`,[c.id]),
       sponsorshipSummary(c.id,career)
     ]);
     const cal=career?calendarSummary(career,fin.wages):null;
@@ -2058,6 +2270,73 @@ app.post("/api/sponsorships/sign",auth,async(req,res,next)=>{
         [c.id,`${offer.name} assinou por ${offer.months} meses: ${offer.monthly.toLocaleString("pt-BR")} moedas por mês.`]);
       return {ok:true,name:offer.name,monthly:offer.monthly,signing:offer.signing};
     });
+    res.json(result);
+  }catch(e){next(e)}
+});
+
+app.post("/api/career/manual-save",auth,async(req,res,next)=>{
+  try{
+    const club=await userClub(req.user.id);
+    if(!club)return res.status(404).json({error:"Carreira não encontrada."});
+
+    const starterIds=Array.isArray(req.body.starterIds)?req.body.starterIds.map(String):null;
+    const formation=req.body.formation?String(req.body.formation):null;
+
+    const result=await withCompetitionLock(club.id,async()=>tx(async client=>{
+      const career=(await client.query(`SELECT * FROM careers WHERE owner_club_id=$1 FOR UPDATE`,[club.id])).rows[0];
+      if(!career)throw Object.assign(new Error("Carreira não encontrada."),{status:404});
+
+      let lineupSaved=false;
+
+      if(starterIds&&formation){
+        if(starterIds.length!==11||new Set(starterIds).size!==11){
+          throw Object.assign(new Error("Selecione exatamente 11 titulares para salvar a escalação."),{status:400});
+        }
+
+        const own=(await client.query(
+          `SELECT id,position,injury_games FROM players WHERE club_id=$1 AND id=ANY($2::bigint[])`,
+          [club.id,starterIds]
+        )).rows;
+
+        if(own.length!==11||!own.some(p=>p.position==="GK")){
+          throw Object.assign(new Error("A escalação precisa incluir um goleiro."),{status:400});
+        }
+        if(own.some(p=>Number(p.injury_games||0)>0)){
+          throw Object.assign(new Error("Jogadores lesionados não podem ser titulares."),{status:400});
+        }
+
+        const quota=formationQuotas(formation),counts={GK:0,DEF:0,MID:0,ATT:0};
+        own.forEach(p=>counts[p.position]=(counts[p.position]||0)+1);
+        if(Object.keys(quota).some(k=>counts[k]!==quota[k])){
+          throw Object.assign(new Error(`A formação ${formation} exige ${quota.DEF} defensores, ${quota.MID} meio-campistas e ${quota.ATT} atacantes.`),{status:400});
+        }
+
+        await client.query(`UPDATE players SET is_starter=FALSE WHERE club_id=$1`,[club.id]);
+        await client.query(`UPDATE players SET is_starter=TRUE WHERE club_id=$1 AND id=ANY($2::bigint[])`,[club.id,starterIds]);
+        await client.query(`UPDATE clubs SET formation=$2 WHERE id=$1`,[club.id,formation]);
+
+        const rating=Number((await client.query(
+          `SELECT COALESCE(ROUND(AVG(rating)),64)::int rating FROM players WHERE club_id=$1 AND is_starter=TRUE`,
+          [club.id]
+        )).rows[0].rating||64);
+        await client.query(`UPDATE clubs SET team_rating=$2 WHERE id=$1`,[club.id,rating]);
+        lineupSaved=true;
+      }
+
+      const saved=(await client.query(
+        `UPDATE careers SET manual_saved_at=NOW(),updated_at=NOW() WHERE owner_club_id=$1 RETURNING manual_saved_at`,
+        [club.id]
+      )).rows[0];
+
+      return {
+        ok:true,
+        savedAt:saved.manual_saved_at,
+        lineupSaved,
+        careerId:club.id,
+        careerLabel:club.career_label||`Carreira ${club.career_slot||1}`
+      };
+    }));
+
     res.json(result);
   }catch(e){next(e)}
 });
@@ -2133,14 +2412,28 @@ app.post("/api/players/:id/release",auth,async(req,res,next)=>{
   try{
     const c=await userClub(req.user.id),pid=String(req.params.id);
     await tx(async x=>{
-      const p=await x.query(`SELECT * FROM players WHERE id=$1 AND club_id=$2 FOR UPDATE`,[pid,c.id]);
-      if(!p.rowCount)throw Object.assign(new Error("Jogador não encontrado."),{status:404});
-      if(p.rows[0].is_starter)throw Object.assign(new Error("Tire o jogador dos titulares antes de rescindir."),{status:400});
-      const count=await x.query(`SELECT COUNT(*)::int count FROM players WHERE club_id=$1`,[c.id]);if(count.rows[0].count<=12)throw Object.assign(new Error("Mantenha pelo menos 12 jogadores."),{status:400});
-      const severance=Math.max(100,Number(p.rows[0].salary||0)*2);
+      const p=(await x.query(`SELECT * FROM players WHERE id=$1 AND club_id=$2 FOR UPDATE`,[pid,c.id])).rows[0];
+      if(!p)throw Object.assign(new Error("Jogador não encontrado."),{status:404});
+      if(p.is_starter)throw Object.assign(new Error("Tire o jogador dos titulares antes de rescindir."),{status:400});
+
+      const borrowed=(await x.query(`SELECT 1 FROM player_loans WHERE player_id=$1 AND borrowing_club_id=$2 AND status='active'`,[pid,c.id])).rowCount>0;
+      if(borrowed)throw Object.assign(new Error("Jogador emprestado não pode ter o contrato rescindido."),{status:400});
+
+      const count=Number((await x.query(`SELECT COUNT(*)::int count FROM players WHERE club_id=$1`,[c.id])).rows[0].count);
+      if(count<=12)throw Object.assign(new Error("Mantenha pelo menos 12 jogadores."),{status:400});
+
+      const severance=Math.max(100,Number(p.salary||0)*2);
       await x.query(`UPDATE clubs SET coins=coins-$2 WHERE id=$1`,[c.id,severance]);
-      await x.query(`INSERT INTO club_finance_events(club_id,amount,category,description) VALUES($1,$2,'severance',$3)`,[c.id,-severance,`Rescisão de ${p.rows[0].name}`]);
-      await x.query(`UPDATE players SET club_id=NULL,is_starter=FALSE,price=GREATEST(100,ROUND(price*0.9)::int),contract_seasons=1 WHERE id=$1`,[pid]);
+      await x.query(`INSERT INTO club_finance_events(club_id,amount,category,description) VALUES($1,$2,'severance',$3)`,[c.id,-severance,`Rescisão de ${p.name}`]);
+
+      // A instância é arquivada fora do save e nunca aparece no mercado de outra carreira.
+      await x.query(`
+        UPDATE players
+        SET club_id=NULL,is_starter=FALSE,transfer_listed=FALSE,
+            market_template_id=COALESCE(market_template_id,-id),
+            price=GREATEST(100,ROUND(price*0.9)::int),contract_seasons=1
+        WHERE id=$1
+      `,[pid]);
     });
     res.json({ok:true});
   }catch(e){next(e)}
@@ -2168,27 +2461,62 @@ app.post("/api/transfers/incoming/:offerId/accept",auth,async(req,res,next)=>{
   try{
     const c=await userClub(req.user.id),offerId=String(req.params.offerId);
     const result=await tx(async client=>{
-      const o=(await client.query(`SELECT o.*,p.name player_name,p.position,p.is_starter FROM transfer_offers o JOIN players p ON p.id=o.player_id WHERE o.id=$1 AND o.selling_club_id=$2 FOR UPDATE OF o`,[offerId,c.id])).rows[0];
+      const o=(await client.query(`
+        SELECT o.*,p.name player_name,p.position,p.is_starter,b.name buying_club_name,b.is_ai buying_is_ai
+        FROM transfer_offers o
+        JOIN players p ON p.id=o.player_id
+        JOIN clubs b ON b.id=o.buying_club_id
+        WHERE o.id=$1 AND o.selling_club_id=$2
+        FOR UPDATE OF o
+      `,[offerId,c.id])).rows[0];
+
       if(!o||o.status!=="pending")throw Object.assign(new Error("Proposta não está mais disponível."),{status:409});
+      if(!o.buying_is_ai||o.offer_kind==="human"){
+        await client.query(`UPDATE transfer_offers SET status='expired',updated_at=NOW() WHERE id=$1`,[offerId]);
+        throw Object.assign(new Error("Essa proposta pertencia ao antigo mercado compartilhado e foi encerrada."),{status:409});
+      }
+
       const p=(await client.query(`SELECT * FROM players WHERE id=$1 AND club_id=$2 FOR UPDATE`,[o.player_id,c.id])).rows[0];
-      if(!p)throw Object.assign(new Error("O jogador não pertence mais ao clube."),{status:409});
+      if(!p)throw Object.assign(new Error("O jogador não pertence mais a esta carreira."),{status:409});
+
+      const borrowed=(await client.query(`SELECT 1 FROM player_loans WHERE player_id=$1 AND borrowing_club_id=$2 AND status='active'`,[p.id,c.id])).rowCount>0;
+      if(borrowed)throw Object.assign(new Error("Jogador emprestado não pode ser vendido."),{status:400});
+
       const count=Number((await client.query(`SELECT COUNT(*)::int count FROM players WHERE club_id=$1`,[c.id])).rows[0].count);
       if(count<=12)throw Object.assign(new Error("Você precisa manter pelo menos 12 jogadores."),{status:400});
       if(p.position==="GK"){
         const gks=Number((await client.query(`SELECT COUNT(*)::int count FROM players WHERE club_id=$1 AND position='GK'`,[c.id])).rows[0].count);
         if(gks<=1)throw Object.assign(new Error("Você precisa manter pelo menos um goleiro."),{status:400});
       }
+
       const before=Number((await client.query(`SELECT coins FROM clubs WHERE id=$1`,[c.id])).rows[0].coins||0);
-      await client.query(`UPDATE players SET club_id=$2,is_starter=FALSE,transfer_listed=FALSE,fitness=100,morale=72 WHERE id=$1`,[p.id,o.buying_club_id]);
+      await addFinance(client,c.id,Number(o.amount),"player_sale",`Venda de ${p.name} ao ${o.buying_club_name}`);
+
+      // Sai apenas desta carreira. Não é inserido no elenco global da IA.
+      await client.query(`
+        UPDATE players
+        SET club_id=NULL,is_starter=FALSE,transfer_listed=FALSE,
+            market_template_id=COALESCE(market_template_id,-id),fitness=100,morale=72
+        WHERE id=$1
+      `,[p.id]);
+
       await client.query(`UPDATE transfer_offers SET status='accepted',updated_at=NOW() WHERE id=$1`,[o.id]);
       await client.query(`UPDATE transfer_offers SET status='expired',updated_at=NOW() WHERE player_id=$1 AND status='pending' AND id<>$2`,[p.id,o.id]);
-      await addFinance(client,c.id,Number(o.amount),"player_sale",`Venda de ${p.name}`);
+
       const after=before+Number(o.amount);
       if(before<TRANSFER_BAN_THRESHOLD&&after>=TRANSFER_BAN_THRESHOLD){
         await client.query(`INSERT INTO club_events(club_id,event_type,title,description) VALUES($1,'finance','Transfer ban suspenso','A venda de um jogador melhorou o caixa e o clube voltou a poder contratar.')`,[c.id]);
       }
-      return {ok:true,amount:Number(o.amount),playerName:p.name,balance:after};
+
+      return {
+        ok:true,
+        amount:Number(o.amount),
+        playerName:p.name,
+        buyerClubName:o.buying_club_name,
+        balance:after
+      };
     });
+
     res.json(result);
   }catch(e){next(e)}
 });
@@ -2225,12 +2553,20 @@ app.get("/api/transfers/search",auth,async(req,res,next)=>{
     const profile=marketProfile(userDiv);
 
     const rows=(await q(`
-      SELECT p.*,sc.name source_club_name,sc.id source_club_id,sc.is_ai source_is_ai,sc.base_rating source_base_rating
+      SELECT p.*,
+        sc.name source_club_name,sc.id source_club_id,sc.is_ai source_is_ai,
+        sc.base_rating source_base_rating
       FROM players p
       LEFT JOIN clubs sc ON sc.id=p.club_id
-      WHERE (p.club_id IS NULL OR sc.is_ai=TRUE) AND (p.club_id IS NULL OR p.club_id<>$1)
+      WHERE
+        p.market_template_id IS NULL
+        AND (p.club_id IS NULL OR sc.is_ai=TRUE)
+        AND NOT EXISTS(
+          SELECT 1 FROM players own
+          WHERE own.club_id=$1 AND own.market_template_id=p.id
+        )
       ORDER BY p.rating DESC,p.price DESC
-      LIMIT 400
+      LIMIT 500
     `,[c.id])).rows;
 
     const filtered=rows.filter(p=>{
@@ -2243,7 +2579,7 @@ app.get("/api/transfers/search",auth,async(req,res,next)=>{
       if(ask>maxPrice)return false;
       if(!marketSourceVisible(userDiv,sourceDiv))return false;
       return true;
-    }).slice(0,72).map(p=>{
+    }).slice(0,90).map(p=>{
       const sourceDiv=p.source_club_id?divisionOfClub(career,p.source_club_id):null;
       const salary=suggestedSalary(p);
       const chance=interestChance(p,c,userDiv,sourceDiv,Math.round(salary*1.1/10)*10,3);
@@ -2257,10 +2593,17 @@ app.get("/api/transfers/search",auth,async(req,res,next)=>{
         interest:chance>=70?"Alta":chance>=45?"Média":"Baixa",
         loan_eligible:Boolean(p.club_id)&&Boolean(p.source_is_ai)&&!likelyImportant,
         loan_reason:!p.club_id?"Jogador livre":likelyImportant?"Importante para o clube":"Disponível",
-        suggested_loan_fee:Boolean(p.club_id)?Math.max(250,Math.round(fairMarketValue(p)*0.025/50)*50):0
+        suggested_loan_fee:Boolean(p.club_id)&&Boolean(p.source_is_ai)?Math.max(250,Math.round(fairMarketValue(p)*0.025/50)*50):0
       };
     });
-    res.json({players:filtered,transferBan:ban,marketProfile:profile,userDivision:userDiv});
+
+    res.json({
+      players:filtered,
+      transferBan:ban,
+      marketProfile:profile,
+      userDivision:userDiv,
+      independentCareerMarket:true
+    });
   }catch(e){next(e)}
 });
 
@@ -2285,14 +2628,19 @@ app.post("/api/transfers/offer",auth,async(req,res,next)=>{
       if(transferBanInfo(currentBalance).active)throw Object.assign(new Error(`Transfer ban ativo por endividamento. Saldo atual: ${currentBalance.toLocaleString("pt-BR")} moedas.`),{status:403});
 
       const p=(await client.query(`
-        SELECT p.*,sc.name source_club_name,sc.id source_club_id,sc.is_ai source_is_ai,sc.base_rating source_base_rating
-        FROM players p LEFT JOIN clubs sc ON sc.id=p.club_id
-        WHERE p.id=$1 FOR UPDATE OF p
+        SELECT p.*,sc.name source_club_name,sc.id source_club_id,sc.is_ai source_is_ai,
+          sc.base_rating source_base_rating
+        FROM players p
+        LEFT JOIN clubs sc ON sc.id=p.club_id
+        WHERE p.id=$1 AND p.market_template_id IS NULL
+        FOR UPDATE OF p
       `,[playerId])).rows[0];
 
-      if(!p)throw Object.assign(new Error("Jogador não encontrado ou já saiu do mercado."),{status:404});
-      if(String(p.club_id)===String(c.id))throw Object.assign(new Error("Esse jogador já é do seu clube."),{status:400});
-      if(p.club_id&&!p.source_is_ai)throw Object.assign(new Error("Jogador de outro usuário não está disponível para compra direta."),{status:400});
+      if(!p)throw Object.assign(new Error("Jogador-base não encontrado."),{status:404});
+      if(p.club_id&&!p.source_is_ai)throw Object.assign(new Error("Esse jogador não pertence ao mercado desta carreira."),{status:400});
+
+      const duplicate=(await client.query(`SELECT 1 FROM players WHERE club_id=$1 AND market_template_id=$2`,[c.id,p.id])).rowCount>0;
+      if(duplicate)throw Object.assign(new Error("Esse jogador já foi contratado nesta carreira."),{status:409});
 
       const squad=Number((await client.query(`SELECT COUNT(*)::int count FROM players WHERE club_id=$1`,[c.id])).rows[0].count);
       if(squad>=30)throw Object.assign(new Error("Seu elenco já possui 30 jogadores."),{status:400});
@@ -2332,6 +2680,13 @@ app.post("/api/transfers/offer",auth,async(req,res,next)=>{
 
       if(p.club_id&&firstFee>0)await client.query(`UPDATE clubs SET coins=coins+$2 WHERE id=$1`,[p.club_id,firstFee]);
 
+      const signed=await clonePlayerForCareer(client,p,c.id,{
+        salary:Math.round(salaryOffer),
+        years,
+        fitness:Math.max(82,Number(p.fitness||100)),
+        morale:78
+      });
+
       if(p.club_id&&realInstallments>1){
         const remaining=Math.max(0,feeOffer-firstFee);
         const nextDue=nextPayrollDate(ensureCalendarData(career));
@@ -2340,33 +2695,23 @@ app.post("/api/transfers/offer",auth,async(req,res,next)=>{
             buying_club_id,selling_club_id,player_id,player_name,total_fee,amount_remaining,
             installment_amount,installments_total,installments_paid,next_due_date,status
           ) VALUES($1,$2,$3,$4,$5,$6,$7,$8,1,$9,'active')
-        `,[c.id,p.club_id,p.id,p.name,feeOffer,remaining,firstFee,realInstallments,nextDue]);
+        `,[c.id,p.club_id,signed.id,p.name,feeOffer,remaining,firstFee,realInstallments,nextDue]);
       }
-
-      if(p.club_id){
-        await client.query(`UPDATE transfer_offers SET status='expired',updated_at=NOW() WHERE player_id=$1 AND status='pending'`,[p.id]);
-      }
-
-      await client.query(`
-        UPDATE players SET club_id=$2,is_starter=FALSE,transfer_listed=FALSE,salary=$3,contract_seasons=$4,
-          fitness=GREATEST(fitness,82),morale=78
-        WHERE id=$1
-      `,[p.id,c.id,Math.round(salaryOffer),years]);
 
       await applyFelipeMode(client,c.id);
 
       const installmentText=realInstallments>1?` em ${realInstallments}x`:"";
       await client.query(`INSERT INTO club_events(club_id,event_type,title,description) VALUES($1,'transfer','Contratação confirmada',$2)`,
-        [c.id,`${p.name} foi contratado${installmentText}. Salário mensal: ${Math.round(salaryOffer).toLocaleString("pt-BR")} moedas.`]);
+        [c.id,`${p.name} foi contratado${installmentText}. Este jogador existe apenas dentro desta carreira.`]);
 
       return {
         accepted:true,
-        message:`${p.name} aceitou a proposta e foi retirado do mercado.${realInstallments>1?` Transferência parcelada em ${realInstallments}x.`:""}`,
-        playerId:p.id,
+        message:`${p.name} aceitou a proposta e entrou nesta carreira.${realInstallments>1?` Transferência parcelada em ${realInstallments}x.`:""}`,
+        playerId:signed.id,
+        templatePlayerId:p.id,
         cost:immediateCost,
         installments:realInstallments,
-        firstPayment:firstFee,
-        removedFromMarket:true
+        firstPayment:firstFee
       };
     });
 
@@ -2391,13 +2736,17 @@ app.post("/api/transfers/loan",auth,async(req,res,next)=>{
       if(transferBanInfo(balance).active)throw Object.assign(new Error("Transfer ban ativo por endividamento."),{status:403});
 
       const p=(await client.query(`
-        SELECT p.*,sc.name source_club_name,sc.is_ai source_is_ai,sc.base_rating source_base_rating
+        SELECT p.*,sc.name source_club_name,sc.id source_club_id,sc.is_ai source_is_ai,sc.base_rating source_base_rating
         FROM players p JOIN clubs sc ON sc.id=p.club_id
-        WHERE p.id=$1 FOR UPDATE OF p
+        WHERE p.id=$1 AND p.market_template_id IS NULL
+        FOR UPDATE OF p
       `,[playerId])).rows[0];
 
-      if(!p)throw Object.assign(new Error("Jogador não encontrado ou já saiu do mercado."),{status:404});
-      if(String(p.club_id)===String(c.id))throw Object.assign(new Error("Esse jogador já está no seu clube."),{status:400});
+      if(!p)throw Object.assign(new Error("Jogador-base não encontrado."),{status:404});
+      if(!p.source_is_ai)throw Object.assign(new Error("Empréstimo disponível apenas para jogadores de clubes controlados pelo jogo."),{status:400});
+
+      const duplicate=(await client.query(`SELECT 1 FROM players WHERE club_id=$1 AND market_template_id=$2`,[c.id,p.id])).rowCount>0;
+      if(duplicate)throw Object.assign(new Error("Esse jogador já pertence a esta carreira."),{status:409});
 
       const eligibility=await loanEligibility(client,p);
       if(!eligibility.eligible)throw Object.assign(new Error(eligibility.reason),{status:400});
@@ -2420,19 +2769,33 @@ app.post("/api/transfers/loan",auth,async(req,res,next)=>{
       const squad=Number((await client.query(`SELECT COUNT(*)::int count FROM players WHERE club_id=$1`,[c.id])).rows[0].count);
       if(squad>=30)throw Object.assign(new Error("Seu elenco já possui 30 jogadores."),{status:400});
 
-      const parentId=p.club_id;
-      await client.query(`INSERT INTO player_loans(player_id,parent_club_id,borrowing_club_id,start_season_no,months_total,months_elapsed,monthly_fee,status)
-        VALUES($1,$2,$3,$4,$5,0,$6,'active')`,
-        [p.id,parentId,c.id,career.season_no,months,Math.round(monthlyFee)]);
+      const loaned=await clonePlayerForCareer(client,p,c.id,{
+        salary:Number(p.salary||salaryForRating(p.rating)),
+        years:Math.max(1,Number(p.contract_seasons||1)),
+        fitness:100,
+        morale:76
+      });
 
-      await client.query(`UPDATE transfer_offers SET status='expired',updated_at=NOW() WHERE player_id=$1 AND status='pending'`,[p.id]);
-      await client.query(`UPDATE players SET club_id=$2,is_starter=FALSE,transfer_listed=FALSE,fitness=100,morale=76 WHERE id=$1`,[p.id,c.id]);
+      await client.query(`
+        INSERT INTO player_loans(
+          player_id,parent_club_id,borrowing_club_id,start_season_no,months_total,months_elapsed,monthly_fee,status
+        )
+        VALUES($1,$2,$3,$4,$5,0,$6,'active')
+      `,[loaned.id,p.club_id,c.id,career.season_no,months,Math.round(monthlyFee)]);
+
       await applyFelipeMode(client,c.id);
 
       await client.query(`INSERT INTO club_events(club_id,event_type,title,description) VALUES($1,'loan','Empréstimo confirmado',$2)`,
-        [c.id,`${p.name} chegou por ${months} meses. Taxa mensal: ${Math.round(monthlyFee).toLocaleString("pt-BR")} moedas, além do salário do jogador.`]);
+        [c.id,`${p.name} chegou por ${months} meses. A versão original continua disponível nas outras carreiras.`]);
 
-      return {accepted:true,message:`${p.name} chegou por empréstimo de ${months} meses e foi retirado do mercado.`,playerId:p.id,months,monthlyFee:Math.round(monthlyFee),removedFromMarket:true};
+      return {
+        accepted:true,
+        message:`${p.name} chegou por empréstimo de ${months} meses nesta carreira.`,
+        playerId:loaned.id,
+        templatePlayerId:p.id,
+        months,
+        monthlyFee:Math.round(monthlyFee)
+      };
     });
 
     res.json(result);
@@ -2485,7 +2848,10 @@ async function start(){
   await applyEconomyMigration();
   await applyV14Migration();
   await applyV15Migration();
+  await applyV16Migration();
+  await applyV17Migration();
+  await applyV18Migration();
   await ensureMarket();
-  app.listen(PORT,"0.0.0.0",()=>console.log(`Dono do Clube v9 rodando na porta ${PORT}`));
+  app.listen(PORT,"0.0.0.0",()=>console.log(`Dono do Clube v12 rodando na porta ${PORT}`));
 }
 start().catch(e=>{console.error("Falha ao iniciar:",e);process.exit(1)});

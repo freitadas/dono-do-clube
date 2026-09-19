@@ -1,8 +1,8 @@
 {
   "name": "dono-do-clube",
-  "version": "15.0.0",
+  "version": "18.0.0",
   "private": true,
-  "description": "Dono do Clube com patrocínios, transferências parceladas até 24x, empréstimos e mercado progressivo por divisão.",
+  "description": "Dono do Clube com até 10 carreiras independentes e botão de salvamento manual.",
   "main": "server.js",
   "scripts": {
     "start": "node server.js"

@@ -106,8 +106,8 @@ As negociações de contratação agora usam **salário mensal**. O jogador cont
 
 ## Mercado e finanças v15
 
-### Jogador sai do mercado
-Quando uma compra ou empréstimo é concluído, o jogador é removido imediatamente dos resultados do mercado e deixa de aparecer nas pesquisas seguintes.
+### Jogador contratado na carreira
+Quando uma compra ou empréstimo é concluído, o jogador deixa de aparecer no mercado **daquela carreira** enquanto estiver no elenco. Ele continua disponível para ser contratado em outras carreiras independentes.
 
 ### Compras parceladas
 Transferências entre clubes podem ser fechadas em até **24 parcelas**.
@@ -120,7 +120,7 @@ Jogadores de clubes controlados pelo jogo podem ser emprestados por 3, 6 ou 12 m
 - o clube paga uma taxa mensal de empréstimo;
 - o salário do atleta entra na folha mensal do clube;
 - jogadores considerados importantes para o clube de origem não podem ser emprestados;
-- ao terminar o prazo ou a temporada, o atleta volta ao clube de origem;
+- ao terminar o prazo ou a temporada, a cópia emprestada sai daquela carreira; o jogador-base das demais carreiras não é afetado;
 - transfer ban bloqueia novos empréstimos.
 
 ### Patrocínios
@@ -141,3 +141,69 @@ O valor de mercado considera preço-base, idade, overall e duração contratual.
 - clubes vendedores pedem um prêmio moderado sobre o valor justo;
 - propostas recebidas pelo seu clube ficam próximas do valor justo;
 - ofertas muito abaixo do valor esperado podem ser recusadas.
+
+
+## Sistema de carreiras v16
+
+Cada conta pode manter até **10 carreiras diferentes**.
+
+Cada carreira possui de forma independente:
+- clube;
+- elenco;
+- dinheiro;
+- divisão;
+- temporadas;
+- competições;
+- troféus;
+- patrocínio;
+- calendário financeiro;
+- dívidas e transfer ban.
+
+A aba **CARREIRAS** permite:
+- ver todos os saves;
+- trocar instantaneamente a carreira ativa;
+- criar uma nova carreira;
+- apagar uma carreira específica sem apagar as demais.
+
+A carreira que já existia antes da atualização é migrada automaticamente para **Carreira 1**.
+
+
+## Mercado individual por carreira — v17
+
+O mercado compartilhado entre usuários foi removido.
+
+Agora cada carreira funciona como um save totalmente independente:
+- jogadores de uma pessoa **não aparecem** no mercado de outra pessoa;
+- jogadores colocados à venda recebem propostas apenas dos clubes controlados pelo jogo;
+- não existem transferências diretas entre usuários;
+- uma negociação feita em uma carreira não altera o elenco nem o mercado de outra carreira;
+- rescisões e vendas também afetam somente o save em que foram feitas.
+
+### O mesmo jogador em várias carreiras
+
+Os jogadores do mercado funcionam como jogadores-base. Quando uma carreira compra ou pega um atleta emprestado, o jogo cria uma instância própria daquele jogador para esse save.
+
+Assim:
+- a Carreira 1 pode contratar um jogador;
+- a Carreira 2 pode contratar o mesmo jogador;
+- outro usuário também pode contratar esse mesmo jogador;
+- cada cópia passa a evoluir, cansar, marcar gols, receber salário e trocar de clube apenas dentro da própria carreira;
+- contratar o atleta em uma carreira não faz ele desaparecer das demais;
+- dentro da mesma carreira, o mesmo jogador-base não pode ser contratado duas vezes simultaneamente.
+
+O limite de **10 carreiras por conta** foi mantido.
+
+
+## Salvamento manual — v18
+
+Foi adicionado o botão **💾 SALVAR** no topo do jogo.
+
+O jogo continua salvando automaticamente as ações normais, mas agora existe também um save manual por carreira.
+
+- salva somente a carreira ativa;
+- registra data e hora do último salvamento manual;
+- a informação aparece na aba **CARREIRAS**;
+- não altera nenhuma das outras carreiras;
+- quando usado dentro da aba **ELENCO**, também grava a formação e os 11 titulares selecionados, se a escalação estiver válida.
+
+Cada uma das até 10 carreiras mantém seu próprio horário de último save manual.

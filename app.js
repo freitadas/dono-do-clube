@@ -6,6 +6,7 @@ const state={
   me:null,club:null,players:[],market:[],matches:[],friends:[],competitions:null,
   finance:{wages:0,recent:[],transferBan:{active:false}},clubEvents:[],transferResults:[],
   trophies:[],incomingOffers:[],calendar:null,sponsorship:{active:null,offers:[]},marketProfile:null,
+  careers:[],maxCareers:10,
   view:"home",authMode:"login",competitionTab:"STATE",roundByDiv:{A:1,B:1,C:1,D:1}
 };
 
@@ -33,10 +34,20 @@ function phaseName(p){return({STATE:"Estadual",NATIONAL:"Brasileirão",LIBERTADO
 async function bootstrap(){
   try{
     const d=await api("/api/me");
-    state.me=d.user;state.club=d.club;
+    state.me=d.user;
+    state.club=d.club;
+    state.careers=d.careers||[];
+    state.maxCareers=Number(d.maxCareers||10);
+    state.transferResults=[];
+    state.marketProfile=null;
     if(state.club?.state_code)await refreshAll();
     render();
   }catch{renderAuth()}
+}
+async function refreshCareerList(){
+  const d=await api("/api/careers");
+  state.careers=d.careers||[];
+  state.maxCareers=Number(d.maxCareers||10);
 }
 async function refreshAll(){
   const c=await api("/api/competitions");
@@ -78,19 +89,23 @@ function renderAuth(){
 }
 
 function renderCreateClub(){
+  const hasCareers=(state.careers||[]).length>0;
+  const nextNumber=Math.min(state.maxCareers||10,(state.careers||[]).length+1);
   app.innerHTML=`<main class="auth"><section class="authbox">
     <div class="brand"><span class="logo">⚽</span>Dono do Clube</div>
-    <h1>Crie seu clube.</h1>
-    <p>Seu time começa na Série D e disputa o Estadual do estado escolhido.</p>
+    <h1>${hasCareers?"Nova carreira":"Crie seu clube."}</h1>
+    <p>${hasCareers?`Você pode manter até ${state.maxCareers||10} carreiras separadas nesta conta.`:"Seu time começa na Série D e disputa o Estadual do estado escolhido."}</p>
     <form id="clubForm" class="stack">
-      <label>Nome<input id="clubName" name="name" value="Meu Clube FC" maxlength="30" required></label>
+      <label>Nome da carreira<input id="careerLabel" name="careerLabel" value="Carreira ${nextNumber}" maxlength="40" required></label>
+      <label>Nome do clube<input id="clubName" name="name" value="Meu Clube FC" maxlength="30" required></label>
       <label>Estado<select name="stateCode" required><option value="">Escolha o estado</option>${stateOptions()}</select></label>
       <div class="colors">
         <label>Cor principal<input id="c1" type="color" name="primaryColor" value="#18864b"></label>
         <label>Cor secundária<input id="c2" type="color" name="secondaryColor" value="#f7fafc"></label>
       </div>
       <div id="preview" class="club-preview"></div>
-      <button class="primary">Fundar clube na Série D</button>
+      <button class="primary">Criar carreira na Série D</button>
+      ${hasCareers?`<button type="button" id="cancelNewCareer" class="secondary">Voltar para minhas carreiras</button>`:""}
       <div id="clubMsg"></div>
     </form>
   </section></main>`;
@@ -103,21 +118,24 @@ function renderCreateClub(){
   };
   ["clubName","c1","c2"].forEach(id=>app.querySelector("#"+id).oninput=sync);
   sync();
+  const cancel=app.querySelector("#cancelNewCareer");
+  if(cancel)cancel.onclick=()=>{state.view="careers";render()};
   app.querySelector("#clubForm").onsubmit=async e=>{
     e.preventDefault();
     const f=new FormData(e.target);
     try{
       await api("/api/club",{method:"POST",body:JSON.stringify({
+        careerLabel:f.get("careerLabel"),
         name:f.get("name"),stateCode:f.get("stateCode"),
         primaryColor:f.get("primaryColor"),secondaryColor:f.get("secondaryColor")
       })});
+      state.view="home";
       await bootstrap();
     }catch(err){
       app.querySelector("#clubMsg").innerHTML=`<div class="msg">${esc(err.message)}</div>`;
     }
   };
 }
-
 function renderStateSetup(){
   app.innerHTML=`<main class="auth"><section class="authbox">
     <div class="brand"><span class="logo">⚽</span>Dono do Clube</div>
@@ -266,6 +284,12 @@ function nextDivision(){
   return pos<=4?"C":"D";
 }
 
+function formatSaveDate(value){
+  if(!value)return "Nunca";
+  const d=new Date(value);
+  if(Number.isNaN(d.getTime()))return "Nunca";
+  return d.toLocaleString("pt-BR",{day:"2-digit",month:"2-digit",hour:"2-digit",minute:"2-digit"});
+}
 function formatGameDate(iso){
   if(!iso)return "—";
   const [y,m,d]=String(iso).split("-");return `${d}/${m}/${y}`;
@@ -410,13 +434,13 @@ function marketView(){
     </section>
     <section class="selling-section">
       <div class="kicker">VENDER JOGADORES</div><h3>Lista de transferências</h3>
-      <p class="muted">Na aba Elenco, use <b>Colocar à venda</b>. Clubes controlados pelo jogo poderão enviar propostas, principalmente nos pagamentos mensais.</p>
+      <p class="muted">Na aba Elenco, use <b>Colocar à venda</b>. Clubes controlados pelo jogo poderão enviar propostas pelo jogador dentro desta carreira.</p>
       <div class="listed-row">${state.players.filter(p=>p.transfer_listed).length?state.players.filter(p=>p.transfer_listed).map(p=>`<span class="listed-chip">${esc(p.name)} · OVR ${p.rating}</span>`).join(""):`<span class="muted">Nenhum jogador listado.</span>`}</div>
     </section>
     <hr class="section-divider">
     <div class="kicker">CONTRATAÇÕES</div><h3>Pesquisar jogadores</h3>
     ${state.marketProfile?`<div class="market-level">Mercado da Série ${esc(state.competitions?.career?.user_division||"D")} · jogadores normalmente entre OVR ${state.marketProfile.min} e ${state.marketProfile.max}. Ao subir de divisão, o nível disponível aumenta.</div>`:""}
-    <p class="muted">O clube vendedor precisa aceitar a proposta e o jogador precisa aceitar o salário e o projeto esportivo. Compras podem ser parceladas em até 24x. Jogadores não essenciais podem chegar por empréstimo.</p>
+    <p class="muted">Cada carreira possui seu próprio mercado. Você pode contratar os mesmos jogadores em carreiras diferentes, porque cada save mantém sua própria cópia do atleta.</p><p class="muted">O clube vendedor precisa aceitar a proposta e o jogador precisa aceitar o salário e o projeto esportivo. Compras podem ser parceladas em até 24x. Jogadores não essenciais de clubes do jogo podem chegar por empréstimo.</p>
     ${ban?.active?`<p class="muted">A pesquisa continua disponível, mas novas contratações estão bloqueadas pelo transfer ban.</p>`:""}
     <form id="transferSearch" class="transfer-search">
       <input id="searchName" placeholder="Nome do jogador">
@@ -594,6 +618,36 @@ function competitionsView(){
   </section>`;
 }
 
+function careersView(){
+  const careers=state.careers||[];
+  const canCreate=careers.length<Number(state.maxCareers||10);
+  return `<section class="card careers-page">
+    <div class="section-title">
+      <div><div class="kicker">SAVES</div><h2>Minhas carreiras</h2></div>
+      <span class="badge blue">${careers.length}/${state.maxCareers||10}</span>
+    </div>
+    <p class="muted">Cada carreira é totalmente independente: clube, elenco, dinheiro, competições, troféus, calendário e transferências. O mesmo jogador pode ser contratado em carreiras diferentes sem desaparecer das outras.</p>
+    <div class="career-grid">
+      ${careers.map(c=>`<article class="career-card ${c.is_active_career?"active":""}">
+        <div class="career-slot">CARREIRA ${c.career_slot||"—"}</div>
+        <div class="career-head">${crestHtml(c,"small")}<div><h3>${esc(c.career_label||`Carreira ${c.career_slot}`)}</h3><b>${esc(c.name)}</b><span>${esc(STATES[c.state_code]||c.state_code||"Estado não definido")}</span></div></div>
+        <div class="career-stats">
+          <span>Temporada <b>${c.season_no||1}</b></span>
+          <span>Divisão <b>Série ${c.user_division||"D"}</b></span>
+          <span>Caixa <b>${Number(c.coins||0).toLocaleString("pt-BR")}</b></span>
+          <span>Último save manual <b>${esc(formatSaveDate(c.manual_saved_at))}</b></span>
+        </div>
+        <div class="career-actions">
+          ${c.is_active_career?`<button class="primary" disabled>Carreira ativa</button>`:`<button class="primary activate-career" data-id="${c.id}">Jogar esta carreira</button>`}
+          <button class="danger delete-career" data-id="${c.id}" data-name="${esc(c.name)}">Apagar</button>
+        </div>
+      </article>`).join("")}
+      ${canCreate?`<button class="career-new" id="newCareer"><span>＋</span><b>Nova carreira</b><small>Criar outro clube e começar na Série D</small></button>`:""}
+    </div>
+    ${!canCreate?`<div class="msg">Você atingiu o limite de ${state.maxCareers||10} carreiras. Apague uma carreira para criar outra.</div>`:""}
+  </section>`;
+}
+
 function clubView(){
   const c=state.club;
   return `<section class="custom-grid">
@@ -631,6 +685,53 @@ function clubView(){
   </section>`;
 }
 
+async function manualSaveCareer(){
+  const btn=app.querySelector("#manualSave");
+  if(!btn||!state.club)return;
+
+  const original=btn.textContent;
+  btn.disabled=true;
+  btn.textContent="SALVANDO...";
+
+  try{
+    const payload={};
+
+    if(state.view==="squad"){
+      const starters=state.players.filter(p=>p.is_starter).map(p=>p.id);
+      const formation=app.querySelector("#formation")?.value||state.club.formation;
+      if(starters.length===11){
+        payload.starterIds=starters;
+        payload.formation=formation;
+      }
+    }
+
+    const d=await api("/api/career/manual-save",{
+      method:"POST",
+      body:JSON.stringify(payload)
+    });
+
+    if(state.competitions?.career)state.competitions.career.manual_saved_at=d.savedAt;
+    await refreshCareerList().catch(()=>{});
+
+    btn.textContent="✓ SALVO";
+    btn.classList.add("saved");
+    btn.title=`Último salvamento: ${formatSaveDate(d.savedAt)}`;
+
+    setTimeout(()=>{
+      const current=app.querySelector("#manualSave");
+      if(current){
+        current.disabled=false;
+        current.textContent="💾 SALVAR";
+        current.classList.remove("saved");
+      }
+    },1600);
+  }catch(err){
+    alert(err.message);
+    btn.disabled=false;
+    btn.textContent=original;
+  }
+}
+
 function render(){
   if(!state.me)return renderAuth();
   if(!state.club)return renderCreateClub();
@@ -640,11 +741,16 @@ function render(){
     state.view==="market"?marketView():
     state.view==="friends"?friendsView():
     state.view==="league"?competitionsView():
-    state.view==="club"?clubView():homeView();
+    state.view==="club"?clubView():
+    state.view==="careers"?careersView():homeView();
 
   app.innerHTML=`<div class="shell">
     <header class="topbar"><div class="brand"><span class="logo">⚽</span>Dono do Clube</div>
-      <div class="top-actions"><span class="coins">● ${Number(state.club.coins).toLocaleString("pt-BR")}</span><button id="logout" class="icon-btn">↪</button></div>
+      <div class="top-actions">
+        <button class="career-top-btn" data-view="careers">${esc(state.club.career_label||`Carreira ${state.club.career_slot||1}`)}</button>
+        <button id="manualSave" class="manual-save-btn" title="Salvar a carreira agora">💾 SALVAR</button>
+        <span class="coins">● ${Number(state.club.coins).toLocaleString("pt-BR")}</span><button id="logout" class="icon-btn">↪</button>
+      </div>
     </header>${body}
   </div>
   <nav class="nav">
@@ -654,16 +760,26 @@ function render(){
     <button data-view="friends" class="${state.view==="friends"?"on":""}">AMIGOS</button>
     <button data-view="league" class="${state.view==="league"?"on":""}">COMPETIÇÕES</button>
     <button data-view="club" class="${state.view==="club"?"on":""}">CLUBE</button>
+    <button data-view="careers" class="${state.view==="careers"?"on":""}">CARREIRAS</button>
   </nav>`;
 
-  app.querySelectorAll("[data-view]").forEach(b=>b.onclick=()=>{state.view=b.dataset.view;render()});
+  app.querySelectorAll("[data-view]").forEach(b=>b.onclick=async()=>{
+    state.view=b.dataset.view;
+    if(state.view==="careers"){
+      try{await refreshCareerList()}catch{}
+    }
+    render();
+  });
   app.querySelector("#logout").onclick=logout;
+  const saveBtn=app.querySelector("#manualSave");
+  if(saveBtn)saveBtn.onclick=manualSaveCareer;
   if(state.view==="home")bindHome();
   if(state.view==="squad")bindSquad();
   if(state.view==="market")bindMarket();
   if(state.view==="friends")bindFriends();
   if(state.view==="league")bindCompetitions();
   if(state.view==="club")bindClub();
+  if(state.view==="careers")bindCareers();
 }
 
 function showMatch(m){
@@ -851,7 +967,7 @@ function openTransferOffer(p){
       if(d.accepted){
         state.transferResults=(state.transferResults||[]).filter(x=>String(x.id)!==String(p.id));
         await refreshAll();
-        setTimeout(()=>{bg.remove();state.view="market";render()},550);
+        setTimeout(()=>{bg.remove();state.view="market";render()},650);
       }else{btn.disabled=false;btn.textContent="Enviar proposta de compra"}
     }catch(err){
       bg.querySelector("#offerMsg").innerHTML=`<div class="msg">${esc(err.message)}</div>`;
@@ -906,7 +1022,11 @@ function bindMarket(){
   app.querySelectorAll(".accept-offer").forEach(b=>b.onclick=async()=>{
     const offer=state.incomingOffers.find(o=>String(o.id)===String(b.dataset.id));
     if(!offer||!confirm(`Vender ${offer.player_name} para ${offer.buying_club_name} por ${Number(offer.amount).toLocaleString("pt-BR")} moedas?`))return;
-    try{const d=await api(`/api/transfers/incoming/${offer.id}/accept`,{method:"POST",body:"{}"});await refreshAll();render();alert(`${d.playerName} vendido por ${Number(d.amount).toLocaleString("pt-BR")} moedas.`)}catch(err){alert(err.message)}
+    try{
+      const d=await api(`/api/transfers/incoming/${offer.id}/accept`,{method:"POST",body:"{}"});
+      await refreshAll();render();
+      alert(`${d.playerName} vendido ao ${d.buyerClubName||"clube comprador"} por ${Number(d.amount).toLocaleString("pt-BR")} moedas.`);
+    }catch(err){alert(err.message)}
   });
   app.querySelectorAll(".reject-offer").forEach(b=>b.onclick=async()=>{
     try{await api(`/api/transfers/incoming/${b.dataset.id}/reject`,{method:"POST",body:"{}"});await refreshAll();render()}catch(err){alert(err.message)}
@@ -935,6 +1055,37 @@ function bindCompetitions(){
 }
 
 let pendingCrest;
+function bindCareers(){
+  const newBtn=app.querySelector("#newCareer");
+  if(newBtn)newBtn.onclick=()=>renderCreateClub();
+
+  app.querySelectorAll(".activate-career").forEach(btn=>btn.onclick=async()=>{
+    btn.disabled=true;btn.textContent="CARREGANDO...";
+    try{
+      await api(`/api/careers/${btn.dataset.id}/activate`,{method:"POST",body:"{}"});
+      state.view="home";
+      await bootstrap();
+    }catch(err){alert(err.message);btn.disabled=false;btn.textContent="Jogar esta carreira"}
+  });
+
+  app.querySelectorAll(".delete-career").forEach(btn=>btn.onclick=async()=>{
+    const career=(state.careers||[]).find(x=>String(x.id)===String(btn.dataset.id));
+    if(!career)return;
+    const typed=prompt(`Para apagar esta carreira, digite exatamente o nome do clube:\\n\\n${career.name}`);
+    if(typed===null)return;
+    if(typed!==career.name){alert("O nome digitado não corresponde ao clube.");return}
+    if(!confirm(`Apagar definitivamente a carreira "${career.career_label||career.name}"?`))return;
+    btn.disabled=true;
+    try{
+      await api(`/api/careers/${career.id}`,{method:"DELETE",body:JSON.stringify({confirmName:typed})});
+      state.view="careers";
+      await bootstrap();
+      if(!(state.careers||[]).length)renderCreateClub();
+      else{state.view="careers";render()}
+    }catch(err){alert(err.message);btn.disabled=false}
+  });
+}
+
 function bindClub(){
   pendingCrest=state.club.crest_data||null;
   const name=app.querySelector("#customName"),c1=app.querySelector("#customPrimary"),c2=app.querySelector("#customSecondary");
@@ -963,22 +1114,14 @@ function bindClub(){
     deleteClub.textContent="APAGANDO...";
     try{
       await api("/api/club",{method:"DELETE",body:JSON.stringify({confirmName:typed})});
-      state.club=null;
-      state.players=[];
-      state.market=[];
-      state.matches=[];
-      state.friends=[];
-      state.competitions=null;
-      state.finance={wages:0,recent:[],transferBan:{active:false}};
-      state.clubEvents=[];
-      state.transferResults=[];
-      state.trophies=[];
-      state.incomingOffers=[];
-      state.calendar=null;
-      state.sponsorship={active:null,offers:[]};
-      state.marketProfile=null;
-      state.view="home";
-      renderCreateClub();
+      state.players=[];state.market=[];state.matches=[];state.friends=[];
+      state.competitions=null;state.finance={wages:0,recent:[],transferBan:{active:false}};
+      state.clubEvents=[];state.transferResults=[];state.trophies=[];state.incomingOffers=[];
+      state.calendar=null;state.sponsorship={active:null,offers:[]};state.marketProfile=null;
+      state.view="careers";
+      await bootstrap();
+      if(!(state.careers||[]).length)renderCreateClub();
+      else{state.view="careers";render()}
     }catch(err){
       alert(err.message);
       deleteClub.disabled=false;
@@ -992,7 +1135,9 @@ function bindClub(){
       const result=await api("/api/club/customize",{method:"PUT",body:JSON.stringify({
         name:name.value,primaryColor:c1.value,secondaryColor:c2.value,crestData:pendingCrest
       })});
-      await refreshAll();render();
+      await refreshAll();
+      await refreshCareerList().catch(()=>{});
+      render();
       if(result.felipeMode)alert("MODO FELIPE ATIVADO: todos os jogadores do clube agora têm atributos 100 e o time recebe placares especiais.");
     }catch(err){
       app.querySelector("#customMsg").innerHTML=`<div class="msg">${esc(err.message)}</div>`;
@@ -1023,6 +1168,6 @@ function resizeImage(file,maxW,maxH){
 }
 async function logout(){
   await api("/api/auth/logout",{method:"POST",body:"{}"}).catch(()=>{});
-  state.me=null;state.club=null;state.players=[];state.competitions=null;renderAuth();
+  state.me=null;state.club=null;state.careers=[];state.players=[];state.competitions=null;renderAuth();
 }
 bootstrap();
