@@ -1,0 +1,2962 @@
+[
+  {
+    "name": "Flamengo",
+    "state": "RJ",
+    "country": "BR",
+    "kind": "national",
+    "division": "A",
+    "rating": 79,
+    "primary": "#166534",
+    "secondary": "#ffffff"
+  },
+  {
+    "name": "Palmeiras",
+    "state": "SP",
+    "country": "BR",
+    "kind": "national",
+    "division": "A",
+    "rating": 79,
+    "primary": "#1d4ed8",
+    "secondary": "#ffffff"
+  },
+  {
+    "name": "Corinthians",
+    "state": "SP",
+    "country": "BR",
+    "kind": "national",
+    "division": "A",
+    "rating": 76,
+    "primary": "#b91c1c",
+    "secondary": "#ffffff"
+  },
+  {
+    "name": "São Paulo",
+    "state": "SP",
+    "country": "BR",
+    "kind": "national",
+    "division": "A",
+    "rating": 77,
+    "primary": "#111827",
+    "secondary": "#f8fafc"
+  },
+  {
+    "name": "Santos",
+    "state": "SP",
+    "country": "BR",
+    "kind": "national",
+    "division": "A",
+    "rating": 74,
+    "primary": "#7c3aed",
+    "secondary": "#ffffff"
+  },
+  {
+    "name": "Fluminense",
+    "state": "RJ",
+    "country": "BR",
+    "kind": "national",
+    "division": "A",
+    "rating": 76,
+    "primary": "#0369a1",
+    "secondary": "#f8fafc"
+  },
+  {
+    "name": "Vasco da Gama",
+    "state": "RJ",
+    "country": "BR",
+    "kind": "national",
+    "division": "A",
+    "rating": 74,
+    "primary": "#92400e",
+    "secondary": "#fde68a"
+  },
+  {
+    "name": "Botafogo",
+    "state": "RJ",
+    "country": "BR",
+    "kind": "national",
+    "division": "A",
+    "rating": 77,
+    "primary": "#166534",
+    "secondary": "#ffffff"
+  },
+  {
+    "name": "Atlético Mineiro",
+    "state": "MG",
+    "country": "BR",
+    "kind": "national",
+    "division": "A",
+    "rating": 77,
+    "primary": "#1d4ed8",
+    "secondary": "#ffffff"
+  },
+  {
+    "name": "Cruzeiro",
+    "state": "MG",
+    "country": "BR",
+    "kind": "national",
+    "division": "A",
+    "rating": 75,
+    "primary": "#b91c1c",
+    "secondary": "#ffffff"
+  },
+  {
+    "name": "Grêmio",
+    "state": "RS",
+    "country": "BR",
+    "kind": "national",
+    "division": "A",
+    "rating": 75,
+    "primary": "#111827",
+    "secondary": "#f8fafc"
+  },
+  {
+    "name": "Internacional",
+    "state": "RS",
+    "country": "BR",
+    "kind": "national",
+    "division": "A",
+    "rating": 76,
+    "primary": "#7c3aed",
+    "secondary": "#ffffff"
+  },
+  {
+    "name": "Athletico Paranaense",
+    "state": "PR",
+    "country": "BR",
+    "kind": "national",
+    "division": "A",
+    "rating": 74,
+    "primary": "#0369a1",
+    "secondary": "#f8fafc"
+  },
+  {
+    "name": "Coritiba",
+    "state": "PR",
+    "country": "BR",
+    "kind": "national",
+    "division": "A",
+    "rating": 72,
+    "primary": "#92400e",
+    "secondary": "#fde68a"
+  },
+  {
+    "name": "Bahia",
+    "state": "BA",
+    "country": "BR",
+    "kind": "national",
+    "division": "A",
+    "rating": 74,
+    "primary": "#166534",
+    "secondary": "#ffffff"
+  },
+  {
+    "name": "Vitória",
+    "state": "BA",
+    "country": "BR",
+    "kind": "national",
+    "division": "A",
+    "rating": 72,
+    "primary": "#1d4ed8",
+    "secondary": "#ffffff"
+  },
+  {
+    "name": "Fortaleza",
+    "state": "CE",
+    "country": "BR",
+    "kind": "national",
+    "division": "A",
+    "rating": 74,
+    "primary": "#b91c1c",
+    "secondary": "#ffffff"
+  },
+  {
+    "name": "Ceará",
+    "state": "CE",
+    "country": "BR",
+    "kind": "national",
+    "division": "A",
+    "rating": 72,
+    "primary": "#111827",
+    "secondary": "#f8fafc"
+  },
+  {
+    "name": "Sport Recife",
+    "state": "PE",
+    "country": "BR",
+    "kind": "national",
+    "division": "A",
+    "rating": 72,
+    "primary": "#7c3aed",
+    "secondary": "#ffffff"
+  },
+  {
+    "name": "Red Bull Bragantino",
+    "state": "SP",
+    "country": "BR",
+    "kind": "national",
+    "division": "A",
+    "rating": 73,
+    "primary": "#0369a1",
+    "secondary": "#f8fafc"
+  },
+  {
+    "name": "América Mineiro",
+    "state": "MG",
+    "country": "BR",
+    "kind": "national",
+    "division": "B",
+    "rating": 72,
+    "primary": "#92400e",
+    "secondary": "#fde68a"
+  },
+  {
+    "name": "Goiás",
+    "state": "GO",
+    "country": "BR",
+    "kind": "national",
+    "division": "B",
+    "rating": 72,
+    "primary": "#166534",
+    "secondary": "#ffffff"
+  },
+  {
+    "name": "Atlético Goianiense",
+    "state": "GO",
+    "country": "BR",
+    "kind": "national",
+    "division": "B",
+    "rating": 71,
+    "primary": "#1d4ed8",
+    "secondary": "#ffffff"
+  },
+  {
+    "name": "Cuiabá",
+    "state": "MT",
+    "country": "BR",
+    "kind": "national",
+    "division": "B",
+    "rating": 71,
+    "primary": "#b91c1c",
+    "secondary": "#ffffff"
+  },
+  {
+    "name": "Juventude",
+    "state": "RS",
+    "country": "BR",
+    "kind": "national",
+    "division": "B",
+    "rating": 70,
+    "primary": "#111827",
+    "secondary": "#f8fafc"
+  },
+  {
+    "name": "Chapecoense",
+    "state": "SC",
+    "country": "BR",
+    "kind": "national",
+    "division": "B",
+    "rating": 69,
+    "primary": "#7c3aed",
+    "secondary": "#ffffff"
+  },
+  {
+    "name": "Avaí",
+    "state": "SC",
+    "country": "BR",
+    "kind": "national",
+    "division": "B",
+    "rating": 69,
+    "primary": "#0369a1",
+    "secondary": "#f8fafc"
+  },
+  {
+    "name": "Criciúma",
+    "state": "SC",
+    "country": "BR",
+    "kind": "national",
+    "division": "B",
+    "rating": 70,
+    "primary": "#92400e",
+    "secondary": "#fde68a"
+  },
+  {
+    "name": "Figueirense",
+    "state": "SC",
+    "country": "BR",
+    "kind": "national",
+    "division": "B",
+    "rating": 68,
+    "primary": "#166534",
+    "secondary": "#ffffff"
+  },
+  {
+    "name": "Ponte Preta",
+    "state": "SP",
+    "country": "BR",
+    "kind": "national",
+    "division": "B",
+    "rating": 69,
+    "primary": "#1d4ed8",
+    "secondary": "#ffffff"
+  },
+  {
+    "name": "Guarani",
+    "state": "SP",
+    "country": "BR",
+    "kind": "national",
+    "division": "B",
+    "rating": 69,
+    "primary": "#b91c1c",
+    "secondary": "#ffffff"
+  },
+  {
+    "name": "Novorizontino",
+    "state": "SP",
+    "country": "BR",
+    "kind": "national",
+    "division": "B",
+    "rating": 71,
+    "primary": "#111827",
+    "secondary": "#f8fafc"
+  },
+  {
+    "name": "Mirassol",
+    "state": "SP",
+    "country": "BR",
+    "kind": "national",
+    "division": "B",
+    "rating": 71,
+    "primary": "#7c3aed",
+    "secondary": "#ffffff"
+  },
+  {
+    "name": "Vila Nova",
+    "state": "GO",
+    "country": "BR",
+    "kind": "national",
+    "division": "B",
+    "rating": 70,
+    "primary": "#0369a1",
+    "secondary": "#f8fafc"
+  },
+  {
+    "name": "Paysandu",
+    "state": "PA",
+    "country": "BR",
+    "kind": "national",
+    "division": "B",
+    "rating": 69,
+    "primary": "#92400e",
+    "secondary": "#fde68a"
+  },
+  {
+    "name": "Remo",
+    "state": "PA",
+    "country": "BR",
+    "kind": "national",
+    "division": "B",
+    "rating": 70,
+    "primary": "#166534",
+    "secondary": "#ffffff"
+  },
+  {
+    "name": "Náutico",
+    "state": "PE",
+    "country": "BR",
+    "kind": "national",
+    "division": "B",
+    "rating": 68,
+    "primary": "#1d4ed8",
+    "secondary": "#ffffff"
+  },
+  {
+    "name": "Santa Cruz",
+    "state": "PE",
+    "country": "BR",
+    "kind": "national",
+    "division": "B",
+    "rating": 68,
+    "primary": "#b91c1c",
+    "secondary": "#ffffff"
+  },
+  {
+    "name": "CRB",
+    "state": "AL",
+    "country": "BR",
+    "kind": "national",
+    "division": "B",
+    "rating": 69,
+    "primary": "#111827",
+    "secondary": "#f8fafc"
+  },
+  {
+    "name": "CSA",
+    "state": "AL",
+    "country": "BR",
+    "kind": "national",
+    "division": "B",
+    "rating": 68,
+    "primary": "#7c3aed",
+    "secondary": "#ffffff"
+  },
+  {
+    "name": "Botafogo-PB",
+    "state": "PB",
+    "country": "BR",
+    "kind": "national",
+    "division": "C",
+    "rating": 67,
+    "primary": "#0369a1",
+    "secondary": "#f8fafc"
+  },
+  {
+    "name": "Confiança",
+    "state": "SE",
+    "country": "BR",
+    "kind": "national",
+    "division": "C",
+    "rating": 66,
+    "primary": "#92400e",
+    "secondary": "#fde68a"
+  },
+  {
+    "name": "ABC",
+    "state": "RN",
+    "country": "BR",
+    "kind": "national",
+    "division": "C",
+    "rating": 66,
+    "primary": "#166534",
+    "secondary": "#ffffff"
+  },
+  {
+    "name": "América-RN",
+    "state": "RN",
+    "country": "BR",
+    "kind": "national",
+    "division": "C",
+    "rating": 66,
+    "primary": "#1d4ed8",
+    "secondary": "#ffffff"
+  },
+  {
+    "name": "Sampaio Corrêa",
+    "state": "MA",
+    "country": "BR",
+    "kind": "national",
+    "division": "C",
+    "rating": 67,
+    "primary": "#b91c1c",
+    "secondary": "#ffffff"
+  },
+  {
+    "name": "Maranhão",
+    "state": "MA",
+    "country": "BR",
+    "kind": "national",
+    "division": "C",
+    "rating": 65,
+    "primary": "#111827",
+    "secondary": "#f8fafc"
+  },
+  {
+    "name": "Volta Redonda",
+    "state": "RJ",
+    "country": "BR",
+    "kind": "national",
+    "division": "C",
+    "rating": 67,
+    "primary": "#7c3aed",
+    "secondary": "#ffffff"
+  },
+  {
+    "name": "Portuguesa",
+    "state": "SP",
+    "country": "BR",
+    "kind": "national",
+    "division": "C",
+    "rating": 67,
+    "primary": "#0369a1",
+    "secondary": "#f8fafc"
+  },
+  {
+    "name": "Ituano",
+    "state": "SP",
+    "country": "BR",
+    "kind": "national",
+    "division": "C",
+    "rating": 66,
+    "primary": "#92400e",
+    "secondary": "#fde68a"
+  },
+  {
+    "name": "São Bernardo",
+    "state": "SP",
+    "country": "BR",
+    "kind": "national",
+    "division": "C",
+    "rating": 68,
+    "primary": "#166534",
+    "secondary": "#ffffff"
+  },
+  {
+    "name": "Londrina",
+    "state": "PR",
+    "country": "BR",
+    "kind": "national",
+    "division": "C",
+    "rating": 66,
+    "primary": "#1d4ed8",
+    "secondary": "#ffffff"
+  },
+  {
+    "name": "Operário-PR",
+    "state": "PR",
+    "country": "BR",
+    "kind": "national",
+    "division": "C",
+    "rating": 67,
+    "primary": "#b91c1c",
+    "secondary": "#ffffff"
+  },
+  {
+    "name": "Brusque",
+    "state": "SC",
+    "country": "BR",
+    "kind": "national",
+    "division": "C",
+    "rating": 65,
+    "primary": "#111827",
+    "secondary": "#f8fafc"
+  },
+  {
+    "name": "Joinville",
+    "state": "SC",
+    "country": "BR",
+    "kind": "national",
+    "division": "C",
+    "rating": 65,
+    "primary": "#7c3aed",
+    "secondary": "#ffffff"
+  },
+  {
+    "name": "Ypiranga-RS",
+    "state": "RS",
+    "country": "BR",
+    "kind": "national",
+    "division": "C",
+    "rating": 66,
+    "primary": "#0369a1",
+    "secondary": "#f8fafc"
+  },
+  {
+    "name": "Caxias",
+    "state": "RS",
+    "country": "BR",
+    "kind": "national",
+    "division": "C",
+    "rating": 67,
+    "primary": "#92400e",
+    "secondary": "#fde68a"
+  },
+  {
+    "name": "Tombense",
+    "state": "MG",
+    "country": "BR",
+    "kind": "national",
+    "division": "C",
+    "rating": 66,
+    "primary": "#166534",
+    "secondary": "#ffffff"
+  },
+  {
+    "name": "Athletic Club",
+    "state": "MG",
+    "country": "BR",
+    "kind": "national",
+    "division": "C",
+    "rating": 68,
+    "primary": "#1d4ed8",
+    "secondary": "#ffffff"
+  },
+  {
+    "name": "Ferroviário",
+    "state": "CE",
+    "country": "BR",
+    "kind": "national",
+    "division": "C",
+    "rating": 65,
+    "primary": "#b91c1c",
+    "secondary": "#ffffff"
+  },
+  {
+    "name": "Floresta",
+    "state": "CE",
+    "country": "BR",
+    "kind": "national",
+    "division": "C",
+    "rating": 64,
+    "primary": "#111827",
+    "secondary": "#f8fafc"
+  },
+  {
+    "name": "Manaus",
+    "state": "AM",
+    "country": "BR",
+    "kind": "national",
+    "division": "D",
+    "rating": 63,
+    "primary": "#7c3aed",
+    "secondary": "#ffffff"
+  },
+  {
+    "name": "Amazonas FC",
+    "state": "AM",
+    "country": "BR",
+    "kind": "national",
+    "division": "D",
+    "rating": 64,
+    "primary": "#0369a1",
+    "secondary": "#f8fafc"
+  },
+  {
+    "name": "Rio Branco-AC",
+    "state": "AC",
+    "country": "BR",
+    "kind": "national",
+    "division": "D",
+    "rating": 61,
+    "primary": "#92400e",
+    "secondary": "#fde68a"
+  },
+  {
+    "name": "Trem",
+    "state": "AP",
+    "country": "BR",
+    "kind": "national",
+    "division": "D",
+    "rating": 60,
+    "primary": "#166534",
+    "secondary": "#ffffff"
+  },
+  {
+    "name": "São Raimundo-RR",
+    "state": "RR",
+    "country": "BR",
+    "kind": "national",
+    "division": "D",
+    "rating": 60,
+    "primary": "#1d4ed8",
+    "secondary": "#ffffff"
+  },
+  {
+    "name": "Porto Velho",
+    "state": "RO",
+    "country": "BR",
+    "kind": "national",
+    "division": "D",
+    "rating": 61,
+    "primary": "#b91c1c",
+    "secondary": "#ffffff"
+  },
+  {
+    "name": "Tocantinópolis",
+    "state": "TO",
+    "country": "BR",
+    "kind": "national",
+    "division": "D",
+    "rating": 61,
+    "primary": "#111827",
+    "secondary": "#f8fafc"
+  },
+  {
+    "name": "Brasiliense",
+    "state": "DF",
+    "country": "BR",
+    "kind": "national",
+    "division": "D",
+    "rating": 64,
+    "primary": "#7c3aed",
+    "secondary": "#ffffff"
+  },
+  {
+    "name": "Gama",
+    "state": "DF",
+    "country": "BR",
+    "kind": "national",
+    "division": "D",
+    "rating": 62,
+    "primary": "#0369a1",
+    "secondary": "#f8fafc"
+  },
+  {
+    "name": "Ceilândia",
+    "state": "DF",
+    "country": "BR",
+    "kind": "national",
+    "division": "D",
+    "rating": 61,
+    "primary": "#92400e",
+    "secondary": "#fde68a"
+  },
+  {
+    "name": "Inter de Limeira",
+    "state": "SP",
+    "country": "BR",
+    "kind": "national",
+    "division": "D",
+    "rating": 64,
+    "primary": "#166534",
+    "secondary": "#ffffff"
+  },
+  {
+    "name": "Água Santa",
+    "state": "SP",
+    "country": "BR",
+    "kind": "national",
+    "division": "D",
+    "rating": 63,
+    "primary": "#1d4ed8",
+    "secondary": "#ffffff"
+  },
+  {
+    "name": "Portuguesa-RJ",
+    "state": "RJ",
+    "country": "BR",
+    "kind": "national",
+    "division": "D",
+    "rating": 63,
+    "primary": "#b91c1c",
+    "secondary": "#ffffff"
+  },
+  {
+    "name": "Nova Iguaçu",
+    "state": "RJ",
+    "country": "BR",
+    "kind": "national",
+    "division": "D",
+    "rating": 64,
+    "primary": "#111827",
+    "secondary": "#f8fafc"
+  },
+  {
+    "name": "Sergipe",
+    "state": "SE",
+    "country": "BR",
+    "kind": "national",
+    "division": "D",
+    "rating": 62,
+    "primary": "#7c3aed",
+    "secondary": "#ffffff"
+  },
+  {
+    "name": "ASA",
+    "state": "AL",
+    "country": "BR",
+    "kind": "national",
+    "division": "D",
+    "rating": 62,
+    "primary": "#0369a1",
+    "secondary": "#f8fafc"
+  },
+  {
+    "name": "Treze",
+    "state": "PB",
+    "country": "BR",
+    "kind": "national",
+    "division": "D",
+    "rating": 62,
+    "primary": "#92400e",
+    "secondary": "#fde68a"
+  },
+  {
+    "name": "Campinense",
+    "state": "PB",
+    "country": "BR",
+    "kind": "national",
+    "division": "D",
+    "rating": 61,
+    "primary": "#166534",
+    "secondary": "#ffffff"
+  },
+  {
+    "name": "Altos",
+    "state": "PI",
+    "country": "BR",
+    "kind": "national",
+    "division": "D",
+    "rating": 61,
+    "primary": "#1d4ed8",
+    "secondary": "#ffffff"
+  },
+  {
+    "name": "Atlético Acre-AC",
+    "state": "AC",
+    "country": "BR",
+    "kind": "state",
+    "division": null,
+    "rating": 58,
+    "primary": "#111827",
+    "secondary": "#f8fafc"
+  },
+  {
+    "name": "União Acre-AC",
+    "state": "AC",
+    "country": "BR",
+    "kind": "state",
+    "division": null,
+    "rating": 59,
+    "primary": "#7c3aed",
+    "secondary": "#ffffff"
+  },
+  {
+    "name": "Estrela Acre-AC",
+    "state": "AC",
+    "country": "BR",
+    "kind": "state",
+    "division": null,
+    "rating": 60,
+    "primary": "#0369a1",
+    "secondary": "#f8fafc"
+  },
+  {
+    "name": "Independente Acre-AC",
+    "state": "AC",
+    "country": "BR",
+    "kind": "state",
+    "division": null,
+    "rating": 61,
+    "primary": "#92400e",
+    "secondary": "#fde68a"
+  },
+  {
+    "name": "Real Acre-AC",
+    "state": "AC",
+    "country": "BR",
+    "kind": "state",
+    "division": null,
+    "rating": 62,
+    "primary": "#166534",
+    "secondary": "#ffffff"
+  },
+  {
+    "name": "Esporte Acre-AC",
+    "state": "AC",
+    "country": "BR",
+    "kind": "state",
+    "division": null,
+    "rating": 58,
+    "primary": "#1d4ed8",
+    "secondary": "#ffffff"
+  },
+  {
+    "name": "Nacional Acre-AC",
+    "state": "AC",
+    "country": "BR",
+    "kind": "state",
+    "division": null,
+    "rating": 59,
+    "primary": "#b91c1c",
+    "secondary": "#ffffff"
+  },
+  {
+    "name": "Atlético Alagoas-AL",
+    "state": "AL",
+    "country": "BR",
+    "kind": "state",
+    "division": null,
+    "rating": 58,
+    "primary": "#111827",
+    "secondary": "#f8fafc"
+  },
+  {
+    "name": "União Alagoas-AL",
+    "state": "AL",
+    "country": "BR",
+    "kind": "state",
+    "division": null,
+    "rating": 59,
+    "primary": "#7c3aed",
+    "secondary": "#ffffff"
+  },
+  {
+    "name": "Estrela Alagoas-AL",
+    "state": "AL",
+    "country": "BR",
+    "kind": "state",
+    "division": null,
+    "rating": 60,
+    "primary": "#0369a1",
+    "secondary": "#f8fafc"
+  },
+  {
+    "name": "Independente Alagoas-AL",
+    "state": "AL",
+    "country": "BR",
+    "kind": "state",
+    "division": null,
+    "rating": 61,
+    "primary": "#92400e",
+    "secondary": "#fde68a"
+  },
+  {
+    "name": "Real Alagoas-AL",
+    "state": "AL",
+    "country": "BR",
+    "kind": "state",
+    "division": null,
+    "rating": 62,
+    "primary": "#166534",
+    "secondary": "#ffffff"
+  },
+  {
+    "name": "Esporte Alagoas-AL",
+    "state": "AL",
+    "country": "BR",
+    "kind": "state",
+    "division": null,
+    "rating": 58,
+    "primary": "#1d4ed8",
+    "secondary": "#ffffff"
+  },
+  {
+    "name": "Nacional Alagoas-AL",
+    "state": "AL",
+    "country": "BR",
+    "kind": "state",
+    "division": null,
+    "rating": 59,
+    "primary": "#b91c1c",
+    "secondary": "#ffffff"
+  },
+  {
+    "name": "Atlético Amapá-AP",
+    "state": "AP",
+    "country": "BR",
+    "kind": "state",
+    "division": null,
+    "rating": 58,
+    "primary": "#111827",
+    "secondary": "#f8fafc"
+  },
+  {
+    "name": "União Amapá-AP",
+    "state": "AP",
+    "country": "BR",
+    "kind": "state",
+    "division": null,
+    "rating": 59,
+    "primary": "#7c3aed",
+    "secondary": "#ffffff"
+  },
+  {
+    "name": "Estrela Amapá-AP",
+    "state": "AP",
+    "country": "BR",
+    "kind": "state",
+    "division": null,
+    "rating": 60,
+    "primary": "#0369a1",
+    "secondary": "#f8fafc"
+  },
+  {
+    "name": "Independente Amapá-AP",
+    "state": "AP",
+    "country": "BR",
+    "kind": "state",
+    "division": null,
+    "rating": 61,
+    "primary": "#92400e",
+    "secondary": "#fde68a"
+  },
+  {
+    "name": "Real Amapá-AP",
+    "state": "AP",
+    "country": "BR",
+    "kind": "state",
+    "division": null,
+    "rating": 62,
+    "primary": "#166534",
+    "secondary": "#ffffff"
+  },
+  {
+    "name": "Esporte Amapá-AP",
+    "state": "AP",
+    "country": "BR",
+    "kind": "state",
+    "division": null,
+    "rating": 58,
+    "primary": "#1d4ed8",
+    "secondary": "#ffffff"
+  },
+  {
+    "name": "Nacional Amapá-AP",
+    "state": "AP",
+    "country": "BR",
+    "kind": "state",
+    "division": null,
+    "rating": 59,
+    "primary": "#b91c1c",
+    "secondary": "#ffffff"
+  },
+  {
+    "name": "Atlético Amazonas-AM",
+    "state": "AM",
+    "country": "BR",
+    "kind": "state",
+    "division": null,
+    "rating": 58,
+    "primary": "#111827",
+    "secondary": "#f8fafc"
+  },
+  {
+    "name": "União Amazonas-AM",
+    "state": "AM",
+    "country": "BR",
+    "kind": "state",
+    "division": null,
+    "rating": 59,
+    "primary": "#7c3aed",
+    "secondary": "#ffffff"
+  },
+  {
+    "name": "Estrela Amazonas-AM",
+    "state": "AM",
+    "country": "BR",
+    "kind": "state",
+    "division": null,
+    "rating": 60,
+    "primary": "#0369a1",
+    "secondary": "#f8fafc"
+  },
+  {
+    "name": "Independente Amazonas-AM",
+    "state": "AM",
+    "country": "BR",
+    "kind": "state",
+    "division": null,
+    "rating": 61,
+    "primary": "#92400e",
+    "secondary": "#fde68a"
+  },
+  {
+    "name": "Real Amazonas-AM",
+    "state": "AM",
+    "country": "BR",
+    "kind": "state",
+    "division": null,
+    "rating": 62,
+    "primary": "#166534",
+    "secondary": "#ffffff"
+  },
+  {
+    "name": "Esporte Amazonas-AM",
+    "state": "AM",
+    "country": "BR",
+    "kind": "state",
+    "division": null,
+    "rating": 58,
+    "primary": "#1d4ed8",
+    "secondary": "#ffffff"
+  },
+  {
+    "name": "Nacional Amazonas-AM",
+    "state": "AM",
+    "country": "BR",
+    "kind": "state",
+    "division": null,
+    "rating": 59,
+    "primary": "#b91c1c",
+    "secondary": "#ffffff"
+  },
+  {
+    "name": "Atlético Bahia-BA",
+    "state": "BA",
+    "country": "BR",
+    "kind": "state",
+    "division": null,
+    "rating": 58,
+    "primary": "#111827",
+    "secondary": "#f8fafc"
+  },
+  {
+    "name": "União Bahia-BA",
+    "state": "BA",
+    "country": "BR",
+    "kind": "state",
+    "division": null,
+    "rating": 59,
+    "primary": "#7c3aed",
+    "secondary": "#ffffff"
+  },
+  {
+    "name": "Estrela Bahia-BA",
+    "state": "BA",
+    "country": "BR",
+    "kind": "state",
+    "division": null,
+    "rating": 60,
+    "primary": "#0369a1",
+    "secondary": "#f8fafc"
+  },
+  {
+    "name": "Independente Bahia-BA",
+    "state": "BA",
+    "country": "BR",
+    "kind": "state",
+    "division": null,
+    "rating": 61,
+    "primary": "#92400e",
+    "secondary": "#fde68a"
+  },
+  {
+    "name": "Real Bahia-BA",
+    "state": "BA",
+    "country": "BR",
+    "kind": "state",
+    "division": null,
+    "rating": 62,
+    "primary": "#166534",
+    "secondary": "#ffffff"
+  },
+  {
+    "name": "Esporte Bahia-BA",
+    "state": "BA",
+    "country": "BR",
+    "kind": "state",
+    "division": null,
+    "rating": 58,
+    "primary": "#1d4ed8",
+    "secondary": "#ffffff"
+  },
+  {
+    "name": "Nacional Bahia-BA",
+    "state": "BA",
+    "country": "BR",
+    "kind": "state",
+    "division": null,
+    "rating": 59,
+    "primary": "#b91c1c",
+    "secondary": "#ffffff"
+  },
+  {
+    "name": "Atlético Ceará-CE",
+    "state": "CE",
+    "country": "BR",
+    "kind": "state",
+    "division": null,
+    "rating": 58,
+    "primary": "#111827",
+    "secondary": "#f8fafc"
+  },
+  {
+    "name": "União Ceará-CE",
+    "state": "CE",
+    "country": "BR",
+    "kind": "state",
+    "division": null,
+    "rating": 59,
+    "primary": "#7c3aed",
+    "secondary": "#ffffff"
+  },
+  {
+    "name": "Estrela Ceará-CE",
+    "state": "CE",
+    "country": "BR",
+    "kind": "state",
+    "division": null,
+    "rating": 60,
+    "primary": "#0369a1",
+    "secondary": "#f8fafc"
+  },
+  {
+    "name": "Independente Ceará-CE",
+    "state": "CE",
+    "country": "BR",
+    "kind": "state",
+    "division": null,
+    "rating": 61,
+    "primary": "#92400e",
+    "secondary": "#fde68a"
+  },
+  {
+    "name": "Real Ceará-CE",
+    "state": "CE",
+    "country": "BR",
+    "kind": "state",
+    "division": null,
+    "rating": 62,
+    "primary": "#166534",
+    "secondary": "#ffffff"
+  },
+  {
+    "name": "Esporte Ceará-CE",
+    "state": "CE",
+    "country": "BR",
+    "kind": "state",
+    "division": null,
+    "rating": 58,
+    "primary": "#1d4ed8",
+    "secondary": "#ffffff"
+  },
+  {
+    "name": "Nacional Ceará-CE",
+    "state": "CE",
+    "country": "BR",
+    "kind": "state",
+    "division": null,
+    "rating": 59,
+    "primary": "#b91c1c",
+    "secondary": "#ffffff"
+  },
+  {
+    "name": "Atlético Distrito Federal-DF",
+    "state": "DF",
+    "country": "BR",
+    "kind": "state",
+    "division": null,
+    "rating": 58,
+    "primary": "#111827",
+    "secondary": "#f8fafc"
+  },
+  {
+    "name": "União Distrito Federal-DF",
+    "state": "DF",
+    "country": "BR",
+    "kind": "state",
+    "division": null,
+    "rating": 59,
+    "primary": "#7c3aed",
+    "secondary": "#ffffff"
+  },
+  {
+    "name": "Estrela Distrito Federal-DF",
+    "state": "DF",
+    "country": "BR",
+    "kind": "state",
+    "division": null,
+    "rating": 60,
+    "primary": "#0369a1",
+    "secondary": "#f8fafc"
+  },
+  {
+    "name": "Independente Distrito Federal-DF",
+    "state": "DF",
+    "country": "BR",
+    "kind": "state",
+    "division": null,
+    "rating": 61,
+    "primary": "#92400e",
+    "secondary": "#fde68a"
+  },
+  {
+    "name": "Real Distrito Federal-DF",
+    "state": "DF",
+    "country": "BR",
+    "kind": "state",
+    "division": null,
+    "rating": 62,
+    "primary": "#166534",
+    "secondary": "#ffffff"
+  },
+  {
+    "name": "Esporte Distrito Federal-DF",
+    "state": "DF",
+    "country": "BR",
+    "kind": "state",
+    "division": null,
+    "rating": 58,
+    "primary": "#1d4ed8",
+    "secondary": "#ffffff"
+  },
+  {
+    "name": "Nacional Distrito Federal-DF",
+    "state": "DF",
+    "country": "BR",
+    "kind": "state",
+    "division": null,
+    "rating": 59,
+    "primary": "#b91c1c",
+    "secondary": "#ffffff"
+  },
+  {
+    "name": "Atlético Espírito Santo-ES",
+    "state": "ES",
+    "country": "BR",
+    "kind": "state",
+    "division": null,
+    "rating": 58,
+    "primary": "#111827",
+    "secondary": "#f8fafc"
+  },
+  {
+    "name": "União Espírito Santo-ES",
+    "state": "ES",
+    "country": "BR",
+    "kind": "state",
+    "division": null,
+    "rating": 59,
+    "primary": "#7c3aed",
+    "secondary": "#ffffff"
+  },
+  {
+    "name": "Estrela Espírito Santo-ES",
+    "state": "ES",
+    "country": "BR",
+    "kind": "state",
+    "division": null,
+    "rating": 60,
+    "primary": "#0369a1",
+    "secondary": "#f8fafc"
+  },
+  {
+    "name": "Independente Espírito Santo-ES",
+    "state": "ES",
+    "country": "BR",
+    "kind": "state",
+    "division": null,
+    "rating": 61,
+    "primary": "#92400e",
+    "secondary": "#fde68a"
+  },
+  {
+    "name": "Real Espírito Santo-ES",
+    "state": "ES",
+    "country": "BR",
+    "kind": "state",
+    "division": null,
+    "rating": 62,
+    "primary": "#166534",
+    "secondary": "#ffffff"
+  },
+  {
+    "name": "Esporte Espírito Santo-ES",
+    "state": "ES",
+    "country": "BR",
+    "kind": "state",
+    "division": null,
+    "rating": 58,
+    "primary": "#1d4ed8",
+    "secondary": "#ffffff"
+  },
+  {
+    "name": "Nacional Espírito Santo-ES",
+    "state": "ES",
+    "country": "BR",
+    "kind": "state",
+    "division": null,
+    "rating": 59,
+    "primary": "#b91c1c",
+    "secondary": "#ffffff"
+  },
+  {
+    "name": "Atlético Goiás-GO",
+    "state": "GO",
+    "country": "BR",
+    "kind": "state",
+    "division": null,
+    "rating": 58,
+    "primary": "#111827",
+    "secondary": "#f8fafc"
+  },
+  {
+    "name": "União Goiás-GO",
+    "state": "GO",
+    "country": "BR",
+    "kind": "state",
+    "division": null,
+    "rating": 59,
+    "primary": "#7c3aed",
+    "secondary": "#ffffff"
+  },
+  {
+    "name": "Estrela Goiás-GO",
+    "state": "GO",
+    "country": "BR",
+    "kind": "state",
+    "division": null,
+    "rating": 60,
+    "primary": "#0369a1",
+    "secondary": "#f8fafc"
+  },
+  {
+    "name": "Independente Goiás-GO",
+    "state": "GO",
+    "country": "BR",
+    "kind": "state",
+    "division": null,
+    "rating": 61,
+    "primary": "#92400e",
+    "secondary": "#fde68a"
+  },
+  {
+    "name": "Real Goiás-GO",
+    "state": "GO",
+    "country": "BR",
+    "kind": "state",
+    "division": null,
+    "rating": 62,
+    "primary": "#166534",
+    "secondary": "#ffffff"
+  },
+  {
+    "name": "Esporte Goiás-GO",
+    "state": "GO",
+    "country": "BR",
+    "kind": "state",
+    "division": null,
+    "rating": 58,
+    "primary": "#1d4ed8",
+    "secondary": "#ffffff"
+  },
+  {
+    "name": "Nacional Goiás-GO",
+    "state": "GO",
+    "country": "BR",
+    "kind": "state",
+    "division": null,
+    "rating": 59,
+    "primary": "#b91c1c",
+    "secondary": "#ffffff"
+  },
+  {
+    "name": "Atlético Maranhão-MA",
+    "state": "MA",
+    "country": "BR",
+    "kind": "state",
+    "division": null,
+    "rating": 58,
+    "primary": "#111827",
+    "secondary": "#f8fafc"
+  },
+  {
+    "name": "União Maranhão-MA",
+    "state": "MA",
+    "country": "BR",
+    "kind": "state",
+    "division": null,
+    "rating": 59,
+    "primary": "#7c3aed",
+    "secondary": "#ffffff"
+  },
+  {
+    "name": "Estrela Maranhão-MA",
+    "state": "MA",
+    "country": "BR",
+    "kind": "state",
+    "division": null,
+    "rating": 60,
+    "primary": "#0369a1",
+    "secondary": "#f8fafc"
+  },
+  {
+    "name": "Independente Maranhão-MA",
+    "state": "MA",
+    "country": "BR",
+    "kind": "state",
+    "division": null,
+    "rating": 61,
+    "primary": "#92400e",
+    "secondary": "#fde68a"
+  },
+  {
+    "name": "Real Maranhão-MA",
+    "state": "MA",
+    "country": "BR",
+    "kind": "state",
+    "division": null,
+    "rating": 62,
+    "primary": "#166534",
+    "secondary": "#ffffff"
+  },
+  {
+    "name": "Esporte Maranhão-MA",
+    "state": "MA",
+    "country": "BR",
+    "kind": "state",
+    "division": null,
+    "rating": 58,
+    "primary": "#1d4ed8",
+    "secondary": "#ffffff"
+  },
+  {
+    "name": "Nacional Maranhão-MA",
+    "state": "MA",
+    "country": "BR",
+    "kind": "state",
+    "division": null,
+    "rating": 59,
+    "primary": "#b91c1c",
+    "secondary": "#ffffff"
+  },
+  {
+    "name": "Atlético Mato Grosso-MT",
+    "state": "MT",
+    "country": "BR",
+    "kind": "state",
+    "division": null,
+    "rating": 58,
+    "primary": "#111827",
+    "secondary": "#f8fafc"
+  },
+  {
+    "name": "União Mato Grosso-MT",
+    "state": "MT",
+    "country": "BR",
+    "kind": "state",
+    "division": null,
+    "rating": 59,
+    "primary": "#7c3aed",
+    "secondary": "#ffffff"
+  },
+  {
+    "name": "Estrela Mato Grosso-MT",
+    "state": "MT",
+    "country": "BR",
+    "kind": "state",
+    "division": null,
+    "rating": 60,
+    "primary": "#0369a1",
+    "secondary": "#f8fafc"
+  },
+  {
+    "name": "Independente Mato Grosso-MT",
+    "state": "MT",
+    "country": "BR",
+    "kind": "state",
+    "division": null,
+    "rating": 61,
+    "primary": "#92400e",
+    "secondary": "#fde68a"
+  },
+  {
+    "name": "Real Mato Grosso-MT",
+    "state": "MT",
+    "country": "BR",
+    "kind": "state",
+    "division": null,
+    "rating": 62,
+    "primary": "#166534",
+    "secondary": "#ffffff"
+  },
+  {
+    "name": "Esporte Mato Grosso-MT",
+    "state": "MT",
+    "country": "BR",
+    "kind": "state",
+    "division": null,
+    "rating": 58,
+    "primary": "#1d4ed8",
+    "secondary": "#ffffff"
+  },
+  {
+    "name": "Nacional Mato Grosso-MT",
+    "state": "MT",
+    "country": "BR",
+    "kind": "state",
+    "division": null,
+    "rating": 59,
+    "primary": "#b91c1c",
+    "secondary": "#ffffff"
+  },
+  {
+    "name": "Atlético Mato Grosso do Sul-MS",
+    "state": "MS",
+    "country": "BR",
+    "kind": "state",
+    "division": null,
+    "rating": 58,
+    "primary": "#111827",
+    "secondary": "#f8fafc"
+  },
+  {
+    "name": "União Mato Grosso do Sul-MS",
+    "state": "MS",
+    "country": "BR",
+    "kind": "state",
+    "division": null,
+    "rating": 59,
+    "primary": "#7c3aed",
+    "secondary": "#ffffff"
+  },
+  {
+    "name": "Estrela Mato Grosso do Sul-MS",
+    "state": "MS",
+    "country": "BR",
+    "kind": "state",
+    "division": null,
+    "rating": 60,
+    "primary": "#0369a1",
+    "secondary": "#f8fafc"
+  },
+  {
+    "name": "Independente Mato Grosso do Sul-MS",
+    "state": "MS",
+    "country": "BR",
+    "kind": "state",
+    "division": null,
+    "rating": 61,
+    "primary": "#92400e",
+    "secondary": "#fde68a"
+  },
+  {
+    "name": "Real Mato Grosso do Sul-MS",
+    "state": "MS",
+    "country": "BR",
+    "kind": "state",
+    "division": null,
+    "rating": 62,
+    "primary": "#166534",
+    "secondary": "#ffffff"
+  },
+  {
+    "name": "Esporte Mato Grosso do Sul-MS",
+    "state": "MS",
+    "country": "BR",
+    "kind": "state",
+    "division": null,
+    "rating": 58,
+    "primary": "#1d4ed8",
+    "secondary": "#ffffff"
+  },
+  {
+    "name": "Nacional Mato Grosso do Sul-MS",
+    "state": "MS",
+    "country": "BR",
+    "kind": "state",
+    "division": null,
+    "rating": 59,
+    "primary": "#b91c1c",
+    "secondary": "#ffffff"
+  },
+  {
+    "name": "Atlético Minas Gerais-MG",
+    "state": "MG",
+    "country": "BR",
+    "kind": "state",
+    "division": null,
+    "rating": 58,
+    "primary": "#111827",
+    "secondary": "#f8fafc"
+  },
+  {
+    "name": "União Minas Gerais-MG",
+    "state": "MG",
+    "country": "BR",
+    "kind": "state",
+    "division": null,
+    "rating": 59,
+    "primary": "#7c3aed",
+    "secondary": "#ffffff"
+  },
+  {
+    "name": "Estrela Minas Gerais-MG",
+    "state": "MG",
+    "country": "BR",
+    "kind": "state",
+    "division": null,
+    "rating": 60,
+    "primary": "#0369a1",
+    "secondary": "#f8fafc"
+  },
+  {
+    "name": "Independente Minas Gerais-MG",
+    "state": "MG",
+    "country": "BR",
+    "kind": "state",
+    "division": null,
+    "rating": 61,
+    "primary": "#92400e",
+    "secondary": "#fde68a"
+  },
+  {
+    "name": "Real Minas Gerais-MG",
+    "state": "MG",
+    "country": "BR",
+    "kind": "state",
+    "division": null,
+    "rating": 62,
+    "primary": "#166534",
+    "secondary": "#ffffff"
+  },
+  {
+    "name": "Esporte Minas Gerais-MG",
+    "state": "MG",
+    "country": "BR",
+    "kind": "state",
+    "division": null,
+    "rating": 58,
+    "primary": "#1d4ed8",
+    "secondary": "#ffffff"
+  },
+  {
+    "name": "Nacional Minas Gerais-MG",
+    "state": "MG",
+    "country": "BR",
+    "kind": "state",
+    "division": null,
+    "rating": 59,
+    "primary": "#b91c1c",
+    "secondary": "#ffffff"
+  },
+  {
+    "name": "Atlético Pará-PA",
+    "state": "PA",
+    "country": "BR",
+    "kind": "state",
+    "division": null,
+    "rating": 58,
+    "primary": "#111827",
+    "secondary": "#f8fafc"
+  },
+  {
+    "name": "União Pará-PA",
+    "state": "PA",
+    "country": "BR",
+    "kind": "state",
+    "division": null,
+    "rating": 59,
+    "primary": "#7c3aed",
+    "secondary": "#ffffff"
+  },
+  {
+    "name": "Estrela Pará-PA",
+    "state": "PA",
+    "country": "BR",
+    "kind": "state",
+    "division": null,
+    "rating": 60,
+    "primary": "#0369a1",
+    "secondary": "#f8fafc"
+  },
+  {
+    "name": "Independente Pará-PA",
+    "state": "PA",
+    "country": "BR",
+    "kind": "state",
+    "division": null,
+    "rating": 61,
+    "primary": "#92400e",
+    "secondary": "#fde68a"
+  },
+  {
+    "name": "Real Pará-PA",
+    "state": "PA",
+    "country": "BR",
+    "kind": "state",
+    "division": null,
+    "rating": 62,
+    "primary": "#166534",
+    "secondary": "#ffffff"
+  },
+  {
+    "name": "Esporte Pará-PA",
+    "state": "PA",
+    "country": "BR",
+    "kind": "state",
+    "division": null,
+    "rating": 58,
+    "primary": "#1d4ed8",
+    "secondary": "#ffffff"
+  },
+  {
+    "name": "Nacional Pará-PA",
+    "state": "PA",
+    "country": "BR",
+    "kind": "state",
+    "division": null,
+    "rating": 59,
+    "primary": "#b91c1c",
+    "secondary": "#ffffff"
+  },
+  {
+    "name": "Atlético Paraíba-PB",
+    "state": "PB",
+    "country": "BR",
+    "kind": "state",
+    "division": null,
+    "rating": 58,
+    "primary": "#111827",
+    "secondary": "#f8fafc"
+  },
+  {
+    "name": "União Paraíba-PB",
+    "state": "PB",
+    "country": "BR",
+    "kind": "state",
+    "division": null,
+    "rating": 59,
+    "primary": "#7c3aed",
+    "secondary": "#ffffff"
+  },
+  {
+    "name": "Estrela Paraíba-PB",
+    "state": "PB",
+    "country": "BR",
+    "kind": "state",
+    "division": null,
+    "rating": 60,
+    "primary": "#0369a1",
+    "secondary": "#f8fafc"
+  },
+  {
+    "name": "Independente Paraíba-PB",
+    "state": "PB",
+    "country": "BR",
+    "kind": "state",
+    "division": null,
+    "rating": 61,
+    "primary": "#92400e",
+    "secondary": "#fde68a"
+  },
+  {
+    "name": "Real Paraíba-PB",
+    "state": "PB",
+    "country": "BR",
+    "kind": "state",
+    "division": null,
+    "rating": 62,
+    "primary": "#166534",
+    "secondary": "#ffffff"
+  },
+  {
+    "name": "Esporte Paraíba-PB",
+    "state": "PB",
+    "country": "BR",
+    "kind": "state",
+    "division": null,
+    "rating": 58,
+    "primary": "#1d4ed8",
+    "secondary": "#ffffff"
+  },
+  {
+    "name": "Nacional Paraíba-PB",
+    "state": "PB",
+    "country": "BR",
+    "kind": "state",
+    "division": null,
+    "rating": 59,
+    "primary": "#b91c1c",
+    "secondary": "#ffffff"
+  },
+  {
+    "name": "Atlético Paraná-PR",
+    "state": "PR",
+    "country": "BR",
+    "kind": "state",
+    "division": null,
+    "rating": 58,
+    "primary": "#111827",
+    "secondary": "#f8fafc"
+  },
+  {
+    "name": "União Paraná-PR",
+    "state": "PR",
+    "country": "BR",
+    "kind": "state",
+    "division": null,
+    "rating": 59,
+    "primary": "#7c3aed",
+    "secondary": "#ffffff"
+  },
+  {
+    "name": "Estrela Paraná-PR",
+    "state": "PR",
+    "country": "BR",
+    "kind": "state",
+    "division": null,
+    "rating": 60,
+    "primary": "#0369a1",
+    "secondary": "#f8fafc"
+  },
+  {
+    "name": "Independente Paraná-PR",
+    "state": "PR",
+    "country": "BR",
+    "kind": "state",
+    "division": null,
+    "rating": 61,
+    "primary": "#92400e",
+    "secondary": "#fde68a"
+  },
+  {
+    "name": "Real Paraná-PR",
+    "state": "PR",
+    "country": "BR",
+    "kind": "state",
+    "division": null,
+    "rating": 62,
+    "primary": "#166534",
+    "secondary": "#ffffff"
+  },
+  {
+    "name": "Esporte Paraná-PR",
+    "state": "PR",
+    "country": "BR",
+    "kind": "state",
+    "division": null,
+    "rating": 58,
+    "primary": "#1d4ed8",
+    "secondary": "#ffffff"
+  },
+  {
+    "name": "Nacional Paraná-PR",
+    "state": "PR",
+    "country": "BR",
+    "kind": "state",
+    "division": null,
+    "rating": 59,
+    "primary": "#b91c1c",
+    "secondary": "#ffffff"
+  },
+  {
+    "name": "Atlético Pernambuco-PE",
+    "state": "PE",
+    "country": "BR",
+    "kind": "state",
+    "division": null,
+    "rating": 58,
+    "primary": "#111827",
+    "secondary": "#f8fafc"
+  },
+  {
+    "name": "União Pernambuco-PE",
+    "state": "PE",
+    "country": "BR",
+    "kind": "state",
+    "division": null,
+    "rating": 59,
+    "primary": "#7c3aed",
+    "secondary": "#ffffff"
+  },
+  {
+    "name": "Estrela Pernambuco-PE",
+    "state": "PE",
+    "country": "BR",
+    "kind": "state",
+    "division": null,
+    "rating": 60,
+    "primary": "#0369a1",
+    "secondary": "#f8fafc"
+  },
+  {
+    "name": "Independente Pernambuco-PE",
+    "state": "PE",
+    "country": "BR",
+    "kind": "state",
+    "division": null,
+    "rating": 61,
+    "primary": "#92400e",
+    "secondary": "#fde68a"
+  },
+  {
+    "name": "Real Pernambuco-PE",
+    "state": "PE",
+    "country": "BR",
+    "kind": "state",
+    "division": null,
+    "rating": 62,
+    "primary": "#166534",
+    "secondary": "#ffffff"
+  },
+  {
+    "name": "Esporte Pernambuco-PE",
+    "state": "PE",
+    "country": "BR",
+    "kind": "state",
+    "division": null,
+    "rating": 58,
+    "primary": "#1d4ed8",
+    "secondary": "#ffffff"
+  },
+  {
+    "name": "Nacional Pernambuco-PE",
+    "state": "PE",
+    "country": "BR",
+    "kind": "state",
+    "division": null,
+    "rating": 59,
+    "primary": "#b91c1c",
+    "secondary": "#ffffff"
+  },
+  {
+    "name": "Atlético Piauí-PI",
+    "state": "PI",
+    "country": "BR",
+    "kind": "state",
+    "division": null,
+    "rating": 58,
+    "primary": "#111827",
+    "secondary": "#f8fafc"
+  },
+  {
+    "name": "União Piauí-PI",
+    "state": "PI",
+    "country": "BR",
+    "kind": "state",
+    "division": null,
+    "rating": 59,
+    "primary": "#7c3aed",
+    "secondary": "#ffffff"
+  },
+  {
+    "name": "Estrela Piauí-PI",
+    "state": "PI",
+    "country": "BR",
+    "kind": "state",
+    "division": null,
+    "rating": 60,
+    "primary": "#0369a1",
+    "secondary": "#f8fafc"
+  },
+  {
+    "name": "Independente Piauí-PI",
+    "state": "PI",
+    "country": "BR",
+    "kind": "state",
+    "division": null,
+    "rating": 61,
+    "primary": "#92400e",
+    "secondary": "#fde68a"
+  },
+  {
+    "name": "Real Piauí-PI",
+    "state": "PI",
+    "country": "BR",
+    "kind": "state",
+    "division": null,
+    "rating": 62,
+    "primary": "#166534",
+    "secondary": "#ffffff"
+  },
+  {
+    "name": "Esporte Piauí-PI",
+    "state": "PI",
+    "country": "BR",
+    "kind": "state",
+    "division": null,
+    "rating": 58,
+    "primary": "#1d4ed8",
+    "secondary": "#ffffff"
+  },
+  {
+    "name": "Nacional Piauí-PI",
+    "state": "PI",
+    "country": "BR",
+    "kind": "state",
+    "division": null,
+    "rating": 59,
+    "primary": "#b91c1c",
+    "secondary": "#ffffff"
+  },
+  {
+    "name": "Atlético Rio de Janeiro-RJ",
+    "state": "RJ",
+    "country": "BR",
+    "kind": "state",
+    "division": null,
+    "rating": 58,
+    "primary": "#111827",
+    "secondary": "#f8fafc"
+  },
+  {
+    "name": "União Rio de Janeiro-RJ",
+    "state": "RJ",
+    "country": "BR",
+    "kind": "state",
+    "division": null,
+    "rating": 59,
+    "primary": "#7c3aed",
+    "secondary": "#ffffff"
+  },
+  {
+    "name": "Estrela Rio de Janeiro-RJ",
+    "state": "RJ",
+    "country": "BR",
+    "kind": "state",
+    "division": null,
+    "rating": 60,
+    "primary": "#0369a1",
+    "secondary": "#f8fafc"
+  },
+  {
+    "name": "Independente Rio de Janeiro-RJ",
+    "state": "RJ",
+    "country": "BR",
+    "kind": "state",
+    "division": null,
+    "rating": 61,
+    "primary": "#92400e",
+    "secondary": "#fde68a"
+  },
+  {
+    "name": "Real Rio de Janeiro-RJ",
+    "state": "RJ",
+    "country": "BR",
+    "kind": "state",
+    "division": null,
+    "rating": 62,
+    "primary": "#166534",
+    "secondary": "#ffffff"
+  },
+  {
+    "name": "Esporte Rio de Janeiro-RJ",
+    "state": "RJ",
+    "country": "BR",
+    "kind": "state",
+    "division": null,
+    "rating": 58,
+    "primary": "#1d4ed8",
+    "secondary": "#ffffff"
+  },
+  {
+    "name": "Nacional Rio de Janeiro-RJ",
+    "state": "RJ",
+    "country": "BR",
+    "kind": "state",
+    "division": null,
+    "rating": 59,
+    "primary": "#b91c1c",
+    "secondary": "#ffffff"
+  },
+  {
+    "name": "Atlético Rio Grande do Norte-RN",
+    "state": "RN",
+    "country": "BR",
+    "kind": "state",
+    "division": null,
+    "rating": 58,
+    "primary": "#111827",
+    "secondary": "#f8fafc"
+  },
+  {
+    "name": "União Rio Grande do Norte-RN",
+    "state": "RN",
+    "country": "BR",
+    "kind": "state",
+    "division": null,
+    "rating": 59,
+    "primary": "#7c3aed",
+    "secondary": "#ffffff"
+  },
+  {
+    "name": "Estrela Rio Grande do Norte-RN",
+    "state": "RN",
+    "country": "BR",
+    "kind": "state",
+    "division": null,
+    "rating": 60,
+    "primary": "#0369a1",
+    "secondary": "#f8fafc"
+  },
+  {
+    "name": "Independente Rio Grande do Norte-RN",
+    "state": "RN",
+    "country": "BR",
+    "kind": "state",
+    "division": null,
+    "rating": 61,
+    "primary": "#92400e",
+    "secondary": "#fde68a"
+  },
+  {
+    "name": "Real Rio Grande do Norte-RN",
+    "state": "RN",
+    "country": "BR",
+    "kind": "state",
+    "division": null,
+    "rating": 62,
+    "primary": "#166534",
+    "secondary": "#ffffff"
+  },
+  {
+    "name": "Esporte Rio Grande do Norte-RN",
+    "state": "RN",
+    "country": "BR",
+    "kind": "state",
+    "division": null,
+    "rating": 58,
+    "primary": "#1d4ed8",
+    "secondary": "#ffffff"
+  },
+  {
+    "name": "Nacional Rio Grande do Norte-RN",
+    "state": "RN",
+    "country": "BR",
+    "kind": "state",
+    "division": null,
+    "rating": 59,
+    "primary": "#b91c1c",
+    "secondary": "#ffffff"
+  },
+  {
+    "name": "Atlético Rio Grande do Sul-RS",
+    "state": "RS",
+    "country": "BR",
+    "kind": "state",
+    "division": null,
+    "rating": 58,
+    "primary": "#111827",
+    "secondary": "#f8fafc"
+  },
+  {
+    "name": "União Rio Grande do Sul-RS",
+    "state": "RS",
+    "country": "BR",
+    "kind": "state",
+    "division": null,
+    "rating": 59,
+    "primary": "#7c3aed",
+    "secondary": "#ffffff"
+  },
+  {
+    "name": "Estrela Rio Grande do Sul-RS",
+    "state": "RS",
+    "country": "BR",
+    "kind": "state",
+    "division": null,
+    "rating": 60,
+    "primary": "#0369a1",
+    "secondary": "#f8fafc"
+  },
+  {
+    "name": "Independente Rio Grande do Sul-RS",
+    "state": "RS",
+    "country": "BR",
+    "kind": "state",
+    "division": null,
+    "rating": 61,
+    "primary": "#92400e",
+    "secondary": "#fde68a"
+  },
+  {
+    "name": "Real Rio Grande do Sul-RS",
+    "state": "RS",
+    "country": "BR",
+    "kind": "state",
+    "division": null,
+    "rating": 62,
+    "primary": "#166534",
+    "secondary": "#ffffff"
+  },
+  {
+    "name": "Esporte Rio Grande do Sul-RS",
+    "state": "RS",
+    "country": "BR",
+    "kind": "state",
+    "division": null,
+    "rating": 58,
+    "primary": "#1d4ed8",
+    "secondary": "#ffffff"
+  },
+  {
+    "name": "Nacional Rio Grande do Sul-RS",
+    "state": "RS",
+    "country": "BR",
+    "kind": "state",
+    "division": null,
+    "rating": 59,
+    "primary": "#b91c1c",
+    "secondary": "#ffffff"
+  },
+  {
+    "name": "Atlético Rondônia-RO",
+    "state": "RO",
+    "country": "BR",
+    "kind": "state",
+    "division": null,
+    "rating": 58,
+    "primary": "#111827",
+    "secondary": "#f8fafc"
+  },
+  {
+    "name": "União Rondônia-RO",
+    "state": "RO",
+    "country": "BR",
+    "kind": "state",
+    "division": null,
+    "rating": 59,
+    "primary": "#7c3aed",
+    "secondary": "#ffffff"
+  },
+  {
+    "name": "Estrela Rondônia-RO",
+    "state": "RO",
+    "country": "BR",
+    "kind": "state",
+    "division": null,
+    "rating": 60,
+    "primary": "#0369a1",
+    "secondary": "#f8fafc"
+  },
+  {
+    "name": "Independente Rondônia-RO",
+    "state": "RO",
+    "country": "BR",
+    "kind": "state",
+    "division": null,
+    "rating": 61,
+    "primary": "#92400e",
+    "secondary": "#fde68a"
+  },
+  {
+    "name": "Real Rondônia-RO",
+    "state": "RO",
+    "country": "BR",
+    "kind": "state",
+    "division": null,
+    "rating": 62,
+    "primary": "#166534",
+    "secondary": "#ffffff"
+  },
+  {
+    "name": "Esporte Rondônia-RO",
+    "state": "RO",
+    "country": "BR",
+    "kind": "state",
+    "division": null,
+    "rating": 58,
+    "primary": "#1d4ed8",
+    "secondary": "#ffffff"
+  },
+  {
+    "name": "Nacional Rondônia-RO",
+    "state": "RO",
+    "country": "BR",
+    "kind": "state",
+    "division": null,
+    "rating": 59,
+    "primary": "#b91c1c",
+    "secondary": "#ffffff"
+  },
+  {
+    "name": "Atlético Roraima-RR",
+    "state": "RR",
+    "country": "BR",
+    "kind": "state",
+    "division": null,
+    "rating": 58,
+    "primary": "#111827",
+    "secondary": "#f8fafc"
+  },
+  {
+    "name": "União Roraima-RR",
+    "state": "RR",
+    "country": "BR",
+    "kind": "state",
+    "division": null,
+    "rating": 59,
+    "primary": "#7c3aed",
+    "secondary": "#ffffff"
+  },
+  {
+    "name": "Estrela Roraima-RR",
+    "state": "RR",
+    "country": "BR",
+    "kind": "state",
+    "division": null,
+    "rating": 60,
+    "primary": "#0369a1",
+    "secondary": "#f8fafc"
+  },
+  {
+    "name": "Independente Roraima-RR",
+    "state": "RR",
+    "country": "BR",
+    "kind": "state",
+    "division": null,
+    "rating": 61,
+    "primary": "#92400e",
+    "secondary": "#fde68a"
+  },
+  {
+    "name": "Real Roraima-RR",
+    "state": "RR",
+    "country": "BR",
+    "kind": "state",
+    "division": null,
+    "rating": 62,
+    "primary": "#166534",
+    "secondary": "#ffffff"
+  },
+  {
+    "name": "Esporte Roraima-RR",
+    "state": "RR",
+    "country": "BR",
+    "kind": "state",
+    "division": null,
+    "rating": 58,
+    "primary": "#1d4ed8",
+    "secondary": "#ffffff"
+  },
+  {
+    "name": "Nacional Roraima-RR",
+    "state": "RR",
+    "country": "BR",
+    "kind": "state",
+    "division": null,
+    "rating": 59,
+    "primary": "#b91c1c",
+    "secondary": "#ffffff"
+  },
+  {
+    "name": "Atlético Santa Catarina-SC",
+    "state": "SC",
+    "country": "BR",
+    "kind": "state",
+    "division": null,
+    "rating": 58,
+    "primary": "#111827",
+    "secondary": "#f8fafc"
+  },
+  {
+    "name": "União Santa Catarina-SC",
+    "state": "SC",
+    "country": "BR",
+    "kind": "state",
+    "division": null,
+    "rating": 59,
+    "primary": "#7c3aed",
+    "secondary": "#ffffff"
+  },
+  {
+    "name": "Estrela Santa Catarina-SC",
+    "state": "SC",
+    "country": "BR",
+    "kind": "state",
+    "division": null,
+    "rating": 60,
+    "primary": "#0369a1",
+    "secondary": "#f8fafc"
+  },
+  {
+    "name": "Independente Santa Catarina-SC",
+    "state": "SC",
+    "country": "BR",
+    "kind": "state",
+    "division": null,
+    "rating": 61,
+    "primary": "#92400e",
+    "secondary": "#fde68a"
+  },
+  {
+    "name": "Real Santa Catarina-SC",
+    "state": "SC",
+    "country": "BR",
+    "kind": "state",
+    "division": null,
+    "rating": 62,
+    "primary": "#166534",
+    "secondary": "#ffffff"
+  },
+  {
+    "name": "Esporte Santa Catarina-SC",
+    "state": "SC",
+    "country": "BR",
+    "kind": "state",
+    "division": null,
+    "rating": 58,
+    "primary": "#1d4ed8",
+    "secondary": "#ffffff"
+  },
+  {
+    "name": "Nacional Santa Catarina-SC",
+    "state": "SC",
+    "country": "BR",
+    "kind": "state",
+    "division": null,
+    "rating": 59,
+    "primary": "#b91c1c",
+    "secondary": "#ffffff"
+  },
+  {
+    "name": "Atlético São Paulo-SP",
+    "state": "SP",
+    "country": "BR",
+    "kind": "state",
+    "division": null,
+    "rating": 58,
+    "primary": "#111827",
+    "secondary": "#f8fafc"
+  },
+  {
+    "name": "União São Paulo-SP",
+    "state": "SP",
+    "country": "BR",
+    "kind": "state",
+    "division": null,
+    "rating": 59,
+    "primary": "#7c3aed",
+    "secondary": "#ffffff"
+  },
+  {
+    "name": "Estrela São Paulo-SP",
+    "state": "SP",
+    "country": "BR",
+    "kind": "state",
+    "division": null,
+    "rating": 60,
+    "primary": "#0369a1",
+    "secondary": "#f8fafc"
+  },
+  {
+    "name": "Independente São Paulo-SP",
+    "state": "SP",
+    "country": "BR",
+    "kind": "state",
+    "division": null,
+    "rating": 61,
+    "primary": "#92400e",
+    "secondary": "#fde68a"
+  },
+  {
+    "name": "Real São Paulo-SP",
+    "state": "SP",
+    "country": "BR",
+    "kind": "state",
+    "division": null,
+    "rating": 62,
+    "primary": "#166534",
+    "secondary": "#ffffff"
+  },
+  {
+    "name": "Esporte São Paulo-SP",
+    "state": "SP",
+    "country": "BR",
+    "kind": "state",
+    "division": null,
+    "rating": 58,
+    "primary": "#1d4ed8",
+    "secondary": "#ffffff"
+  },
+  {
+    "name": "Nacional São Paulo-SP",
+    "state": "SP",
+    "country": "BR",
+    "kind": "state",
+    "division": null,
+    "rating": 59,
+    "primary": "#b91c1c",
+    "secondary": "#ffffff"
+  },
+  {
+    "name": "Atlético Sergipe-SE",
+    "state": "SE",
+    "country": "BR",
+    "kind": "state",
+    "division": null,
+    "rating": 58,
+    "primary": "#111827",
+    "secondary": "#f8fafc"
+  },
+  {
+    "name": "União Sergipe-SE",
+    "state": "SE",
+    "country": "BR",
+    "kind": "state",
+    "division": null,
+    "rating": 59,
+    "primary": "#7c3aed",
+    "secondary": "#ffffff"
+  },
+  {
+    "name": "Estrela Sergipe-SE",
+    "state": "SE",
+    "country": "BR",
+    "kind": "state",
+    "division": null,
+    "rating": 60,
+    "primary": "#0369a1",
+    "secondary": "#f8fafc"
+  },
+  {
+    "name": "Independente Sergipe-SE",
+    "state": "SE",
+    "country": "BR",
+    "kind": "state",
+    "division": null,
+    "rating": 61,
+    "primary": "#92400e",
+    "secondary": "#fde68a"
+  },
+  {
+    "name": "Real Sergipe-SE",
+    "state": "SE",
+    "country": "BR",
+    "kind": "state",
+    "division": null,
+    "rating": 62,
+    "primary": "#166534",
+    "secondary": "#ffffff"
+  },
+  {
+    "name": "Esporte Sergipe-SE",
+    "state": "SE",
+    "country": "BR",
+    "kind": "state",
+    "division": null,
+    "rating": 58,
+    "primary": "#1d4ed8",
+    "secondary": "#ffffff"
+  },
+  {
+    "name": "Nacional Sergipe-SE",
+    "state": "SE",
+    "country": "BR",
+    "kind": "state",
+    "division": null,
+    "rating": 59,
+    "primary": "#b91c1c",
+    "secondary": "#ffffff"
+  },
+  {
+    "name": "Atlético Tocantins-TO",
+    "state": "TO",
+    "country": "BR",
+    "kind": "state",
+    "division": null,
+    "rating": 58,
+    "primary": "#111827",
+    "secondary": "#f8fafc"
+  },
+  {
+    "name": "União Tocantins-TO",
+    "state": "TO",
+    "country": "BR",
+    "kind": "state",
+    "division": null,
+    "rating": 59,
+    "primary": "#7c3aed",
+    "secondary": "#ffffff"
+  },
+  {
+    "name": "Estrela Tocantins-TO",
+    "state": "TO",
+    "country": "BR",
+    "kind": "state",
+    "division": null,
+    "rating": 60,
+    "primary": "#0369a1",
+    "secondary": "#f8fafc"
+  },
+  {
+    "name": "Independente Tocantins-TO",
+    "state": "TO",
+    "country": "BR",
+    "kind": "state",
+    "division": null,
+    "rating": 61,
+    "primary": "#92400e",
+    "secondary": "#fde68a"
+  },
+  {
+    "name": "Real Tocantins-TO",
+    "state": "TO",
+    "country": "BR",
+    "kind": "state",
+    "division": null,
+    "rating": 62,
+    "primary": "#166534",
+    "secondary": "#ffffff"
+  },
+  {
+    "name": "Esporte Tocantins-TO",
+    "state": "TO",
+    "country": "BR",
+    "kind": "state",
+    "division": null,
+    "rating": 58,
+    "primary": "#1d4ed8",
+    "secondary": "#ffffff"
+  },
+  {
+    "name": "Nacional Tocantins-TO",
+    "state": "TO",
+    "country": "BR",
+    "kind": "state",
+    "division": null,
+    "rating": 59,
+    "primary": "#b91c1c",
+    "secondary": "#ffffff"
+  },
+  {
+    "name": "River Plate",
+    "state": null,
+    "country": "AR",
+    "kind": "continental",
+    "division": null,
+    "rating": 78,
+    "primary": "#1d4ed8",
+    "secondary": "#ffffff"
+  },
+  {
+    "name": "Boca Juniors",
+    "state": null,
+    "country": "AR",
+    "kind": "continental",
+    "division": null,
+    "rating": 77,
+    "primary": "#b91c1c",
+    "secondary": "#ffffff"
+  },
+  {
+    "name": "Racing Club",
+    "state": null,
+    "country": "AR",
+    "kind": "continental",
+    "division": null,
+    "rating": 75,
+    "primary": "#111827",
+    "secondary": "#f8fafc"
+  },
+  {
+    "name": "Independiente",
+    "state": null,
+    "country": "AR",
+    "kind": "continental",
+    "division": null,
+    "rating": 74,
+    "primary": "#7c3aed",
+    "secondary": "#ffffff"
+  },
+  {
+    "name": "Estudiantes",
+    "state": null,
+    "country": "AR",
+    "kind": "continental",
+    "division": null,
+    "rating": 74,
+    "primary": "#0369a1",
+    "secondary": "#f8fafc"
+  },
+  {
+    "name": "Rosario Central",
+    "state": null,
+    "country": "AR",
+    "kind": "continental",
+    "division": null,
+    "rating": 72,
+    "primary": "#92400e",
+    "secondary": "#fde68a"
+  },
+  {
+    "name": "Peñarol",
+    "state": null,
+    "country": "UY",
+    "kind": "continental",
+    "division": null,
+    "rating": 74,
+    "primary": "#166534",
+    "secondary": "#ffffff"
+  },
+  {
+    "name": "Nacional-URU",
+    "state": null,
+    "country": "UY",
+    "kind": "continental",
+    "division": null,
+    "rating": 74,
+    "primary": "#1d4ed8",
+    "secondary": "#ffffff"
+  },
+  {
+    "name": "Defensor Sporting",
+    "state": null,
+    "country": "UY",
+    "kind": "continental",
+    "division": null,
+    "rating": 70,
+    "primary": "#b91c1c",
+    "secondary": "#ffffff"
+  },
+  {
+    "name": "Colo-Colo",
+    "state": null,
+    "country": "CL",
+    "kind": "continental",
+    "division": null,
+    "rating": 73,
+    "primary": "#111827",
+    "secondary": "#f8fafc"
+  },
+  {
+    "name": "Universidad de Chile",
+    "state": null,
+    "country": "CL",
+    "kind": "continental",
+    "division": null,
+    "rating": 71,
+    "primary": "#7c3aed",
+    "secondary": "#ffffff"
+  },
+  {
+    "name": "Universidad Católica-CHI",
+    "state": null,
+    "country": "CL",
+    "kind": "continental",
+    "division": null,
+    "rating": 71,
+    "primary": "#0369a1",
+    "secondary": "#f8fafc"
+  },
+  {
+    "name": "LDU Quito",
+    "state": null,
+    "country": "EC",
+    "kind": "continental",
+    "division": null,
+    "rating": 74,
+    "primary": "#92400e",
+    "secondary": "#fde68a"
+  },
+  {
+    "name": "Independiente del Valle",
+    "state": null,
+    "country": "EC",
+    "kind": "continental",
+    "division": null,
+    "rating": 75,
+    "primary": "#166534",
+    "secondary": "#ffffff"
+  },
+  {
+    "name": "Barcelona SC",
+    "state": null,
+    "country": "EC",
+    "kind": "continental",
+    "division": null,
+    "rating": 72,
+    "primary": "#1d4ed8",
+    "secondary": "#ffffff"
+  },
+  {
+    "name": "Emelec",
+    "state": null,
+    "country": "EC",
+    "kind": "continental",
+    "division": null,
+    "rating": 71,
+    "primary": "#b91c1c",
+    "secondary": "#ffffff"
+  },
+  {
+    "name": "Atlético Nacional",
+    "state": null,
+    "country": "CO",
+    "kind": "continental",
+    "division": null,
+    "rating": 74,
+    "primary": "#111827",
+    "secondary": "#f8fafc"
+  },
+  {
+    "name": "Millonarios",
+    "state": null,
+    "country": "CO",
+    "kind": "continental",
+    "division": null,
+    "rating": 73,
+    "primary": "#7c3aed",
+    "secondary": "#ffffff"
+  },
+  {
+    "name": "América de Cali",
+    "state": null,
+    "country": "CO",
+    "kind": "continental",
+    "division": null,
+    "rating": 72,
+    "primary": "#0369a1",
+    "secondary": "#f8fafc"
+  },
+  {
+    "name": "Junior Barranquilla",
+    "state": null,
+    "country": "CO",
+    "kind": "continental",
+    "division": null,
+    "rating": 71,
+    "primary": "#92400e",
+    "secondary": "#fde68a"
+  },
+  {
+    "name": "Olimpia",
+    "state": null,
+    "country": "PY",
+    "kind": "continental",
+    "division": null,
+    "rating": 74,
+    "primary": "#166534",
+    "secondary": "#ffffff"
+  },
+  {
+    "name": "Libertad",
+    "state": null,
+    "country": "PY",
+    "kind": "continental",
+    "division": null,
+    "rating": 73,
+    "primary": "#1d4ed8",
+    "secondary": "#ffffff"
+  },
+  {
+    "name": "Cerro Porteño",
+    "state": null,
+    "country": "PY",
+    "kind": "continental",
+    "division": null,
+    "rating": 73,
+    "primary": "#b91c1c",
+    "secondary": "#ffffff"
+  },
+  {
+    "name": "Guaraní-PAR",
+    "state": null,
+    "country": "PY",
+    "kind": "continental",
+    "division": null,
+    "rating": 70,
+    "primary": "#111827",
+    "secondary": "#f8fafc"
+  },
+  {
+    "name": "Bolívar",
+    "state": null,
+    "country": "BO",
+    "kind": "continental",
+    "division": null,
+    "rating": 72,
+    "primary": "#7c3aed",
+    "secondary": "#ffffff"
+  },
+  {
+    "name": "The Strongest",
+    "state": null,
+    "country": "BO",
+    "kind": "continental",
+    "division": null,
+    "rating": 71,
+    "primary": "#0369a1",
+    "secondary": "#f8fafc"
+  },
+  {
+    "name": "Universitario-PER",
+    "state": null,
+    "country": "PE",
+    "kind": "continental",
+    "division": null,
+    "rating": 71,
+    "primary": "#92400e",
+    "secondary": "#fde68a"
+  },
+  {
+    "name": "Alianza Lima",
+    "state": null,
+    "country": "PE",
+    "kind": "continental",
+    "division": null,
+    "rating": 70,
+    "primary": "#166534",
+    "secondary": "#ffffff"
+  }
+]

@@ -1,8 +1,8 @@
 {
   "name": "dono-do-clube",
-  "version": "3.0.0",
+  "version": "4.0.0",
   "private": true,
-  "description": "Dono do Clube com Liga de 20 times/38 rodadas e Libertadores de 32 times.",
+  "description": "Manager de futebol com estaduais, Séries A/B/C/D, acesso, rebaixamento e Libertadores.",
   "main": "server.js",
   "scripts": {
     "start": "node server.js"
