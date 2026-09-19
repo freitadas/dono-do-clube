@@ -130,3 +130,31 @@ tr.me{background:#163522}
   .friend-add{grid-template-columns:1fr}
   .board b{font-size:34px}
 }
+.competition-tabs{display:grid;grid-template-columns:1fr 1fr;gap:6px;background:#09150e;padding:5px;border-radius:14px;margin-bottom:16px}
+.competition-tabs button{border:0;border-radius:10px;padding:11px;background:transparent;color:var(--muted);font-weight:950}
+.competition-tabs button.on{background:var(--panel2);color:white}
+.competition-info{display:flex;gap:7px;flex-wrap:wrap}
+.round-head{display:flex;justify-content:space-between;gap:12px;align-items:end;flex-wrap:wrap;margin-bottom:12px}
+.round-head label{min-width:170px}
+.fixture-grid{display:grid;grid-template-columns:repeat(2,1fr);gap:8px}
+.fixture{display:grid;grid-template-columns:1fr auto 1fr;align-items:center;gap:8px;background:#09150e;border:1px solid #1e392a;padding:10px 12px;border-radius:12px;font-size:13px}
+.fixture.user-fixture{border-color:var(--green);box-shadow:0 0 0 1px rgba(73,209,125,.15)}
+tr.qualifier td:first-child{color:#9df3bc;font-weight:950}
+.groups-grid{display:grid;grid-template-columns:repeat(2,1fr);gap:12px}
+.group-card{border:1px solid var(--line);border-radius:15px;padding:12px;background:#0a1710}
+.group-card h3{margin:0 0 9px}
+.mini-table{min-width:0;background:transparent}
+.mini-table th,.mini-table td{padding:7px 6px;font-size:11px}
+.mini-table tr.qualified{background:#153820}
+.knockout-grid{display:grid;grid-template-columns:repeat(4,1fr);gap:10px;margin-top:18px;align-items:start}
+.knockout-stage{border:1px solid var(--line);border-radius:15px;padding:10px;background:#0a1710}
+.knockout-stage h3{margin:0 0 9px}
+.ko-match{display:grid;gap:4px;border-bottom:1px solid #1f392a;padding:8px 0;font-size:11px}
+.ko-match:last-child{border-bottom:0}
+.ko-match span{display:flex;justify-content:space-between;gap:6px}
+.ko-match small,.ko-match em{color:var(--muted);font-size:9px}
+.champion-card{text-align:center;padding:28px;border:1px solid #7c6514;background:linear-gradient(135deg,#2d260b,#151a0c);border-radius:18px;margin-bottom:15px}
+.champion-card h2{font-size:32px;margin:8px 0}
+.big-empty{padding:45px 20px}
+@media(max-width:900px){.knockout-grid{grid-template-columns:repeat(2,1fr)}}
+@media(max-width:700px){.fixture-grid,.groups-grid{grid-template-columns:1fr}.knockout-grid{grid-template-columns:1fr}.fixture{font-size:12px}}

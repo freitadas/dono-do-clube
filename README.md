@@ -1,39 +1,36 @@
-# Dono do Clube v2
+# Dono do Clube v3 — Liga + Libertadores
 
-Versão com:
+Esta versão reinicia o progresso esportivo dos clubes uma única vez no primeiro deploy desta versão, preservando contas, nome do clube, cores, escudo e amigos.
 
-- dados persistentes no PostgreSQL;
-- cadastro/login;
-- criação do clube;
-- personalização de nome, cores e escudo;
-- upload de escudo redimensionado no navegador;
-- elenco com estatísticas individuais;
-- escalação;
-- rescisão de jogadores;
-- mercado;
-- partidas de liga;
-- simulação de jogos dos outros clubes;
-- classificação;
-- visualização do elenco e estatísticas de qualquer clube;
-- código de amizade;
-- adicionar/remover amigos;
-- amistosos contra amigos mesmo quando eles estiverem offline.
+## Liga
 
-## Arquivos
+- 20 clubes.
+- 38 rodadas.
+- Todos contra todos em ida e volta.
+- Cada clube faz exatamente 19 jogos em casa e 19 fora.
+- Cada rodada possui 10 partidas.
+- Ao jogar a próxima rodada, os outros jogos da rodada também são simulados.
+- Os 4 primeiros se classificam para a Libertadores.
 
-Todos ficam na raiz do repositório:
+## Libertadores
 
-- `server.js`
-- `index.html`
-- `app.js`
-- `styles.css`
-- `package.json`
-- `render.yaml`
-- `README.md`
+- Criada automaticamente ao fim da 38ª rodada.
+- 32 clubes no total.
+- 4 classificados da Liga + 28 clubes sorteados.
+- 8 grupos de 4 clubes.
+- Ida e volta dentro do grupo.
+- 6 jogos por clube.
+- Os 2 primeiros de cada grupo avançam.
+- Mata-mata com oitavas, quartas e semifinais em ida e volta.
+- Final em jogo único.
+- Empates no agregado ou na final são decididos por pênaltis.
 
-## Atualização do projeto já existente
+## Recursos mantidos
 
-Substitua os arquivos da raiz pelos arquivos desta versão e faça commit na branch `main`.
-O Render conectado ao GitHub deve fazer Auto-Deploy.
-
-O banco existente é reutilizado. As colunas e tabelas novas são criadas automaticamente no início do servidor.
+- Login e persistência PostgreSQL.
+- Personalização de nome, cores e escudo.
+- Mercado.
+- Rescisão.
+- Estatísticas individuais.
+- Visualização de elencos.
+- Amigos e amistosos.
