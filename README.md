@@ -469,3 +469,49 @@ A simulação não inicia automaticamente a temporada seguinte. O usuário ainda
 Os jogadores com nomes reais agora usam **exatamente a mesma fórmula-base de salário dos jogadores normais do jogo**, de acordo com o overall.
 
 Assim, um jogador real não recebe um salário artificialmente maior apenas por ter um nome real. O salário sugerido continua podendo variar durante a negociação, como já ocorre com os demais jogadores.
+
+
+## Mata-mata com ida, volta e pênaltis — v24
+
+### Copa do Brasil
+
+A Copa do Brasil agora é disputada em **jogos de ida e volta em todas as fases, inclusive a final**.
+
+- o placar agregado dos dois jogos decide o classificado;
+- não existe regra de gol fora;
+- se o placar agregado terminar empatado após o jogo de volta, a vaga é decidida nos pênaltis;
+- a interface mostra claramente **IDA**, **VOLTA**, o **AGREGADO** e o clube classificado;
+- quando houver pênaltis, aparece o placar da disputa, por exemplo `5 × 4`, e o nome de quem avançou.
+
+As outras copas nacionais do jogo continuam com o formato próprio já existente; a mudança para ida e volta é específica da Copa do Brasil.
+
+### UEFA Champions League
+
+O mata-mata da Champions agora deixa explícito o sistema de:
+- jogo de **IDA**;
+- jogo de **VOLTA**;
+- placar **AGREGADO**;
+- pênaltis quando o agregado terminar empatado.
+
+O playoff, oitavas, quartas e semifinais são disputados em ida e volta. A **final continua em jogo único**, como no formato real da Champions League. Se a final empatar, também é exibido o placar dos pênaltis.
+
+### Pênaltis visíveis
+
+Os placares das disputas por pênaltis também passam a aparecer nos demais mata-matas que utilizam desempate por pênaltis, como Libertadores, Estadual e Super Mundial.
+
+
+## Correção do XI titular — v25
+
+Corrigido o problema em que o campo podia aparecer com apenas 5, 6 ou outro número menor que 11 jogadores.
+
+Agora, sempre que a carreira de clube é carregada:
+- o jogo confere a escalação salva;
+- se ela já possui 11 titulares válidos, nada é alterado;
+- se faltarem titulares, o sistema completa automaticamente o XI;
+- a formação atual é respeitada sempre que o elenco possui jogadores suficientes por posição;
+- os titulares já escolhidos têm preferência, para evitar mudanças desnecessárias;
+- em seguida entram os jogadores de maior overall, físico e moral;
+- o sistema preserva pelo menos um goleiro;
+- a correção também funciona depois de vendas, empréstimos, lesões ou outras alterações de elenco.
+
+O campo passa a mostrar novamente os **11 jogadores** em vez de manter uma escalação quebrada.

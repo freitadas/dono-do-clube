@@ -535,7 +535,8 @@ function copaQuickCard(){
   const copa=state.competitions?.copaBrasil,car=state.competitions?.career;
   if(!copa||car?.phase==="STATE")return "";
   const active=copa.status!=="finished"&&!copa.userEliminated;
-  return `<div class="card copa-home"><div><div class="kicker">${esc(copa.name||"COPA NACIONAL")}</div><h2>${copa.status==="finished"?`🏆 ${esc(copa.championClub?.name||"Encerrada")}`:esc(({R32:"Primeira fase",R16:"Oitavas",QF:"Quartas",SF:"Semifinais",FINAL:"Final"})[copa.stage]||copa.stage)}</h2><p class="muted">Torneio mata-mata em jogo único.</p></div>${active?`<button id="playCopaHome" class="primary">Jogar ${esc(copa.name||"Copa")}</button>`:""}</div>`;
+  const legText=copa.twoLegged?` · ${Number(copa.leg||1)===1?"ida":"volta"}`:"";
+  return `<div class="card copa-home"><div><div class="kicker">${esc(copa.name||"COPA NACIONAL")}</div><h2>${copa.status==="finished"?`🏆 ${esc(copa.championClub?.name||"Encerrada")}`:esc(({R32:"Primeira fase",R16:"Oitavas",QF:"Quartas",SF:"Semifinais",FINAL:"Final"})[copa.stage]||copa.stage)+legText}</h2><p class="muted">${copa.twoLegged?"Mata-mata em ida e volta. Empate no agregado vai para os pênaltis.":"Torneio mata-mata em jogo único."}</p></div>${active?`<button id="playCopaHome" class="primary">Jogar ${copa.twoLegged?(Number(copa.leg||1)===1?"ida":"volta"):esc(copa.name||"Copa")}</button>`:""}</div>`;
 }
 function superWorldQuickCard(){
   const car=state.competitions?.career;
@@ -852,6 +853,7 @@ function stateView(){
   </table></div>
   <h3>Jogos</h3><div class="fixture-grid">${s.fixtures.map(f=>`<div class="fixture ${String(f.home)===String(state.club.id)||String(f.away)===String(state.club.id)?"user-fixture":""}">
     <span>${esc(f.homeClub.name)}</span><b>${f.played?`${f.hg} × ${f.ag}`:"×"}</b><span class="right">${esc(f.awayClub.name)}</span>
+    ${penaltySummary(f)}
   </div>`).join("")}</div>`;
 }
 
@@ -866,20 +868,61 @@ function groupCard(group){
   </div>`;
 }
 
+function penaltySummary(f){
+  if(!f?.pw)return "";
+  const winner=String(f.pw)===String(f.home)?f.homeClub?.name:f.awayClub?.name;
+  if(f.penHome!=null&&f.penAway!=null){
+    return `<em class="penalty-detail">Pênaltis: ${esc(f.homeClub?.name||"Mandante")} <b>${f.penHome}</b> × <b>${f.penAway}</b> ${esc(f.awayClub?.name||"Visitante")} · <strong>${esc(winner||"Vencedor")} passou</strong></em>`;
+  }
+  return `<em class="penalty-detail">Decidido nos pênaltis · <strong>${esc(winner||"Vencedor")} passou</strong></em>`;
+}
+function aggregateSummary(fixtures){
+  const all=[...(fixtures||[])].sort((x,y)=>Number(x.leg||1)-Number(y.leg||1));
+  const fs=all.filter(f=>f.played);
+  if(all.length<2||fs.length<all.length)return "";
+  const ids=[...new Set(fs.flatMap(f=>[String(f.home),String(f.away)]))];
+  if(ids.length!==2)return "";
+  const scores=new Map(ids.map(id=>[id,0]));
+  const names=new Map();
+  for(const f of fs){
+    scores.set(String(f.home),scores.get(String(f.home))+Number(f.hg||0));
+    scores.set(String(f.away),scores.get(String(f.away))+Number(f.ag||0));
+    names.set(String(f.home),f.homeClub?.name||"Clube");
+    names.set(String(f.away),f.awayClub?.name||"Clube");
+  }
+  const [a,b]=ids;
+  let winner=null;
+  if(scores.get(a)>scores.get(b))winner=a;
+  else if(scores.get(b)>scores.get(a))winner=b;
+  else winner=String(fs[fs.length-1]?.pw||"");
+  return `<div class="aggregate-line">
+    Agregado: <b>${esc(names.get(a))} ${scores.get(a)} × ${scores.get(b)} ${esc(names.get(b))}</b>
+    ${winner?`<strong>Classificado: ${esc(names.get(String(winner))||"")}</strong>`:""}
+  </div>`;
+}
+function groupedKnockoutTies(fixtures,stage){
+  const fs=(fixtures||[]).filter(f=>f.stage===stage);
+  const keys=[...new Set(fs.map(f=>f.tie||`${stage}-${f.slot}`))];
+  return keys.map(key=>fs.filter(f=>(f.tie||`${stage}-${f.slot}`)===key).sort((x,y)=>Number(x.leg||1)-Number(y.leg||1)));
+}
+
 function knockoutList(lib){
   return `<div class="knockout-grid">${[["R16","Oitavas"],["QF","Quartas"],["SF","Semifinais"],["FINAL","Final"]].map(([code,label])=>{
-    const fs=lib.fixtures.filter(f=>f.stage===code);if(!fs.length)return "";
+    const ties=groupedKnockoutTies(lib.fixtures,code);if(!ties.length)return "";
     return `<div class="knockout-stage"><h3>${label}</h3>
-      ${fs.map(f=>`<div class="ko-match">
-        <small>${code==="FINAL"?"Final":`Chave ${f.slot} · jogo ${f.leg}`}</small>
-        <span>${esc(f.homeClub.name)} ${f.played?`<b>${f.hg}</b>`:""}</span>
-        <span>${esc(f.awayClub.name)} ${f.played?`<b>${f.ag}</b>`:""}</span>
-        ${f.pw?`<em>Decidido nos pênaltis</em>`:""}
+      ${ties.map(fs=>`<div class="ko-tie">
+        <small>${code==="FINAL"?"Final · jogo único":`Chave ${fs[0]?.slot} · ida e volta`}</small>
+        ${fs.map(f=>`<div class="ko-leg">
+          <span class="leg-label">${code==="FINAL"?"FINAL":Number(f.leg||1)===1?"IDA":"VOLTA"}</span>
+          <span>${esc(f.homeClub?.name||"")} ${f.played?`<b>${f.hg}</b>`:""}</span>
+          <span>${esc(f.awayClub?.name||"")} ${f.played?`<b>${f.ag}</b>`:""}</span>
+          ${penaltySummary(f)}
+        </div>`).join("")}
+        ${aggregateSummary(fs)}
       </div>`).join("")}
     </div>`;
   }).join("")}</div>`;
 }
-
 function libertadoresView(){
   const lib=state.competitions.libertadores;
   if(!lib)return `<div class="empty"><h2>🏆 Libertadores</h2><p>Somente os 4 primeiros da Série A se classificam.</p></div>`;
@@ -897,12 +940,16 @@ function championsTableRows(){
 }
 function championsKnockoutList(ch){
   return `<div class="knockout-grid">${[["PLAYOFF","Playoff"],["R16","Oitavas"],["QF","Quartas"],["SF","Semifinais"],["FINAL","Final"]].map(([code,label])=>{
-    const fs=ch.fixtures.filter(f=>f.stage===code);if(!fs.length)return "";
-    return `<div class="knockout-stage"><h3>${label}</h3>${fs.map(f=>`<div class="ko-match">
-      <small>${code==="FINAL"?"Final":`Chave ${f.slot} · jogo ${f.leg}`}</small>
-      <span>${esc(f.homeClub?.name||"")} ${f.played?`<b>${f.hg}</b>`:""}</span>
-      <span>${esc(f.awayClub?.name||"")} ${f.played?`<b>${f.ag}</b>`:""}</span>
-      ${f.pw?`<em>Decidido nos pênaltis</em>`:""}
+    const ties=groupedKnockoutTies(ch.fixtures,code);if(!ties.length)return "";
+    return `<div class="knockout-stage"><h3>${label}</h3>${ties.map(fs=>`<div class="ko-tie">
+      <small>${code==="FINAL"?"Final · jogo único":`Chave ${fs[0]?.slot} · ida e volta`}</small>
+      ${fs.map(f=>`<div class="ko-leg">
+        <span class="leg-label">${code==="FINAL"?"FINAL":Number(f.leg||1)===1?"IDA":"VOLTA"}</span>
+        <span>${esc(f.homeClub?.name||"")} ${f.played?`<b>${f.hg}</b>`:""}</span>
+        <span>${esc(f.awayClub?.name||"")} ${f.played?`<b>${f.ag}</b>`:""}</span>
+        ${penaltySummary(f)}
+      </div>`).join("")}
+      ${aggregateSummary(fs)}
     </div>`).join("")}</div>`;
   }).join("")}</div>`;
 }
@@ -933,7 +980,7 @@ function championsView(){
     </table></div>`;
   }
 
-  return `<div class="section-title"><div><div class="kicker">MATA-MATA</div><h2>Champions League — ${esc(({PLAYOFF:"Playoff",R16:"Oitavas",QF:"Quartas",SF:"Semifinais",FINAL:"Final"})[ch.stage]||ch.stage)}</h2></div>${button}</div>
+  return `<div class="section-title"><div><div class="kicker">${ch.stage==="FINAL"?"FINAL · JOGO ÚNICO":"MATA-MATA · IDA E VOLTA"}</div><h2>Champions League — ${esc(({PLAYOFF:"Playoff",R16:"Oitavas",QF:"Quartas",SF:"Semifinais",FINAL:"Final"})[ch.stage]||ch.stage)}</h2></div>${button}</div>
     ${championsKnockoutList(ch)}`;
 }
 function worldGroupCard(group){
@@ -953,7 +1000,7 @@ function worldKnockoutList(world){
       <small>${code==="FINAL"?"Final":`Chave ${f.slot}`}</small>
       <span>${esc(f.homeClub?.name||"")} ${f.played?`<b>${f.hg}</b>`:""}</span>
       <span>${esc(f.awayClub?.name||"")} ${f.played?`<b>${f.ag}</b>`:""}</span>
-      ${f.pw?`<em>Decidido nos pênaltis</em>`:""}
+      ${penaltySummary(f)}
     </div>`).join("")}</div>`;
   }).join("")}</div>`;
 }
@@ -994,15 +1041,33 @@ function copaView(){
   if(!copa)return `<div class="empty">Copa nacional não disponível.</div>`;
   const stageLabels={R32:"Primeira fase",R16:"Oitavas de final",QF:"Quartas de final",SF:"Semifinais",FINAL:"Final"};
   const active=copa.status!=="finished"&&!copa.userEliminated&&state.competitions.career.phase!=="STATE";
-  return `<div class="section-title"><div><div class="kicker">MATA-MATA · JOGO ÚNICO</div><h2>${esc(copa.name||"Copa Nacional")}</h2><span class="muted">${copa.status==="finished"?"Encerrada":stageLabels[copa.stage]||copa.stage}</span></div>${active?`<button id="playCopa" class="primary">Jogar próxima fase</button>`:""}</div>
-    ${copa.status==="finished"?`<div class="champion-card"><div class="kicker">CAMPEÃO DA COPA</div><h2>🏆 ${esc(copa.championClub?.name||"Campeão")}</h2></div>`:""}
-    ${copa.userEliminated?`<div class="msg">Seu clube foi eliminado. O restante do torneio foi simulado automaticamente.</div>`:""}
-    <div class="knockout-grid copa-grid">${[["R32","1ª fase"],["R16","Oitavas"],["QF","Quartas"],["SF","Semifinais"],["FINAL","Final"]].map(([code,label])=>{
-      const fs=copa.fixtures.filter(f=>f.stage===code);if(!fs.length)return "";
-      return `<div class="knockout-stage"><h3>${label}</h3>${fs.map(f=>`<div class="ko-match"><small>Chave ${f.slot}</small><span>${esc(f.homeClub?.name||"")} ${f.played?`<b>${f.hg}</b>`:""}</span><span>${esc(f.awayClub?.name||"")} ${f.played?`<b>${f.ag}</b>`:""}</span>${f.pw?`<em>Decidido nos pênaltis</em>`:""}</div>`).join("")}</div>`;
-    }).join("")}</div>`;
-}
+  const brazilTwoLeg=Boolean(copa.twoLegged);
 
+  return `<div class="section-title"><div>
+      <div class="kicker">${brazilTwoLeg?"MATA-MATA · IDA E VOLTA":"MATA-MATA · JOGO ÚNICO"}</div>
+      <h2>${esc(copa.name||"Copa Nacional")}</h2>
+      <span class="muted">${copa.status==="finished"?"Encerrada":stageLabels[copa.stage]||copa.stage}${brazilTwoLeg&&copa.status!=="finished"?` · ${Number(copa.leg||1)===1?"jogo de ida":"jogo de volta"}`:""}</span>
+    </div>
+    ${active?`<button id="playCopa" class="primary">${brazilTwoLeg?`Jogar ${Number(copa.leg||1)===1?"ida":"volta"}`:"Jogar próxima fase"}</button>`:""}
+  </div>
+  ${copa.status==="finished"?`<div class="champion-card"><div class="kicker">CAMPEÃO DA COPA</div><h2>🏆 ${esc(copa.championClub?.name||"Campeão")}</h2></div>`:""}
+  ${copa.userEliminated?`<div class="msg">Seu clube foi eliminado. O restante do torneio foi simulado automaticamente.</div>`:""}
+  <div class="knockout-grid copa-grid">
+    ${[["R32","1ª fase"],["R16","Oitavas"],["QF","Quartas"],["SF","Semifinais"],["FINAL","Final"]].map(([code,label])=>{
+      const ties=groupedKnockoutTies(copa.fixtures,code);if(!ties.length)return "";
+      return `<div class="knockout-stage"><h3>${label}</h3>${ties.map(fs=>`<div class="ko-tie">
+        <small>Chave ${fs[0]?.slot}${brazilTwoLeg?" · ida e volta":" · jogo único"}</small>
+        ${fs.map(f=>`<div class="ko-leg">
+          <span class="leg-label">${brazilTwoLeg?(Number(f.leg||1)===1?"IDA":"VOLTA"):"JOGO"}</span>
+          <span>${esc(f.homeClub?.name||"")} ${f.played?`<b>${f.hg}</b>`:""}</span>
+          <span>${esc(f.awayClub?.name||"")} ${f.played?`<b>${f.ag}</b>`:""}</span>
+          ${penaltySummary(f)}
+        </div>`).join("")}
+        ${brazilTwoLeg?aggregateSummary(fs):""}
+      </div>`).join("")}</div>`;
+    }).join("")}
+  </div>`;
+}
 function competitionsView(){
   const car=state.competitions.career;
   const country=car.country_code||state.club.country_code||"BR";

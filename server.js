@@ -27,6 +27,8 @@ const V18_MIGRATION_KEY = "v18_manual_career_save_20260919";
 const V21_MIGRATION_KEY = "v21_countries_player_career_20260919";
 const V22_MIGRATION_KEY = "v22_real_market_champions_superworld_20260919";
 const V23_MIGRATION_KEY = "v23_full_season_sim_equal_wages_20260919";
+const V24_MIGRATION_KEY = "v24_two_leg_cups_penalty_scores_20260919";
+const V25_MIGRATION_KEY = "v25_starting_xi_repair_20260919";
 const MAX_CAREERS_PER_USER = 10;
 const TRANSFER_BAN_THRESHOLD = -10000;
 const competitionLocks = new Set();
@@ -585,6 +587,16 @@ async function applyV23Migration(){
     }
     await c.query(`INSERT INTO app_meta(key,value) VALUES($1,$2)`,[V23_MIGRATION_KEY,new Date().toISOString()]);
   });
+}
+async function applyV24Migration(){
+  const done=await q(`SELECT 1 FROM app_meta WHERE key=$1`,[V24_MIGRATION_KEY]);
+  if(done.rowCount)return;
+  await q(`INSERT INTO app_meta(key,value) VALUES($1,$2)`,[V24_MIGRATION_KEY,new Date().toISOString()]);
+}
+async function applyV25Migration(){
+  const done=await q(`SELECT 1 FROM app_meta WHERE key=$1`,[V25_MIGRATION_KEY]);
+  if(done.rowCount)return;
+  await q(`INSERT INTO app_meta(key,value) VALUES($1,$2)`,[V25_MIGRATION_KEY,new Date().toISOString()]);
 }
 
 function countryProfile(code){
@@ -1255,6 +1267,91 @@ function formationQuotas(formation){
   if(formation==="3-5-2")return {GK:1,DEF:3,MID:5,ATT:2};
   return {GK:1,DEF:4,MID:3,ATT:3};
 }
+
+async function ensureStartingXI(client,clubId,formation="4-3-3"){
+  const players=(await client.query(`
+    SELECT * FROM players
+    WHERE club_id=$1
+    ORDER BY is_starter DESC,rating DESC,fitness DESC,morale DESC,id
+  `,[clubId])).rows;
+
+  if(players.length<11)return {repaired:false,count:players.filter(p=>p.is_starter).length,reason:"roster_under_11"};
+
+  const quota=formationQuotas(formation);
+  const current=players.filter(p=>p.is_starter);
+  const currentCounts={GK:0,DEF:0,MID:0,ATT:0};
+  current.forEach(p=>currentCounts[p.position]=(currentCounts[p.position]||0)+1);
+
+  const currentValid=
+    current.length===11 &&
+    current.some(p=>p.position==="GK") &&
+    current.every(p=>Number(p.injury_games||0)<=0) &&
+    Object.keys(quota).every(pos=>Number(currentCounts[pos]||0)===Number(quota[pos]));
+
+  if(currentValid)return {repaired:false,count:11};
+
+  const healthy=players.filter(p=>Number(p.injury_games||0)<=0);
+  const selected=[];
+  const used=new Set();
+
+  const scoreSort=(a,b)=>{
+    if(Boolean(a.is_starter)!==Boolean(b.is_starter))return a.is_starter?-1:1;
+    return Number(b.rating||0)-Number(a.rating||0) ||
+      Number(b.fitness||0)-Number(a.fitness||0) ||
+      Number(b.morale||0)-Number(a.morale||0);
+  };
+
+  for(const pos of ["GK","DEF","MID","ATT"]){
+    const pool=healthy.filter(p=>p.position===pos&&!used.has(String(p.id))).sort(scoreSort);
+    for(const p of pool.slice(0,quota[pos])){
+      selected.push(p);
+      used.add(String(p.id));
+    }
+  }
+
+  // Se alguma posição estiver curta, completa com os melhores jogadores saudáveis restantes.
+  if(selected.length<11){
+    const remaining=healthy.filter(p=>!used.has(String(p.id))).sort(scoreSort);
+    for(const p of remaining.slice(0,11-selected.length)){
+      selected.push(p);
+      used.add(String(p.id));
+    }
+  }
+
+  // Último fallback: em um elenco muito desfalcado, completa visualmente com lesionados.
+  // O motor da partida continua respeitando indisponibilidade e fará sua própria seleção.
+  if(selected.length<11){
+    const remaining=players.filter(p=>!used.has(String(p.id))).sort(scoreSort);
+    for(const p of remaining.slice(0,11-selected.length)){
+      selected.push(p);
+      used.add(String(p.id));
+    }
+  }
+
+  // Sempre preservar ao menos um goleiro quando houver goleiro no elenco.
+  if(!selected.some(p=>p.position==="GK")){
+    const gk=players.filter(p=>p.position==="GK").sort(scoreSort)[0];
+    if(gk){
+      const replaceIndex=selected.findIndex(p=>p.position!=="GK");
+      if(replaceIndex>=0){
+        used.delete(String(selected[replaceIndex].id));
+        selected[replaceIndex]=gk;
+        used.add(String(gk.id));
+      }
+    }
+  }
+
+  if(selected.length!==11)return {repaired:false,count:selected.length,reason:"unable_to_build_11"};
+
+  const ids=selected.map(p=>String(p.id));
+  await client.query(`UPDATE players SET is_starter=FALSE WHERE club_id=$1`,[clubId]);
+  await client.query(`UPDATE players SET is_starter=TRUE WHERE club_id=$1 AND id=ANY($2::bigint[])`,[clubId,ids]);
+
+  const avg=Math.round(selected.reduce((n,p)=>n+Number(p.rating||0),0)/selected.length);
+  await client.query(`UPDATE clubs SET team_rating=$2 WHERE id=$1`,[clubId,avg]);
+
+  return {repaired:true,count:11};
+}
 function sortForSelection(players,preferManual){
   return [...players].sort((a,b)=>{
     if(preferManual&&Boolean(a.is_starter)!==Boolean(b.is_starter))return a.is_starter?-1:1;
@@ -1599,26 +1696,191 @@ function stateObject(name,ids){
   };
 }
 function copaStageLabel(stage){return ({R32:"Primeira fase",R16:"Oitavas de final",QF:"Quartas de final",SF:"Semifinais",FINAL:"Final"})[stage]||stage}
+function penaltyShootout(f,forcedWinner=null){
+  if(f.penHome!=null&&f.penAway!=null&&f.pw)return Number(f.pw);
+
+  let homePens=rand(3,5),awayPens=rand(3,5);
+  if(homePens===awayPens){
+    if(Math.random()<.5)homePens++;
+    else awayPens++;
+  }
+
+  if(forcedWinner!=null){
+    const forceHome=String(forcedWinner)===String(f.home);
+    if(forceHome&&homePens<=awayPens)homePens=awayPens+1;
+    if(!forceHome&&awayPens<=homePens)awayPens=homePens+1;
+  }
+
+  f.penHome=homePens;
+  f.penAway=awayPens;
+  f.pw=forcedWinner!=null
+    ?Number(forcedWinner)
+    :(homePens>awayPens?Number(f.home):Number(f.away));
+  return Number(f.pw);
+}
+
+function normalizePenaltyScores(career){
+  let changed=false;
+  const comps=[
+    career?.data?.state,
+    career?.data?.copaBrasil,
+    career?.data?.libertadores,
+    career?.data?.championsLeague,
+    career?.data?.clubWorldCup
+  ];
+  for(const comp of comps){
+    for(const f of comp?.fixtures||[]){
+      if(f.pw!=null&&(f.penHome==null||f.penAway==null)){
+        penaltyShootout(f,f.pw);
+        changed=true;
+      }
+    }
+  }
+  return changed;
+}
+
+function knockoutWinnerFromFixtures(fixtures){
+  const fs=[...fixtures].filter(f=>f.played).sort((a,b)=>Number(a.leg||1)-Number(b.leg||1));
+  if(!fs.length)return null;
+
+  const ids=[...new Set(fs.flatMap(f=>[String(f.home),String(f.away)]))];
+  if(ids.length!==2)return null;
+
+  const agg=new Map(ids.map(id=>[id,0]));
+  for(const f of fs){
+    agg.set(String(f.home),agg.get(String(f.home))+Number(f.hg||0));
+    agg.set(String(f.away),agg.get(String(f.away))+Number(f.ag||0));
+  }
+
+  const [a,b]=ids;
+  if(agg.get(a)>agg.get(b))return Number(a);
+  if(agg.get(b)>agg.get(a))return Number(b);
+
+  const decisive=fs[fs.length-1];
+  return penaltyShootout(decisive);
+}
+
 async function createCopaBrasil(ownerId){
   const owner=(await q(`SELECT country_code FROM clubs WHERE id=$1`,[ownerId])).rows[0];
   const countryCode=owner?.country_code||"BR";
   const ai=(await q(`SELECT id FROM clubs WHERE is_ai=TRUE AND country_code=$1 AND club_kind='national' ORDER BY base_rating DESC,RANDOM() LIMIT 31`,[countryCode])).rows.map(r=>Number(r.id));
   if(ai.length<31)throw new Error(`Clubes insuficientes para ${domesticCupName(countryCode)}.`);
+
   const teams=shuffle([Number(ownerId),...ai]);
+  const twoLegged=countryCode==="BR";
   const fixtures=[];
-  for(let i=0;i<teams.length;i+=2)fixtures.push({stage:"R32",slot:i/2+1,home:teams[i],away:teams[i+1],played:false,hg:null,ag:null,pw:null});
-  return {name:domesticCupName(countryCode),countryCode,status:"active",stage:"R32",champion:null,userEliminated:false,fixtures};
+
+  for(let i=0;i<teams.length;i+=2){
+    const home=teams[i],away=teams[i+1],slot=i/2+1,tie=`R32-${slot}`;
+    fixtures.push({
+      stage:"R32",tie,slot,leg:1,home,away,
+      played:false,hg:null,ag:null,pw:null,penHome:null,penAway:null
+    });
+    if(twoLegged){
+      fixtures.push({
+        stage:"R32",tie,slot,leg:2,home:away,away:home,
+        played:false,hg:null,ag:null,pw:null,penHome:null,penAway:null
+      });
+    }
+  }
+
+  return {
+    name:domesticCupName(countryCode),
+    countryCode,
+    twoLegged,
+    status:"active",
+    stage:"R32",
+    leg:1,
+    champion:null,
+    userEliminated:false,
+    fixtures
+  };
 }
+
+function normalizeCopaFormat(career,copa){
+  if(!copa||copa.status==="finished")return copa;
+  const isBrazil=(career.country_code||copa.countryCode||"BR")==="BR";
+  copa.twoLegged=isBrazil;
+
+  const current=copa.fixtures.filter(f=>f.stage===copa.stage);
+  if(!current.length)return copa;
+
+  const bySlot=new Map();
+  for(const f of current){
+    f.slot=Number(f.slot||1);
+    f.tie=f.tie||`${copa.stage}-${f.slot}`;
+    f.leg=Number(f.leg||1);
+    if(f.penHome===undefined)f.penHome=null;
+    if(f.penAway===undefined)f.penAway=null;
+    if(!bySlot.has(f.slot))bySlot.set(f.slot,[]);
+    bySlot.get(f.slot).push(f);
+  }
+
+  if(isBrazil){
+    for(const [slot,fs] of bySlot.entries()){
+      const first=fs.sort((a,b)=>Number(a.leg)-Number(b.leg))[0];
+      if(!fs.some(f=>Number(f.leg)===2)){
+        copa.fixtures.push({
+          stage:copa.stage,
+          tie:first.tie||`${copa.stage}-${slot}`,
+          slot,
+          leg:2,
+          home:first.away,
+          away:first.home,
+          played:false,
+          hg:null,ag:null,pw:null,penHome:null,penAway:null
+        });
+      }
+    }
+
+    const leg1=copa.fixtures.filter(f=>f.stage===copa.stage&&Number(f.leg)===1);
+    const leg2=copa.fixtures.filter(f=>f.stage===copa.stage&&Number(f.leg)===2);
+    copa.leg=leg1.length&&leg1.every(f=>f.played)?2:1;
+  }else{
+    copa.leg=1;
+  }
+
+  return copa;
+}
+
 function copaWinners(copa,stage){
-  return copa.fixtures.filter(f=>f.stage===stage&&f.played).sort((a,b)=>(a.slot||0)-(b.slot||0)).map(f=>f.hg>f.ag?f.home:f.ag>f.hg?f.away:(f.pw||f.home));
+  const stageFixtures=copa.fixtures.filter(f=>f.stage===stage);
+  const ties=[...new Set(stageFixtures.map(f=>f.tie||`${stage}-${f.slot}`))];
+  const out=[];
+
+  for(const tie of ties){
+    const fs=stageFixtures.filter(f=>(f.tie||`${stage}-${f.slot}`)===tie);
+    const winner=knockoutWinnerFromFixtures(fs);
+    if(winner!=null)out.push(Number(winner));
+  }
+  return out;
 }
+
 function addCopaStage(copa,stage,ids){
   const x=shuffle(ids);
-  for(let i=0;i<x.length;i+=2)copa.fixtures.push({stage,slot:i/2+1,home:x[i],away:x[i+1],played:false,hg:null,ag:null,pw:null});
+  copa.leg=1;
+
+  for(let i=0;i<x.length;i+=2){
+    const slot=i/2+1,tie=`${stage}-${slot}`,home=x[i],away=x[i+1];
+    copa.fixtures.push({
+      stage,tie,slot,leg:1,home,away,
+      played:false,hg:null,ag:null,pw:null,penHome:null,penAway:null
+    });
+
+    if(copa.twoLegged){
+      copa.fixtures.push({
+        stage,tie,slot,leg:2,home:away,away:home,
+        played:false,hg:null,ag:null,pw:null,penHome:null,penAway:null
+      });
+    }
+  }
+
   copa.stage=stage;
 }
+
 async function ensureCopaData(career){
   if(!career.data.copaBrasil)career.data.copaBrasil=await createCopaBrasil(career.owner_club_id);
+  normalizeCopaFormat(career,career.data.copaBrasil);
   return career.data.copaBrasil;
 }
 
@@ -1784,8 +2046,7 @@ function finishFastState(career,ownerId,clubMap,userMatches){
       const winners=[];
       for(const f of games){
         playFastFixture(f,null,clubMap,ownerId,"Estadual",userMatches);
-        const winner=f.hg>f.ag?f.home:f.ag>f.hg?f.away:(Math.random()<.5?f.home:f.away);
-        if(f.hg===f.ag)f.pw=winner;
+        const winner=f.hg>f.ag?f.home:f.ag>f.hg?f.away:penaltyShootout(f);
         winners.push(winner);
       }
       if(!st.fixtures.some(f=>f.stage==="FINAL")){
@@ -1795,8 +2056,7 @@ function finishFastState(career,ownerId,clubMap,userMatches){
     }else if(st.stage==="FINAL"){
       const f=st.fixtures.find(x=>x.stage==="FINAL");
       playFastFixture(f,null,clubMap,ownerId,"Estadual",userMatches);
-      st.champion=f.hg>f.ag?f.home:f.ag>f.hg?f.away:(Math.random()<.5?f.home:f.away);
-      if(f.hg===f.ag)f.pw=st.champion;
+      st.champion=f.hg>f.ag?f.home:f.ag>f.hg?f.away:penaltyShootout(f);
       st.stage="FINISHED";career.phase="NATIONAL";
     }else{
       st.stage="FINISHED";career.phase="NATIONAL";
@@ -1858,8 +2118,7 @@ function advanceFastLibKnockout(lib,ownerId,clubMap,userMatches,includeUser=true
     if(stage==="FINAL"){
       const f=games[0]||lib.fixtures.find(x=>x.stage==="FINAL");
       if(!f){lib.status="finished";break}
-      let champ=f.hg>f.ag?f.home:f.ag>f.hg?f.away:(Math.random()<.5?f.home:f.away);
-      if(f.hg===f.ag)f.pw=champ;
+      const champ=f.hg>f.ag?f.home:f.ag>f.hg?f.away:penaltyShootout(f);
       lib.champion=champ;lib.status="finished";
       break;
     }
@@ -1884,20 +2143,31 @@ async function finishFastLibertadores(career,ownerId,clubMap,userMatches,include
 
 async function finishCopaFast(career,ownerId,clubMap,userMatches=null){
   const copa=await ensureCopaData(career);
+
   while(copa.status!=="finished"){
     const stage=copa.stage;
-    const games=copa.fixtures.filter(f=>f.stage===stage&&!f.played);
-    for(const f of games){
-      playFastFixture(f,null,clubMap,ownerId,copa.name||"Copa Nacional",userMatches||[]);
-      if(f.hg===f.ag)f.pw=Math.random()<.5?f.home:f.away;
+    const legs=copa.twoLegged?[1,2]:[1];
+
+    for(const leg of legs){
+      const games=copa.fixtures.filter(f=>f.stage===stage&&Number(f.leg||1)===leg&&!f.played);
+      for(const f of games){
+        playFastFixture(f,null,clubMap,ownerId,copa.name||"Copa Nacional",userMatches||[]);
+      }
+      copa.leg=leg===1&&copa.twoLegged?2:1;
     }
+
     const winners=copaWinners(copa,stage);
+
     if(stage==="FINAL"){
-      copa.champion=winners[0]||null;copa.status="finished";break;
+      copa.champion=winners[0]||null;
+      copa.status="finished";
+      break;
     }
+
     const next=stage==="R32"?"R16":stage==="R16"?"QF":stage==="QF"?"SF":"FINAL";
     addCopaStage(copa,next,winners);
   }
+
   career.data.copaBrasil=copa;
   return copa;
 }
@@ -1905,37 +2175,82 @@ async function finishCopaFast(career,ownerId,clubMap,userMatches=null){
 async function playCopa(ownerId){
   const career=await getCareer(ownerId);
   if(!career)throw Object.assign(new Error("Carreira não encontrada."),{status:404});
-  if((career.country_code||"BR")==="BR"&&career.data.state?.stage!=="FINISHED")throw Object.assign(new Error(`${domesticCupName(career.country_code||"BR")} começa depois do Estadual.`),{status:400});
+  if((career.country_code||"BR")==="BR"&&career.data.state?.stage!=="FINISHED"){
+    throw Object.assign(new Error(`${domesticCupName(career.country_code||"BR")} começa depois do Estadual.`),{status:400});
+  }
+
   const copa=await ensureCopaData(career);
   if(copa.status==="finished")throw Object.assign(new Error(`${copa.name} desta temporada já terminou.`),{status:400});
   if(copa.userEliminated)throw Object.assign(new Error(`Seu clube já foi eliminado de ${copa.name}.`),{status:400});
 
   const stage=copa.stage;
-  const games=copa.fixtures.filter(f=>f.stage===stage&&!f.played);
+  const leg=copa.twoLegged?Number(copa.leg||1):1;
+  const games=copa.fixtures.filter(f=>f.stage===stage&&Number(f.leg||1)===leg&&!f.played);
   const clubMap=await fastClubSnapshot();
-  let userMatch=null,userWon=false;
+  let userMatch=null;
 
   for(const f of games){
     const userGame=String(f.home)===String(ownerId)||String(f.away)===String(ownerId);
+
     if(userGame){
       await tx(async client=>{
         const sim=await fullMatch(client,f.home,f.away,ownerId);
-        f.played=true;f.hg=sim.hg;f.ag=sim.ag;
-        if(f.hg===f.ag)f.pw=Math.random()<.5?f.home:f.away;
-        const winner=f.hg>f.ag?f.home:f.ag>f.hg?f.away:f.pw;
-        userWon=String(winner)===String(ownerId);
-        userMatch=sim.userMatch;userMatch.matchType=copa.name;userMatch.reward=0;
-        userMatch.finance=await settleMatchFinances(client,ownerId,"CUP",String(f.home)===String(ownerId),userMatch.result);
-        await recordUserMatch(client,ownerId,String(f.home)===String(ownerId)?f.away:f.home,userMatch,sim.events,"copa_nacional",userMatch.finance.performance);
+        f.played=true;
+        f.hg=sim.hg;
+        f.ag=sim.ag;
+
+        userMatch=sim.userMatch;
+        userMatch.matchType=`${copa.name} — ${leg===1?"ida":"volta"}`;
+        userMatch.reward=0;
+        userMatch.finance=await settleMatchFinances(
+          client,
+          ownerId,
+          "CUP",
+          String(f.home)===String(ownerId),
+          userMatch.result
+        );
+
+        await recordUserMatch(
+          client,
+          ownerId,
+          String(f.home)===String(ownerId)?f.away:f.home,
+          userMatch,
+          sim.events,
+          "copa_nacional",
+          userMatch.finance.performance
+        );
       });
     }else{
-      const {hg,ag}=fastScore(f.home,f.away,clubMap);f.played=true;f.hg=hg;f.ag=ag;if(hg===ag)f.pw=Math.random()<.5?f.home:f.away;
+      const {hg,ag}=fastScore(f.home,f.away,clubMap);
+      f.played=true;
+      f.hg=hg;
+      f.ag=ag;
     }
   }
 
+  // Em confrontos de ida e volta, a primeira partida não elimina ninguém.
+  if(copa.twoLegged&&leg===1){
+    copa.leg=2;
+    career.data.copaBrasil=copa;
+    await advanceCalendar(career,ownerId,7,`${copa.name} — ${copaStageLabel(stage)} — ida`);
+    await saveCareer(career);
+    return {
+      userMatch,
+      copaStage:stage,
+      leg:1,
+      finished:false,
+      champion:null,
+      awaitingReturn:true
+    };
+  }
+
   const winners=copaWinners(copa,stage);
+  const userWon=winners.some(id=>String(id)===String(ownerId));
+
   if(stage==="FINAL"){
-    copa.champion=winners[0]||null;copa.status="finished";
+    copa.champion=winners[0]||null;
+    copa.status="finished";
+
     if(String(copa.champion)===String(ownerId)){
       await tx(async client=>{
         await addFinance(client,ownerId,9000,"prize",`Premiação pelo título — ${copa.name}`);
@@ -1953,9 +2268,21 @@ async function playCopa(ownerId){
   }
 
   career.data.copaBrasil=copa;
-  await advanceCalendar(career,ownerId,7,`${copa.name} — ${copaStageLabel(stage)}`);
+  await advanceCalendar(
+    career,
+    ownerId,
+    7,
+    `${copa.name} — ${copaStageLabel(stage)}${copa.twoLegged?" — volta":""}`
+  );
   await saveCareer(career);
-  return {userMatch,copaStage:stage,finished:copa.status==="finished",champion:copa.champion};
+
+  return {
+    userMatch,
+    copaStage:stage,
+    leg:copa.twoLegged?2:1,
+    finished:copa.status==="finished",
+    champion:copa.champion
+  };
 }
 
 async function playState(ownerId){
@@ -2001,8 +2328,7 @@ async function playState(ownerId){
           await recordUserMatch(c,ownerId,String(f.home)===String(ownerId)?f.away:f.home,userMatch,sim.events,"state",userMatch.finance.performance);
         }else ({hg,ag}=basicScore(ratings.get(String(f.home))||60,ratings.get(String(f.away))||60));
         f.played=true;f.hg=hg;f.ag=ag;
-        const winner=hg>ag?f.home:ag>hg?f.away:(Math.random()<.5?f.home:f.away);
-        if(hg===ag)f.pw=winner;
+        const winner=hg>ag?f.home:ag>hg?f.away:penaltyShootout(f);
         winners.push(winner);
       }
     });
@@ -2057,11 +2383,20 @@ function createR16(lib){
 function koWinners(lib,stage){
   const ties=[...new Set(lib.fixtures.filter(f=>f.stage===stage).map(f=>f.tie))],out=[];
   for(const tie of ties){
-    const fs=lib.fixtures.filter(f=>f.stage===stage&&f.tie===tie);
-    const ids=[...new Set(fs.flatMap(f=>[String(f.home),String(f.away)]))],agg=new Map(ids.map(x=>[x,0]));
-    fs.forEach(f=>{agg.set(String(f.home),agg.get(String(f.home))+Number(f.hg||0));agg.set(String(f.away),agg.get(String(f.away))+Number(f.ag||0))});
-    let [a,b]=ids,w=agg.get(a)>agg.get(b)?a:agg.get(b)>agg.get(a)?b:(Math.random()<.5?a:b);
-    if(agg.get(a)===agg.get(b))fs[fs.length-1].pw=Number(w);
+    const fs=lib.fixtures
+      .filter(f=>f.stage===stage&&f.tie===tie&&f.played)
+      .sort((a,b)=>Number(a.leg||1)-Number(b.leg||1));
+    const ids=[...new Set(fs.flatMap(f=>[String(f.home),String(f.away)]))];
+    const agg=new Map(ids.map(x=>[x,0]));
+    fs.forEach(f=>{
+      agg.set(String(f.home),agg.get(String(f.home))+Number(f.hg||0));
+      agg.set(String(f.away),agg.get(String(f.away))+Number(f.ag||0));
+    });
+    const [a,b]=ids;
+    let w;
+    if(agg.get(a)>agg.get(b))w=Number(a);
+    else if(agg.get(b)>agg.get(a))w=Number(b);
+    else w=penaltyShootout(fs[fs.length-1]);
     out.push(Number(w));
   }
   return out;
@@ -2119,8 +2454,7 @@ async function simulateLibStep(career,allowUserDetail){
 
     if(stage==="FINAL"){
       const f=games[0];
-      let champ=f.hg>f.ag?f.home:f.ag>f.hg?f.away:(Math.random()<.5?f.home:f.away);
-      if(f.hg===f.ag)f.pw=champ;
+const champ=f.hg>f.ag?f.home:f.ag>f.hg?f.away:penaltyShootout(f);
       lib.champion=champ;lib.status="finished";userAlive=false;
       if(String(champ)===String(career.owner_club_id)){
         await tx(async client=>{
@@ -2249,8 +2583,7 @@ async function simulateChampionsStep(career,allowUserDetail){
       const f=games[0];
       if(!f){ch.status="finished";userAlive=false}
       else{
-        const champ=f.hg>f.ag?f.home:f.ag>f.hg?f.away:(Math.random()<.5?f.home:f.away);
-        if(f.hg===f.ag)f.pw=champ;
+        const champ=f.hg>f.ag?f.home:f.ag>f.hg?f.away:penaltyShootout(f);
         ch.champion=champ;ch.status="finished";userAlive=false;
         if(String(champ)===String(ownerId)){
           await tx(async client=>{
@@ -2421,7 +2754,7 @@ async function simulateClubWorldStep(career,allowUserDetail){
           ({hg,ag}=basicScore(ratings.get(String(f.home))||78,ratings.get(String(f.away))||78));
         }
         f.played=true;f.hg=hg;f.ag=ag;
-        if(hg===ag)f.pw=Math.random()<.5?f.home:f.away;
+        if(hg===ag)penaltyShootout(f);
       }
     });
 
@@ -2829,6 +3162,10 @@ async function repairCareer(ownerId){
   let changed=false;
   if(!career.data.calendar){career.data.calendar=initialCalendar(career.season_no);changed=true}
   if(!career.data.copaBrasil){career.data.copaBrasil=await createCopaBrasil(ownerId);changed=true}
+  const beforeCopaCount=career.data.copaBrasil?.fixtures?.length||0;
+  normalizeCopaFormat(career,career.data.copaBrasil);
+  if((career.data.copaBrasil?.fixtures?.length||0)!==beforeCopaCount)changed=true;
+  if(normalizePenaltyScores(career))changed=true;
   const s=career.data.state;
 
   if(career.phase==="STATE"&&s){
@@ -3569,7 +3906,11 @@ app.get("/api/dashboard",auth,async(req,res,next)=>{
     if(!c)return res.json({club:null,players:[],market:[],matches:[],friends:[]});
     if((c.country_code||"BR")==="BR"&&!c.state_code)return res.json({club:c,players:[],market:[],matches:[],friends:[]});
     await ensureRoster(c.id);await ensureMarket();
-    await tx(async client=>{await applyFelipeMode(client,c.id)});
+    await tx(async client=>{
+      await applyFelipeMode(client,c.id);
+      const clubRow=(await client.query(`SELECT formation FROM clubs WHERE id=$1`,[c.id])).rows[0];
+      await ensureStartingXI(client,c.id,clubRow?.formation||"4-3-3");
+    });
     const freshClub=(await q(`SELECT * FROM clubs WHERE id=$1`,[c.id])).rows[0];
     Object.assign(c,freshClub);
     c.team_rating=await clubRating(c.id);
@@ -4219,8 +4560,10 @@ async function start(){
   await applyV21Migration();
   await applyV22Migration();
   await applyV23Migration();
+  await applyV24Migration();
+  await applyV25Migration();
   await seedRealMarketPlayers();
   await ensureMarket();
-  app.listen(PORT,"0.0.0.0",()=>console.log(`Dono do Clube v15 rodando na porta ${PORT}`));
+  app.listen(PORT,"0.0.0.0",()=>console.log(`Dono do Clube v25 rodando na porta ${PORT}`));
 }
 start().catch(e=>{console.error("Falha ao iniciar:",e);process.exit(1)});

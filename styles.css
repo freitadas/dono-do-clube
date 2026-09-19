@@ -221,3 +221,22 @@ repeating-linear-gradient(0deg,#1e7d43 0,#1e7d43 56px,#237f47 56px,#237f47 112px
   .season-action-row{display:grid;grid-template-columns:1fr}
   .player-season-actions{grid-template-columns:1fr}
 }
+
+
+/* v24 — ida/volta e pênaltis visíveis */
+.ko-tie{display:grid;gap:7px;padding:10px;border:1px solid var(--line);border-radius:12px;background:#08130d;margin-bottom:8px}
+.ko-tie>small{color:var(--muted);font-weight:900}
+.ko-leg{display:grid;grid-template-columns:auto 1fr 1fr;gap:8px;align-items:center;padding:8px;border-radius:10px;background:#0d1b13;border:1px solid #274332}
+.ko-leg>span:nth-child(3){text-align:right}
+.leg-label{min-width:45px;padding:4px 6px;border-radius:999px;background:#173923;color:#bff0ce;font-size:8px;font-weight:1000;text-align:center}
+.penalty-detail{grid-column:1/-1;display:block;padding:7px 8px;border-radius:9px;background:#352b0e;border:1px solid #77621d;color:#ffe99a;font-size:9px;font-style:normal}
+.penalty-detail b,.penalty-detail strong{color:#fff}
+.aggregate-line{display:flex;justify-content:space-between;gap:10px;flex-wrap:wrap;padding:7px 8px;border-radius:9px;background:#0b2115;color:#a9c7b2;font-size:9px}
+.aggregate-line b{color:#fff}.aggregate-line strong{color:#bff0ce}
+.fixture .penalty-detail{grid-column:1/-1;margin-top:5px}
+@media(max-width:650px){
+  .ko-leg{grid-template-columns:auto 1fr}
+  .ko-leg>span:nth-child(3){grid-column:2;text-align:left}
+  .penalty-detail{grid-column:1/-1}
+  .aggregate-line{display:grid}
+}
