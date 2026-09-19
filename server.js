@@ -17,6 +17,8 @@ const SECRET = process.env.APP_SECRET || "dev-secret-change-me";
 const COOKIE = "ddc_session";
 const RESET_KEY = "v7_brasileirao_estaduais_reset_20260919";
 const ECONOMY_MIGRATION_KEY = "v8_economy_fitness_transfer_20260919";
+const V14_MIGRATION_KEY = "v14_copa_calendar_trophies_sales_20260919";
+const TRANSFER_BAN_THRESHOLD = -10000;
 const competitionLocks = new Set();
 const DIVS = ["A","B","C","D"];
 const VALID_STATES = new Set(Object.keys(STATE_DATA.names));
@@ -149,6 +151,27 @@ async function initDb(){
       created_at TIMESTAMPTZ NOT NULL DEFAULT NOW()
     );
 
+    CREATE TABLE IF NOT EXISTS club_trophies(
+      id BIGSERIAL PRIMARY KEY,
+      club_id BIGINT NOT NULL REFERENCES clubs(id) ON DELETE CASCADE,
+      season_no INTEGER NOT NULL,
+      competition TEXT NOT NULL,
+      title TEXT NOT NULL,
+      won_at TIMESTAMPTZ NOT NULL DEFAULT NOW(),
+      UNIQUE(club_id,season_no,competition)
+    );
+
+    CREATE TABLE IF NOT EXISTS transfer_offers(
+      id BIGSERIAL PRIMARY KEY,
+      selling_club_id BIGINT NOT NULL REFERENCES clubs(id) ON DELETE CASCADE,
+      player_id BIGINT NOT NULL REFERENCES players(id) ON DELETE CASCADE,
+      buying_club_id BIGINT NOT NULL REFERENCES clubs(id) ON DELETE CASCADE,
+      amount INTEGER NOT NULL CHECK(amount>0),
+      status TEXT NOT NULL DEFAULT 'pending',
+      created_at TIMESTAMPTZ NOT NULL DEFAULT NOW(),
+      updated_at TIMESTAMPTZ NOT NULL DEFAULT NOW()
+    );
+
     CREATE TABLE IF NOT EXISTS app_meta(
       key TEXT PRIMARY KEY,
       value TEXT NOT NULL,
@@ -158,6 +181,9 @@ async function initDb(){
     CREATE UNIQUE INDEX IF NOT EXISTS idx_clubs_friend_code
       ON clubs(friend_code) WHERE friend_code IS NOT NULL;
     CREATE INDEX IF NOT EXISTS idx_players_club ON players(club_id);
+    CREATE INDEX IF NOT EXISTS idx_transfer_offers_seller_status ON transfer_offers(selling_club_id,status);
+    CREATE UNIQUE INDEX IF NOT EXISTS idx_transfer_offers_pending_player ON transfer_offers(selling_club_id,player_id) WHERE status='pending';
+    CREATE INDEX IF NOT EXISTS idx_trophies_club_season ON club_trophies(club_id,season_no);
   `);
 
   for(const sql of [
@@ -172,7 +198,8 @@ async function initDb(){
     `ALTER TABLE players ADD COLUMN IF NOT EXISTS contract_seasons INTEGER NOT NULL DEFAULT 2`,
     `ALTER TABLE players ADD COLUMN IF NOT EXISTS fitness INTEGER NOT NULL DEFAULT 100`,
     `ALTER TABLE players ADD COLUMN IF NOT EXISTS morale INTEGER NOT NULL DEFAULT 70`,
-    `ALTER TABLE players ADD COLUMN IF NOT EXISTS injury_games INTEGER NOT NULL DEFAULT 0`
+    `ALTER TABLE players ADD COLUMN IF NOT EXISTS injury_games INTEGER NOT NULL DEFAULT 0`,
+    `ALTER TABLE players ADD COLUMN IF NOT EXISTS transfer_listed BOOLEAN NOT NULL DEFAULT FALSE`
   ]) await q(sql);
 
   await q(`ALTER TABLE clubs DROP CONSTRAINT IF EXISTS clubs_coins_check`);
@@ -258,6 +285,16 @@ async function oneTimeReset(){
   });
 }
 
+
+async function applyV14Migration(){
+  const done=await q(`SELECT 1 FROM app_meta WHERE key=$1`,[V14_MIGRATION_KEY]);
+  if(done.rowCount)return;
+  await tx(async c=>{
+    await c.query(`UPDATE players SET transfer_listed=FALSE WHERE transfer_listed IS NULL`);
+    await c.query(`UPDATE transfer_offers SET status='expired',updated_at=NOW() WHERE status='pending'`);
+    await c.query(`INSERT INTO app_meta(key,value) VALUES($1,$2)`,[V14_MIGRATION_KEY,new Date().toISOString()]);
+  });
+}
 
 function isFelipeName(name){
   return String(name||"").trim().toLocaleLowerCase("pt-BR")==="felipe";
@@ -572,6 +609,7 @@ function financeRates(context){
   if(key==="C")return {sponsor:3000,gate:2600};
   if(key==="D")return {sponsor:2400,gate:2100};
   if(key==="LIB")return {sponsor:6200,gate:5600};
+  if(key==="CUP")return {sponsor:4400,gate:4000};
   return {sponsor:1900,gate:1500};
 }
 async function unexpectedClubEvent(client,clubId){
@@ -607,18 +645,109 @@ async function settleMatchFinances(client,clubId,context,isHome,result){
   const sponsor=rates.sponsor;
   const gate=isHome?Math.round(rates.gate*(rand(85,115)/100)):0;
   const performance=result==="win"?650:result==="draw"?250:80;
-  const wages=await wageBill(client,clubId);
   await addFinance(client,clubId,sponsor,"sponsor","Receita de patrocinadores");
   if(gate)await addFinance(client,clubId,gate,"tickets","Bilheteria da partida em casa");
   await addFinance(client,clubId,performance,"performance","Bônus pelo resultado");
-  await addFinance(client,clubId,-wages,"wages","Pagamento dos salários do elenco");
-  const balance=Number((await client.query(`SELECT coins FROM clubs WHERE id=$1`,[clubId])).rows[0].coins);
-  if(balance<0){
-    await client.query(`UPDATE players SET morale=GREATEST(35,morale-4) WHERE club_id=$1`,[clubId]);
-    await client.query(`INSERT INTO club_events(club_id,event_type,title,description) VALUES($1,'finance','Caixa no vermelho','O clube terminou a rodada com saldo negativo e o moral do elenco caiu.')`,[clubId]);
-  }
   const event=await unexpectedClubEvent(client,clubId);
-  return {sponsor,gate,performance,wages,net:sponsor+gate+performance-wages,event};
+  return {sponsor,gate,performance,wages:0,net:sponsor+gate+performance,event};
+}
+
+
+function seasonStartYear(seasonNo){return 2026+Math.max(0,Number(seasonNo||1)-1)}
+function monthKey(d){return `${d.getUTCFullYear()}-${String(d.getUTCMonth()+1).padStart(2,"0")}`}
+function isoDate(d){return d.toISOString().slice(0,10)}
+function addDays(dateStr,days){const d=new Date(`${dateStr}T12:00:00Z`);d.setUTCDate(d.getUTCDate()+days);return d}
+function initialCalendar(seasonNo){
+  const year=seasonStartYear(seasonNo);
+  return {date:`${year}-01-15`,lastPayrollMonth:`${year}-01`,events:[],payrolls:[]};
+}
+function ensureCalendarData(career){
+  if(!career.data.calendar)career.data.calendar=initialCalendar(career.season_no);
+  if(!Array.isArray(career.data.calendar.events))career.data.calendar.events=[];
+  if(!Array.isArray(career.data.calendar.payrolls))career.data.calendar.payrolls=[];
+  if(!career.data.calendar.lastPayrollMonth)career.data.calendar.lastPayrollMonth=monthKey(new Date(`${career.data.calendar.date}T12:00:00Z`));
+  return career.data.calendar;
+}
+function nextPayrollDate(calendar){
+  const d=new Date(`${calendar.date}T12:00:00Z`);
+  const next=new Date(Date.UTC(d.getUTCFullYear(),d.getUTCMonth()+1,1,12));
+  return isoDate(next);
+}
+function transferBanInfo(balance){
+  const amount=Number(balance||0);
+  return {active:amount<TRANSFER_BAN_THRESHOLD,threshold:TRANSFER_BAN_THRESHOLD,balance:amount,debt:amount<0?Math.abs(amount):0};
+}
+async function recordTrophy(client,clubId,seasonNo,competition,title){
+  const r=await client.query(`INSERT INTO club_trophies(club_id,season_no,competition,title) VALUES($1,$2,$3,$4) ON CONFLICT(club_id,season_no,competition) DO NOTHING RETURNING id`,[clubId,seasonNo,competition,title]);
+  return r.rowCount>0;
+}
+async function maybeRecordDivisionTrophy(client,career,ownerId){
+  const div=career.user_division;
+  const table=sortEntries(career.data.divisions?.[div]?.entries||[]);
+  if(table[0]&&String(table[0].clubId)===String(ownerId))await recordTrophy(client,ownerId,career.season_no,`SERIE_${div}`,`Campeão da Série ${div}`);
+}
+async function generateIncomingOffers(client,clubId,{force=false,playerId=null}={}){
+  const pending=Number((await client.query(`SELECT COUNT(*)::int count FROM transfer_offers WHERE selling_club_id=$1 AND status='pending'`,[clubId])).rows[0].count||0);
+  if(pending>=5&&!force)return 0;
+  let players;
+  if(playerId){
+    players=(await client.query(`SELECT * FROM players WHERE id=$1 AND club_id=$2`,[playerId,clubId])).rows;
+  }else{
+    players=(await client.query(`SELECT * FROM players WHERE club_id=$1 ORDER BY transfer_listed DESC,rating DESC`,[clubId])).rows;
+  }
+  if(!players.length)return 0;
+  const already=(await client.query(`SELECT player_id FROM transfer_offers WHERE selling_club_id=$1 AND status='pending'`,[clubId])).rows.map(r=>String(r.player_id));
+  const eligible=players.filter(p=>!already.includes(String(p.id))&&(p.transfer_listed||force||Math.random()<.18));
+  if(!eligible.length)return 0;
+  const buyers=(await client.query(`SELECT id,name,base_rating FROM clubs WHERE is_ai=TRUE AND country_code='BR' ORDER BY RANDOM() LIMIT 20`)).rows;
+  if(!buyers.length)return 0;
+  let created=0;
+  for(const p of shuffle(eligible).slice(0,force?2:1)){
+    const buyer=buyers.find(b=>String(b.id)!==String(clubId));if(!buyer)continue;
+    const base=Math.max(500,Number(p.price||0));
+    const factor=p.transfer_listed?(rand(92,125)/100):(rand(82,112)/100);
+    const amount=Math.max(500,Math.round(base*factor/100)*100);
+    const ins=await client.query(`INSERT INTO transfer_offers(selling_club_id,player_id,buying_club_id,amount,status) VALUES($1,$2,$3,$4,'pending') ON CONFLICT DO NOTHING RETURNING id`,[clubId,p.id,buyer.id,amount]);
+    created+=ins.rowCount;
+  }
+  return created;
+}
+async function payMonthlyWages(client,career,clubId,month){
+  const wages=await wageBill(client,clubId);
+  if(wages>0)await addFinance(client,clubId,-wages,"wages",`Folha salarial mensal — ${month}`);
+  const balance=Number((await client.query(`SELECT coins FROM clubs WHERE id=$1`,[clubId])).rows[0]?.coins||0);
+  const cal=ensureCalendarData(career);
+  cal.payrolls.unshift({month,amount:wages,balance});cal.payrolls=cal.payrolls.slice(0,18);
+  if(balance<0)await client.query(`UPDATE players SET morale=GREATEST(35,morale-3) WHERE club_id=$1`,[clubId]);
+  if(balance<TRANSFER_BAN_THRESHOLD){
+    await client.query(`INSERT INTO club_events(club_id,event_type,title,description) VALUES($1,'finance','Transfer ban por endividamento',$2)`,[clubId,`O saldo chegou a ${balance.toLocaleString("pt-BR")} moedas. Contratações ficam bloqueadas enquanto o caixa estiver abaixo de ${TRANSFER_BAN_THRESHOLD.toLocaleString("pt-BR")}.`]);
+  }
+  await generateIncomingOffers(client,clubId,{force:false});
+  return {wages,balance};
+}
+async function advanceCalendar(career,clubId,days,label){
+  const cal=ensureCalendarData(career);
+  const before=new Date(`${cal.date}T12:00:00Z`);
+  const after=addDays(cal.date,days);
+  let cursor=new Date(Date.UTC(before.getUTCFullYear(),before.getUTCMonth()+1,1,12));
+  while(cursor<=after){
+    const key=monthKey(cursor);
+    if(key!==cal.lastPayrollMonth){
+      await tx(async client=>{await payMonthlyWages(client,career,clubId,key)});
+      cal.lastPayrollMonth=key;
+    }
+    cursor=new Date(Date.UTC(cursor.getUTCFullYear(),cursor.getUTCMonth()+1,1,12));
+  }
+  cal.date=isoDate(after);
+  if(label){cal.events.unshift({date:cal.date,label});cal.events=cal.events.slice(0,30)}
+  career.data.calendar=cal;
+  return cal;
+}
+function calendarSummary(career,monthlyWages=0){
+  const cal=ensureCalendarData(career);
+  const d=new Date(`${cal.date}T12:00:00Z`);
+  const next=new Date(Date.UTC(d.getUTCFullYear(),d.getUTCMonth()+1,1,12));
+  return {currentDate:cal.date,nextPayrollDate:isoDate(next),monthlyWages,events:cal.events||[],payrolls:cal.payrolls||[]};
 }
 
 async function fullMatch(client,homeId,awayId,userId){
@@ -696,12 +825,33 @@ function stateObject(name,ids){
     fixtures:singleRR(ids).flatMap((games,ri)=>games.map(([home,away])=>({stage:"GROUP",round:ri+1,home,away,played:false,hg:null,ag:null,pw:null})))
   };
 }
+function copaStageLabel(stage){return ({R32:"Primeira fase",R16:"Oitavas de final",QF:"Quartas de final",SF:"Semifinais",FINAL:"Final"})[stage]||stage}
+async function createCopaBrasil(ownerId){
+  const ai=(await q(`SELECT id FROM clubs WHERE is_ai=TRUE AND country_code='BR' ORDER BY base_rating DESC,RANDOM() LIMIT 31`)).rows.map(r=>Number(r.id));
+  if(ai.length<31)throw new Error("Clubes brasileiros insuficientes para a Copa do Brasil.");
+  const teams=shuffle([Number(ownerId),...ai]);
+  const fixtures=[];
+  for(let i=0;i<teams.length;i+=2)fixtures.push({stage:"R32",slot:i/2+1,home:teams[i],away:teams[i+1],played:false,hg:null,ag:null,pw:null});
+  return {name:"Copa do Brasil",status:"active",stage:"R32",champion:null,userEliminated:false,fixtures};
+}
+function copaWinners(copa,stage){
+  return copa.fixtures.filter(f=>f.stage===stage&&f.played).sort((a,b)=>(a.slot||0)-(b.slot||0)).map(f=>f.hg>f.ag?f.home:f.ag>f.hg?f.away:(f.pw||f.home));
+}
+function addCopaStage(copa,stage,ids){
+  const x=shuffle(ids);
+  for(let i=0;i<x.length;i+=2)copa.fixtures.push({stage,slot:i/2+1,home:x[i],away:x[i+1],played:false,hg:null,ag:null,pw:null});
+  copa.stage=stage;
+}
+async function ensureCopaData(career){
+  if(!career.data.copaBrasil)career.data.copaBrasil=await createCopaBrasil(career.owner_club_id);
+  return career.data.copaBrasil;
+}
 
 async function clubIdsBySeed(div,limit){
   return (await q(`SELECT id FROM clubs WHERE is_ai=TRUE AND club_kind='national' AND national_seed_division=$1 ORDER BY base_rating DESC,name LIMIT $2`,[div,limit])).rows.map(x=>Number(x.id));
 }
 async function buildSeasonData(ownerId,stateCode,previous=null){
-  const data={state:null,divisions:{},libertadores:null};
+  const data={state:null,divisions:{},libertadores:null,copaBrasil:null,calendar:initialCalendar(previous?.season_no?Number(previous.season_no)+1:1)};
   let members={A:[],B:[],C:[],D:[]};
 
   if(!previous){
@@ -726,12 +876,15 @@ async function buildSeasonData(ownerId,stateCode,previous=null){
   const opp=(await q(`SELECT id FROM clubs WHERE is_ai=TRUE AND country_code='BR' AND state_code=$1 ORDER BY CASE WHEN club_kind='state' THEN 0 ELSE 1 END,RANDOM() LIMIT 7`,[stateCode])).rows.map(x=>Number(x.id));
   if(opp.length<7) throw new Error("Faltam clubes para o Estadual.");
   data.state=stateObject(STATE_DATA.championships[stateCode]||`Campeonato ${stateCode}`,[Number(ownerId),...opp]);
+  data.copaBrasil=await createCopaBrasil(ownerId);
 
   return {data,userDiv};
 }
 
 async function createCareer(ownerId,stateCode,seasonNo=1,previousData=null){
   const built=await buildSeasonData(ownerId,stateCode,previousData);
+  built.data.calendar=initialCalendar(seasonNo);
+  await q(`UPDATE transfer_offers SET status='expired',updated_at=NOW() WHERE selling_club_id=$1 AND status='pending'`,[ownerId]);
   await q(`
     INSERT INTO careers(owner_club_id,season_no,phase,state_code,user_division,current_round,data,updated_at)
     VALUES($1,$2,'STATE',$3,$4,1,$5::jsonb,NOW())
@@ -922,88 +1075,81 @@ async function finishFastLibertadores(career,ownerId,clubMap,userMatches,include
   career.data.libertadores=lib;
   if(includeUser||career.phase==="LIBERTADORES")career.phase="END";
 }
-async function applyFastSimulationEffects(ownerId,userMatches,career){
-  if(!userMatches.length)return {matches:0,net:0};
-  return tx(async client=>{
-    const wage=await wageBill(client,ownerId);
-    let totalNet=0,totalSponsor=0,totalGate=0,totalPerformance=0,totalWages=0;
-    let totalGoals=0;
-    for(const m of userMatches){
-      const context=m.matchType.startsWith("Série ")?m.matchType.slice(-1):m.matchType==="Libertadores"?"LIB":"STATE";
-      const rates=financeRates(context);
-      const sponsor=rates.sponsor;
-      const gate=m.isHome?Math.round(rates.gate*(rand(88,112)/100)):0;
-      const performance=m.result==="win"?650:m.result==="draw"?250:80;
-      const net=sponsor+gate+performance-wage;
-      totalSponsor+=sponsor;totalGate+=gate;totalPerformance+=performance;totalWages+=wage;totalNet+=net;
-      totalGoals+=Number(m.userGoals||0);
-      await client.query(`INSERT INTO matches(user_club_id,opponent_club_id,user_goals,opponent_goals,reward,user_rating,opponent_rating,events,match_type)
-        VALUES($1,$2,$3,$4,$5,$6,$7,'[]'::jsonb,$8)`,
-        [ownerId,m.opponentId,m.userGoals,m.opponentGoals,performance,m.userRating,m.opponentRating,
-         m.matchType==="Estadual"?"state":m.matchType==="Libertadores"?"libertadores":`serie_${m.matchType.slice(-1).toLowerCase()}`]);
-    }
-    await client.query(`UPDATE clubs SET coins=coins+$2 WHERE id=$1`,[ownerId,totalNet]);
-    await client.query(`INSERT INTO club_finance_events(club_id,amount,category,description) VALUES($1,$2,'fast_simulation',$3)`,
-      [ownerId,totalNet,`Simulação rápida de ${userMatches.length} partida(s): patrocínio ${totalSponsor}, bilheteria ${totalGate}, bônus ${totalPerformance}, salários ${totalWages}`]);
 
-    const players=(await client.query(`SELECT * FROM players WHERE club_id=$1 ORDER BY is_starter DESC,rating DESC`,[ownerId])).rows;
-    const healthy=players.filter(p=>Number(p.injury_games||0)<=0);
-    const starters=healthy.filter(p=>p.is_starter).slice(0,11);
-    const bench=healthy.filter(p=>!p.is_starter);
-    const n=userMatches.length;
-    for(const p of starters){
-      const apps=Math.max(1,Math.round(n*(rand(70,92)/100)));
-      await client.query(`UPDATE players SET appearances=appearances+$2,fitness=$3,morale=GREATEST(45,LEAST(100,morale+$4)) WHERE id=$1`,
-        [p.id,apps,rand(72,96),rand(-3,6)]);
+async function finishCopaFast(career,ownerId,clubMap){
+  const copa=await ensureCopaData(career);
+  while(copa.status!=="finished"){
+    const stage=copa.stage;
+    const games=copa.fixtures.filter(f=>f.stage===stage&&!f.played);
+    for(const f of games){
+      const {hg,ag}=fastScore(f.home,f.away,clubMap);f.played=true;f.hg=hg;f.ag=ag;
+      if(hg===ag)f.pw=Math.random()<.5?f.home:f.away;
     }
-    for(const p of bench){
-      const apps=Math.round(n*(rand(18,52)/100));
-      if(apps>0)await client.query(`UPDATE players SET appearances=appearances+$2,fitness=$3,morale=GREATEST(45,LEAST(100,morale+$4)) WHERE id=$1`,
-        [p.id,apps,rand(80,100),rand(-2,5)]);
+    const winners=copaWinners(copa,stage);
+    if(stage==="FINAL"){
+      copa.champion=winners[0]||null;copa.status="finished";break;
     }
-    const scorers=healthy.filter(p=>p.position!=="GK");
-    for(let i=0;i<Math.min(totalGoals,180);i++){
-      const p=weightedPick(scorers);
-      if(p)await client.query(`UPDATE players SET goals=goals+1 WHERE id=$1`,[p.id]);
-    }
-    const eventCount=Math.min(3,Math.max(1,Math.floor(n/10)));
-    for(let i=0;i<eventCount;i++)await unexpectedClubEvent(client,ownerId);
-    await applyFelipeMode(client,ownerId);
-    return {matches:n,net:totalNet};
-  });
+    const next=stage==="R32"?"R16":stage==="R16"?"QF":stage==="QF"?"SF":"FINAL";
+    addCopaStage(copa,next,winners);
+  }
+  career.data.copaBrasil=copa;
+  return copa;
 }
-async function fastSimulate(ownerId,mode="season",rounds=5){
-  let career=await repairCareer(ownerId);
-  if(!career)throw Object.assign(new Error("Carreira não encontrada."),{status:404});
-  if(career.phase==="END")return {message:"A temporada já terminou.",matches:0,phase:"END"};
-  const clubMap=await fastClubSnapshot();
-  const userMatches=[];
-  const startPhase=career.phase;
-  const startRound=career.current_round;
 
-  if(mode==="rounds"){
-    if(career.phase!=="NATIONAL")throw Object.assign(new Error("Simular rodadas está disponível durante o Brasileirão."),{status:400});
-    simulateFastNationalRounds(career,ownerId,clubMap,userMatches,clamp(Number(rounds||5),1,10));
-    if(career.current_round>38)await finalizeFastNational(career,ownerId,clubMap,userMatches);
-  }else if(mode==="competition"){
-    if(career.phase==="STATE")finishFastState(career,ownerId,clubMap,userMatches);
-    else if(career.phase==="NATIONAL")await finalizeFastNational(career,ownerId,clubMap,userMatches);
-    else if(career.phase==="LIBERTADORES")await finishFastLibertadores(career,ownerId,clubMap,userMatches,true);
-  }else{
-    if(career.phase==="STATE")finishFastState(career,ownerId,clubMap,userMatches);
-    if(career.phase==="NATIONAL")await finalizeFastNational(career,ownerId,clubMap,userMatches);
-    if(career.phase==="LIBERTADORES")await finishFastLibertadores(career,ownerId,clubMap,userMatches,true);
+async function playCopa(ownerId){
+  const career=await getCareer(ownerId);
+  if(!career)throw Object.assign(new Error("Carreira não encontrada."),{status:404});
+  if(career.data.state?.stage!=="FINISHED")throw Object.assign(new Error("A Copa do Brasil começa depois do Estadual."),{status:400});
+  const copa=await ensureCopaData(career);
+  if(copa.status==="finished")throw Object.assign(new Error("A Copa do Brasil desta temporada já terminou."),{status:400});
+  if(copa.userEliminated)throw Object.assign(new Error("Seu clube já foi eliminado da Copa do Brasil."),{status:400});
+
+  const stage=copa.stage;
+  const games=copa.fixtures.filter(f=>f.stage===stage&&!f.played);
+  const clubMap=await fastClubSnapshot();
+  let userMatch=null,userWon=false;
+
+  for(const f of games){
+    const userGame=String(f.home)===String(ownerId)||String(f.away)===String(ownerId);
+    if(userGame){
+      await tx(async client=>{
+        const sim=await fullMatch(client,f.home,f.away,ownerId);
+        f.played=true;f.hg=sim.hg;f.ag=sim.ag;
+        if(f.hg===f.ag)f.pw=Math.random()<.5?f.home:f.away;
+        const winner=f.hg>f.ag?f.home:f.ag>f.hg?f.away:f.pw;
+        userWon=String(winner)===String(ownerId);
+        userMatch=sim.userMatch;userMatch.matchType="Copa do Brasil";userMatch.reward=0;
+        userMatch.finance=await settleMatchFinances(client,ownerId,"CUP",String(f.home)===String(ownerId),userMatch.result);
+        await recordUserMatch(client,ownerId,String(f.home)===String(ownerId)?f.away:f.home,userMatch,sim.events,"copa_brasil",userMatch.finance.performance);
+      });
+    }else{
+      const {hg,ag}=fastScore(f.home,f.away,clubMap);f.played=true;f.hg=hg;f.ag=ag;if(hg===ag)f.pw=Math.random()<.5?f.home:f.away;
+    }
   }
 
-  const effects=await applyFastSimulationEffects(ownerId,userMatches,career);
+  const winners=copaWinners(copa,stage);
+  if(stage==="FINAL"){
+    copa.champion=winners[0]||null;copa.status="finished";
+    if(String(copa.champion)===String(ownerId)){
+      await tx(async client=>{
+        await addFinance(client,ownerId,9000,"prize","Premiação pelo título da Copa do Brasil");
+        await recordTrophy(client,ownerId,career.season_no,"COPA_DO_BRASIL","Campeão da Copa do Brasil");
+      });
+    }
+  }else if(userWon){
+    const next=stage==="R32"?"R16":stage==="R16"?"QF":stage==="QF"?"SF":"FINAL";
+    addCopaStage(copa,next,winners);
+  }else{
+    copa.userEliminated=true;
+    const next=stage==="R32"?"R16":stage==="R16"?"QF":stage==="QF"?"SF":"FINAL";
+    addCopaStage(copa,next,winners);
+    await finishCopaFast(career,ownerId,clubMap);
+  }
+
+  career.data.copaBrasil=copa;
+  await advanceCalendar(career,ownerId,7,`Copa do Brasil — ${copaStageLabel(stage)}`);
   await saveCareer(career);
-  const end=await repairCareer(ownerId);
-  return {
-    message:mode==="season"?"Temporada simulada.":mode==="competition"?"Competição simulada.":`${effects.matches} partida(s) do seu clube simuladas.`,
-    mode,matches:effects.matches,net:effects.net,
-    startPhase,startRound,endPhase:end.phase,endRound:end.current_round,
-    seasonNo:end.season_no,userDivision:end.user_division
-  };
+  return {userMatch,copaStage:stage,finished:copa.status==="finished",champion:copa.champion};
 }
 
 async function playState(ownerId){
@@ -1062,12 +1208,17 @@ async function playState(ownerId){
       s.champion=winners[0];s.stage="FINISHED";
       career.phase="NATIONAL";
       if(String(s.champion)===String(ownerId)){
-        await tx(async c=>{await addFinance(c,ownerId,4000,"prize","Premiação pelo título estadual");});
+        await tx(async c=>{
+          await addFinance(c,ownerId,4000,"prize","Premiação pelo título estadual");
+          await recordTrophy(c,ownerId,career.season_no,"ESTADUAL",`Campeão — ${s.name}`);
+        });
       }
     }
   }
 
   career.data.state=s;
+  const stateCalendarLabel=s.stage==="GROUP"?`Estadual — rodada ${Math.max(1,Number(s.round)-1)}`:`Estadual — ${s.stage}`;
+  await advanceCalendar(career,ownerId,7,stateCalendarLabel);
   await saveCareer(career);
   return {userMatch};
 }
@@ -1165,6 +1316,12 @@ async function simulateLibStep(career,allowUserDetail){
       let champ=f.hg>f.ag?f.home:f.ag>f.hg?f.away:(Math.random()<.5?f.home:f.away);
       if(f.hg===f.ag)f.pw=champ;
       lib.champion=champ;lib.status="finished";userAlive=false;
+      if(String(champ)===String(career.owner_club_id)){
+        await tx(async client=>{
+          await addFinance(client,career.owner_club_id,15000,"prize","Premiação pelo título da Libertadores");
+          await recordTrophy(client,career.owner_club_id,career.season_no,"LIBERTADORES","Campeão da Libertadores");
+        });
+      }
     }else if(leg===1){
       lib.leg=2;
     }else{
@@ -1250,6 +1407,14 @@ async function playNational(ownerId){
   // Avança exatamente UMA rodada.
   if(round>=38){
     career.current_round=39;
+    await tx(async client=>{await maybeRecordDivisionTrophy(client,career,ownerId)});
+    if(career.data.copaBrasil?.status!=="finished")await finishCopaFast(career,ownerId,clubMap);
+    if(String(career.data.copaBrasil?.champion)===String(ownerId)){
+      await tx(async client=>{
+        const fresh=await recordTrophy(client,ownerId,career.season_no,"COPA_DO_BRASIL","Campeão da Copa do Brasil");
+        if(fresh)await addFinance(client,ownerId,9000,"prize","Premiação pelo título da Copa do Brasil");
+      });
+    }
     await makeLibertadores(career);
 
     const tableA=sortEntries(career.data.divisions.A.entries);
@@ -1259,8 +1424,6 @@ async function playNational(ownerId){
     if(userTop4A){
       career.phase="LIBERTADORES";
     }else{
-      // A Libertadores sem participação do usuário é resolvida rapidamente,
-      // sem atrasar a transição para o fim da temporada.
       await finishFastLibertadores(career,ownerId,clubMap,[],false);
       career.phase="END";
     }
@@ -1268,7 +1431,7 @@ async function playNational(ownerId){
     career.current_round=round+1;
   }
 
-  // Uma única gravação consolidada do estado da competição.
+  await advanceCalendar(career,ownerId,7,`Brasileirão — rodada ${round}`);
   await saveCareer(career);
 
   return {
@@ -1284,6 +1447,7 @@ async function playLib(ownerId){
   const r=await simulateLibStep(career,true);
   if(r.finished) career.phase="END";
   else if(!r.userAlive){ await autoFinishLib(career);career.phase="END"; }
+  await advanceCalendar(career,ownerId,7,"Libertadores");
   await saveCareer(career);
   return r;
 }
@@ -1321,6 +1485,8 @@ async function repairCareer(ownerId){
   let career=await getCareer(ownerId);
   if(!career||!career.data)return career;
   let changed=false;
+  if(!career.data.calendar){career.data.calendar=initialCalendar(career.season_no);changed=true}
+  if(!career.data.copaBrasil){career.data.copaBrasil=await createCopaBrasil(ownerId);changed=true}
   const s=career.data.state;
 
   if(career.phase==="STATE"&&s){
@@ -1351,6 +1517,7 @@ async function repairCareer(ownerId){
       const final=s.fixtures.find(f=>f.stage==="FINAL");
       if(final?.played){
         s.champion=final.hg>final.ag?final.home:final.ag>final.hg?final.away:(final.pw||final.home);
+        if(String(s.champion)===String(ownerId))await tx(async client=>{await recordTrophy(client,ownerId,career.season_no,"ESTADUAL",`Campeão — ${s.name}`)});
         s.stage="FINISHED";career.phase="NATIONAL";changed=true;
       }
     }
@@ -1366,6 +1533,14 @@ async function repairCareer(ownerId){
       else break;
     }
     if(Number(career.current_round)>38){
+      await tx(async client=>{await maybeRecordDivisionTrophy(client,career,ownerId)});
+      if(career.data.copaBrasil?.status!=="finished"){
+        await finishCopaFast(career,ownerId,await fastClubSnapshot());
+        if(String(career.data.copaBrasil?.champion)===String(ownerId))await tx(async client=>{
+          const fresh=await recordTrophy(client,ownerId,career.season_no,"COPA_DO_BRASIL","Campeão da Copa do Brasil");
+          if(fresh)await addFinance(client,ownerId,9000,"prize","Premiação pelo título da Copa do Brasil");
+        });
+      }
       if(!career.data.libertadores){await makeLibertadores(career);changed=true}
       const top4=sortEntries(career.data.divisions.A.entries).slice(0,4);
       const qualified=career.user_division==="A"&&top4.some(e=>String(e.clubId)===String(ownerId));
@@ -1378,9 +1553,17 @@ async function repairCareer(ownerId){
     }
   }
 
+  if(career.phase==="END"&&career.data.copaBrasil?.status!=="finished"){
+    await finishCopaFast(career,ownerId,await fastClubSnapshot());
+    changed=true;
+  }
+
   if(career.phase==="LIBERTADORES"){
     const lib=career.data.libertadores;
-    if(lib?.status==="finished"){career.phase="END";changed=true}
+    if(lib?.status==="finished"){
+      if(String(lib.champion)===String(ownerId))await tx(async client=>{await recordTrophy(client,ownerId,career.season_no,"LIBERTADORES","Campeão da Libertadores")});
+      career.phase="END";changed=true
+    }
     else if(lib&&lib.stage!=="GROUP"){
       const active=lib.fixtures.some(f=>f.stage===lib.stage&&!f.played&&(String(f.home)===String(ownerId)||String(f.away)===String(ownerId)));
       if(!active){
@@ -1406,6 +1589,10 @@ async function hydrateCareer(career){
   if(career.data.libertadores){
     career.data.libertadores.entries.forEach(e=>ids.add(e.clubId));
     career.data.libertadores.fixtures.forEach(f=>{ids.add(f.home);ids.add(f.away)});
+  }
+  if(career.data.copaBrasil){
+    career.data.copaBrasil.fixtures.forEach(f=>{ids.add(f.home);ids.add(f.away)});
+    if(career.data.copaBrasil.champion)ids.add(career.data.copaBrasil.champion);
   }
   const clubs=(await q(`SELECT id,name,primary_color,secondary_color,crest_data,team_rating,state_code,country_code FROM clubs WHERE id=ANY($1::bigint[])`,[[...ids]])).rows;
   const map=new Map(clubs.map(c=>[String(c.id),c]));
@@ -1434,9 +1621,17 @@ async function hydrateCareer(career){
       championClub:career.data.libertadores.champion?map.get(String(career.data.libertadores.champion)):null
     };
   }
+  let copa=null;
+  if(career.data.copaBrasil){
+    copa={
+      ...career.data.copaBrasil,
+      fixtures:career.data.copaBrasil.fixtures.map(hFix),
+      championClub:career.data.copaBrasil.champion?map.get(String(career.data.copaBrasil.champion)):null
+    };
+  }
   return {
     career:{owner_club_id:career.owner_club_id,season_no:career.season_no,phase:career.phase,state_code:career.state_code,user_division:career.user_division,current_round:career.current_round},
-    divisions,state:stateObj,libertadores:lib
+    divisions,state:stateObj,libertadores:lib,copaBrasil:copa,calendar:calendarSummary(career,0)
   };
 }
 
@@ -1479,7 +1674,8 @@ async function ensureTransferPool(ownerId){
 async function financeSummary(clubId){
   const wages=await q(`SELECT COALESCE(SUM(salary),0)::int total FROM players WHERE club_id=$1`,[clubId]);
   const recent=await q(`SELECT amount,category,description,created_at FROM club_finance_events WHERE club_id=$1 ORDER BY created_at DESC,id DESC LIMIT 12`,[clubId]);
-  return {wages:Number(wages.rows[0].total||0),recent:recent.rows};
+  const club=(await q(`SELECT coins FROM clubs WHERE id=$1`,[clubId])).rows[0];
+  return {wages:Number(wages.rows[0].total||0),recent:recent.rows,transferBan:transferBanInfo(club?.coins||0)};
 }
 
 app.get("/health",async(_req,res,next)=>{try{await q("SELECT 1");res.json({ok:true})}catch(e){next(e)}});
@@ -1593,15 +1789,20 @@ app.get("/api/dashboard",auth,async(req,res,next)=>{
     const freshClub=(await q(`SELECT * FROM clubs WHERE id=$1`,[c.id])).rows[0];
     Object.assign(c,freshClub);
     c.team_rating=await clubRating(c.id);
-    const [ps,mk,mt,fr,fin,events]=await Promise.all([
+    const career=await getCareer(c.id);
+    Object.assign(c,(await q(`SELECT * FROM clubs WHERE id=$1`,[c.id])).rows[0]||c);
+    const [ps,mk,mt,fr,fin,events,trophies,offers]=await Promise.all([
       q(`SELECT * FROM players WHERE club_id=$1 ORDER BY is_starter DESC,CASE position WHEN 'GK' THEN 1 WHEN 'DEF' THEN 2 WHEN 'MID' THEN 3 ELSE 4 END,rating DESC`,[c.id]),
       q(`SELECT * FROM players WHERE club_id IS NULL ORDER BY rating DESC,price DESC LIMIT 40`),
       q(`SELECT m.*,o.name opponent_name FROM matches m JOIN clubs o ON o.id=m.opponent_club_id WHERE m.user_club_id=$1 ORDER BY played_at DESC LIMIT 30`,[c.id]),
       q(`SELECT c.id,c.name,c.primary_color,c.secondary_color,c.crest_data,c.friend_code,c.team_rating FROM friendships f JOIN clubs c ON c.id=CASE WHEN f.club_a_id=$1 THEN f.club_b_id ELSE f.club_a_id END WHERE f.club_a_id=$1 OR f.club_b_id=$1 ORDER BY c.name`,[c.id]),
       financeSummary(c.id),
-      q(`SELECT event_type,title,description,created_at FROM club_events WHERE club_id=$1 ORDER BY created_at DESC,id DESC LIMIT 10`,[c.id])
+      q(`SELECT event_type,title,description,created_at FROM club_events WHERE club_id=$1 ORDER BY created_at DESC,id DESC LIMIT 10`,[c.id]),
+      q(`SELECT id,season_no,competition,title,won_at FROM club_trophies WHERE club_id=$1 ORDER BY season_no DESC,won_at DESC`,[c.id]),
+      q(`SELECT o.id,o.amount,o.status,o.created_at,p.id player_id,p.name player_name,p.position,p.role,p.rating,p.age,p.transfer_listed,b.id buying_club_id,b.name buying_club_name FROM transfer_offers o JOIN players p ON p.id=o.player_id JOIN clubs b ON b.id=o.buying_club_id WHERE o.selling_club_id=$1 AND o.status='pending' ORDER BY o.amount DESC,o.created_at DESC`,[c.id])
     ]);
-    res.json({club:c,players:ps.rows,market:mk.rows,matches:mt.rows,friends:fr.rows,finance:fin,clubEvents:events.rows});
+    const cal=career?calendarSummary(career,fin.wages):null;
+    res.json({club:c,players:ps.rows,market:mk.rows,matches:mt.rows,friends:fr.rows,finance:fin,clubEvents:events.rows,trophies:trophies.rows,incomingOffers:offers.rows,calendar:cal});
   }catch(e){next(e)}
 });
 
@@ -1612,6 +1813,13 @@ app.get("/api/competitions",auth,async(req,res,next)=>{
     let career=await repairCareer(c.id);
     if(!career)career=await createCareer(c.id,c.state_code,1,null);
     res.json(await hydrateCareer(career));
+  }catch(e){next(e)}
+});
+
+app.post("/api/copa/play-next",auth,async(req,res,next)=>{
+  try{
+    const c=await userClub(req.user.id);
+    res.json(await withCompetitionLock(c.id,async()=>{await repairCareer(c.id);return playCopa(c.id)}));
   }catch(e){next(e)}
 });
 
@@ -1683,12 +1891,74 @@ app.post("/api/players/:id/release",auth,async(req,res,next)=>{
 });
 
 
+app.post("/api/players/:id/transfer-list",auth,async(req,res,next)=>{
+  try{
+    const c=await userClub(req.user.id),pid=String(req.params.id),listed=Boolean(req.body.listed);
+    const result=await tx(async client=>{
+      const p=(await client.query(`SELECT * FROM players WHERE id=$1 AND club_id=$2 FOR UPDATE`,[pid,c.id])).rows[0];
+      if(!p)throw Object.assign(new Error("Jogador não encontrado."),{status:404});
+      await client.query(`UPDATE players SET transfer_listed=$3 WHERE id=$1 AND club_id=$2`,[pid,c.id,listed]);
+      let offersCreated=0;
+      if(listed)offersCreated=await generateIncomingOffers(client,c.id,{force:true,playerId:p.id});
+      return {ok:true,listed,offersCreated};
+    });
+    res.json(result);
+  }catch(e){next(e)}
+});
+
+app.post("/api/transfers/incoming/:offerId/accept",auth,async(req,res,next)=>{
+  try{
+    const c=await userClub(req.user.id),offerId=String(req.params.offerId);
+    const result=await tx(async client=>{
+      const o=(await client.query(`SELECT o.*,p.name player_name,p.position,p.is_starter FROM transfer_offers o JOIN players p ON p.id=o.player_id WHERE o.id=$1 AND o.selling_club_id=$2 FOR UPDATE OF o`,[offerId,c.id])).rows[0];
+      if(!o||o.status!=="pending")throw Object.assign(new Error("Proposta não está mais disponível."),{status:409});
+      const p=(await client.query(`SELECT * FROM players WHERE id=$1 AND club_id=$2 FOR UPDATE`,[o.player_id,c.id])).rows[0];
+      if(!p)throw Object.assign(new Error("O jogador não pertence mais ao clube."),{status:409});
+      const count=Number((await client.query(`SELECT COUNT(*)::int count FROM players WHERE club_id=$1`,[c.id])).rows[0].count);
+      if(count<=12)throw Object.assign(new Error("Você precisa manter pelo menos 12 jogadores."),{status:400});
+      if(p.position==="GK"){
+        const gks=Number((await client.query(`SELECT COUNT(*)::int count FROM players WHERE club_id=$1 AND position='GK'`,[c.id])).rows[0].count);
+        if(gks<=1)throw Object.assign(new Error("Você precisa manter pelo menos um goleiro."),{status:400});
+      }
+      const before=Number((await client.query(`SELECT coins FROM clubs WHERE id=$1`,[c.id])).rows[0].coins||0);
+      await client.query(`UPDATE players SET club_id=$2,is_starter=FALSE,transfer_listed=FALSE,fitness=100,morale=72 WHERE id=$1`,[p.id,o.buying_club_id]);
+      await client.query(`UPDATE transfer_offers SET status='accepted',updated_at=NOW() WHERE id=$1`,[o.id]);
+      await client.query(`UPDATE transfer_offers SET status='expired',updated_at=NOW() WHERE player_id=$1 AND status='pending' AND id<>$2`,[p.id,o.id]);
+      await addFinance(client,c.id,Number(o.amount),"player_sale",`Venda de ${p.name}`);
+      const after=before+Number(o.amount);
+      if(before<TRANSFER_BAN_THRESHOLD&&after>=TRANSFER_BAN_THRESHOLD){
+        await client.query(`INSERT INTO club_events(club_id,event_type,title,description) VALUES($1,'finance','Transfer ban suspenso','A venda de um jogador melhorou o caixa e o clube voltou a poder contratar.')`,[c.id]);
+      }
+      return {ok:true,amount:Number(o.amount),playerName:p.name,balance:after};
+    });
+    res.json(result);
+  }catch(e){next(e)}
+});
+
+app.post("/api/transfers/incoming/:offerId/reject",auth,async(req,res,next)=>{
+  try{
+    const c=await userClub(req.user.id),offerId=String(req.params.offerId);
+    const r=await q(`UPDATE transfer_offers SET status='rejected',updated_at=NOW() WHERE id=$1 AND selling_club_id=$2 AND status='pending' RETURNING id`,[offerId,c.id]);
+    if(!r.rowCount)return res.status(404).json({error:"Proposta não encontrada."});
+    res.json({ok:true});
+  }catch(e){next(e)}
+});
+
+app.post("/api/transfers/incoming/generate",auth,async(req,res,next)=>{
+  try{
+    const c=await userClub(req.user.id);
+    const created=await tx(async client=>generateIncomingOffers(client,c.id,{force:true}));
+    res.json({ok:true,created});
+  }catch(e){next(e)}
+});
+
 app.get("/api/transfers/search",auth,async(req,res,next)=>{
   try{
     const c=await userClub(req.user.id);
     if(!c)return res.status(404).json({error:"Clube não encontrado."});
     await ensureTransferPool(c.id);
     const career=await getCareer(c.id);
+    const ban=transferBanInfo(c.coins);
     const qText=String(req.query.q||"").trim().toLowerCase();
     const position=String(req.query.position||"").trim().toUpperCase();
     const minRating=Number(req.query.minRating||0);
@@ -1721,7 +1991,7 @@ app.get("/api/transfers/search",auth,async(req,res,next)=>{
         interest:chance>=70?"Alta":chance>=45?"Média":"Baixa"
       };
     });
-    res.json({players:filtered});
+    res.json({players:filtered,transferBan:ban});
   }catch(e){next(e)}
 });
 
@@ -1735,8 +2005,11 @@ app.post("/api/transfers/offer",auth,async(req,res,next)=>{
     const years=clamp(Number(req.body.years||3),1,4);
     const career=await getCareer(c.id);
     const userDiv=career?.user_division||"D";
+    if(transferBanInfo(c.coins).active)return res.status(403).json({error:`Transfer ban ativo por endividamento. O caixa precisa voltar para pelo menos ${TRANSFER_BAN_THRESHOLD.toLocaleString("pt-BR")} moedas para contratar.`});
 
     const result=await tx(async client=>{
+      const currentBalance=Number((await client.query(`SELECT coins FROM clubs WHERE id=$1 FOR UPDATE`,[c.id])).rows[0]?.coins||0);
+      if(transferBanInfo(currentBalance).active)throw Object.assign(new Error(`Transfer ban ativo por endividamento. Saldo atual: ${currentBalance.toLocaleString("pt-BR")} moedas.`),{status:403});
       const p=(await client.query(`
         SELECT p.*,sc.name source_club_name,sc.id source_club_id,sc.is_ai source_is_ai
         FROM players p LEFT JOIN clubs sc ON sc.id=p.club_id
@@ -1785,7 +2058,7 @@ app.post("/api/transfers/offer",auth,async(req,res,next)=>{
       await applyFelipeMode(client,c.id);
 
       await client.query(`INSERT INTO club_events(club_id,event_type,title,description) VALUES($1,'transfer','Contratação confirmada',$2)`,
-        [c.id,`${p.name} aceitou contrato de ${years} temporada(s), com salário de ${Math.round(salaryOffer).toLocaleString("pt-BR")} moedas por rodada.`]);
+        [c.id,`${p.name} aceitou contrato de ${years} temporada(s), com salário mensal de ${Math.round(salaryOffer).toLocaleString("pt-BR")} moedas.`]);
 
       return {accepted:true,message:`${p.name} aceitou a proposta e é o novo reforço do clube.`,playerId:p.id,cost:total};
     });
@@ -1837,6 +2110,7 @@ async function start(){
   await seedClubs();
   await oneTimeReset();
   await applyEconomyMigration();
+  await applyV14Migration();
   await ensureMarket();
   app.listen(PORT,"0.0.0.0",()=>console.log(`Dono do Clube v8 rodando na porta ${PORT}`));
 }

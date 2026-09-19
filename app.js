@@ -4,7 +4,8 @@ const STATES={"AC": "Acre", "AL": "Alagoas", "AP": "Amapá", "AM": "Amazonas", "
 
 const state={
   me:null,club:null,players:[],market:[],matches:[],friends:[],competitions:null,
-  finance:{wages:0,recent:[]},clubEvents:[],transferResults:[],
+  finance:{wages:0,recent:[],transferBan:{active:false}},clubEvents:[],transferResults:[],
+  trophies:[],incomingOffers:[],calendar:null,
   view:"home",authMode:"login",competitionTab:"STATE",roundByDiv:{A:1,B:1,C:1,D:1}
 };
 
@@ -38,7 +39,8 @@ async function bootstrap(){
   }catch{renderAuth()}
 }
 async function refreshAll(){
-  const [d,c]=await Promise.all([api("/api/dashboard"),api("/api/competitions")]);
+  const c=await api("/api/competitions");
+  const d=await api("/api/dashboard");
   Object.assign(state,d);
   state.competitions=c;
   if(c?.career?.phase==="NATIONAL"){
@@ -163,8 +165,10 @@ function playerCard(p){
       <span>A <b>${p.assists}</b></span><span>Sal. <b>${Number(p.salary||0).toLocaleString("pt-BR")}</b></span>
       <span>Contrato <b>${p.contract_seasons||1}T</b></span><span>Rescisão <b>${severance.toLocaleString("pt-BR")}</b></span>
     </div>
+    ${p.transfer_listed?`<div class="sale-badge">À VENDA</div>`:""}
     <div class="player-actions">
       <button class="${p.is_starter?"primary":"secondary"} toggle-player" data-id="${p.id}" ${Number(p.injury_games||0)>0&&!p.is_starter?"disabled":""}>${p.is_starter?"Titular":"Reserva"}</button>
+      <button class="secondary list-player" data-id="${p.id}">${p.transfer_listed?"Retirar da venda":"Colocar à venda"}</button>
       <button class="danger release-player" data-id="${p.id}" ${p.is_starter?"disabled":""}>Rescindir</button>
     </div>
   </article>`;
@@ -211,6 +215,41 @@ function suggestRotation(formation){
   state.players.forEach(p=>p.is_starter=chosen.some(x=>String(x.id)===String(p.id)));
 }
 
+function selectBestSquad(formation){
+  const q=formationQuota(formation);
+  const chosen=[];
+
+  // "Melhores" = maior overall entre os jogadores disponíveis.
+  // Físico e moral servem como desempate; lesionados ficam fora.
+  const bestSort=(x,y)=>
+    Number(y.rating)-Number(x.rating) ||
+    Number(y.fitness||100)-Number(x.fitness||100) ||
+    Number(y.morale||70)-Number(x.morale||70);
+
+  for(const pos of ["GK","DEF","MID","ATT"]){
+    const available=state.players
+      .filter(p=>p.position===pos&&Number(p.injury_games||0)<=0)
+      .sort(bestSort);
+
+    chosen.push(...available.slice(0,q[pos]));
+  }
+
+  if(chosen.length<11){
+    const used=new Set(chosen.map(p=>String(p.id)));
+    const remaining=state.players
+      .filter(p=>!used.has(String(p.id))&&Number(p.injury_games||0)<=0)
+      .sort(bestSort);
+
+    chosen.push(...remaining.slice(0,11-chosen.length));
+  }
+
+  state.players.forEach(p=>{
+    p.is_starter=chosen.some(x=>String(x.id)===String(p.id));
+  });
+
+  return chosen.length===11;
+}
+
 function userPosition(){
   const car=state.competitions?.career;if(!car)return null;
   const table=state.competitions.divisions[car.user_division]?.entries||[];
@@ -225,6 +264,39 @@ function nextDivision(){
   if(d==="B")return pos<=4?"A":pos>=17?"C":"B";
   if(d==="C")return pos<=4?"B":pos>=17?"D":"C";
   return pos<=4?"C":"D";
+}
+
+function formatGameDate(iso){
+  if(!iso)return "—";
+  const [y,m,d]=String(iso).split("-");return `${d}/${m}/${y}`;
+}
+function seasonTrophies(){
+  const season=Number(state.competitions?.career?.season_no||0);
+  return (state.trophies||[]).filter(t=>Number(t.season_no)===season);
+}
+function trophyCards(list){
+  if(!list.length)return `<div class="empty">Nenhum troféu conquistado nesta temporada.</div>`;
+  return `<div class="trophy-grid">${list.map(t=>`<div class="trophy-card"><span>🏆</span><b>${esc(t.title)}</b><small>Temporada ${t.season_no}</small></div>`).join("")}</div>`;
+}
+function calendarCard(){
+  const cal=state.calendar;if(!cal)return "";
+  return `<div class="card calendar-card">
+    <div class="section-title"><div><div class="kicker">CALENDÁRIO FINANCEIRO</div><h2>${formatGameDate(cal.currentDate)}</h2></div><span class="badge blue">Próximo pagamento ${formatGameDate(cal.nextPayrollDate)}</span></div>
+    <div class="calendar-money"><span>Folha salarial mensal</span><b>${Number(cal.monthlyWages||0).toLocaleString("pt-BR")} moedas</b></div>
+    <p class="muted">Os salários são pagos uma vez por mês, quando o calendário passa para um novo mês. Não há mais salário cobrado por rodada.</p>
+    ${(cal.payrolls||[]).slice(0,3).map(x=>`<div class="finance-row"><span>Folha ${esc(x.month)}</span><b class="expense">-${Number(x.amount).toLocaleString("pt-BR")}</b></div>`).join("")}
+  </div>`;
+}
+function transferBanBanner(){
+  const ban=state.finance?.transferBan;
+  if(!ban?.active)return "";
+  return `<div class="transfer-ban"><b>⛔ TRANSFER BAN ATIVO</b><span>O clube está excessivamente endividado. Você pode vender jogadores, mas não pode contratar enquanto o caixa estiver abaixo de ${Number(ban.threshold).toLocaleString("pt-BR")} moedas.</span></div>`;
+}
+function copaQuickCard(){
+  const copa=state.competitions?.copaBrasil,car=state.competitions?.career;
+  if(!copa||car?.phase==="STATE")return "";
+  const active=copa.status!=="finished"&&!copa.userEliminated;
+  return `<div class="card copa-home"><div><div class="kicker">COPA DO BRASIL</div><h2>${copa.status==="finished"?`🏆 ${esc(copa.championClub?.name||"Encerrada")}`:esc(({R32:"Primeira fase",R16:"Oitavas",QF:"Quartas",SF:"Semifinais",FINAL:"Final"})[copa.stage]||copa.stage)}</h2><p class="muted">Torneio mata-mata em jogo único.</p></div>${active?`<button id="playCopaHome" class="primary">Jogar Copa do Brasil</button>`:""}</div>`;
 }
 
 function homeView(){
@@ -247,14 +319,18 @@ function homeView(){
     <div class="stats">
       <div class="stat"><small>Overall</small><b>${c.team_rating}</b></div>
       <div class="stat"><small>Caixa</small><b>${Number(c.coins).toLocaleString("pt-BR")}</b></div>
-      <div class="stat"><small>Salários/rodada</small><b>${Number(state.finance?.wages||0).toLocaleString("pt-BR")}</b></div>
+      <div class="stat"><small>Folha mensal</small><b>${Number(state.finance?.wages||0).toLocaleString("pt-BR")}</b></div>
       <div class="stat"><small>Elenco</small><b>${tired} cansados · ${injured} lesionados</b></div>
     </div>
   </section>
+  ${transferBanBanner()}
+  ${copaQuickCard()}
   ${car.phase==="END"?`<section class="season-end" style="margin-top:14px">
     <div class="kicker">FIM DA TEMPORADA</div>
     <h2>${nextDivision()!==car.user_division?`Você vai para a Série ${nextDivision()}`:`Você permanece na Série ${car.user_division}`}</h2>
     <p>A próxima temporada reinicia as tabelas e o Estadual. Seu elenco, dinheiro, escudo e estatísticas de carreira continuam.</p>
+    <h3>Troféus conquistados nesta temporada</h3>
+    ${trophyCards(seasonTrophies())}
   </section>`:""}
   <section class="grid">
     <div class="card"><div class="section-title"><h2>Últimos jogos</h2><span class="badge">${state.matches.length}</span></div>
@@ -275,7 +351,8 @@ function homeView(){
       <p class="muted">Jogadores cansados perdem rendimento. Use a escalação e o botão de rodízio para preservar o time.</p>
       <button class="secondary" id="goSquad">Ver escalação e físico</button>
     </div>
-  </section>`;
+  </section>
+  <section class="grid calendar-grid">${calendarCard()}<div class="card"><div class="kicker">GALERIA</div><h2>Troféus do clube</h2>${trophyCards((state.trophies||[]).slice(0,6))}</div></section>`;
 }
 function squadView(){
   return `<section class="card">
@@ -283,10 +360,11 @@ function squadView(){
       <div><div class="kicker">Gestão do time</div><h2>Formação, físico e rodízio</h2></div>
       <div class="squad-tools">
         <label>Formação<select id="formation">${["4-3-3","4-4-2","3-5-2"].map(f=>`<option ${state.club.formation===f?"selected":""}>${f}</option>`).join("")}</select></label>
+        <button id="bestSquad" class="primary">⭐ Escalar melhores</button>
         <button id="rotateSquad" class="secondary">Sugerir rodízio</button>
       </div>
     </div>
-    <p class="muted">O campo abaixo mostra sua escalação. Físico baixo reduz o rendimento; lesionados não podem ser escalados.</p>
+    <p class="muted">O campo abaixo mostra sua escalação. Use <b>Escalar melhores</b> para selecionar automaticamente os maiores overalls disponíveis na formação escolhida. Físico baixo reduz o rendimento; lesionados não podem ser escalados.</p>
     <div id="pitchWrap">${formationPitch(state.club.formation)}</div>
     <div class="legend"><span class="good-dot"></span> Bom físico <span class="warn-dot"></span> Cansado <span class="bad-dot"></span> Muito cansado/lesionado</div>
     <div class="players" style="margin-top:16px">${state.players.map(playerCard).join("")}</div>
@@ -294,12 +372,26 @@ function squadView(){
   </section>`;
 }
 function marketView(){
+  const ban=state.finance?.transferBan;
   return `<section class="card">
     <div class="section-title">
-      <div><div class="kicker">Scout e negociações</div><h2>Pesquisar jogadores</h2></div>
-      <div class="finance-chips"><span class="coins">Caixa ● ${Number(state.club.coins).toLocaleString("pt-BR")}</span><span class="badge red">Folha ${Number(state.finance?.wages||0).toLocaleString("pt-BR")}/rodada</span></div>
+      <div><div class="kicker">Scout, compras e vendas</div><h2>Mercado de transferências</h2></div>
+      <div class="finance-chips"><span class="coins">Caixa ● ${Number(state.club.coins).toLocaleString("pt-BR")}</span><span class="badge red">Folha mensal ${Number(state.finance?.wages||0).toLocaleString("pt-BR")}</span></div>
     </div>
-    <p class="muted">O clube vendedor precisa aceitar a taxa de transferência e o jogador precisa aceitar salário e projeto esportivo.</p>
+    ${transferBanBanner()}
+    <section class="incoming-section">
+      <div class="section-title"><div><div class="kicker">PROPOSTAS RECEBIDAS</div><h3>Clubes interessados nos seus jogadores</h3></div><button id="checkOffers" class="secondary">Buscar novas propostas</button></div>
+      <div id="incomingOffers">${incomingOfferCards()}</div>
+    </section>
+    <section class="selling-section">
+      <div class="kicker">VENDER JOGADORES</div><h3>Lista de transferências</h3>
+      <p class="muted">Na aba Elenco, use <b>Colocar à venda</b>. Clubes controlados pelo jogo poderão enviar propostas, principalmente nos pagamentos mensais.</p>
+      <div class="listed-row">${state.players.filter(p=>p.transfer_listed).length?state.players.filter(p=>p.transfer_listed).map(p=>`<span class="listed-chip">${esc(p.name)} · OVR ${p.rating}</span>`).join(""):`<span class="muted">Nenhum jogador listado.</span>`}</div>
+    </section>
+    <hr class="section-divider">
+    <div class="kicker">CONTRATAÇÕES</div><h3>Pesquisar jogadores</h3>
+    <p class="muted">O clube vendedor precisa aceitar a taxa e o jogador precisa aceitar o salário mensal e o projeto esportivo.</p>
+    ${ban?.active?`<p class="muted">A pesquisa continua disponível, mas novas contratações estão bloqueadas pelo transfer ban.</p>`:""}
     <form id="transferSearch" class="transfer-search">
       <input id="searchName" placeholder="Nome do jogador">
       <select id="searchPosition">
@@ -309,13 +401,21 @@ function marketView(){
         <option value="CDM">Volante</option><option value="CM">Meia central</option><option value="CAM">Meia ofensivo</option>
         <option value="RW">Ponta direita</option><option value="LW">Ponta esquerda</option><option value="ST">Centroavante</option>
       </select>
-      <input id="searchMinRating" type="number" min="40" max="99" value="58" placeholder="OVR mínimo">
+      <input id="searchMinRating" type="number" min="40" max="100" value="58" placeholder="OVR mínimo">
       <input id="searchMaxPrice" type="number" min="0" value="150000" placeholder="Valor máximo">
       <button class="primary">Pesquisar</button>
     </form>
     <div id="transferMsg"></div>
     <div id="transferResults" class="market-grid">${transferCards()}</div>
   </section>`;
+}
+function incomingOfferCards(){
+  if(!(state.incomingOffers||[]).length)return `<div class="empty">Nenhuma proposta pendente. Coloque jogadores à venda ou aguarde o avanço do calendário.</div>`;
+  return `<div class="offer-list">${state.incomingOffers.map(o=>`<article class="incoming-offer">
+    <div><div class="kicker">${esc(o.buying_club_name)}</div><h4>${esc(o.player_name)}</h4><span class="muted">${esc(o.role||o.position)} · OVR ${o.rating} · ${o.age} anos</span></div>
+    <div class="offer-value"><small>OFERTA</small><b>${Number(o.amount).toLocaleString("pt-BR")}</b></div>
+    <div class="offer-actions"><button class="primary accept-offer" data-id="${o.id}">Aceitar</button><button class="danger reject-offer" data-id="${o.id}">Recusar</button></div>
+  </article>`).join("")}</div>`;
 }
 function transferCards(){
   if(!state.transferResults?.length)return `<div class="empty">Use a pesquisa para encontrar jogadores livres e atletas de outros clubes.</div>`;
@@ -326,10 +426,10 @@ function transferCards(){
     <div class="attrs"><span>VEL <b>${p.pace}</b></span><span>CHU <b>${p.shooting}</b></span><span>PAS <b>${p.passing}</b></span><span>DEF <b>${p.defending}</b></span></div>
     <div class="pstats">
       <span>Pedido <b>${Number(p.asking_price||0).toLocaleString("pt-BR")}</b></span>
-      <span>Salário base <b>${Number(p.suggested_salary||0).toLocaleString("pt-BR")}</b></span>
+      <span>Salário mensal <b>${Number(p.suggested_salary||0).toLocaleString("pt-BR")}</b></span>
       <span>Interesse <b>${esc(p.interest)}</b></span><span>Contrato <b>${p.contract_seasons||1}T atual</b></span>
     </div>
-    <div class="player-actions"><button class="primary negotiate-player" data-id="${p.id}">Negociar</button></div>
+    <div class="player-actions"><button class="primary negotiate-player" data-id="${p.id}" ${state.finance?.transferBan?.active?"disabled":""}>${state.finance?.transferBan?.active?"Transfer ban":"Negociar"}</button></div>
   </article>`).join("");
 }
 function friendsView(){
@@ -433,13 +533,28 @@ function libertadoresView(){
   return `<div class="section-title"><div><div class="kicker">MATA-MATA</div><h2>${({R16:"Oitavas",QF:"Quartas",SF:"Semifinais",FINAL:"Final"})[lib.stage]}</h2></div>${button}</div>${knockoutList(lib)}`;
 }
 
+function copaView(){
+  const copa=state.competitions.copaBrasil;
+  if(!copa)return `<div class="empty">Copa do Brasil não disponível.</div>`;
+  const stageLabels={R32:"Primeira fase",R16:"Oitavas de final",QF:"Quartas de final",SF:"Semifinais",FINAL:"Final"};
+  const active=copa.status!=="finished"&&!copa.userEliminated&&state.competitions.career.phase!=="STATE";
+  return `<div class="section-title"><div><div class="kicker">MATA-MATA · JOGO ÚNICO</div><h2>Copa do Brasil</h2><span class="muted">${copa.status==="finished"?"Encerrada":stageLabels[copa.stage]||copa.stage}</span></div>${active?`<button id="playCopa" class="primary">Jogar próxima fase</button>`:""}</div>
+    ${copa.status==="finished"?`<div class="champion-card"><div class="kicker">CAMPEÃO DA COPA DO BRASIL</div><h2>🏆 ${esc(copa.championClub?.name||"Campeão")}</h2></div>`:""}
+    ${copa.userEliminated?`<div class="msg">Seu clube foi eliminado. O restante do torneio foi simulado automaticamente.</div>`:""}
+    <div class="knockout-grid copa-grid">${[["R32","1ª fase"],["R16","Oitavas"],["QF","Quartas"],["SF","Semifinais"],["FINAL","Final"]].map(([code,label])=>{
+      const fs=copa.fixtures.filter(f=>f.stage===code);if(!fs.length)return "";
+      return `<div class="knockout-stage"><h3>${label}</h3>${fs.map(f=>`<div class="ko-match"><small>Chave ${f.slot}</small><span>${esc(f.homeClub?.name||"")} ${f.played?`<b>${f.hg}</b>`:""}</span><span>${esc(f.awayClub?.name||"")} ${f.played?`<b>${f.ag}</b>`:""}</span>${f.pw?`<em>Decidido nos pênaltis</em>`:""}</div>`).join("")}</div>`;
+    }).join("")}</div>`;
+}
+
 function competitionsView(){
   const car=state.competitions.career;
-  if(!["STATE","A","B","C","D","LIB"].includes(state.competitionTab))state.competitionTab=car.user_division;
-  const content=state.competitionTab==="STATE"?stateView():state.competitionTab==="LIB"?libertadoresView():divisionView(state.competitionTab);
+  if(!["STATE","COPA","A","B","C","D","LIB"].includes(state.competitionTab))state.competitionTab=car.user_division;
+  const content=state.competitionTab==="STATE"?stateView():state.competitionTab==="COPA"?copaView():state.competitionTab==="LIB"?libertadoresView():divisionView(state.competitionTab);
   return `<section class="card">
     <div class="competition-tabs">
       <button data-comp="STATE" class="${state.competitionTab==="STATE"?"on":""}">ESTADUAL</button>
+      <button data-comp="COPA" class="${state.competitionTab==="COPA"?"on":""}">COPA DO BRASIL</button>
       ${["A","B","C","D"].map(d=>`<button data-comp="${d}" class="${state.competitionTab===d?"on":""}">SÉRIE ${d}</button>`).join("")}
       <button data-comp="LIB" class="${state.competitionTab==="LIB"?"on":""}">LIBERTADORES</button>
     </div>
@@ -469,6 +584,8 @@ function clubView(){
         <div style="display:flex;gap:8px"><button type="button" id="removeCrest" class="secondary">Remover escudo</button><button class="primary" style="flex:1">Salvar nome e personalização</button></div>
         <div id="customMsg"></div>
       </form>
+
+      <div class="club-trophy-section"><div class="kicker">GALERIA DE TROFÉUS</div><h3>Conquistas do clube</h3>${trophyCards(state.trophies||[])}</div>
 
       <div class="danger-zone">
         <div>
@@ -525,7 +642,7 @@ function showMatch(m){
     <button class="secondary close-modal">Fechar</button></div>
     <div class="board"><span>${esc(m.userClub)}<br><small class="muted">OVR ${m.userRating}</small></span><b>${m.userGoals} × ${m.opponentGoals}</b>
     <span>${esc(m.opponent)}<br><small class="muted">OVR ${m.opponentRating}</small></span></div>
-    ${m.finance?`<div class="finance-match"><span>Patrocínio +${Number(m.finance.sponsor).toLocaleString("pt-BR")}</span><span>Bilheteria +${Number(m.finance.gate).toLocaleString("pt-BR")}</span><span>Resultado +${Number(m.finance.performance).toLocaleString("pt-BR")}</span><span>Salários -${Number(m.finance.wages).toLocaleString("pt-BR")}</span><b>Saldo da rodada ${Number(m.finance.net)>=0?"+":""}${Number(m.finance.net).toLocaleString("pt-BR")}</b></div>${m.finance.event?`<div class="msg ok"><b>${esc(m.finance.event.title)}</b><br>${esc(m.finance.event.description)}</div>`:""}`:""}
+    ${m.finance?`<div class="finance-match"><span>Patrocínio +${Number(m.finance.sponsor).toLocaleString("pt-BR")}</span><span>Bilheteria +${Number(m.finance.gate).toLocaleString("pt-BR")}</span><span>Resultado +${Number(m.finance.performance).toLocaleString("pt-BR")}</span><span>Salários: pagamento mensal pelo calendário</span><b>Receita líquida desta partida ${Number(m.finance.net)>=0?"+":""}${Number(m.finance.net).toLocaleString("pt-BR")}</b></div>${m.finance.event?`<div class="msg ok"><b>${esc(m.finance.event.title)}</b><br>${esc(m.finance.event.description)}</div>`:""}`:""}
     <h3>Lances</h3>${m.events?.length?m.events.map(e=>`<div class="event"><b>${e.minute}'</b> ${esc(e.text)}</div>`).join(""):`<div class="empty">Sem lances relevantes.</div>`}
   </div>`;
   document.body.appendChild(bg);bg.querySelector(".close-modal").onclick=()=>bg.remove();bg.onclick=e=>{if(e.target===bg)bg.remove()};
@@ -545,7 +662,7 @@ async function showClub(id){
 }
 
 async function careerAction(action){
-  const endpoints={state:"/api/state/play-next",national:"/api/national/play-round",lib:"/api/libertadores/play-next",next:"/api/career/next-season"};
+  const endpoints={state:"/api/state/play-next",national:"/api/national/play-round",copa:"/api/copa/play-next",lib:"/api/libertadores/play-next",next:"/api/career/next-season"};
   try{
     const d=await api(endpoints[action],{method:"POST",body:"{}"});
     await refreshAll();render();
@@ -561,10 +678,24 @@ function bindHome(){
   const b=app.querySelector("#careerAction");
   if(b)b.onclick=async()=>{b.disabled=true;b.textContent=b.dataset.action==="national"?"SIMULANDO RODADA...":"SIMULANDO...";await careerAction(b.dataset.action)};
   const gs=app.querySelector("#goSquad");if(gs)gs.onclick=()=>{state.view="squad";render()};
+  const cup=app.querySelector("#playCopaHome");if(cup)cup.onclick=async()=>{cup.disabled=true;await careerAction("copa")};
 }
 function bindSquad(){
   const formation=app.querySelector("#formation");
   if(formation)formation.onchange=()=>{app.querySelector("#pitchWrap").innerHTML=formationPitch(formation.value)};
+  const best=app.querySelector("#bestSquad");
+  if(best)best.onclick=()=>{
+    const currentFormation=formation?.value||state.club.formation;
+    const complete=selectBestSquad(currentFormation);
+    if(!complete){
+      alert("Não há 11 jogadores disponíveis para montar a escalação.");
+      return;
+    }
+    // Mantém a formação escolhida após renderizar.
+    state.club.formation=currentFormation;
+    render();
+  };
+
   const rotate=app.querySelector("#rotateSquad");
   if(rotate)rotate.onclick=()=>{
     suggestRotation(formation?.value||state.club.formation);
@@ -575,6 +706,13 @@ function bindSquad(){
     if(Number(p.injury_games||0)>0&&!p.is_starter){alert(`${p.name} está lesionado por ${p.injury_games} jogo(s).`);return}
     if(!p.is_starter&&state.players.filter(x=>x.is_starter).length>=11){alert("Já existem 11 titulares.");return}
     p.is_starter=!p.is_starter;render();
+  });
+  app.querySelectorAll(".list-player").forEach(b=>b.onclick=async()=>{
+    const p=state.players.find(x=>String(x.id)===String(b.dataset.id));if(!p)return;
+    try{
+      await api(`/api/players/${p.id}/transfer-list`,{method:"POST",body:JSON.stringify({listed:!p.transfer_listed})});
+      await refreshAll();render();
+    }catch(err){alert(err.message)}
   });
   app.querySelectorAll(".release-player").forEach(b=>b.onclick=async()=>{
     const p=state.players.find(x=>String(x.id)===String(b.dataset.id));
@@ -621,9 +759,9 @@ function openTransferOffer(p){
     <div class="modal-head"><div><div class="kicker">NEGOCIAÇÃO</div><h2>${esc(p.name)}</h2><span class="muted">${esc(p.source_club_name||"Jogador livre")} · ${esc(p.role||p.position)} · OVR ${p.rating}</span></div><button class="secondary close-modal">Fechar</button></div>
     <form id="offerForm" class="stack" style="margin-top:16px">
       <label>Oferta ao clube<input id="offerFee" type="number" min="0" value="${fee}"></label>
-      <label>Salário por rodada<input id="offerSalary" type="number" min="10" value="${salary}"></label>
+      <label>Salário mensal<input id="offerSalary" type="number" min="10" value="${salary}"></label>
       <label>Duração do contrato<select id="offerYears"><option value="1">1 temporada</option><option value="2">2 temporadas</option><option value="3" selected>3 temporadas</option><option value="4">4 temporadas</option></select></label>
-      <div class="offer-summary">Pedido aproximado: <b>${fee.toLocaleString("pt-BR")}</b> · Salário sugerido: <b>${Number(p.suggested_salary||0).toLocaleString("pt-BR")}</b> · Interesse atual: <b>${esc(p.interest)}</b></div>
+      <div class="offer-summary">Pedido aproximado: <b>${fee.toLocaleString("pt-BR")}</b> · Salário mensal sugerido: <b>${Number(p.suggested_salary||0).toLocaleString("pt-BR")}</b> · Interesse atual: <b>${esc(p.interest)}</b></div>
       <div id="offerMsg"></div>
       <button class="primary">Enviar proposta</button>
     </form>
@@ -653,6 +791,18 @@ function bindMarket(){
   const form=app.querySelector("#transferSearch");
   if(form)form.onsubmit=async e=>{e.preventDefault();await searchTransfers()};
   bindTransferButtons();
+  app.querySelectorAll(".accept-offer").forEach(b=>b.onclick=async()=>{
+    const offer=state.incomingOffers.find(o=>String(o.id)===String(b.dataset.id));
+    if(!offer||!confirm(`Vender ${offer.player_name} para ${offer.buying_club_name} por ${Number(offer.amount).toLocaleString("pt-BR")} moedas?`))return;
+    try{const d=await api(`/api/transfers/incoming/${offer.id}/accept`,{method:"POST",body:"{}"});await refreshAll();render();alert(`${d.playerName} vendido por ${Number(d.amount).toLocaleString("pt-BR")} moedas.`)}catch(err){alert(err.message)}
+  });
+  app.querySelectorAll(".reject-offer").forEach(b=>b.onclick=async()=>{
+    try{await api(`/api/transfers/incoming/${b.dataset.id}/reject`,{method:"POST",body:"{}"});await refreshAll();render()}catch(err){alert(err.message)}
+  });
+  const check=app.querySelector("#checkOffers");if(check)check.onclick=async()=>{
+    check.disabled=true;check.textContent="PROCURANDO...";
+    try{const d=await api("/api/transfers/incoming/generate",{method:"POST",body:"{}"});await refreshAll();render();if(!d.created)alert("Nenhuma nova proposta apareceu agora.")}catch(err){alert(err.message);check.disabled=false}
+  };
   if(!state.transferResults?.length)searchTransfers();
 }
 function bindFriends(){
@@ -668,6 +818,7 @@ function bindCompetitions(){
   const rs=app.querySelector("#roundSelect");
   if(rs)rs.onchange=()=>{state.roundByDiv[state.competitionTab]=Number(rs.value);render()};
   const ps=app.querySelector("#playState");if(ps)ps.onclick=async()=>{ps.disabled=true;await careerAction("state")};
+  const pc=app.querySelector("#playCopa");if(pc)pc.onclick=async()=>{pc.disabled=true;await careerAction("copa")};
   const pl=app.querySelector("#playLib");if(pl)pl.onclick=async()=>{pl.disabled=true;await careerAction("lib")};
 }
 
@@ -706,9 +857,12 @@ function bindClub(){
       state.matches=[];
       state.friends=[];
       state.competitions=null;
-      state.finance={wages:0,recent:[]};
+      state.finance={wages:0,recent:[],transferBan:{active:false}};
       state.clubEvents=[];
       state.transferResults=[];
+      state.trophies=[];
+      state.incomingOffers=[];
+      state.calendar=null;
       state.view="home";
       renderCreateClub();
     }catch(err){

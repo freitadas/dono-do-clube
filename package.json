@@ -1,8 +1,8 @@
 {
   "name": "dono-do-clube",
-  "version": "9.0.0",
+  "version": "14.0.0",
   "private": true,
-  "description": "Dono do Clube com simulação otimizada de uma rodada por vez e todos os recursos de gestão.",
+  "description": "Dono do Clube com Copa do Brasil, troféus, calendário mensal de salários, vendas, propostas e transfer ban.",
   "main": "server.js",
   "scripts": {
     "start": "node server.js"

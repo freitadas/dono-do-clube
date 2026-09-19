@@ -60,3 +60,17 @@ repeating-linear-gradient(0deg,#1e7d43 0,#1e7d43 56px,#237f47 56px,#237f47 112px
 @media(max-width:650px){.danger-zone{grid-template-columns:1fr}.danger-zone .danger{width:100%}}
 
 
+
+.squad-tools #bestSquad{white-space:nowrap}
+@media(max-width:650px){.squad-tools{width:100%}.squad-tools label,.squad-tools button{width:100%}}
+
+/* v14 — calendário, troféus, Copa do Brasil e mercado de vendas */
+.transfer-ban{display:grid;gap:5px;margin:12px 0;padding:13px 15px;border:1px solid #8a3d43;border-radius:14px;background:linear-gradient(135deg,#351619,#1a1011);color:#ffc1c5}.transfer-ban b{font-size:13px;letter-spacing:.04em}.transfer-ban span{font-size:12px;color:#e9a9ad}
+.calendar-grid{align-items:stretch}.calendar-card{height:100%}.calendar-money{display:flex;justify-content:space-between;gap:12px;align-items:center;padding:12px;border:1px solid var(--line);border-radius:13px;background:#09150e;margin:10px 0}.calendar-money b{font-size:18px;color:#bdf2cc}
+.trophy-grid{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:9px}.trophy-card{display:grid;grid-template-columns:auto 1fr;grid-template-rows:auto auto;column-gap:9px;align-items:center;padding:11px;border:1px solid #665719;border-radius:13px;background:linear-gradient(135deg,#2d260b,#151a0c)}.trophy-card>span{grid-row:1/3;font-size:28px}.trophy-card b{font-size:12px}.trophy-card small{font-size:10px;color:#d7c77c}.club-trophy-section{margin-top:20px;padding-top:18px;border-top:1px solid var(--line)}
+.copa-home{display:flex;justify-content:space-between;align-items:center;gap:16px;margin:14px 0;background:linear-gradient(135deg,#2a2410,#102518);border-color:#6d5f24}.copa-home h2{margin:4px 0}.copa-grid{grid-template-columns:repeat(5,1fr)}
+.sale-badge{display:inline-block;margin-top:8px;padding:4px 7px;border-radius:999px;background:#173c26;color:#aef2c5;border:1px solid #2e6843;font-size:9px;font-weight:950;letter-spacing:.08em}.player-actions{flex-wrap:wrap}.player-actions .list-player{min-width:96px}
+.incoming-section,.selling-section{margin:14px 0;padding:14px;border:1px solid var(--line);border-radius:16px;background:#0a1710}.incoming-section h3,.selling-section h3{margin:4px 0}.offer-list{display:grid;gap:9px}.incoming-offer{display:grid;grid-template-columns:1fr auto auto;gap:14px;align-items:center;padding:12px;border:1px solid #294b38;border-radius:14px;background:#0c1d14}.incoming-offer h4{margin:3px 0}.offer-value{display:grid;text-align:right}.offer-value small{font-size:9px;color:var(--muted)}.offer-value b{font-size:20px;color:#bdf2cc}.offer-actions{display:flex;gap:6px}.offer-actions button{padding:9px 11px}.listed-row{display:flex;gap:7px;flex-wrap:wrap}.listed-chip{padding:6px 9px;border-radius:999px;background:#173522;border:1px solid #315943;font-size:10px}.section-divider{border:0;border-top:1px solid var(--line);margin:18px 0}
+@media(max-width:1050px){.copa-grid{grid-template-columns:repeat(3,1fr)}}
+@media(max-width:760px){.copa-grid{grid-template-columns:1fr 1fr}.incoming-offer{grid-template-columns:1fr auto}.offer-actions{grid-column:1/-1}.offer-actions button{flex:1}.trophy-grid{grid-template-columns:1fr}}
+@media(max-width:560px){.copa-home{align-items:stretch;flex-direction:column}.copa-home button{width:100%}.copa-grid{grid-template-columns:1fr}.incoming-offer{grid-template-columns:1fr}.offer-value{text-align:left}.offer-actions{grid-column:auto}}

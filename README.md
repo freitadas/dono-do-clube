@@ -1,124 +1,104 @@
-# Dono do Clube v5 — gestão, mercado e partidas aprimorados
+# Dono do Clube v14 — Copa do Brasil, troféus, calendário e mercado de vendas
 
-Esta versão mantém a carreira A/B/C/D + Estaduais + Libertadores e adiciona uma camada de gestão mais completa.
+Esta versão mantém os recursos anteriores e adiciona novas camadas de temporada, finanças e transferências.
 
-## Novidades
+## Troféus e fim de temporada
 
-- Campo visual da escalação na aba **Elenco**.
-- Jogadores aparecem no gramado de acordo com a formação.
-- Botão **Sugerir rodízio**.
-- Físico/fadiga de 0 a 100.
-- Moral dos jogadores.
-- Lesões por número de jogos.
-- Jogadores cansados perdem rendimento.
-- IA também monta times considerando condição física.
-- Resultados com força do elenco, ataque, defesa, físico, moral e vantagem de jogar em casa.
-- Posições mais detalhadas: GK, CB, RB, LB, CDM, CM, CAM, RM, LM, RW, LW e ST.
-- Elencos novos com distribuição de posições mais equilibrada.
+Ao terminar a temporada, a tela inicial mostra os troféus conquistados naquela temporada.
 
-## Dinheiro e salários
+Também existe uma galeria permanente de troféus do clube. Podem ser registrados:
+- Campeonato Estadual;
+- Série A, B, C ou D;
+- Copa do Brasil;
+- Libertadores.
 
-- Caixa inicial de novos clubes: 30.000 moedas.
-- Migração de clubes existentes para um caixa mínimo de 25.000 moedas.
-- Salário individual por rodada.
-- Folha salarial total.
-- Receita de patrocinadores.
-- Bilheteria em jogos em casa.
-- Bônus por resultado.
-- Registro de receitas e despesas.
-- Rescisão custa duas rodadas de salário.
-- Contratos de 1 a 4 temporadas.
-- Renovação automática de segurança no fim do contrato para não deixar a equipe sem jogadores.
+Os troféus ficam salvos no PostgreSQL e continuam aparecendo nas temporadas seguintes.
 
-## Transferências
+## Copa do Brasil
 
-A compra direta foi removida.
+Foi adicionada a **Copa do Brasil** na aba Competições.
 
-Na aba **Mercado** existe pesquisa por:
-- nome;
-- posição;
-- overall mínimo;
-- preço máximo.
+Formato do jogo:
+- 32 clubes brasileiros;
+- mata-mata;
+- primeira fase com 32 clubes;
+- oitavas de final;
+- quartas de final;
+- semifinais;
+- final;
+- jogos em partida única;
+- empate decidido nos pênaltis.
 
-O sistema encontra:
-- jogadores livres;
-- jogadores de clubes controlados pelo jogo.
+O clube do usuário entra no torneio em todas as temporadas. A Copa fica disponível após o fim do Estadual. Se o usuário for eliminado, o restante é simulado automaticamente até definir o campeão.
 
-Para contratar:
-1. o clube vendedor pode aceitar ou recusar a taxa;
-2. o jogador avalia salário, duração do contrato, força do seu clube e divisão;
-3. o atleta pode recusar a proposta;
-4. em caso de aceite, taxa + luvas são descontadas imediatamente;
-5. o salário passa a integrar a folha salarial.
+## Calendário e salários mensais
 
-## Eventos inesperados
+Os salários **não são mais pagos por rodada**.
 
-Podem ocorrer:
-- lesões;
-- bônus comercial;
-- melhora de moral;
-- evolução no treino;
-- recuperação física do elenco;
-- impacto de caixa negativo no moral.
+A temporada possui um calendário próprio:
+- a data avança a cada compromisso oficial do usuário;
+- a folha salarial é cobrada uma vez quando o calendário entra em um novo mês;
+- a tela inicial mostra a data atual;
+- mostra a próxima data de pagamento;
+- mostra o valor da folha mensal;
+- mostra os pagamentos recentes.
 
-## Competições
+Receitas de bilheteria, patrocinadores e bônus de resultado continuam ligadas às partidas, mas os salários ficam separados no calendário mensal.
 
-Foram adicionados:
-- trava contra clique duplo/simulações simultâneas;
-- reparo automático de estado quando uma rodada/fase já foi concluída;
-- recuperação de progressão do Estadual;
-- recuperação de rodada do Brasileirão;
-- recuperação da Libertadores quando o estado da competição fica inconsistente.
+## Vender jogadores
 
-## Persistência
+Na aba Elenco, cada jogador possui a opção **Colocar à venda**.
 
-Conta, clube, carreira, finanças, jogadores e demais dados continuam no PostgreSQL do Render.
+Ao colocar um atleta à venda:
+- ele entra na lista de transferências do clube;
+- clubes controlados pelo jogo podem enviar propostas;
+- uma proposta também pode surgir durante os ciclos mensais do calendário;
+- o jogador pode ser retirado da lista de transferências.
 
+Na aba Mercado existe a seção **Propostas recebidas**, onde é possível:
+- ver qual clube fez a proposta;
+- ver o valor oferecido;
+- aceitar a venda;
+- recusar a proposta;
+- procurar novas propostas.
 
-## Modo FELIPE
+Ao aceitar:
+- o jogador é transferido para o clube comprador;
+- o valor entra no caixa;
+- as demais propostas pendentes pelo mesmo jogador expiram.
 
-Existe um modo especial ativado quando o nome do clube é exatamente `Felipe` (maiúsculas/minúsculas não importam).
+## Transfer ban por endividamento
 
-Ao criar o clube como Felipe ou mudar o nome para Felipe:
-- todos os jogadores do clube ficam com overall 100;
-- velocidade, chute, passe e defesa ficam em 100;
-- físico e moral ficam em 100;
-- lesões atuais são zeradas;
-- novos jogadores contratados também passam a 100 enquanto o clube continuar chamado Felipe;
-- o clube vence as partidas com placares especiais sorteados entre 100 x 0, 1067 x 0 e 67 x 42.
+Se o caixa do clube ficar abaixo de **-10.000 moedas**, entra em vigor um transfer ban.
 
-A aba **Clube** possui uma opção explícita para mudar o nome a qualquer momento.
+Durante o transfer ban:
+- novas contratações ficam bloqueadas;
+- a pesquisa de jogadores continua disponível;
+- vendas continuam permitidas para ajudar a recuperar o caixa;
+- propostas recebidas continuam funcionando.
 
+O ban é removido automaticamente quando o saldo volta para pelo menos -10.000 moedas.
 
-## Apagar time e reiniciar
+## Mercado e salários
 
-Na aba **Clube**, existe uma **Zona de perigo** com a opção **Apagar meu time**.
+As negociações de contratação agora usam **salário mensal**. O jogador continua podendo aceitar ou recusar com base em salário, duração de contrato, divisão e projeto esportivo.
 
-Ao usar essa opção:
-- é necessário digitar exatamente o nome atual do clube;
-- há uma segunda confirmação antes da exclusão;
-- clube, elenco, carreira, partidas, amizades, finanças, eventos e progresso do time são apagados;
-- a conta de login é preservada;
-- em seguida o usuário volta à tela de criação de clube;
-- o novo clube começa novamente na Série D e escolhe o estado do zero.
+## Recursos anteriores mantidos
 
-
-
-
-## Simulação de rodada mais rápida
-
-A simulação continua avançando **somente uma rodada por clique**.
-
-Não existem mais botões para:
-- simular 3, 5 ou 10 rodadas;
-- simular uma competição inteira;
-- simular uma temporada inteira.
-
-O botão normal **JOGAR RODADA** foi otimizado:
-- os jogos dos outros clubes são calculados em memória;
-- apenas a partida do usuário usa o motor detalhado;
-- a tabela das quatro divisões é atualizada de uma vez;
-- o estado da carreira é gravado apenas uma vez ao final da rodada;
-- físico, moral, salários, eventos e estatísticas do jogo do usuário continuam funcionando normalmente.
-
-Todos os demais recursos da versão anterior foram mantidos.
+- Séries A, B, C e D;
+- 20 clubes por divisão;
+- 38 rodadas, ida e volta;
+- acesso e rebaixamento;
+- Estaduais;
+- Libertadores;
+- escalação visual;
+- botão Escalar melhores;
+- rodízio;
+- fadiga, moral e lesões;
+- mercado com negociação;
+- personalização e escudo;
+- jogar contra amigos;
+- Modo Felipe;
+- opção de apagar o time e reiniciar;
+- simulação otimizada de uma rodada por clique;
+- persistência de dados no PostgreSQL.
