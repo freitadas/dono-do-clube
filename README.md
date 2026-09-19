@@ -88,3 +88,16 @@ Ao criar o clube como Felipe ou mudar o nome para Felipe:
 - o clube vence as partidas com placares especiais sorteados entre 100 x 0, 1067 x 0 e 67 x 42.
 
 A aba **Clube** possui uma opção explícita para mudar o nome a qualquer momento.
+
+
+## Apagar time e reiniciar
+
+Na aba **Clube**, existe uma **Zona de perigo** com a opção **Apagar meu time**.
+
+Ao usar essa opção:
+- é necessário digitar exatamente o nome atual do clube;
+- há uma segunda confirmação antes da exclusão;
+- clube, elenco, carreira, partidas, amizades, finanças, eventos e progresso do time são apagados;
+- a conta de login é preservada;
+- em seguida o usuário volta à tela de criação de clube;
+- o novo clube começa novamente na Série D e escolhe o estado do zero.

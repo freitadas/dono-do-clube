@@ -1225,6 +1225,34 @@ app.put("/api/club/state",auth,async(req,res,next)=>{
   }catch(e){next(e)}
 });
 
+app.delete("/api/club",auth,async(req,res,next)=>{
+  try{
+    const club=await userClub(req.user.id);
+    if(!club)return res.status(404).json({error:"Clube não encontrado."});
+
+    const confirmName=String(req.body.confirmName||"").trim();
+    if(confirmName!==club.name){
+      return res.status(400).json({error:"Digite exatamente o nome atual do clube para confirmar."});
+    }
+
+    await withCompetitionLock(club.id,async()=>{
+      await tx(async client=>{
+        // Remove os jogadores do clube em vez de transformá-los em agentes livres.
+        await client.query(`DELETE FROM players WHERE club_id=$1`,[club.id]);
+
+        // As demais estruturas vinculadas ao clube usam ON DELETE CASCADE:
+        // carreira, partidas, amizades, finanças e eventos.
+        await client.query(`DELETE FROM clubs WHERE id=$1 AND user_id=$2`,[club.id,req.user.id]);
+      });
+    });
+
+    res.json({
+      ok:true,
+      message:"Clube apagado. Sua conta foi mantida e você pode criar um novo clube do zero."
+    });
+  }catch(e){next(e)}
+});
+
 app.put("/api/club/customize",auth,async(req,res,next)=>{
   try{
     const c=await userClub(req.user.id);

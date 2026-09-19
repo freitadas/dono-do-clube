@@ -469,6 +469,15 @@ function clubView(){
         <div style="display:flex;gap:8px"><button type="button" id="removeCrest" class="secondary">Remover escudo</button><button class="primary" style="flex:1">Salvar nome e personalização</button></div>
         <div id="customMsg"></div>
       </form>
+
+      <div class="danger-zone">
+        <div>
+          <div class="kicker danger-kicker">ZONA DE PERIGO</div>
+          <h3>Apagar time e reiniciar do início</h3>
+          <p class="muted">Apaga o clube, elenco, carreira, partidas, amigos, finanças e progresso esportivo. Sua conta continua existindo para você criar um novo clube na Série D.</p>
+        </div>
+        <button type="button" id="deleteClub" class="danger">Apagar meu time</button>
+      </div>
     </div>
   </section>`;
 }
@@ -677,6 +686,38 @@ function bindClub(){
     try{pendingCrest=await resizeImage(f,256,256);sync()}catch(err){alert(err.message)}
   };
   app.querySelector("#removeCrest").onclick=()=>{pendingCrest=null;sync()};
+  const deleteClub=app.querySelector("#deleteClub");
+  if(deleteClub)deleteClub.onclick=async()=>{
+    const typed=prompt(`Para apagar definitivamente o time, digite exatamente o nome atual do clube:\n\n${state.club.name}`);
+    if(typed===null)return;
+    if(typed!==state.club.name){
+      alert("O nome digitado não corresponde ao nome atual do clube.");
+      return;
+    }
+    if(!confirm("Esta ação apaga todo o progresso do time e não pode ser desfeita. Continuar?"))return;
+
+    deleteClub.disabled=true;
+    deleteClub.textContent="APAGANDO...";
+    try{
+      await api("/api/club",{method:"DELETE",body:JSON.stringify({confirmName:typed})});
+      state.club=null;
+      state.players=[];
+      state.market=[];
+      state.matches=[];
+      state.friends=[];
+      state.competitions=null;
+      state.finance={wages:0,recent:[]};
+      state.clubEvents=[];
+      state.transferResults=[];
+      state.view="home";
+      renderCreateClub();
+    }catch(err){
+      alert(err.message);
+      deleteClub.disabled=false;
+      deleteClub.textContent="Apagar meu time";
+    }
+  };
+
   app.querySelector("#customForm").onsubmit=async e=>{
     e.preventDefault();
     try{
