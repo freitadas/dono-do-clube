@@ -2897,7 +2897,6 @@ async function searchTransfers(){
   if(box)box.innerHTML=`<div class="empty">Procurando jogadores...</div>`;
 
   try{
-    if(typeof api!=="function") throw new Error("Sistema de pesquisa indisponível.");
     const d=await api(`/api/transfers/search?q=${qv}&position=${pos}&minRating=${min}&maxPrice=${max}&realOnly=${realOnly}`);
     state.transferResults=d.players||[];
     state.marketProfile=d.marketProfile||state.marketProfile;
@@ -3067,6 +3066,41 @@ function openLoanOffer(p){
     }
   };
 }
+// FIX V38 PROPOSTAS DELEGADO
+// Mantém os botões funcionando mesmo após renderizações da tela.
+if(!window.__v38ProposalButtons){
+  window.__v38ProposalButtons=true;
+  document.addEventListener("click", async function(e){
+    const check=e.target.closest("#checkOffers");
+    const accept=e.target.closest(".accept-offer");
+    const reject=e.target.closest(".reject-offer");
+    if(!check&&!accept&&!reject)return;
+    e.preventDefault();
+    if(check){
+      check.disabled=true;
+      check.textContent="PROCURANDO...";
+      try{
+        const d=await api("/api/transfers/incoming/generate",{method:"POST",body:"{}"});
+        await refreshAll();
+        render();
+        if(!d.created) alert("Nenhuma nova proposta apareceu agora.");
+      }catch(err){alert(err.message);check.disabled=false;check.textContent="Buscar novas propostas";}
+    }
+    if(accept){
+      const offer=(state.incomingOffers||[]).find(o=>String(o.id)===String(accept.dataset.id));
+      if(!offer||!confirm(`Vender ${offer.player_name} para ${offer.buying_club_name}?`))return;
+      accept.disabled=true;
+      try{await api(`/api/transfers/incoming/${offer.id}/accept`,{method:"POST",body:"{}"});await refreshAll();render();}
+      catch(err){alert(err.message);accept.disabled=false;}
+    }
+    if(reject){
+      reject.disabled=true;
+      try{await api(`/api/transfers/incoming/${reject.dataset.id}/reject`,{method:"POST",body:"{}"});await refreshAll();render();}
+      catch(err){alert(err.message);reject.disabled=false;}
+    }
+  }, true);
+}
+
 function bindMarket(){
   bindLoanPurchaseButtons();
 
@@ -3084,13 +3118,11 @@ function bindMarket(){
     });
   }
   if(searchBtn){
-    // Botão restaurado: comportamento antigo, pesquisa direta sem recarregar a página.
-    searchBtn.onclick=async e=>{
+    searchBtn.addEventListener("click",async e=>{
       e.preventDefault();
       e.stopPropagation();
       await searchTransfers();
-      return false;
-    };
+    });
   }
 
   const position=app.querySelector("#searchPosition");
@@ -3121,38 +3153,8 @@ function bindMarket(){
     check.disabled=true;check.textContent="PROCURANDO...";
     try{const d=await api("/api/transfers/incoming/generate",{method:"POST",body:"{}"});await refreshAll();render();if(!d.created)alert("Nenhuma nova proposta apareceu agora.")}catch(err){alert(err.message);check.disabled=false}
   };
-  // v33 FIX FINAL aplicado por delegação global
-  const finalSearchBtn=app.querySelector("#transferSearchBtn");
-  if(finalSearchBtn){
-    finalSearchBtn.onclick=async function(e){
-      e.preventDefault();
-      e.stopPropagation();
-      await searchTransfers();
-      return false;
-    };
-  }
-
   if(!state.transferResults?.length)searchTransfers();
 }
-
-// Correção definitiva do botão Pesquisar Mercado.
-// Funciona mesmo quando a aba é recriada por render().
-if(!window.__marketSearchDelegated){
-  window.__marketSearchDelegated=true;
-  document.addEventListener("click",async function(e){
-    const btn=e.target.closest("#transferSearchBtn");
-    if(!btn)return;
-    e.preventDefault();
-    e.stopPropagation();
-    try{
-      await searchTransfers();
-    }catch(err){
-      const msg=document.querySelector("#transferMsg");
-      if(msg) msg.innerHTML=`<div class="msg">${esc(err.message)}</div>`;
-    }
-  }, true);
-}
-
 function bindFriends(){
   app.querySelector("#copyCode").onclick=async()=>{try{await navigator.clipboard.writeText(state.club.friend_code);app.querySelector("#friendMsg").innerHTML=`<div class="msg ok">Código copiado.</div>`}catch{alert(state.club.friend_code)}};
   app.querySelector("#addFriend").onclick=async()=>{try{await api("/api/friends/add",{method:"POST",body:JSON.stringify({code:app.querySelector("#friendCode").value.trim()})});await refreshAll();render()}catch(err){app.querySelector("#friendMsg").innerHTML=`<div class="msg">${esc(err.message)}</div>`}};
