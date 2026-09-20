@@ -3121,7 +3121,7 @@ function bindMarket(){
     check.disabled=true;check.textContent="PROCURANDO...";
     try{const d=await api("/api/transfers/incoming/generate",{method:"POST",body:"{}"});await refreshAll();render();if(!d.created)alert("Nenhuma nova proposta apareceu agora.")}catch(err){alert(err.message);check.disabled=false}
   };
-  // v33 FIX FINAL: garante o clique do botão de pesquisa mesmo após re-renderizações
+  // v33 FIX FINAL aplicado por delegação global
   const finalSearchBtn=app.querySelector("#transferSearchBtn");
   if(finalSearchBtn){
     finalSearchBtn.onclick=async function(e){
@@ -3134,6 +3134,25 @@ function bindMarket(){
 
   if(!state.transferResults?.length)searchTransfers();
 }
+
+// Correção definitiva do botão Pesquisar Mercado.
+// Funciona mesmo quando a aba é recriada por render().
+if(!window.__marketSearchDelegated){
+  window.__marketSearchDelegated=true;
+  document.addEventListener("click",async function(e){
+    const btn=e.target.closest("#transferSearchBtn");
+    if(!btn)return;
+    e.preventDefault();
+    e.stopPropagation();
+    try{
+      await searchTransfers();
+    }catch(err){
+      const msg=document.querySelector("#transferMsg");
+      if(msg) msg.innerHTML=`<div class="msg">${esc(err.message)}</div>`;
+    }
+  }, true);
+}
+
 function bindFriends(){
   app.querySelector("#copyCode").onclick=async()=>{try{await navigator.clipboard.writeText(state.club.friend_code);app.querySelector("#friendMsg").innerHTML=`<div class="msg ok">Código copiado.</div>`}catch{alert(state.club.friend_code)}};
   app.querySelector("#addFriend").onclick=async()=>{try{await api("/api/friends/add",{method:"POST",body:JSON.stringify({code:app.querySelector("#friendCode").value.trim()})});await refreshAll();render()}catch(err){app.querySelector("#friendMsg").innerHTML=`<div class="msg">${esc(err.message)}</div>`}};
