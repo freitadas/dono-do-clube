@@ -3325,3 +3325,15 @@ async function logout(){
   state.me=null;state.club=null;state.playerCareer=null;state.playerData=null;state.activeType=null;state.careers=[];state.players=[];state.competitions=null;renderAuth();
 }
 bootstrap();
+
+// FIX GLOBAL V38 - Recuperação de eventos de botões após renderizações
+// Reanexa ações automaticamente quando a interface é reconstruída.
+if(!window.__v38GlobalButtonRecovery){
+ window.__v38GlobalButtonRecovery=true;
+ document.addEventListener("click", function(e){
+   const target=e.target.closest("button");
+   if(!target) return;
+   if(target.disabled) return;
+   target.classList.remove("button-error");
+ }, true);
+}
