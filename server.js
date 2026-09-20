@@ -4478,8 +4478,10 @@ async function playCopa(ownerId){
 
 async function playState(ownerId){
   const career=await getCareer(ownerId);
+  if(!ownerId) throw Object.assign(new Error("Clube da carreira não encontrado."),{status:400});
   if(!career||career.phase!=="STATE") throw Object.assign(new Error("O Estadual não está ativo."),{status:400});
   const s=career.data.state;
+  if(!s || !Array.isArray(s.fixtures) || !Array.isArray(s.entries)) throw Object.assign(new Error("Dados do Estadual inválidos. Simule a temporada ou recarregue a carreira."),{status:400});
   let userMatch=null;
 
   if(s.stage==="GROUP"){
