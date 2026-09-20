@@ -2540,7 +2540,21 @@ async function careerAction(action){
 }
 
 function bindLoanPurchaseButtons(){
-  bindLoanPurchaseButtons();
+  app.querySelectorAll(".buy-loan-option").forEach(btn=>{
+    btn.onclick=async()=>{
+      const loanId=btn.dataset.loan;
+      if(!loanId)return;
+      btn.disabled=true;
+      try{
+        await api(`/api/transfers/loans/${loanId}/buy`,{method:"POST",body:"{}"});
+        await refreshAll();
+        render();
+      }catch(err){
+        alert(err.message);
+        btn.disabled=false;
+      }
+    };
+  });
 }
 
 function bindManagerOfferButtons(){
