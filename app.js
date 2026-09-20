@@ -3348,3 +3348,27 @@ if(!window.__v38SearchHardFix){
    }
  }, true);
 }
+
+
+// V38 ACADEMIA MELHORADA - gera jovens mais variados e com potencial
+function improveYouthAcademy(player){
+  if(!player) return player;
+  const age=Number(player.age||17);
+  player.potential=Math.max(Number(player.potential||0), Math.min(95, Number(player.rating||60)+Math.floor(Math.random()*25)));
+  player.baseProfile=player.baseProfile||(["Velocista","Finalizador","Armador","Marcador","Driblador"][Math.floor(Math.random()*5)]);
+  player.attributes=player.attributes||{};
+  const attrs=["pace","shooting","passing","dribbling","physical"];
+  attrs.forEach(a=>{if(!player.attributes[a]) player.attributes[a]=Math.max(40,Number(player.rating||55)-5+Math.floor(Math.random()*15));});
+  player.age=age;
+  return player;
+}
+
+// V38 BUTTON WATCHDOG - recupera listeners após telas dinâmicas
+if(!window.__v38ButtonWatchdog){
+ window.__v38ButtonWatchdog=true;
+ const observer=new MutationObserver(()=>{
+   if(typeof bindMarket==="function" && state.view==="market") bindMarket();
+   if(typeof bindTransferButtons==="function") bindTransferButtons();
+ });
+ observer.observe(document.body,{childList:true,subtree:true});
+}
