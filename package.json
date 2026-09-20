@@ -1,8 +1,8 @@
 {
   "name": "dono-do-clube",
-  "version": "36.0.0",
+  "version": "38.0.0",
   "private": true,
-  "description": "Dono do Clube com correção da pesquisa do Mercado para atualizar apenas os resultados sem recarregar a página.",
+  "description": "Dono do Clube v38 com pacote de realismo: disciplina, forma, táticas, banco e substituições, base, potencial, scouting, comissão, estádio, rivalidades, histórico, mercado vivo e propostas de outros clubes ao treinador.",
   "main": "server.js",
   "scripts": {
     "start": "node server.js"

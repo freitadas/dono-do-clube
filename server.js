@@ -36,6 +36,7 @@ const V32_MIGRATION_KEY = "v32_realistic_rotation_performance_offers_20260919";
 const V33_MIGRATION_KEY = "v33_copa_skip_and_career_condition_freeze_20260919";
 const V34_MIGRATION_KEY = "v34_copa_brasil_libertadores_qualification_20260919";
 const V35_MIGRATION_KEY = "v35_loan_purchase_option_contract_renewal_20260919";
+const V38_MIGRATION_KEY = "v38_realism_suite_manager_offers_20260920";
 const MAX_CAREERS_PER_USER = 10;
 const TRANSFER_BAN_THRESHOLD = -10000;
 const competitionLocks = new Set();
@@ -116,6 +117,20 @@ async function initDb(){
       saf_debt_relegations INTEGER NOT NULL DEFAULT 0,
       board_confidence INTEGER NOT NULL DEFAULT 60,
       media_pressure INTEGER NOT NULL DEFAULT 0,
+      chemistry INTEGER NOT NULL DEFAULT 70,
+      manager_reputation INTEGER NOT NULL DEFAULT 50,
+      coach_name TEXT,
+      stadium_capacity INTEGER NOT NULL DEFAULT 12000,
+      stadium_level INTEGER NOT NULL DEFAULT 1,
+      ticket_price INTEGER NOT NULL DEFAULT 30,
+      rival_club_id BIGINT REFERENCES clubs(id) ON DELETE SET NULL,
+      tactic_pressing TEXT NOT NULL DEFAULT 'NORMAL',
+      tactic_defensive_line TEXT NOT NULL DEFAULT 'NORMAL',
+      tactic_tempo TEXT NOT NULL DEFAULT 'NORMAL',
+      tactic_width TEXT NOT NULL DEFAULT 'NORMAL',
+      tactic_style TEXT NOT NULL DEFAULT 'BALANCED',
+      tactic_marking TEXT NOT NULL DEFAULT 'NORMAL',
+      last_match_game_date DATE,
       created_at TIMESTAMPTZ NOT NULL DEFAULT NOW()
     );
 
@@ -139,6 +154,22 @@ async function initDb(){
       red_cards INTEGER NOT NULL DEFAULT 0,
       clean_sheets INTEGER NOT NULL DEFAULT 0,
       consecutive_starts INTEGER NOT NULL DEFAULT 0,
+      potential INTEGER NOT NULL DEFAULT 70,
+      form_rating INTEGER NOT NULL DEFAULT 70,
+      suspension_games INTEGER NOT NULL DEFAULT 0,
+      yellow_accumulation INTEGER NOT NULL DEFAULT 0,
+      injury_type TEXT,
+      squad_status TEXT NOT NULL DEFAULT 'ROTATION',
+      happiness INTEGER NOT NULL DEFAULT 75,
+      tactical_role TEXT NOT NULL DEFAULT 'BALANCED',
+      is_captain BOOLEAN NOT NULL DEFAULT FALSE,
+      set_piece_role TEXT NOT NULL DEFAULT 'NONE',
+      academy_product BOOLEAN NOT NULL DEFAULT FALSE,
+      is_bench BOOLEAN NOT NULL DEFAULT FALSE,
+      season_appearances INTEGER NOT NULL DEFAULT 0,
+      season_goals INTEGER NOT NULL DEFAULT 0,
+      season_assists INTEGER NOT NULL DEFAULT 0,
+      season_clean_sheets INTEGER NOT NULL DEFAULT 0,
       created_at TIMESTAMPTZ NOT NULL DEFAULT NOW()
     );
 
@@ -153,6 +184,10 @@ async function initDb(){
       opponent_rating INTEGER NOT NULL,
       events JSONB NOT NULL DEFAULT '[]'::jsonb,
       match_type TEXT NOT NULL DEFAULT 'league',
+      season_no INTEGER NOT NULL DEFAULT 1,
+      is_home BOOLEAN NOT NULL DEFAULT TRUE,
+      attendance INTEGER NOT NULL DEFAULT 0,
+      game_date DATE,
       played_at TIMESTAMPTZ NOT NULL DEFAULT NOW()
     );
 
@@ -347,6 +382,109 @@ async function initDb(){
       manual_saved_at TIMESTAMPTZ,
       created_at TIMESTAMPTZ NOT NULL DEFAULT NOW(),
       updated_at TIMESTAMPTZ NOT NULL DEFAULT NOW()
+    );
+
+
+    CREATE TABLE IF NOT EXISTS club_staff(
+      id BIGSERIAL PRIMARY KEY,
+      club_id BIGINT NOT NULL REFERENCES clubs(id) ON DELETE CASCADE,
+      role TEXT NOT NULL,
+      staff_name TEXT NOT NULL,
+      level INTEGER NOT NULL DEFAULT 1,
+      salary INTEGER NOT NULL DEFAULT 200,
+      UNIQUE(club_id,role)
+    );
+
+    CREATE TABLE IF NOT EXISTS academy_players(
+      id BIGSERIAL PRIMARY KEY,
+      club_id BIGINT NOT NULL REFERENCES clubs(id) ON DELETE CASCADE,
+      season_no INTEGER NOT NULL,
+      name TEXT NOT NULL,
+      position TEXT NOT NULL,
+      role TEXT NOT NULL,
+      age INTEGER NOT NULL,
+      rating INTEGER NOT NULL,
+      potential INTEGER NOT NULL,
+      status TEXT NOT NULL DEFAULT 'academy',
+      created_at TIMESTAMPTZ NOT NULL DEFAULT NOW()
+    );
+
+    CREATE TABLE IF NOT EXISTS player_season_history(
+      id BIGSERIAL PRIMARY KEY,
+      club_id BIGINT NOT NULL REFERENCES clubs(id) ON DELETE CASCADE,
+      player_id BIGINT REFERENCES players(id) ON DELETE SET NULL,
+      player_name TEXT NOT NULL,
+      season_no INTEGER NOT NULL,
+      appearances INTEGER NOT NULL DEFAULT 0,
+      goals INTEGER NOT NULL DEFAULT 0,
+      assists INTEGER NOT NULL DEFAULT 0,
+      clean_sheets INTEGER NOT NULL DEFAULT 0,
+      yellow_cards INTEGER NOT NULL DEFAULT 0,
+      red_cards INTEGER NOT NULL DEFAULT 0,
+      rating_end INTEGER NOT NULL DEFAULT 0,
+      UNIQUE(club_id,season_no,player_id)
+    );
+
+    CREATE TABLE IF NOT EXISTS career_season_history(
+      id BIGSERIAL PRIMARY KEY,
+      club_id BIGINT NOT NULL REFERENCES clubs(id) ON DELETE CASCADE,
+      season_no INTEGER NOT NULL,
+      division TEXT NOT NULL,
+      final_position INTEGER,
+      wins INTEGER NOT NULL DEFAULT 0,
+      draws INTEGER NOT NULL DEFAULT 0,
+      losses INTEGER NOT NULL DEFAULT 0,
+      gf INTEGER NOT NULL DEFAULT 0,
+      ga INTEGER NOT NULL DEFAULT 0,
+      trophies INTEGER NOT NULL DEFAULT 0,
+      top_scorer TEXT,
+      top_scorer_goals INTEGER NOT NULL DEFAULT 0,
+      balance INTEGER NOT NULL DEFAULT 0,
+      created_at TIMESTAMPTZ NOT NULL DEFAULT NOW(),
+      UNIQUE(club_id,season_no)
+    );
+
+    CREATE TABLE IF NOT EXISTS player_awards(
+      id BIGSERIAL PRIMARY KEY,
+      club_id BIGINT NOT NULL REFERENCES clubs(id) ON DELETE CASCADE,
+      season_no INTEGER NOT NULL,
+      player_id BIGINT REFERENCES players(id) ON DELETE SET NULL,
+      player_name TEXT NOT NULL,
+      award_type TEXT NOT NULL,
+      award_title TEXT NOT NULL,
+      created_at TIMESTAMPTZ NOT NULL DEFAULT NOW(),
+      UNIQUE(club_id,season_no,award_type)
+    );
+
+    CREATE TABLE IF NOT EXISTS manager_job_offers(
+      id BIGSERIAL PRIMARY KEY,
+      user_club_id BIGINT NOT NULL REFERENCES clubs(id) ON DELETE CASCADE,
+      offering_club_id BIGINT NOT NULL REFERENCES clubs(id) ON DELETE CASCADE,
+      season_no INTEGER NOT NULL,
+      salary INTEGER NOT NULL DEFAULT 0,
+      performance_score INTEGER NOT NULL DEFAULT 0,
+      status TEXT NOT NULL DEFAULT 'pending',
+      created_at TIMESTAMPTZ NOT NULL DEFAULT NOW()
+    );
+
+    CREATE TABLE IF NOT EXISTS scout_reports(
+      id BIGSERIAL PRIMARY KEY,
+      club_id BIGINT NOT NULL REFERENCES clubs(id) ON DELETE CASCADE,
+      target_player_id BIGINT NOT NULL REFERENCES players(id) ON DELETE CASCADE,
+      exact_rating INTEGER NOT NULL,
+      created_at TIMESTAMPTZ NOT NULL DEFAULT NOW(),
+      UNIQUE(club_id,target_player_id)
+    );
+
+    CREATE TABLE IF NOT EXISTS ai_transfer_log(
+      id BIGSERIAL PRIMARY KEY,
+      career_owner_id BIGINT NOT NULL REFERENCES clubs(id) ON DELETE CASCADE,
+      season_no INTEGER NOT NULL,
+      player_name TEXT NOT NULL,
+      from_club_name TEXT NOT NULL,
+      to_club_name TEXT NOT NULL,
+      fee INTEGER NOT NULL DEFAULT 0,
+      created_at TIMESTAMPTZ NOT NULL DEFAULT NOW()
     );
 
     CREATE TABLE IF NOT EXISTS app_meta(
@@ -770,6 +908,198 @@ async function applyV35Migration(){
   });
 }
 
+async function applyV38Migration(){
+  const done=await q(`SELECT 1 FROM app_meta WHERE key=$1`,[V38_MIGRATION_KEY]);
+  if(done.rowCount)return;
+  await tx(async c=>{
+    for(const sql of [
+      `ALTER TABLE clubs ADD COLUMN IF NOT EXISTS chemistry INTEGER NOT NULL DEFAULT 70`,
+      `ALTER TABLE clubs ADD COLUMN IF NOT EXISTS manager_reputation INTEGER NOT NULL DEFAULT 50`,
+      `ALTER TABLE clubs ADD COLUMN IF NOT EXISTS coach_name TEXT`,
+      `ALTER TABLE clubs ADD COLUMN IF NOT EXISTS stadium_capacity INTEGER NOT NULL DEFAULT 12000`,
+      `ALTER TABLE clubs ADD COLUMN IF NOT EXISTS stadium_level INTEGER NOT NULL DEFAULT 1`,
+      `ALTER TABLE clubs ADD COLUMN IF NOT EXISTS ticket_price INTEGER NOT NULL DEFAULT 30`,
+      `ALTER TABLE clubs ADD COLUMN IF NOT EXISTS rival_club_id BIGINT REFERENCES clubs(id) ON DELETE SET NULL`,
+      `ALTER TABLE clubs ADD COLUMN IF NOT EXISTS tactic_pressing TEXT NOT NULL DEFAULT 'NORMAL'`,
+      `ALTER TABLE clubs ADD COLUMN IF NOT EXISTS tactic_defensive_line TEXT NOT NULL DEFAULT 'NORMAL'`,
+      `ALTER TABLE clubs ADD COLUMN IF NOT EXISTS tactic_tempo TEXT NOT NULL DEFAULT 'NORMAL'`,
+      `ALTER TABLE clubs ADD COLUMN IF NOT EXISTS tactic_width TEXT NOT NULL DEFAULT 'NORMAL'`,
+      `ALTER TABLE clubs ADD COLUMN IF NOT EXISTS tactic_style TEXT NOT NULL DEFAULT 'BALANCED'`,
+      `ALTER TABLE clubs ADD COLUMN IF NOT EXISTS tactic_marking TEXT NOT NULL DEFAULT 'NORMAL'`,
+      `ALTER TABLE clubs ADD COLUMN IF NOT EXISTS last_match_game_date DATE`,
+      `ALTER TABLE players ADD COLUMN IF NOT EXISTS potential INTEGER NOT NULL DEFAULT 70`,
+      `ALTER TABLE players ADD COLUMN IF NOT EXISTS form_rating INTEGER NOT NULL DEFAULT 70`,
+      `ALTER TABLE players ADD COLUMN IF NOT EXISTS suspension_games INTEGER NOT NULL DEFAULT 0`,
+      `ALTER TABLE players ADD COLUMN IF NOT EXISTS yellow_accumulation INTEGER NOT NULL DEFAULT 0`,
+      `ALTER TABLE players ADD COLUMN IF NOT EXISTS injury_type TEXT`,
+      `ALTER TABLE players ADD COLUMN IF NOT EXISTS squad_status TEXT NOT NULL DEFAULT 'ROTATION'`,
+      `ALTER TABLE players ADD COLUMN IF NOT EXISTS happiness INTEGER NOT NULL DEFAULT 75`,
+      `ALTER TABLE players ADD COLUMN IF NOT EXISTS tactical_role TEXT NOT NULL DEFAULT 'BALANCED'`,
+      `ALTER TABLE players ADD COLUMN IF NOT EXISTS is_captain BOOLEAN NOT NULL DEFAULT FALSE`,
+      `ALTER TABLE players ADD COLUMN IF NOT EXISTS set_piece_role TEXT NOT NULL DEFAULT 'NONE'`,
+      `ALTER TABLE players ADD COLUMN IF NOT EXISTS academy_product BOOLEAN NOT NULL DEFAULT FALSE`,
+      `ALTER TABLE players ADD COLUMN IF NOT EXISTS is_bench BOOLEAN NOT NULL DEFAULT FALSE`,
+      `ALTER TABLE players ADD COLUMN IF NOT EXISTS season_appearances INTEGER NOT NULL DEFAULT 0`,
+      `ALTER TABLE players ADD COLUMN IF NOT EXISTS season_goals INTEGER NOT NULL DEFAULT 0`,
+      `ALTER TABLE players ADD COLUMN IF NOT EXISTS season_assists INTEGER NOT NULL DEFAULT 0`,
+      `ALTER TABLE players ADD COLUMN IF NOT EXISTS season_clean_sheets INTEGER NOT NULL DEFAULT 0`,
+      `ALTER TABLE matches ADD COLUMN IF NOT EXISTS season_no INTEGER NOT NULL DEFAULT 1`,
+      `ALTER TABLE matches ADD COLUMN IF NOT EXISTS is_home BOOLEAN NOT NULL DEFAULT TRUE`,
+      `ALTER TABLE matches ADD COLUMN IF NOT EXISTS attendance INTEGER NOT NULL DEFAULT 0`,
+      `ALTER TABLE matches ADD COLUMN IF NOT EXISTS game_date DATE`
+    ]) await c.query(sql);
+
+    await c.query(`
+      UPDATE players SET
+        potential=GREATEST(rating,LEAST(99,
+          CASE
+            WHEN age<=20 THEN rating+8
+            WHEN age<=23 THEN rating+5
+            WHEN age<=27 THEN rating+2
+            ELSE rating
+          END
+        )),
+        form_rating=COALESCE(NULLIF(form_rating,0),70),
+        happiness=COALESCE(NULLIF(happiness,0),75),
+        squad_status=CASE WHEN is_starter THEN 'STARTER' ELSE 'ROTATION' END
+    `);
+
+    await c.query(`
+      CREATE TABLE IF NOT EXISTS club_staff(
+        id BIGSERIAL PRIMARY KEY,
+        club_id BIGINT NOT NULL REFERENCES clubs(id) ON DELETE CASCADE,
+        role TEXT NOT NULL,
+        staff_name TEXT NOT NULL,
+        level INTEGER NOT NULL DEFAULT 1,
+        salary INTEGER NOT NULL DEFAULT 200,
+        UNIQUE(club_id,role)
+      )
+    `);
+    await c.query(`
+      CREATE TABLE IF NOT EXISTS academy_players(
+        id BIGSERIAL PRIMARY KEY,
+        club_id BIGINT NOT NULL REFERENCES clubs(id) ON DELETE CASCADE,
+        season_no INTEGER NOT NULL,
+        name TEXT NOT NULL,
+        position TEXT NOT NULL,
+        role TEXT NOT NULL,
+        age INTEGER NOT NULL,
+        rating INTEGER NOT NULL,
+        potential INTEGER NOT NULL,
+        status TEXT NOT NULL DEFAULT 'academy',
+        created_at TIMESTAMPTZ NOT NULL DEFAULT NOW()
+      )
+    `);
+    await c.query(`
+      CREATE TABLE IF NOT EXISTS player_season_history(
+        id BIGSERIAL PRIMARY KEY,
+        club_id BIGINT NOT NULL REFERENCES clubs(id) ON DELETE CASCADE,
+        player_id BIGINT REFERENCES players(id) ON DELETE SET NULL,
+        player_name TEXT NOT NULL,
+        season_no INTEGER NOT NULL,
+        appearances INTEGER NOT NULL DEFAULT 0,
+        goals INTEGER NOT NULL DEFAULT 0,
+        assists INTEGER NOT NULL DEFAULT 0,
+        clean_sheets INTEGER NOT NULL DEFAULT 0,
+        yellow_cards INTEGER NOT NULL DEFAULT 0,
+        red_cards INTEGER NOT NULL DEFAULT 0,
+        rating_end INTEGER NOT NULL DEFAULT 0,
+        UNIQUE(club_id,season_no,player_id)
+      )
+    `);
+    await c.query(`
+      CREATE TABLE IF NOT EXISTS career_season_history(
+        id BIGSERIAL PRIMARY KEY,
+        club_id BIGINT NOT NULL REFERENCES clubs(id) ON DELETE CASCADE,
+        season_no INTEGER NOT NULL,
+        division TEXT NOT NULL,
+        final_position INTEGER,
+        wins INTEGER NOT NULL DEFAULT 0,
+        draws INTEGER NOT NULL DEFAULT 0,
+        losses INTEGER NOT NULL DEFAULT 0,
+        gf INTEGER NOT NULL DEFAULT 0,
+        ga INTEGER NOT NULL DEFAULT 0,
+        trophies INTEGER NOT NULL DEFAULT 0,
+        top_scorer TEXT,
+        top_scorer_goals INTEGER NOT NULL DEFAULT 0,
+        balance INTEGER NOT NULL DEFAULT 0,
+        created_at TIMESTAMPTZ NOT NULL DEFAULT NOW(),
+        UNIQUE(club_id,season_no)
+      )
+    `);
+    await c.query(`
+      CREATE TABLE IF NOT EXISTS player_awards(
+        id BIGSERIAL PRIMARY KEY,
+        club_id BIGINT NOT NULL REFERENCES clubs(id) ON DELETE CASCADE,
+        season_no INTEGER NOT NULL,
+        player_id BIGINT REFERENCES players(id) ON DELETE SET NULL,
+        player_name TEXT NOT NULL,
+        award_type TEXT NOT NULL,
+        award_title TEXT NOT NULL,
+        created_at TIMESTAMPTZ NOT NULL DEFAULT NOW(),
+        UNIQUE(club_id,season_no,award_type)
+      )
+    `);
+    await c.query(`
+      CREATE TABLE IF NOT EXISTS manager_job_offers(
+        id BIGSERIAL PRIMARY KEY,
+        user_club_id BIGINT NOT NULL REFERENCES clubs(id) ON DELETE CASCADE,
+        offering_club_id BIGINT NOT NULL REFERENCES clubs(id) ON DELETE CASCADE,
+        season_no INTEGER NOT NULL,
+        salary INTEGER NOT NULL DEFAULT 0,
+        performance_score INTEGER NOT NULL DEFAULT 0,
+        status TEXT NOT NULL DEFAULT 'pending',
+        created_at TIMESTAMPTZ NOT NULL DEFAULT NOW()
+      )
+    `);
+    await c.query(`
+      CREATE TABLE IF NOT EXISTS scout_reports(
+        id BIGSERIAL PRIMARY KEY,
+        club_id BIGINT NOT NULL REFERENCES clubs(id) ON DELETE CASCADE,
+        target_player_id BIGINT NOT NULL REFERENCES players(id) ON DELETE CASCADE,
+        exact_rating INTEGER NOT NULL,
+        created_at TIMESTAMPTZ NOT NULL DEFAULT NOW(),
+        UNIQUE(club_id,target_player_id)
+      )
+    `);
+    await c.query(`
+      CREATE TABLE IF NOT EXISTS ai_transfer_log(
+        id BIGSERIAL PRIMARY KEY,
+        career_owner_id BIGINT NOT NULL REFERENCES clubs(id) ON DELETE CASCADE,
+        season_no INTEGER NOT NULL,
+        player_name TEXT NOT NULL,
+        from_club_name TEXT NOT NULL,
+        to_club_name TEXT NOT NULL,
+        fee INTEGER NOT NULL DEFAULT 0,
+        created_at TIMESTAMPTZ NOT NULL DEFAULT NOW()
+      )
+    `);
+
+    await c.query(`CREATE INDEX IF NOT EXISTS idx_manager_job_offers_club_status ON manager_job_offers(user_club_id,status)`);
+    await c.query(`CREATE INDEX IF NOT EXISTS idx_player_history_club_season ON player_season_history(club_id,season_no)`);
+    await c.query(`CREATE INDEX IF NOT EXISTS idx_academy_club_status ON academy_players(club_id,status)`);
+    await c.query(`CREATE INDEX IF NOT EXISTS idx_ai_transfer_log_owner_season ON ai_transfer_log(career_owner_id,season_no)`);
+
+    const aiClubs=(await c.query(`SELECT id FROM clubs WHERE is_ai=TRUE`)).rows;
+    for(const row of aiClubs){
+      const mod=Number(row.id)%4;
+      const style=["BALANCED","POSSESSION","COUNTER","DIRECT"][mod];
+      const pressing=["NORMAL","HIGH","LOW","NORMAL"][mod];
+      const line=["NORMAL","HIGH","LOW","NORMAL"][mod];
+      await c.query(`
+        UPDATE clubs SET
+          coach_name=COALESCE(coach_name,$2),
+          tactic_style=CASE WHEN tactic_style='BALANCED' THEN $3 ELSE tactic_style END,
+          tactic_pressing=CASE WHEN tactic_pressing='NORMAL' THEN $4 ELSE tactic_pressing END,
+          tactic_defensive_line=CASE WHEN tactic_defensive_line='NORMAL' THEN $5 ELSE tactic_defensive_line END
+        WHERE id=$1
+      `,[row.id,randomStaffName(),style,pressing,line]);
+    }
+
+    await c.query(`INSERT INTO app_meta(key,value) VALUES($1,$2)`,[V38_MIGRATION_KEY,new Date().toISOString()]);
+  });
+}
+
 function countryProfile(code){
   return COUNTRY_DATA[code]||COUNTRY_DATA.BR;
 }
@@ -851,10 +1181,12 @@ function makePlayer(position,lo=61,hi=68){
   if(position==="MID"){passing=clamp(rating+rand(1,6),40,95);shooting=clamp(rating+rand(-4,4),25,92)}
   if(position==="ATT"){shooting=clamp(rating+rand(1,7),40,95);defending=clamp(rating-rand(13,20),20,78)}
   const price=Math.max(500,Math.round((((rating-48)**2)*55 + rating*110 + rand(0,1800))/100)*100);
+  const age=rand(18,31);
+  const potential=clamp(rating+(age<=20?rand(6,15):age<=23?rand(3,10):age<=27?rand(0,5):rand(0,2)),rating,96);
   return {
     name:randomName(),position,role:roleFor(position),rating,pace,shooting,passing,defending,price,
-    age:rand(18,31),salary:salaryForRating(rating),contract_seasons:rand(1,4),
-    fitness:100,morale:rand(66,82),injury_games:0
+    age,potential,salary:salaryForRating(rating),contract_seasons:rand(1,4),
+    fitness:100,morale:rand(66,82),injury_games:0,form_rating:70,happiness:75
   };
 }
 
@@ -890,11 +1222,11 @@ async function createRoster(client, club, force=false){
       await client.query(`
         INSERT INTO players(
           club_id,name,position,role,rating,pace,shooting,passing,defending,price,is_starter,age,
-          salary,contract_seasons,fitness,morale,injury_games
+          salary,contract_seasons,fitness,morale,injury_games,potential,form_rating,happiness,squad_status
         )
-        VALUES($1,$2,$3,$4,$5,$6,$7,$8,$9,$10,$11,$12,$13,$14,$15,$16,$17)
+        VALUES($1,$2,$3,$4,$5,$6,$7,$8,$9,$10,$11,$12,$13,$14,$15,$16,$17,$18,$19,$20,$21)
       `,[club.id,p.name,p.position,p.role,p.rating,p.pace,p.shooting,p.passing,p.defending,p.price,isStarter,p.age,
-         p.salary,p.contract_seasons,p.fitness,p.morale,p.injury_games]);
+         p.salary,p.contract_seasons,p.fitness,p.morale,p.injury_games,p.potential,p.form_rating,p.happiness,isStarter?"STARTER":"ROTATION"]);
     }
   }
 }
@@ -907,15 +1239,171 @@ async function ensureRoster(clubId){
   });
 }
 
+async function ensureRealismClubData(client,clubId,career=null){
+  const club=(await client.query(`SELECT * FROM clubs WHERE id=$1 FOR UPDATE`,[clubId])).rows[0];
+  if(!club)return;
+
+  if(!club.coach_name){
+    const coachName=club.is_ai?randomStaffName():"Seu treinador";
+    await client.query(`UPDATE clubs SET coach_name=$2 WHERE id=$1`,[clubId,coachName]);
+    club.coach_name=coachName;
+  }
+
+  for(const [role,meta] of Object.entries(STAFF_ROLES)){
+    await client.query(`
+      INSERT INTO club_staff(club_id,role,staff_name,level,salary)
+      VALUES($1,$2,$3,1,$4)
+      ON CONFLICT(club_id,role) DO NOTHING
+    `,[clubId,role,randomStaffName(),meta.baseSalary]);
+  }
+
+  if(!club.rival_club_id){
+    const rival=(await client.query(`
+      SELECT id FROM clubs
+      WHERE id<>$1
+        AND club_kind='national'
+        AND country_code=$2
+        AND ($3::text IS NULL OR state_code=$3 OR $3='')
+      ORDER BY ABS(base_rating-$4),RANDOM()
+      LIMIT 1
+    `,[clubId,club.country_code||"BR",club.state_code||"",Number(club.base_rating||64)])).rows[0];
+    if(rival)await client.query(`UPDATE clubs SET rival_club_id=$2 WHERE id=$1`,[clubId,rival.id]);
+  }
+
+  await client.query(`
+    UPDATE players SET
+      potential=GREATEST(rating,LEAST(99,
+        CASE
+          WHEN potential<rating THEN rating
+          WHEN potential=70 AND age<=20 THEN rating+8
+          WHEN potential=70 AND age<=23 THEN rating+5
+          WHEN potential=70 THEN rating+2
+          ELSE potential
+        END
+      )),
+      squad_status=CASE
+        WHEN squad_status IS NULL OR squad_status='' THEN CASE WHEN is_starter THEN 'STARTER' ELSE 'ROTATION' END
+        ELSE squad_status
+      END
+    WHERE club_id=$1
+  `,[clubId]);
+
+  const benchCount=Number((await client.query(`SELECT COUNT(*)::int count FROM players WHERE club_id=$1 AND is_bench=TRUE AND is_starter=FALSE`,[clubId])).rows[0]?.count||0);
+  if(benchCount<9){
+    const reserveIds=(await client.query(`
+      SELECT id FROM players
+      WHERE club_id=$1 AND is_starter=FALSE AND injury_games<=0 AND suspension_games<=0
+      ORDER BY is_bench DESC,rating DESC,fitness DESC
+      LIMIT 9
+    `,[clubId])).rows.map(x=>Number(x.id));
+    await client.query(`UPDATE players SET is_bench=FALSE WHERE club_id=$1`,[clubId]);
+    if(reserveIds.length)await client.query(`UPDATE players SET is_bench=TRUE WHERE id=ANY($1::bigint[])`,[reserveIds]);
+  }
+
+  const captain=(await client.query(`SELECT id FROM players WHERE club_id=$1 AND is_captain=TRUE LIMIT 1`,[clubId])).rows[0];
+  if(!captain){
+    const p=(await client.query(`SELECT id FROM players WHERE club_id=$1 ORDER BY is_starter DESC,rating DESC,age DESC LIMIT 1`,[clubId])).rows[0];
+    if(p)await client.query(`UPDATE players SET is_captain=TRUE WHERE id=$1`,[p.id]);
+  }
+
+  for(const role of ["PENALTY","FREE_KICK","CORNER"]){
+    const exists=(await client.query(`SELECT id FROM players WHERE club_id=$1 AND set_piece_role=$2 LIMIT 1`,[clubId,role])).rows[0];
+    if(!exists){
+      const order=role==="PENALTY"?"shooting DESC":role==="FREE_KICK"?"shooting DESC,passing DESC":"passing DESC";
+      const p=(await client.query(`SELECT id FROM players WHERE club_id=$1 ORDER BY ${order} LIMIT 1`,[clubId])).rows[0];
+      if(p)await client.query(`UPDATE players SET set_piece_role=$2 WHERE id=$1`,[p.id,role]);
+    }
+  }
+
+  if(career){
+    const season=Number(career.season_no||1);
+    const count=Number((await client.query(
+      `SELECT COUNT(*)::int count FROM academy_players WHERE club_id=$1 AND season_no=$2`,
+      [clubId,season]
+    )).rows[0]?.count||0);
+    for(let i=count;i<3;i++){
+      const position=["GK","DEF","MID","ATT"][rand(0,3)];
+      const base=Math.max(48,Number(club.base_rating||64)-rand(8,15));
+      const rating=clamp(base+rand(-2,4),45,76);
+      const potential=clamp(rating+rand(7,18),rating,94);
+      await client.query(`
+        INSERT INTO academy_players(club_id,season_no,name,position,role,age,rating,potential,status)
+        VALUES($1,$2,$3,$4,$5,$6,$7,$8,'academy')
+      `,[clubId,season,randomName(),position,roleFor(position),rand(15,18),rating,potential]);
+    }
+  }
+}
+
+async function staffLevels(client,clubId){
+  const rows=(await client.query(`SELECT role,staff_name,level,salary FROM club_staff WHERE club_id=$1 ORDER BY role`,[clubId])).rows;
+  const levels={FITNESS:1,PHYSIO:1,SCOUT:1,GK_COACH:1};
+  rows.forEach(x=>levels[x.role]=Number(x.level||1));
+  return {rows,levels};
+}
+
+function nextOpponentId(career,ownerId){
+  if(!career)return null;
+  const uid=String(ownerId);
+  const find=(fixtures,predicate=()=>true)=>{
+    const f=(fixtures||[]).find(x=>!x.played&&predicate(x)&&(String(x.home)===uid||String(x.away)===uid));
+    if(!f)return null;
+    return String(f.home)===uid?Number(f.away):Number(f.home);
+  };
+  if(career.phase==="STATE")return find(career.data?.state?.fixtures,x=>x.stage===career.data?.state?.stage);
+  if(career.phase==="NATIONAL")return find(career.data?.divisions?.[career.user_division]?.fixtures,x=>Number(x.round)===Number(career.current_round));
+  if(career.phase==="LIBERTADORES")return find(career.data?.libertadores?.fixtures,x=>x.stage===career.data?.libertadores?.stage);
+  if(career.phase==="CHAMPIONS")return find(career.data?.championsLeague?.fixtures,x=>x.stage===career.data?.championsLeague?.stage);
+  if(career.phase==="CLUB_WORLD_CUP")return find(career.data?.clubWorldCup?.fixtures,x=>x.stage===career.data?.clubWorldCup?.stage);
+  return null;
+}
+
+async function opponentAnalysis(client,clubId,career,scoutLevel=1){
+  const opponentId=nextOpponentId(career,clubId);
+  if(!opponentId)return null;
+  await createRoster(client,(await client.query(`SELECT * FROM clubs WHERE id=$1`,[opponentId])).rows[0],false);
+  const club=(await client.query(`SELECT * FROM clubs WHERE id=$1`,[opponentId])).rows[0];
+  if(!club)return null;
+  const players=(await client.query(`
+    SELECT name,position,role,rating,fitness,injury_games,suspension_games
+    FROM players WHERE club_id=$1 ORDER BY rating DESC LIMIT 18
+  `,[opponentId])).rows;
+  const available=players.filter(p=>Number(p.injury_games||0)<=0&&Number(p.suspension_games||0)<=0);
+  const star=available[0]||players[0]||null;
+  const unavailable=players.filter(p=>Number(p.injury_games||0)>0||Number(p.suspension_games||0)>0);
+  const uncertainty=Math.max(0,4-Number(scoutLevel||1));
+  return {
+    id:club.id,
+    name:club.name,
+    rating:Number(club.team_rating||club.base_rating||64),
+    formation:club.formation,
+    coachName:club.coach_name||"Treinador",
+    style:club.tactic_style||"BALANCED",
+    pressing:club.tactic_pressing||"NORMAL",
+    star:star?{
+      name:star.name,
+      role:star.role,
+      ratingMin:Math.max(40,Number(star.rating)-uncertainty),
+      ratingMax:Math.min(100,Number(star.rating)+uncertainty)
+    }:null,
+    unavailable:unavailable.slice(0,5).map(p=>({
+      name:p.name,
+      injury:Number(p.injury_games||0),
+      suspension:Number(p.suspension_games||0)
+    })),
+    strength:club.tactic_style==="COUNTER"?"Contra-ataques":club.tactic_pressing==="HIGH"?"Pressão alta":"Organização coletiva",
+    weakness:club.tactic_defensive_line==="HIGH"?"Espaço às costas da defesa":club.tactic_pressing==="HIGH"?"Pode cansar no segundo tempo":"Pouca agressividade sem a bola"
+  };
+}
+
 async function ensureMarket(){
   const r=await q(`SELECT COUNT(*)::int count FROM players WHERE club_id IS NULL`);
   const pos=["GK","DEF","MID","ATT"];
   for(let i=r.rows[0].count;i<40;i++){
     const p=makePlayer(pos[rand(0,3)],59,77);
     await q(`
-      INSERT INTO players(name,position,role,rating,pace,shooting,passing,defending,price,age,salary,contract_seasons,fitness,morale,injury_games)
-      VALUES($1,$2,$3,$4,$5,$6,$7,$8,$9,$10,$11,$12,$13,$14,$15)
-    `,[p.name,p.position,p.role,p.rating,p.pace,p.shooting,p.passing,p.defending,p.price,p.age,p.salary,p.contract_seasons,p.fitness,p.morale,p.injury_games]);
+      INSERT INTO players(name,position,role,rating,pace,shooting,passing,defending,price,age,salary,contract_seasons,fitness,morale,injury_games,potential,form_rating,happiness)
+      VALUES($1,$2,$3,$4,$5,$6,$7,$8,$9,$10,$11,$12,$13,$14,$15,$16,$17,$18)
+    `,[p.name,p.position,p.role,p.rating,p.pace,p.shooting,p.passing,p.defending,p.price,p.age,p.salary,p.contract_seasons,p.fitness,p.morale,p.injury_games,p.potential,p.form_rating,p.happiness]);
   }
 }
 
@@ -932,12 +1420,12 @@ async function clonePlayerForCareer(client,source,clubId,{salary=null,years=null
       club_id,name,position,role,rating,pace,shooting,passing,defending,price,is_starter,age,
       appearances,goals,assists,yellow_cards,red_cards,clean_sheets,
       salary,contract_seasons,fitness,morale,injury_games,transfer_listed,market_template_id,
-      is_real_name,nationality_code
+      is_real_name,nationality_code,potential,form_rating,happiness,squad_status
     )
     VALUES(
       $1,$2,$3,$4,$5,$6,$7,$8,$9,$10,FALSE,$11,
       0,0,0,0,0,0,
-      $12,$13,$14,$15,0,FALSE,$16,$17,$18
+      $12,$13,$14,$15,0,FALSE,$16,$17,$18,$19,70,78,'ROTATION'
     )
     RETURNING *
   `,[
@@ -945,7 +1433,8 @@ async function clonePlayerForCareer(client,source,clubId,{salary=null,years=null
     source.passing,source.defending,source.price,source.age,
     salary===null?Number(source.salary||salaryForRating(source.rating)):Number(salary),
     years===null?Number(source.contract_seasons||2):Number(years),
-    Number(fitness),Number(morale),templateId,Boolean(source.is_real_name),source.nationality_code||null
+    Number(fitness),Number(morale),templateId,Boolean(source.is_real_name),source.nationality_code||null,
+    Math.max(Number(source.rating||60),Number(source.potential||source.rating||60))
   ]);
   return r.rows[0];
 }
@@ -1506,10 +1995,64 @@ function poisson(lambda){
   do{k++;p*=Math.random()}while(p>L);
   return k-1;
 }
+const STAFF_ROLES={
+  FITNESS:{label:"Preparador físico",baseSalary:280},
+  PHYSIO:{label:"Fisioterapeuta",baseSalary:300},
+  SCOUT:{label:"Olheiro",baseSalary:320},
+  GK_COACH:{label:"Treinador de goleiros",baseSalary:260}
+};
+const STAFF_FIRST=["Rafael","Bruno","Carlos","André","Marcelo","Felipe","Paulo","Renato","Diego","Lucas","Thiago","Eduardo"];
+const STAFF_LAST=["Silva","Costa","Almeida","Santos","Pereira","Mendes","Oliveira","Rocha","Souza","Barbosa"];
+const INJURY_TYPES=[
+  {name:"Contusão leve",min:1,max:1},
+  {name:"Torção no tornozelo",min:1,max:3},
+  {name:"Distensão muscular",min:2,max:4},
+  {name:"Lesão na coxa",min:2,max:5},
+  {name:"Problema no joelho",min:3,max:7}
+];
+
+function randomStaffName(){return `${STAFF_FIRST[rand(0,STAFF_FIRST.length-1)]} ${STAFF_LAST[rand(0,STAFF_LAST.length-1)]}`}
+function transferWindowInfo(dateStr){
+  const d=new Date(`${dateStr||new Date().toISOString().slice(0,10)}T12:00:00Z`);
+  const md=(d.getUTCMonth()+1)*100+d.getUTCDate();
+  const open=(md>=101&&md<=430)||(md>=701&&md<=915);
+  let next;
+  if(md<101)next=`${d.getUTCFullYear()}-01-01`;
+  else if(md>430&&md<701)next=`${d.getUTCFullYear()}-07-01`;
+  else if(md>915)next=`${d.getUTCFullYear()+1}-01-01`;
+  else next=null;
+  return {open,next,date:dateStr};
+}
+function tacticalModifiers(club){
+  let attack=0,defense=0,fatigue=0,injuryRisk=0;
+  const pressing=club?.tactic_pressing||"NORMAL";
+  const line=club?.tactic_defensive_line||"NORMAL";
+  const tempo=club?.tactic_tempo||"NORMAL";
+  const width=club?.tactic_width||"NORMAL";
+  const style=club?.tactic_style||"BALANCED";
+  const marking=club?.tactic_marking||"NORMAL";
+
+  if(pressing==="HIGH"){attack+=.10;defense+=.06;fatigue+=3;injuryRisk+=.012}
+  if(pressing==="LOW"){attack-=.05;defense+=.05;fatigue-=1}
+  if(line==="HIGH"){attack+=.07;defense-=.04}
+  if(line==="LOW"){attack-=.05;defense+=.08}
+  if(tempo==="FAST"){attack+=.09;fatigue+=2;injuryRisk+=.008}
+  if(tempo==="SLOW"){attack-=.04;defense+=.04;fatigue-=1}
+  if(width==="WIDE"){attack+=.04;fatigue+=.5}
+  if(width==="NARROW"){attack-=.01;defense+=.04}
+  if(style==="POSSESSION"){attack+=.05;defense+=.03}
+  if(style==="COUNTER"){attack+=.08;defense+=.02}
+  if(style==="DIRECT"){attack+=.06;defense-=.02}
+  if(marking==="AGGRESSIVE"){defense+=.08;fatigue+=1;injuryRisk+=.008}
+  return {attack,defense,fatigue,injuryRisk};
+}
 function effectiveRating(p){
   const fitnessPenalty=(100-Number(p.fitness||100))*0.12;
   const moraleBonus=(Number(p.morale||70)-70)*0.07;
-  return Number(p.rating)-fitnessPenalty+moraleBonus;
+  const formBonus=(Number(p.form_rating||70)-70)*0.08;
+  const happinessBonus=(Number(p.happiness||75)-75)*0.035;
+  const roleBonus=p.tactical_role&&p.tactical_role!=="BALANCED"?0.35:0;
+  return Number(p.rating)-fitnessPenalty+moraleBonus+formBonus+happinessBonus+roleBonus;
 }
 function basicScore(hr,ar){
   return {
@@ -1563,12 +2106,12 @@ async function ensureStartingXI(client,clubId,formation="4-3-3"){
   const currentValid=
     current.length===11 &&
     current.some(p=>p.position==="GK") &&
-    current.every(p=>Number(p.injury_games||0)<=0) &&
+    current.every(p=>Number(p.injury_games||0)<=0&&Number(p.suspension_games||0)<=0) &&
     Object.keys(quota).every(pos=>Number(currentCounts[pos]||0)===Number(quota[pos]));
 
   if(currentValid)return {repaired:false,count:11};
 
-  const healthy=players.filter(p=>Number(p.injury_games||0)<=0);
+  const healthy=players.filter(p=>Number(p.injury_games||0)<=0&&Number(p.suspension_games||0)<=0);
   const selected=[];
   const used=new Set();
 
@@ -1595,7 +2138,7 @@ async function ensureStartingXI(client,clubId,formation="4-3-3"){
     if(!missing)continue;
 
     const fallback=players
-      .filter(p=>p.position===pos&&!used.has(String(p.id)))
+      .filter(p=>p.position===pos&&!used.has(String(p.id))&&Number(p.suspension_games||0)<=0)
       .sort(scoreSort)
       .slice(0,missing);
 
@@ -1612,7 +2155,7 @@ async function ensureStartingXI(client,clubId,formation="4-3-3"){
 
   const ids=selected.map(p=>String(p.id));
   await client.query(`UPDATE players SET is_starter=FALSE WHERE club_id=$1`,[clubId]);
-  await client.query(`UPDATE players SET is_starter=TRUE WHERE club_id=$1 AND id=ANY($2::bigint[])`,[clubId,ids]);
+  await client.query(`UPDATE players SET is_starter=TRUE,is_bench=FALSE WHERE club_id=$1 AND id=ANY($2::bigint[])`,[clubId,ids]);
 
   const avg=Math.round(selected.reduce((n,p)=>n+Number(p.rating||0),0)/selected.length);
   await client.query(`UPDATE clubs SET team_rating=$2 WHERE id=$1`,[clubId,avg]);
@@ -1628,7 +2171,7 @@ function sortForSelection(players,preferManual){
 async function matchStarters(client,club,isUser){
   await createRoster(client,club,false);
   const all=(await client.query(`SELECT * FROM players WHERE club_id=$1 ORDER BY rating DESC`,[club.id])).rows;
-  const healthy=all.filter(p=>Number(p.injury_games||0)<=0);
+  const healthy=all.filter(p=>Number(p.injury_games||0)<=0&&Number(p.suspension_games||0)<=0);
   if(healthy.length<11)throw Object.assign(new Error(`${club.name} não possui 11 jogadores disponíveis.`),{status:400});
   const q=formationQuotas(club.formation);
   const chosen=[];
@@ -1646,22 +2189,46 @@ async function matchStarters(client,club,isUser){
   }
   return chosen.slice(0,11);
 }
-function teamMetrics(players){
-  const strength=players.reduce((a,p)=>a+effectiveRating(p),0)/players.length;
-  const attack=players.reduce((a,p)=>a+(Number(p.shooting)*.48+Number(p.passing)*.32+Number(p.pace)*.20),0)/players.length;
-  const defense=players.reduce((a,p)=>a+(Number(p.defending)*.72+Number(p.passing)*.12+effectiveRating(p)*.16),0)/players.length;
-  return {strength,attack,defense};
+function teamMetrics(players,club=null){
+  const chemistry=(Number(club?.chemistry||70)-70)*0.045;
+  const tactics=tacticalModifiers(club);
+  const gkCoach=Number(club?._gkCoachLevel||1);
+
+  let strength=players.reduce((a,p)=>a+effectiveRating(p),0)/players.length;
+  let attack=players.reduce((a,p)=>a+(Number(p.shooting)*.48+Number(p.passing)*.32+Number(p.pace)*.20),0)/players.length;
+  let defense=players.reduce((a,p)=>a+(Number(p.defending)*.72+Number(p.passing)*.12+effectiveRating(p)*.16),0)/players.length;
+
+  const captain=players.find(p=>p.is_captain);
+  if(captain){strength+=.45;defense+=.25}
+  const gk=players.find(p=>p.position==="GK");
+  if(gk)defense+=(gkCoach-1)*.45;
+
+  strength+=chemistry;
+  attack+=chemistry+tactics.attack*5;
+  defense+=chemistry+tactics.defense*5;
+
+  return {strength,attack,defense,tactics};
 }
-function realisticScore(homePlayers,awayPlayers){
-  const h=teamMetrics(homePlayers),a=teamMetrics(awayPlayers);
-  const homeLambda=clamp(1.22+(h.strength-a.strength)*.028+(h.attack-a.defense)*.012+.16,.22,3.05);
-  const awayLambda=clamp(1.02+(a.strength-h.strength)*.028+(a.attack-h.defense)*.012,.20,2.85);
-  return {hg:Math.min(6,poisson(homeLambda)),ag:Math.min(6,poisson(awayLambda)),hr:Math.round(h.strength),ar:Math.round(a.strength)};
+function realisticScore(homePlayers,awayPlayers,homeClub=null,awayClub=null){
+  const h=teamMetrics(homePlayers,homeClub),a=teamMetrics(awayPlayers,awayClub);
+  const crowdBoost=Math.min(.24,Math.max(.06,Number(homeClub?.stadium_capacity||12000)/100000));
+  const rivalry=String(homeClub?.rival_club_id||"")===String(awayClub?.id||"")?.06:0;
+  const homeLambda=clamp(1.22+(h.strength-a.strength)*.028+(h.attack-a.defense)*.012+.14+crowdBoost+rivalry,.22,3.35);
+  const awayLambda=clamp(1.02+(a.strength-h.strength)*.028+(a.attack-h.defense)*.012-rivalry*.35,.20,3.05);
+  return {
+    hg:Math.min(7,poisson(homeLambda)),
+    ag:Math.min(7,poisson(awayLambda)),
+    hr:Math.round(h.strength),
+    ar:Math.round(a.strength),
+    homeTactics:h.tactics,
+    awayTactics:a.tactics
+  };
 }
 function weightedPick(players){
   const x=[];
   for(const p of players){
-    const n=p.position==="ATT"?7:p.position==="MID"?4:p.position==="DEF"?2:1;
+    const form=Math.max(1,Math.round((Number(p.form_rating||70)-55)/10));
+    const n=(p.position==="ATT"?7:p.position==="MID"?4:p.position==="DEF"?2:1)+form;
     for(let i=0;i<n;i++)x.push(p);
   }
   return x[rand(0,x.length-1)]||players[0];
@@ -1669,51 +2236,266 @@ function weightedPick(players){
 function eventsFor(clubId,startersList,goals){
   const ev=[];
   for(let i=0;i<goals;i++){
-    const scorer=weightedPick(startersList.filter(p=>p.position!=="GK"));
+    let scorer;
+    const penaltyTaker=startersList.find(p=>p.set_piece_role==="PENALTY");
+    if(penaltyTaker&&Math.random()<.12)scorer=penaltyTaker;
+    else scorer=weightedPick(startersList.filter(p=>p.position!=="GK"));
     const pool=startersList.filter(p=>String(p.id)!==String(scorer.id)&&p.position!=="GK");
-    const assist=pool.length&&Math.random()<.7?weightedPick(pool):null;
+    const cornerTaker=startersList.find(p=>p.set_piece_role==="CORNER");
+    const assist=cornerTaker&&Math.random()<.12?cornerTaker:(pool.length&&Math.random()<.7?weightedPick(pool):null);
     ev.push({type:"goal",clubId,minute:rand(3,89),scorerId:scorer.id,assistId:assist?.id||null,text:`Gol de ${scorer.name}${assist?` (assistência de ${assist.name})`:""}`});
   }
-  if(Math.random()<.52){
+
+  const yellowCount=Math.random()<.70?rand(0,2):0;
+  for(let i=0;i<yellowCount;i++){
     const p=startersList[rand(0,startersList.length-1)];
-    ev.push({type:"yellow",clubId,minute:rand(15,87),playerId:p.id,text:`Cartão amarelo para ${p.name}`});
+    ev.push({type:"yellow",clubId,minute:rand(12,88),playerId:p.id,text:`Cartão amarelo para ${p.name}`});
+  }
+  if(Math.random()<.075){
+    const candidates=startersList.filter(p=>p.position!=="GK");
+    const p=candidates[rand(0,candidates.length-1)];
+    ev.push({type:"red",clubId,minute:rand(25,88),playerId:p.id,text:`Cartão vermelho para ${p.name}`});
   }
   return ev;
 }
-async function applyStatsAndCondition(client,clubId,startersList,conceded,events,result){
+function matchBench(allPlayers,starters){
+  const ids=new Set(starters.map(p=>String(p.id)));
+  const available=allPlayers.filter(p=>!ids.has(String(p.id))&&Number(p.injury_games||0)<=0&&Number(p.suspension_games||0)<=0);
+  const order={GK:0,DEF:1,MID:2,ATT:3};
+  return available.sort((a,b)=>{
+    if(Boolean(a.is_bench)!==Boolean(b.is_bench))return a.is_bench?-1:1;
+    return (order[a.position]-order[b.position])||effectiveRating(b)-effectiveRating(a);
+  }).slice(0,9);
+}
+function simulateSubstitutions(starters,bench,clubId){
+  const subs=[];
+  const usedOut=new Set(),usedIn=new Set();
+  const target=Math.min(5,Math.max(3,starters.filter(p=>Number(p.fitness||100)<75).length+2));
+  const minutes=[55,62,68,73,79];
+  for(let i=0;i<target;i++){
+    const outPool=starters
+      .filter(p=>!usedOut.has(String(p.id))&&p.position!=="GK")
+      .sort((a,b)=>Number(a.fitness||100)-Number(b.fitness||100)||effectiveRating(a)-effectiveRating(b));
+    const out=outPool[0];
+    if(!out)break;
+    let inP=bench
+      .filter(p=>!usedIn.has(String(p.id))&&p.position===out.position)
+      .sort((a,b)=>effectiveRating(b)-effectiveRating(a))[0];
+    if(!inP)inP=bench.filter(p=>!usedIn.has(String(p.id))&&p.position!=="GK").sort((a,b)=>effectiveRating(b)-effectiveRating(a))[0];
+    if(!inP)break;
+    usedOut.add(String(out.id));usedIn.add(String(inP.id));
+    subs.push({
+      type:"substitution",clubId,minute:minutes[i]||80,
+      outId:out.id,inId:inP.id,
+      text:`Substituição: sai ${out.name}, entra ${inP.name}`
+    });
+  }
+  return subs;
+}
+
+async function applyStatsAndCondition(
+  client,clubId,startersList,conceded,events,result,
+  {bench=[],substitutions=[],club=null,congestionDays=7,travelLoad=0,staffLevels:staff={}}={}
+){
   const selectedIds=startersList.map(p=>p.id);
+  const subIds=substitutions.map(x=>x.inId).filter(Boolean);
+  const participantIds=[...new Set([...selectedIds,...subIds].map(Number))];
+
+  // Suspensões e lesões antigas contam um jogo cumprido antes de registrar novas punições/lesões.
+  await client.query(`UPDATE players SET suspension_games=GREATEST(0,suspension_games-1) WHERE club_id=$1 AND suspension_games>0`,[clubId]);
+  await client.query(`UPDATE players SET injury_games=GREATEST(0,injury_games-1),injury_type=CASE WHEN injury_games<=1 THEN NULL ELSE injury_type END WHERE club_id=$1 AND injury_games>0`,[clubId]);
+
   await client.query(`UPDATE players SET consecutive_starts=0 WHERE club_id=$1 AND NOT(id=ANY($2::bigint[]))`,[clubId,selectedIds]);
-  await client.query(`UPDATE players SET appearances=appearances+1,consecutive_starts=consecutive_starts+1 WHERE id=ANY($1::bigint[])`,[selectedIds]);
+  await client.query(`
+    UPDATE players SET
+      appearances=appearances+1,
+      season_appearances=season_appearances+1
+    WHERE id=ANY($1::bigint[])
+  `,[participantIds]);
+  await client.query(`UPDATE players SET consecutive_starts=consecutive_starts+1 WHERE id=ANY($1::bigint[])`,[selectedIds]);
+
   if(conceded===0){
     const gk=startersList.find(p=>p.position==="GK");
-    if(gk)await client.query(`UPDATE players SET clean_sheets=clean_sheets+1 WHERE id=$1`,[gk.id]);
+    if(gk)await client.query(`UPDATE players SET clean_sheets=clean_sheets+1,season_clean_sheets=season_clean_sheets+1 WHERE id=$1`,[gk.id]);
   }
+
   for(const e of events.filter(x=>String(x.clubId)===String(clubId))){
     if(e.type==="goal"){
-      await client.query(`UPDATE players SET goals=goals+1 WHERE id=$1`,[e.scorerId]);
-      if(e.assistId)await client.query(`UPDATE players SET assists=assists+1 WHERE id=$1`,[e.assistId]);
+      await client.query(`UPDATE players SET goals=goals+1,season_goals=season_goals+1,form_rating=LEAST(100,form_rating+4) WHERE id=$1`,[e.scorerId]);
+      if(e.assistId)await client.query(`UPDATE players SET assists=assists+1,season_assists=season_assists+1,form_rating=LEAST(100,form_rating+2) WHERE id=$1`,[e.assistId]);
     }
-    if(e.type==="yellow")await client.query(`UPDATE players SET yellow_cards=yellow_cards+1 WHERE id=$1`,[e.playerId]);
+
+    if(e.type==="yellow"){
+      const r=(await client.query(`
+        UPDATE players SET
+          yellow_cards=yellow_cards+1,
+          yellow_accumulation=yellow_accumulation+1
+        WHERE id=$1
+        RETURNING name,yellow_accumulation
+      `,[e.playerId])).rows[0];
+      if(r&&Number(r.yellow_accumulation)>=3){
+        await client.query(`UPDATE players SET yellow_accumulation=0,suspension_games=GREATEST(suspension_games,1) WHERE id=$1`,[e.playerId]);
+        await client.query(
+          `INSERT INTO club_events(club_id,event_type,title,description) VALUES($1,'discipline','Suspensão por cartões',$2)`,
+          [clubId,`${r.name} atingiu o limite de cartões amarelos e está suspenso por 1 jogo.`]
+        );
+      }
+    }
+
+    if(e.type==="red"){
+      const games=Math.random()<.22?2:1;
+      const r=(await client.query(`
+        UPDATE players SET
+          red_cards=red_cards+1,
+          suspension_games=GREATEST(suspension_games,$2),
+          form_rating=GREATEST(45,form_rating-3)
+        WHERE id=$1 RETURNING name
+      `,[e.playerId,games])).rows[0];
+      if(r)await client.query(
+        `INSERT INTO club_events(club_id,event_type,title,description) VALUES($1,'discipline','Expulsão e suspensão',$2)`,
+        [clubId,`${r.name} foi expulso e recebeu ${games} jogo(s) de suspensão.`]
+      );
+    }
   }
+
+  const tactics=tacticalModifiers(club);
+  const fitnessStaff=Number(staff.FITNESS||1);
+  const physio=Number(staff.PHYSIO||1);
+  const congestionPenalty=congestionDays<=3?4:congestionDays<=5?2:0;
+  const resultDelta=result==="win"?3:result==="draw"?1:-2;
+
   for(const p of startersList){
-    const fatigue=rand(8,14);
-    const moraleDelta=result==="win"?3:result==="draw"?1:-2;
-    await client.query(`UPDATE players SET fitness=GREATEST(25,fitness-$2),morale=GREATEST(35,LEAST(100,morale+$3)) WHERE id=$1`,[p.id,fatigue,moraleDelta]);
+    const fatigue=clamp(
+      rand(8,14)+tactics.fatigue+congestionPenalty+Number(travelLoad||0)-(fitnessStaff-1),
+      5,22
+    );
+    const goalCount=events.filter(e=>e.type==="goal"&&String(e.scorerId)===String(p.id)).length;
+    const assistCount=events.filter(e=>e.type==="goal"&&String(e.assistId)===String(p.id)).length;
+    const formDelta=(result==="win"?2:result==="draw"?0:-2)+goalCount*2+assistCount;
+    const status=String(p.squad_status||"ROTATION");
+    let happinessDelta=0;
+    if(status==="STAR")happinessDelta=2;
+    else if(status==="STARTER")happinessDelta=1;
+    else if(status==="PROSPECT")happinessDelta=2;
+    else happinessDelta=1;
+
+    await client.query(`
+      UPDATE players SET
+        fitness=GREATEST(20,fitness-$2),
+        morale=GREATEST(30,LEAST(100,morale+$3)),
+        form_rating=GREATEST(45,LEAST(100,form_rating+$4)),
+        happiness=GREATEST(20,LEAST(100,happiness+$5))
+      WHERE id=$1
+    `,[p.id,fatigue,resultDelta,formDelta,happinessDelta]);
+
+    const currentFitness=Number(p.fitness||100)-fatigue;
+    const risk=.012+
+      Math.max(0,70-currentFitness)*.0012+
+      tactics.injuryRisk+
+      (congestionDays<=3?.018:congestionDays<=5?.008:0)-
+      (physio-1)*.004;
+
+    if(Math.random()<Math.max(.004,risk)){
+      const injury=INJURY_TYPES[rand(0,INJURY_TYPES.length-1)];
+      const baseGames=rand(injury.min,injury.max);
+      const games=Math.max(1,baseGames-Math.floor((physio-1)/2));
+      await client.query(`
+        UPDATE players SET
+          injury_games=GREATEST(injury_games,$2),
+          injury_type=$3,
+          fitness=GREATEST(25,fitness-10),
+          form_rating=GREATEST(45,form_rating-2)
+        WHERE id=$1
+      `,[p.id,games,injury.name]);
+      await client.query(
+        `INSERT INTO club_events(club_id,event_type,title,description)
+         VALUES($1,'injury','Lesão no elenco',$2)`,
+        [clubId,`${p.name}: ${injury.name}. Previsão de ${games} jogo(s) fora.`]
+      );
+    }
   }
-  await client.query(`UPDATE players SET fitness=LEAST(100,fitness+$2) WHERE club_id=$1 AND NOT(id=ANY($3::bigint[]))`,[clubId,rand(7,11),selectedIds]);
-  await client.query(`UPDATE players SET injury_games=GREATEST(0,injury_games-1) WHERE club_id=$1 AND injury_games>0`,[clubId]);
+
+  for(const sub of substitutions){
+    const p=bench.find(x=>String(x.id)===String(sub.inId));
+    if(!p)continue;
+    const fatigue=clamp(rand(4,8)+Math.max(0,tactics.fatigue-1)+Math.max(0,congestionPenalty-1)-(fitnessStaff-1),3,13);
+    const status=String(p.squad_status||"ROTATION");
+    const happinessDelta=status==="STAR"||status==="STARTER"?0:status==="PROSPECT"?3:2;
+    await client.query(`
+      UPDATE players SET
+        fitness=GREATEST(25,fitness-$2),
+        morale=GREATEST(35,LEAST(100,morale+$3)),
+        form_rating=GREATEST(45,LEAST(100,form_rating+$4)),
+        happiness=GREATEST(20,LEAST(100,happiness+$5))
+      WHERE id=$1
+    `,[p.id,fatigue,result==="win"?2:0,result==="win"?1:0,happinessDelta]);
+  }
+
+  const nonParticipants=await client.query(`
+    SELECT id,name,squad_status,happiness
+    FROM players
+    WHERE club_id=$1 AND NOT(id=ANY($2::bigint[]))
+  `,[clubId,participantIds]);
+
+  const recovery=clamp(rand(7,11)+(fitnessStaff-1)*2,6,18);
+  await client.query(`
+    UPDATE players SET
+      fitness=LEAST(100,fitness+$2),
+      form_rating=GREATEST(45,form_rating-1)
+    WHERE club_id=$1 AND NOT(id=ANY($3::bigint[]))
+  `,[clubId,recovery,participantIds]);
+
+  for(const p of nonParticipants.rows){
+    const status=String(p.squad_status||"ROTATION");
+    let delta=0;
+    if(status==="STAR")delta=-4;
+    else if(status==="STARTER")delta=-3;
+    else if(status==="ROTATION")delta=-1;
+    else if(status==="PROSPECT")delta=-1;
+    else delta=1;
+    await client.query(`UPDATE players SET happiness=GREATEST(20,LEAST(100,happiness+$2)) WHERE id=$1`,[p.id,delta]);
+  }
+
+  const unhappy=(await client.query(`
+    SELECT id,name,happiness
+    FROM players
+    WHERE club_id=$1 AND happiness<=32 AND transfer_listed=FALSE
+  `,[clubId])).rows;
+  for(const p of unhappy){
+    await client.query(`UPDATE players SET transfer_listed=TRUE WHERE id=$1`,[p.id]);
+    await client.query(
+      `INSERT INTO club_events(club_id,event_type,title,description)
+       VALUES($1,'squad','Jogador insatisfeito',$2)`,
+      [clubId,`${p.name} está insatisfeito com seu espaço no elenco e pediu para ser colocado no mercado.`]
+    );
+  }
 }
+
 async function recordUserMatch(client,ownerId,opponentId,m,events,type,reward=0){
-  await client.query(`INSERT INTO matches(user_club_id,opponent_club_id,user_goals,opponent_goals,reward,user_rating,opponent_rating,events,match_type)
-    VALUES($1,$2,$3,$4,$5,$6,$7,$8::jsonb,$9)`,
-    [ownerId,opponentId,m.userGoals,m.opponentGoals,reward,m.userRating,m.opponentRating,JSON.stringify(events),type]);
+  const career=(await client.query(`SELECT season_no,data FROM careers WHERE owner_club_id=$1`,[ownerId])).rows[0];
+  const gameDate=career?.data?.calendar?.date||null;
+  await client.query(`
+    INSERT INTO matches(
+      user_club_id,opponent_club_id,user_goals,opponent_goals,reward,
+      user_rating,opponent_rating,events,match_type,season_no,is_home,attendance,game_date
+    )
+    VALUES($1,$2,$3,$4,$5,$6,$7,$8::jsonb,$9,$10,$11,$12,$13)
+  `,[
+    ownerId,opponentId,m.userGoals,m.opponentGoals,reward,m.userRating,m.opponentRating,
+    JSON.stringify(events),type,Number(career?.season_no||1),Boolean(m.isHome),
+    Number(m.attendance||0),gameDate
+  ]);
 }
 async function addFinance(client,clubId,amount,category,description){
   await client.query(`UPDATE clubs SET coins=coins+$2 WHERE id=$1`,[clubId,amount]);
   await client.query(`INSERT INTO club_finance_events(club_id,amount,category,description) VALUES($1,$2,$3,$4)`,[clubId,amount,category,description]);
 }
 async function wageBill(client,clubId){
-  return Number((await client.query(`SELECT COALESCE(SUM(salary),0)::int total FROM players WHERE club_id=$1`,[clubId])).rows[0].total||0);
+  const [players,staff]=await Promise.all([
+    client.query(`SELECT COALESCE(SUM(salary),0)::int total FROM players WHERE club_id=$1`,[clubId]),
+    client.query(`SELECT COALESCE(SUM(salary),0)::int total FROM club_staff WHERE club_id=$1`,[clubId])
+  ]);
+  return Number(players.rows[0].total||0)+Number(staff.rows[0].total||0);
 }
 function financeRates(context){
   const key=String(context||"D").toUpperCase();
@@ -1755,15 +2537,18 @@ async function unexpectedClubEvent(client,clubId){
   await publishNews(client,clubId,season,"bastidores",title,description,1);
   return {title,description};
 }
-async function settleMatchFinances(client,clubId,context,isHome,result){
+async function settleMatchFinances(client,clubId,context,isHome,result,attendance=0,ticketPrice=30){
   const rates=financeRates(context);
   const sponsor=0;
-  const gate=isHome?Math.round(rates.gate*(rand(85,115)/100)):0;
+  const crowdGate=isHome&&Number(attendance)>0
+    ?Math.round(Number(attendance)*Math.max(5,Number(ticketPrice||30))/100)
+    :0;
+  const gate=isHome?Math.max(Math.round(rates.gate*.55),crowdGate):0;
   const performance=result==="win"?650:result==="draw"?250:80;
-  if(gate)await addFinance(client,clubId,gate,"tickets","Bilheteria da partida em casa");
+  if(gate)await addFinance(client,clubId,gate,"tickets",`Bilheteria da partida em casa — público ${Number(attendance||0).toLocaleString("pt-BR")}`);
   await addFinance(client,clubId,performance,"performance","Bônus pelo resultado");
   const event=await unexpectedClubEvent(client,clubId);
-  return {sponsor,gate,performance,wages:0,net:gate+performance,event};
+  return {sponsor,gate,performance,wages:0,net:gate+performance,event,attendance:Number(attendance||0),ticketPrice:Number(ticketPrice||30)};
 }
 
 const MEDIA_SOURCES=["Jornal do Clube","Central da Bola","Esporte Agora","Diário do Futebol","Portal da Torcida"];
@@ -2145,6 +2930,340 @@ async function teamPerformanceProfile(client,clubId,career=null){
   };
 }
 
+async function maybeGenerateManagerJobOffer(client,clubId,career,performance){
+  if(!career||career.phase==="STATE"||career.phase==="END"||!performance?.hot||Number(performance.score||0)<74)return null;
+
+  const pending=(await client.query(`
+    SELECT 1 FROM manager_job_offers
+    WHERE user_club_id=$1 AND status='pending'
+    LIMIT 1
+  `,[clubId])).rowCount>0;
+  if(pending)return null;
+
+  const chance=performance.elite ? 1 : 0.28;
+  if(Math.random()>chance)return null;
+
+  const current=(await client.query(`SELECT * FROM clubs WHERE id=$1`,[clubId])).rows[0];
+  if(!current)return null;
+
+  const currentDiv=career.user_division||"D";
+  const candidates=(await client.query(`
+    SELECT c.*
+    FROM clubs c
+    WHERE c.is_ai=TRUE
+      AND c.club_kind='national'
+      AND c.country_code=$1
+      AND c.id<>$2
+      AND c.base_rating >= $3
+    ORDER BY
+      CASE WHEN c.base_rating>$4 THEN 0 ELSE 1 END,
+      c.base_rating DESC,
+      RANDOM()
+    LIMIT 12
+  `,[current.country_code||"BR",clubId,Math.max(55,Number(current.team_rating||current.base_rating||64)-2),Number(current.team_rating||current.base_rating||64)])).rows;
+
+  const eligible=candidates.filter(c=>{
+    const div=divisionOfClub(career,c.id);
+    if(!div)return false;
+    return divisionRank(div)>=Math.max(divisionRank(currentDiv),2)||Number(c.base_rating)>Number(current.team_rating||64);
+  });
+  if(!eligible.length)return null;
+
+  const target=eligible[rand(0,eligible.length-1)];
+  await createRoster(client,target,false);
+  const salary=Math.round((1200+Number(target.base_rating||65)*55+Number(performance.score||0)*18)/100)*100;
+  const r=await client.query(`
+    INSERT INTO manager_job_offers(user_club_id,offering_club_id,season_no,salary,performance_score,status)
+    VALUES($1,$2,$3,$4,$5,'pending')
+    RETURNING *
+  `,[clubId,target.id,career.season_no,salary,performance.score]);
+
+  await client.query(
+    `INSERT INTO club_events(club_id,event_type,title,description)
+     VALUES($1,'manager_offer','Proposta para comandar outro clube',$2)`,
+    [clubId,`${target.name} procurou você após a grande fase da equipe. O clube oferece um projeto com remuneração de ${salary.toLocaleString("pt-BR")} moedas por mês.`]
+  );
+  await publishNewsOnce(
+    client,clubId,career.season_no,"bastidores",
+    `${target.name} demonstra interesse no treinador de ${current.name}`,
+    `A sequência de bons resultados colocou o trabalho do treinador no radar de outros clubes. ${target.name} formalizou uma proposta para assumir o comando.`,
+    2,"Central da Bola"
+  );
+  return r.rows[0];
+}
+
+function swapCareerClubReferences(node,a,b,parentKey=""){
+  const scalarKeys=new Set(["clubId","home","away","champion","pw","hostClubId"]);
+  const arrayKeys=new Set(["teams","top4","nationalQualifiers","winners","qualified"]);
+  const swap=v=>String(v)===String(a)?Number(b):String(v)===String(b)?Number(a):v;
+
+  if(Array.isArray(node)){
+    if(arrayKeys.has(parentKey))return node.map(v=>(typeof v==="number"||typeof v==="string")?swap(v):swapCareerClubReferences(v,a,b,parentKey));
+    return node.map(v=>swapCareerClubReferences(v,a,b,parentKey));
+  }
+  if(node&&typeof node==="object"){
+    for(const [k,v] of Object.entries(node)){
+      if(scalarKeys.has(k)&&(typeof v==="number"||typeof v==="string"))node[k]=swap(v);
+      else node[k]=swapCareerClubReferences(v,a,b,k);
+    }
+  }
+  return node;
+}
+
+async function finalizeSeasonRealism(client,clubId,career,club){
+  const season=Number(career.season_no||1);
+  const players=(await client.query(`SELECT * FROM players WHERE club_id=$1 ORDER BY season_goals DESC,season_assists DESC,rating DESC`,[clubId])).rows;
+
+  for(const p of players){
+    await client.query(`
+      INSERT INTO player_season_history(
+        club_id,player_id,player_name,season_no,appearances,goals,assists,clean_sheets,
+        yellow_cards,red_cards,rating_end
+      )
+      VALUES($1,$2,$3,$4,$5,$6,$7,$8,$9,$10,$11)
+      ON CONFLICT(club_id,season_no,player_id) DO UPDATE SET
+        appearances=EXCLUDED.appearances,
+        goals=EXCLUDED.goals,
+        assists=EXCLUDED.assists,
+        clean_sheets=EXCLUDED.clean_sheets,
+        yellow_cards=EXCLUDED.yellow_cards,
+        red_cards=EXCLUDED.red_cards,
+        rating_end=EXCLUDED.rating_end
+    `,[clubId,p.id,p.name,season,p.season_appearances||0,p.season_goals||0,p.season_assists||0,p.season_clean_sheets||0,p.yellow_cards||0,p.red_cards||0,p.rating||0]);
+  }
+
+  const awardCandidates={
+    TOP_SCORER:players.slice().sort((a,b)=>Number(b.season_goals||0)-Number(a.season_goals||0)||Number(b.rating)-Number(a.rating))[0],
+    ASSIST_KING:players.slice().sort((a,b)=>Number(b.season_assists||0)-Number(a.season_assists||0)||Number(b.rating)-Number(a.rating))[0],
+    BEST_PLAYER:players.slice().sort((a,b)=>Number(b.form_rating||70)-Number(a.form_rating||70)||Number(b.rating)-Number(a.rating))[0],
+    BEST_GK:players.filter(p=>p.position==="GK").sort((a,b)=>Number(b.season_clean_sheets||0)-Number(a.season_clean_sheets||0)||Number(b.rating)-Number(a.rating))[0],
+    YOUNG_PLAYER:players.filter(p=>Number(p.age)<=21).sort((a,b)=>Number(b.rating)-Number(a.rating)||Number(b.potential||0)-Number(a.potential||0))[0]
+  };
+  const awardNames={
+    TOP_SCORER:"Artilheiro do clube",
+    ASSIST_KING:"Líder de assistências",
+    BEST_PLAYER:"Melhor jogador da temporada",
+    BEST_GK:"Melhor goleiro",
+    YOUNG_PLAYER:"Revelação da temporada"
+  };
+  for(const [type,p] of Object.entries(awardCandidates)){
+    if(!p)continue;
+    await client.query(`
+      INSERT INTO player_awards(club_id,season_no,player_id,player_name,award_type,award_title)
+      VALUES($1,$2,$3,$4,$5,$6)
+      ON CONFLICT(club_id,season_no,award_type) DO NOTHING
+    `,[clubId,season,p.id,p.name,type,awardNames[type]]);
+  }
+
+  const table=sortEntries(career.data?.divisions?.[career.user_division]?.entries||[]);
+  const pos=Math.max(1,table.findIndex(e=>String(e.clubId)===String(clubId))+1);
+  const entry=table.find(e=>String(e.clubId)===String(clubId))||{};
+  const trophyCount=Number((await client.query(`SELECT COUNT(*)::int count FROM club_trophies WHERE club_id=$1 AND season_no=$2`,[clubId,season])).rows[0]?.count||0);
+  const top=awardCandidates.TOP_SCORER;
+  const balance=Number((await client.query(`SELECT coins FROM clubs WHERE id=$1`,[clubId])).rows[0]?.coins||0);
+
+  await client.query(`
+    INSERT INTO career_season_history(
+      club_id,season_no,division,final_position,wins,draws,losses,gf,ga,trophies,top_scorer,top_scorer_goals,balance
+    )
+    VALUES($1,$2,$3,$4,$5,$6,$7,$8,$9,$10,$11,$12,$13)
+    ON CONFLICT(club_id,season_no) DO UPDATE SET
+      division=EXCLUDED.division,final_position=EXCLUDED.final_position,wins=EXCLUDED.wins,
+      draws=EXCLUDED.draws,losses=EXCLUDED.losses,gf=EXCLUDED.gf,ga=EXCLUDED.ga,
+      trophies=EXCLUDED.trophies,top_scorer=EXCLUDED.top_scorer,
+      top_scorer_goals=EXCLUDED.top_scorer_goals,balance=EXCLUDED.balance
+  `,[clubId,season,career.user_division,pos,entry.wins||0,entry.draws||0,entry.losses||0,entry.gf||0,entry.ga||0,trophyCount,top?.name||null,top?.season_goals||0,balance]);
+
+  await client.query(`
+    UPDATE players SET
+      season_appearances=0,
+      season_goals=0,
+      season_assists=0,
+      season_clean_sheets=0,
+      yellow_accumulation=0,
+      suspension_games=0,
+      form_rating=GREATEST(60,LEAST(82,form_rating))
+    WHERE club_id=$1
+  `,[clubId]);
+}
+
+async function simulateAiTransferActivity(client,careerOwnerId,career){
+  const window=transferWindowInfo(career?.data?.calendar?.date);
+  if(!window.open||Math.random()>.55)return null;
+
+  const owner=(await client.query(`SELECT country_code FROM clubs WHERE id=$1`,[careerOwnerId])).rows[0];
+  const clubs=(await client.query(`
+    SELECT id,name,base_rating
+    FROM clubs
+    WHERE is_ai=TRUE AND club_kind='national' AND country_code=$1
+    ORDER BY RANDOM()
+    LIMIT 10
+  `,[owner?.country_code||"BR"])).rows;
+  if(clubs.length<2)return null;
+
+  const from=clubs[0],to=clubs.find(x=>String(x.id)!==String(from.id));
+  if(!to)return null;
+  await createRoster(client,from,false);await createRoster(client,to,false);
+
+  const p=(await client.query(`
+    SELECT * FROM players
+    WHERE club_id=$1 AND is_starter=FALSE
+    ORDER BY rating DESC,RANDOM()
+    LIMIT 1
+  `,[from.id])).rows[0];
+  if(!p)return null;
+
+  const fee=Math.max(500,Math.round(fairMarketValue(p)*(rand(90,115)/100)/100)*100);
+  await client.query(`UPDATE players SET club_id=$2,is_starter=FALSE,morale=75,happiness=78 WHERE id=$1`,[p.id,to.id]);
+  await client.query(`
+    INSERT INTO ai_transfer_log(career_owner_id,season_no,player_name,from_club_name,to_club_name,fee)
+    VALUES($1,$2,$3,$4,$5,$6)
+  `,[careerOwnerId,career.season_no,p.name,from.name,to.name,fee]);
+
+  return {playerName:p.name,from:from.name,to:to.name,fee};
+}
+
+async function clubRecordsSummary(client,clubId){
+  const [
+    topScorer,topApps,trophy,bigWin,bigLoss,bigSale,
+    installmentPurchase,directPurchase,attendance,matches
+  ]=await Promise.all([
+    client.query(`SELECT name,goals FROM players WHERE club_id=$1 ORDER BY goals DESC,rating DESC LIMIT 1`,[clubId]),
+    client.query(`SELECT name,appearances FROM players WHERE club_id=$1 ORDER BY appearances DESC,rating DESC LIMIT 1`,[clubId]),
+    client.query(`SELECT COUNT(*)::int count FROM club_trophies WHERE club_id=$1`,[clubId]),
+    client.query(`SELECT user_goals,opponent_goals,opponent_club_id FROM matches WHERE user_club_id=$1 ORDER BY (user_goals-opponent_goals) DESC,id ASC LIMIT 1`,[clubId]),
+    client.query(`SELECT user_goals,opponent_goals,opponent_club_id FROM matches WHERE user_club_id=$1 ORDER BY (user_goals-opponent_goals) ASC,id ASC LIMIT 1`,[clubId]),
+    client.query(`
+      SELECT o.amount,p.name player_name,b.name buying_club_name
+      FROM transfer_offers o
+      LEFT JOIN players p ON p.id=o.player_id
+      LEFT JOIN clubs b ON b.id=o.buying_club_id
+      WHERE o.selling_club_id=$1 AND o.status='accepted'
+      ORDER BY o.amount DESC LIMIT 1
+    `,[clubId]),
+    client.query(`
+      SELECT player_name,total_fee amount
+      FROM transfer_installments
+      WHERE buying_club_id=$1
+      ORDER BY total_fee DESC LIMIT 1
+    `,[clubId]),
+    client.query(`
+      SELECT description,ABS(amount)::int amount
+      FROM club_finance_events
+      WHERE club_id=$1 AND category='transfer' AND amount<0
+      ORDER BY ABS(amount) DESC LIMIT 1
+    `,[clubId]),
+    client.query(`
+      SELECT attendance,game_date
+      FROM matches
+      WHERE user_club_id=$1 AND is_home=TRUE
+      ORDER BY attendance DESC,id ASC LIMIT 1
+    `,[clubId]),
+    client.query(`
+      SELECT user_goals,opponent_goals
+      FROM matches
+      WHERE user_club_id=$1
+      ORDER BY id ASC
+    `,[clubId])
+  ]);
+
+  let current=0,maxUnbeaten=0;
+  for(const m of matches.rows){
+    if(Number(m.user_goals)>=Number(m.opponent_goals)){
+      current++;
+      maxUnbeaten=Math.max(maxUnbeaten,current);
+    }else current=0;
+  }
+
+  const installment=installmentPurchase.rows[0]||null;
+  const direct=directPurchase.rows[0]||null;
+  const largestPurchase=
+    !installment?direct:
+    !direct?installment:
+    Number(installment.amount)>=Number(direct.amount)?installment:direct;
+
+  return {
+    topScorer:topScorer.rows[0]||null,
+    topAppearances:topApps.rows[0]||null,
+    trophies:Number(trophy.rows[0]?.count||0),
+    biggestWin:bigWin.rows[0]||null,
+    biggestLoss:bigLoss.rows[0]||null,
+    biggestSale:bigSale.rows[0]||null,
+    biggestPurchase:largestPurchase||null,
+    unbeatenStreak:maxUnbeaten,
+    recordAttendance:attendance.rows[0]||null
+  };
+}
+async function realismSummary(client,club,career){
+  await ensureRealismClubData(client,club.id,career);
+  club=(await client.query(`SELECT * FROM clubs WHERE id=$1`,[club.id])).rows[0]||club;
+  const staff=await staffLevels(client,club.id);
+  const [academy,jobOffers,history,awards,playerHistory,aiTransfers,rival,records,players]=await Promise.all([
+    client.query(`SELECT * FROM academy_players WHERE club_id=$1 AND status='academy' ORDER BY potential DESC,rating DESC`,[club.id]),
+    client.query(`
+      SELECT o.*,c.name club_name,c.base_rating,c.country_code,c.national_seed_division,c.coach_name
+      FROM manager_job_offers o JOIN clubs c ON c.id=o.offering_club_id
+      WHERE o.user_club_id=$1 AND o.status='pending'
+      ORDER BY o.created_at DESC
+    `,[club.id]),
+    client.query(`SELECT * FROM career_season_history WHERE club_id=$1 ORDER BY season_no DESC LIMIT 20`,[club.id]),
+    client.query(`SELECT * FROM player_awards WHERE club_id=$1 ORDER BY season_no DESC,id DESC LIMIT 30`,[club.id]),
+    client.query(`SELECT * FROM player_season_history WHERE club_id=$1 ORDER BY season_no DESC,goals DESC,assists DESC LIMIT 100`,[club.id]),
+    client.query(`SELECT * FROM ai_transfer_log WHERE career_owner_id=$1 ORDER BY id DESC LIMIT 20`,[club.id]),
+    club.rival_club_id?client.query(`SELECT id,name,base_rating FROM clubs WHERE id=$1`,[club.rival_club_id]):Promise.resolve({rows:[]}),
+    clubRecordsSummary(client,club.id),
+    client.query(`
+      SELECT id,name,position,role,rating,potential,form_rating,fitness,morale,happiness,
+             suspension_games,yellow_accumulation,injury_games,injury_type,squad_status,
+             tactical_role,is_captain,set_piece_role,academy_product,is_starter,is_bench,
+             season_appearances,season_goals,season_assists,season_clean_sheets
+      FROM players WHERE club_id=$1
+      ORDER BY is_starter DESC,rating DESC
+    `,[club.id])
+  ]);
+
+  const opponent=await opponentAnalysis(client,club.id,career,staff.levels.SCOUT);
+  const window=transferWindowInfo(career?.data?.calendar?.date);
+  const latestHome=(await client.query(`
+    SELECT attendance,game_date FROM matches
+    WHERE user_club_id=$1 AND is_home=TRUE
+    ORDER BY id DESC LIMIT 1
+  `,[club.id])).rows[0]||null;
+
+  return {
+    staff:staff.rows,
+    staffLevels:staff.levels,
+    academy:academy.rows,
+    managerOffers:jobOffers.rows,
+    history:history.rows,
+    awards:awards.rows,
+    playerHistory:playerHistory.rows,
+    aiTransfers:aiTransfers.rows,
+    rival:rival.rows[0]||null,
+    records,
+    players:players.rows,
+    opponent,
+    transferWindow:window,
+    stadium:{
+      capacity:Number(club.stadium_capacity||12000),
+      level:Number(club.stadium_level||1),
+      ticketPrice:Number(club.ticket_price||30),
+      lastAttendance:Number(latestHome?.attendance||0),
+      lastAttendanceDate:latestHome?.game_date||null
+    },
+    tactics:{
+      pressing:club.tactic_pressing||"NORMAL",
+      defensiveLine:club.tactic_defensive_line||"NORMAL",
+      tempo:club.tactic_tempo||"NORMAL",
+      width:club.tactic_width||"NORMAL",
+      style:club.tactic_style||"BALANCED",
+      marking:club.tactic_marking||"NORMAL"
+    },
+    chemistry:Number(club.chemistry||70),
+    managerReputation:Number(club.manager_reputation||50)
+  };
+}
+
 async function generateIncomingOffers(client,clubId,{force=false,playerId=null,performanceAware=true}={}){
   const pending=Number((await client.query(
     `SELECT COUNT(*)::int count FROM transfer_offers WHERE selling_club_id=$1 AND status='pending'`,
@@ -2308,7 +3427,8 @@ async function payMonthlyWages(client,career,clubId,month){
   }
 
   await generateIncomingOffers(client,clubId,{force:false});
-  return {wages,sponsor,installments,loanFees,balance};
+  const aiTransfer=await simulateAiTransferActivity(client,clubId,career);
+  return {wages,sponsor,installments,loanFees,balance,aiTransfer};
 }
 
 async function advanceCalendar(career,clubId,days,label){
@@ -2336,54 +3456,152 @@ function calendarSummary(career,monthlyWages=0){
   return {currentDate:cal.date,nextPayrollDate:isoDate(next),monthlyWages,events:cal.events||[],payrolls:cal.payrolls||[]};
 }
 
+function attendanceForMatch(home,away){
+  const capacity=Math.max(3000,Number(home?.stadium_capacity||12000));
+  const price=Math.max(5,Number(home?.ticket_price||30));
+  const homeRating=Number(home?.team_rating||home?.base_rating||64);
+  const awayRating=Number(away?.team_rating||away?.base_rating||64);
+  const rival=String(home?.rival_club_id||"")===String(away?.id||"");
+  const supporterDemand=Math.min(.20,Number(home?.fans||5000)/Math.max(1,capacity)*.22);
+  const base=.38+supporterDemand+(homeRating-60)*.008+(awayRating-60)*.004+(rival?0.16:0);
+  const pricePenalty=Math.max(.55,1-Math.max(0,price-35)*.008);
+  const fill=clamp(base*pricePenalty,0.35,1);
+  return Math.round(capacity*fill);
+}
+function dayDiff(a,b){
+  if(!a||!b)return 7;
+  const x=new Date(`${a}T12:00:00Z`),y=new Date(`${b}T12:00:00Z`);
+  return Math.max(0,Math.round((x-y)/86400000));
+}
+
 async function fullMatch(client,homeId,awayId,userId){
   const cs=(await client.query(`SELECT * FROM clubs WHERE id=ANY($1::bigint[])`,[[homeId,awayId]])).rows;
   const home=cs.find(c=>String(c.id)===String(homeId)),away=cs.find(c=>String(c.id)===String(awayId));
+  if(!home||!away)throw new Error("Clubes da partida não encontrados.");
+
+  const careerRow=(await client.query(`SELECT * FROM careers WHERE owner_club_id=$1`,[userId])).rows[0]||null;
+  await ensureRealismClubData(client,userId,careerRow);
+
   await applyFelipeMode(client,home.id);
   await applyFelipeMode(client,away.id);
-  const hs=await matchStarters(client,home,String(home.id)===String(userId));
-  const as=await matchStarters(client,away,String(away.id)===String(userId));
-  const sim=realisticScore(hs,as);
+
+  const userHome=String(home.id)===String(userId);
+  const userClub=userHome?home:away;
+  const opponent=userHome?away:home;
+  const staff=await staffLevels(client,userId);
+  userClub._gkCoachLevel=staff.levels.GK_COACH;
+
+  const hs=await matchStarters(client,home,userHome);
+  const as=await matchStarters(client,away,!userHome);
+
+  const homeAll=(await client.query(`SELECT * FROM players WHERE club_id=$1 ORDER BY rating DESC`,[home.id])).rows;
+  const awayAll=(await client.query(`SELECT * FROM players WHERE club_id=$1 ORDER BY rating DESC`,[away.id])).rows;
+  const hBench=matchBench(homeAll,hs);
+  const aBench=matchBench(awayAll,as);
+  const hSubs=simulateSubstitutions(hs,hBench,home.id);
+  const aSubs=simulateSubstitutions(as,aBench,away.id);
+
+  const sim=realisticScore(hs,as,home,away);
   let hg=sim.hg,ag=sim.ag;
+
   const homeFelipe=isFelipeName(home.name),awayFelipe=isFelipeName(away.name);
   if(homeFelipe&&!awayFelipe){
     const score=felipeScore();hg=score.winner;ag=score.loser;
   }else if(awayFelipe&&!homeFelipe){
     const score=felipeScore();ag=score.winner;hg=score.loser;
   }
+
   const visualHomeGoals=Math.min(hg,8),visualAwayGoals=Math.min(ag,8);
-  const events=[...eventsFor(home.id,hs,visualHomeGoals),...eventsFor(away.id,as,visualAwayGoals)].sort((a,b)=>a.minute-b.minute);
+  const events=[
+    ...eventsFor(home.id,hs,visualHomeGoals),
+    ...eventsFor(away.id,as,visualAwayGoals),
+    ...hSubs,
+    ...aSubs
+  ].sort((a,b)=>a.minute-b.minute);
+
   if(homeFelipe||awayFelipe){
     const winner=homeFelipe?home:away;
     events.unshift({type:"special",clubId:winner.id,minute:1,text:`Modo FELIPE ativado para ${winner.name}: todos os jogadores em 100.`});
   }
-  const homeResult=hg>ag?"win":hg===ag?"draw":"loss",awayResult=ag>hg?"win":ag===hg?"draw":"loss";
-  const userHome=String(home.id)===String(userId);
 
-  // A carreira só altera o próprio elenco. Adversários (IA ou outra pessoa)
-  // não recebem fadiga/estatísticas por uma partida iniciada neste save.
+  const homeResult=hg>ag?"win":hg===ag?"draw":"loss";
+  const awayResult=ag>hg?"win":ag===hg?"draw":"loss";
+  const calendarDate=careerRow?.data?.calendar?.date||new Date().toISOString().slice(0,10);
+  const lastDate=userClub.last_match_game_date?String(userClub.last_match_game_date).slice(0,10):null;
+  const congestionDays=dayDiff(calendarDate,lastDate);
+  const travelLoad=!userHome
+    ?((userClub.country_code!==opponent.country_code)?4:
+      (userClub.state_code&&opponent.state_code&&userClub.state_code!==opponent.state_code)?2:1)
+    :0;
+
   if(userHome){
-    await applyStatsAndCondition(client,home.id,hs,ag,events,homeResult);
+    await applyStatsAndCondition(client,home.id,hs,ag,events,homeResult,{
+      bench:hBench,substitutions:hSubs,club:home,congestionDays,travelLoad,staffLevels:staff.levels
+    });
     await client.query(`UPDATE clubs SET team_rating=$2 WHERE id=$1`,[home.id,Math.round(hs.reduce((a,p)=>a+Number(p.rating),0)/hs.length)]);
   }else{
-    await applyStatsAndCondition(client,away.id,as,hg,events,awayResult);
+    await applyStatsAndCondition(client,away.id,as,hg,events,awayResult,{
+      bench:aBench,substitutions:aSubs,club:away,congestionDays,travelLoad,staffLevels:staff.levels
+    });
     await client.query(`UPDATE clubs SET team_rating=$2 WHERE id=$1`,[away.id,Math.round(as.reduce((a,p)=>a+Number(p.rating),0)/as.length)]);
   }
 
+  const userResult=userHome?homeResult:awayResult;
+  const isRival=String(userClub.rival_club_id||"")===String(opponent.id);
+  const chemistryDelta=userResult==="win"?2:userResult==="draw"?1:(Math.abs(hg-ag)>=3?-2:-1);
+  const reputationDelta=(userResult==="win"?1:userResult==="loss"?-1:0)+(isRival&&userResult==="win"?2:0);
+  await client.query(`
+    UPDATE clubs SET
+      chemistry=GREATEST(45,LEAST(100,chemistry+$2)),
+      manager_reputation=GREATEST(1,LEAST(100,manager_reputation+$3)),
+      board_confidence=GREATEST(0,LEAST(100,board_confidence+$4)),
+      last_match_game_date=$5
+    WHERE id=$1
+  `,[userId,chemistryDelta,reputationDelta,isRival?(userResult==="win"?4:userResult==="loss"?-4:1):0,calendarDate]);
+
+  if(isRival){
+    await client.query(
+      `INSERT INTO club_events(club_id,event_type,title,description)
+       VALUES($1,'rivalry','Clássico disputado',$2)`,
+      [userId,userResult==="win"
+        ?`Vitória no clássico contra ${opponent.name}. Moral, reputação e confiança da diretoria cresceram.`
+        :userResult==="loss"
+          ?`Derrota no clássico contra ${opponent.name}. A pressão sobre o time aumentou.`
+          :`Empate no clássico contra ${opponent.name}.`]
+    );
+    await client.query(
+      `UPDATE players SET morale=GREATEST(30,LEAST(100,morale+$2)) WHERE club_id=$1`,
+      [userId,userResult==="win"?4:userResult==="loss"?-4:1]
+    );
+  }
+
+  const attendance=attendanceForMatch(home,away);
   const ug=userHome?hg:ag,og=userHome?ag:hg;
+  const userSubs=userHome?hSubs:aSubs;
+  const userBench=userHome?hBench:aBench;
+
   return {
     home,away,hg,ag,events,homeLineup:hs,awayLineup:as,
+    attendance,
     userMatch:{
       result:ug>og?"win":ug===og?"draw":"loss",
       userClub:userHome?home.name:away.name,
       opponent:userHome?away.name:home.name,
       userGoals:ug,opponentGoals:og,
-      userRating:userHome?sim.hr:sim.ar,opponentRating:userHome?sim.ar:sim.hr,
+      userRating:userHome?sim.hr:sim.ar,
+      opponentRating:userHome?sim.ar:sim.hr,
+      isHome:userHome,
+      attendance,
+      ticketPrice:Number(home.ticket_price||30),
+      congestionDays,
+      travelLoad,
+      isRival,
+      substitutions:userSubs.map(x=>({minute:x.minute,outId:x.outId,inId:x.inId,text:x.text})),
+      bench:userBench.map(p=>({id:p.id,name:p.name,position:p.position,role:p.role,rating:p.rating})),
       events:events.map(e=>({minute:e.minute,text:e.text,type:e.type,clubId:e.clubId}))
     }
   };
 }
-
 function doubleRR(ids){
   let arr=[...ids],n=arr.length,first=[];
   for(let r=0;r<n-1;r++){
@@ -2855,6 +4073,10 @@ async function mediaAfterCompetitionAction(ownerId,action,result){
 
     // Uma sequência forte passa a atrair propostas pelos principais jogadores.
     await generateIncomingOffers(client,ownerId,{force:false,performanceAware:true});
+
+    // Em desempenho alto, outros clubes também podem procurar o treinador.
+    const performance=await teamPerformanceProfile(client,ownerId,career);
+    await maybeGenerateManagerJobOffer(client,ownerId,career,performance);
   });
 
   return result;
@@ -3176,7 +4398,7 @@ async function playCopa(ownerId){
           ownerId,
           "CUP",
           String(f.home)===String(ownerId),
-          userMatch.result
+          userMatch.result, userMatch.attendance, userMatch.ticketPrice
         );
 
         await recordUserMatch(
@@ -3201,7 +4423,7 @@ async function playCopa(ownerId){
   if(copa.twoLegged&&leg===1){
     copa.leg=2;
     career.data.copaBrasil=copa;
-    await advanceCalendar(career,ownerId,7,`${copa.name} — ${copaStageLabel(stage)} — ida`);
+    await advanceCalendar(career,ownerId,3,`${copa.name} — ${copaStageLabel(stage)} — ida`);
     await saveCareer(career);
     return {
       userMatch,
@@ -3240,7 +4462,7 @@ async function playCopa(ownerId){
   await advanceCalendar(
     career,
     ownerId,
-    7,
+    3,
     `${copa.name} — ${copaStageLabel(stage)}${copa.twoLegged?" — volta":""}`
   );
   await saveCareer(career);
@@ -3269,7 +4491,7 @@ async function playState(ownerId){
         let hg,ag,events=[];
         if(String(f.home)===String(ownerId)||String(f.away)===String(ownerId)){
           const sim=await fullMatch(c,f.home,f.away,ownerId);hg=sim.hg;ag=sim.ag;events=sim.events;userMatch=sim.userMatch;userMatch.matchType="Estadual";userMatch.reward=0;
-          userMatch.finance=await settleMatchFinances(c,ownerId,"STATE",String(f.home)===String(ownerId),userMatch.result);
+          userMatch.finance=await settleMatchFinances(c,ownerId,"STATE",String(f.home)===String(ownerId),userMatch.result, userMatch.attendance, userMatch.ticketPrice);
           await recordUserMatch(c,ownerId,String(f.home)===String(ownerId)?f.away:f.home,userMatch,events,"state",userMatch.finance.performance);
         }else{
           ({hg,ag}=basicScore(ratings.get(String(f.home))||60,ratings.get(String(f.away))||60));
@@ -3293,7 +4515,7 @@ async function playState(ownerId){
         let hg,ag;
         if(String(f.home)===String(ownerId)||String(f.away)===String(ownerId)){
           const sim=await fullMatch(c,f.home,f.away,ownerId);hg=sim.hg;ag=sim.ag;userMatch=sim.userMatch;userMatch.matchType="Estadual";userMatch.reward=0;
-          userMatch.finance=await settleMatchFinances(c,ownerId,"STATE",String(f.home)===String(ownerId),userMatch.result);
+          userMatch.finance=await settleMatchFinances(c,ownerId,"STATE",String(f.home)===String(ownerId),userMatch.result, userMatch.attendance, userMatch.ticketPrice);
           await recordUserMatch(c,ownerId,String(f.home)===String(ownerId)?f.away:f.home,userMatch,sim.events,"state",userMatch.finance.performance);
         }else ({hg,ag}=basicScore(ratings.get(String(f.home))||60,ratings.get(String(f.away))||60));
         f.played=true;f.hg=hg;f.ag=ag;
@@ -3319,7 +4541,7 @@ async function playState(ownerId){
 
   career.data.state=s;
   const stateCalendarLabel=s.stage==="GROUP"?`Estadual — rodada ${Math.max(1,Number(s.round)-1)}`:`Estadual — ${s.stage}`;
-  await advanceCalendar(career,ownerId,7,stateCalendarLabel);
+  await advanceCalendar(career,ownerId,5,stateCalendarLabel);
   await saveCareer(career);
   return {userMatch};
 }
@@ -3478,7 +4700,7 @@ async function simulateLibStep(career,allowUserDetail){
         let hg,ag;
         if(allowUserDetail&&(String(f.home)===String(career.owner_club_id)||String(f.away)===String(career.owner_club_id))){
           const sim=await fullMatch(c,f.home,f.away,career.owner_club_id);hg=sim.hg;ag=sim.ag;userMatch=sim.userMatch;userMatch.matchType="Libertadores";userMatch.reward=0;
-          userMatch.finance=await settleMatchFinances(c,career.owner_club_id,"LIB",String(f.home)===String(career.owner_club_id),userMatch.result);
+          userMatch.finance=await settleMatchFinances(c,career.owner_club_id,"LIB",String(f.home)===String(career.owner_club_id),userMatch.result, userMatch.attendance, userMatch.ticketPrice);
           await recordUserMatch(c,career.owner_club_id,String(f.home)===String(career.owner_club_id)?f.away:f.home,userMatch,sim.events,"libertadores",userMatch.finance.performance);
         }else ({hg,ag}=basicScore(ratings.get(String(f.home))||72,ratings.get(String(f.away))||72));
         f.played=true;f.hg=hg;f.ag=ag;
@@ -3499,7 +4721,7 @@ async function simulateLibStep(career,allowUserDetail){
         let hg,ag;
         if(allowUserDetail&&(String(f.home)===String(career.owner_club_id)||String(f.away)===String(career.owner_club_id))){
           const sim=await fullMatch(c,f.home,f.away,career.owner_club_id);hg=sim.hg;ag=sim.ag;userMatch=sim.userMatch;userMatch.matchType="Libertadores";userMatch.reward=0;
-          userMatch.finance=await settleMatchFinances(c,career.owner_club_id,"LIB",String(f.home)===String(career.owner_club_id),userMatch.result);
+          userMatch.finance=await settleMatchFinances(c,career.owner_club_id,"LIB",String(f.home)===String(career.owner_club_id),userMatch.result, userMatch.attendance, userMatch.ticketPrice);
           await recordUserMatch(c,career.owner_club_id,String(f.home)===String(career.owner_club_id)?f.away:f.home,userMatch,sim.events,"libertadores",userMatch.finance.performance);
         }else ({hg,ag}=basicScore(ratings.get(String(f.home))||72,ratings.get(String(f.away))||72));
         f.played=true;f.hg=hg;f.ag=ag;
@@ -3595,7 +4817,7 @@ async function simulateChampionsStep(career,allowUserDetail){
           const sim=await fullMatch(client,f.home,f.away,ownerId);
           hg=sim.hg;ag=sim.ag;userMatch=sim.userMatch;
           userMatch.matchType="Champions League";userMatch.reward=0;
-          userMatch.finance=await settleMatchFinances(client,ownerId,"LIB",String(f.home)===String(ownerId),userMatch.result);
+          userMatch.finance=await settleMatchFinances(client,ownerId,"LIB",String(f.home)===String(ownerId),userMatch.result, userMatch.attendance, userMatch.ticketPrice);
           await recordUserMatch(client,ownerId,String(f.home)===String(ownerId)?f.away:f.home,userMatch,sim.events,"champions",userMatch.finance.performance);
         }else{
           ({hg,ag}=basicScore(ratings.get(String(f.home))||78,ratings.get(String(f.away))||78));
@@ -3624,7 +4846,7 @@ async function simulateChampionsStep(career,allowUserDetail){
           const sim=await fullMatch(client,f.home,f.away,ownerId);
           hg=sim.hg;ag=sim.ag;userMatch=sim.userMatch;
           userMatch.matchType="Champions League";userMatch.reward=0;
-          userMatch.finance=await settleMatchFinances(client,ownerId,"LIB",String(f.home)===String(ownerId),userMatch.result);
+          userMatch.finance=await settleMatchFinances(client,ownerId,"LIB",String(f.home)===String(ownerId),userMatch.result, userMatch.attendance, userMatch.ticketPrice);
           await recordUserMatch(client,ownerId,String(f.home)===String(ownerId)?f.away:f.home,userMatch,sim.events,"champions",userMatch.finance.performance);
         }else{
           ({hg,ag}=basicScore(ratings.get(String(f.home))||80,ratings.get(String(f.away))||80));
@@ -3773,7 +4995,7 @@ async function simulateClubWorldStep(career,allowUserDetail){
           const sim=await fullMatch(client,f.home,f.away,ownerId);
           hg=sim.hg;ag=sim.ag;userMatch=sim.userMatch;
           userMatch.matchType="Super Mundial de Clubes";userMatch.reward=0;
-          userMatch.finance=await settleMatchFinances(client,ownerId,"LIB",String(f.home)===String(ownerId),userMatch.result);
+          userMatch.finance=await settleMatchFinances(client,ownerId,"LIB",String(f.home)===String(ownerId),userMatch.result, userMatch.attendance, userMatch.ticketPrice);
           await recordUserMatch(client,ownerId,String(f.home)===String(ownerId)?f.away:f.home,userMatch,sim.events,"super_mundial",userMatch.finance.performance);
         }else{
           ({hg,ag}=basicScore(ratings.get(String(f.home))||77,ratings.get(String(f.away))||77));
@@ -3802,7 +5024,7 @@ async function simulateClubWorldStep(career,allowUserDetail){
           const sim=await fullMatch(client,f.home,f.away,ownerId);
           hg=sim.hg;ag=sim.ag;userMatch=sim.userMatch;
           userMatch.matchType="Super Mundial de Clubes";userMatch.reward=0;
-          userMatch.finance=await settleMatchFinances(client,ownerId,"LIB",String(f.home)===String(ownerId),userMatch.result);
+          userMatch.finance=await settleMatchFinances(client,ownerId,"LIB",String(f.home)===String(ownerId),userMatch.result, userMatch.attendance, userMatch.ticketPrice);
           await recordUserMatch(client,ownerId,String(f.home)===String(ownerId)?f.away:f.home,userMatch,sim.events,"super_mundial",userMatch.finance.performance);
         }else{
           ({hg,ag}=basicScore(ratings.get(String(f.home))||78,ratings.get(String(f.away))||78));
@@ -4061,7 +5283,7 @@ async function playNational(ownerId){
             ownerId,
             div,
             String(f.home)===String(ownerId),
-            userMatch.result
+            userMatch.result, userMatch.attendance, userMatch.ticketPrice
           );
 
           await recordUserMatch(
@@ -4125,7 +5347,7 @@ async function playNational(ownerId){
     career.current_round=round+1;
   }
 
-  await advanceCalendar(career,ownerId,7,`${leagueName(career.country_code||"BR",career.user_division)} — rodada ${round}`);
+  await advanceCalendar(career,ownerId,5,`${leagueName(career.country_code||"BR",career.user_division)} — rodada ${round}`);
   await saveCareer(career);
 
   return {
@@ -4145,7 +5367,7 @@ async function playLib(ownerId){
     await autoFinishLib(career);
     await maybeStartClubWorldCup(career);
   }
-  await advanceCalendar(career,ownerId,7,"Libertadores");
+  await advanceCalendar(career,ownerId,4,"Libertadores");
   await saveCareer(career);
   return {...r,phase:career.phase};
 }
@@ -4160,7 +5382,7 @@ async function playChampions(ownerId){
     await autoFinishChampions(career);
     await maybeStartClubWorldCup(career);
   }
-  await advanceCalendar(career,ownerId,7,"Champions League");
+  await advanceCalendar(career,ownerId,4,"Champions League");
   await saveCareer(career);
   return {...r,phase:career.phase};
 }
@@ -4175,7 +5397,7 @@ async function playClubWorldCup(ownerId){
     await autoFinishClubWorldCup(career);
     career.phase="END";
   }
-  await advanceCalendar(career,ownerId,6,"Super Mundial de Clubes");
+  await advanceCalendar(career,ownerId,3,"Super Mundial de Clubes");
   await saveCareer(career);
   return {...r,phase:career.phase};
 }
@@ -4207,6 +5429,10 @@ async function nextSeason(ownerId){
   }
 
   await tx(async c=>{
+    // Fecha o histórico da temporada antes de devolver emprestados ou envelhecer o elenco.
+    await finalizeSeasonRealism(c,ownerId,career,club);
+    const developmentStaff=await staffLevels(c,ownerId);
+
     const borrowed=(await c.query(`SELECT l.player_id,l.parent_club_id,p.name FROM player_loans l JOIN players p ON p.id=l.player_id WHERE l.borrowing_club_id=$1 AND l.status='active' FOR UPDATE OF l`,[ownerId])).rows;
     for(const l of borrowed){
       await c.query(`UPDATE player_loans SET status='ended' WHERE player_id=$1 AND borrowing_club_id=$2 AND status='active'`,[l.player_id,ownerId]);
@@ -4214,32 +5440,42 @@ async function nextSeason(ownerId){
       await c.query(`INSERT INTO club_events(club_id,event_type,title,description) VALUES($1,'loan','Fim de empréstimo',$2)`,[ownerId,`${l.name} deixou esta carreira ao fim da temporada.`]);
     }
 
-    const ps=(await c.query(`SELECT id,name,age,contract_seasons FROM players WHERE club_id=$1`,[ownerId])).rows;
+    const ps=(await c.query(`
+      SELECT id,name,age,rating,potential,academy_product,contract_seasons,
+             season_appearances,morale,happiness,form_rating
+      FROM players WHERE club_id=$1
+    `,[ownerId])).rows;
     for(const p of ps){
-      let delta=0;if(p.age<=24&&Math.random()<.35)delta=1;if(p.age>=31&&Math.random()<.25)delta=-1;
+      let delta=0;
+      const age=Number(p.age||24);
+      const rating=Number(p.rating||60);
+      const potential=Math.max(rating,Number(p.potential||rating));
+      const fitnessCoach=Number(developmentStaff.levels.FITNESS||1);
+
+      if(age<=24&&rating<potential){
+        const minutesFactor=Math.min(.20,Number(p.season_appearances||0)*.008);
+        const moraleFactor=(Number(p.morale||70)-70)*.002;
+        const happinessFactor=(Number(p.happiness||75)-75)*.0015;
+        const formFactor=(Number(p.form_rating||70)-70)*.0015;
+        const growthChance=clamp(
+          .28+(fitnessCoach-1)*.07+(p.academy_product?.08:0)+
+          minutesFactor+moraleFactor+happinessFactor+formFactor,
+          .10,.88
+        );
+        if(Math.random()<growthChance){
+          const strongDevelopment=Number(p.season_appearances||0)>=20&&Number(p.form_rating||70)>=78;
+          delta=Math.min(potential-rating,strongDevelopment&&Math.random()<.34?2:1);
+        }
+      }else if(age>=35&&Math.random()<.62){
+        delta=-rand(1,2);
+      }else if(age>=31&&Math.random()<.34){
+        delta=-1;
+      }
+
       const remaining=Math.max(0,Number(p.contract_seasons||1)-1);
       if(remaining===0){
-        await c.query(`
-          UPDATE players SET
-            age=age+1,
-            club_id=NULL,
-            is_starter=FALSE,
-            transfer_listed=FALSE,
-            fitness=100,
-            morale=72,
-            consecutive_starts=0,
-            rating=GREATEST(45,LEAST(95,rating+$2)),
-            pace=GREATEST(25,LEAST(95,pace+$2)),
-            shooting=GREATEST(20,LEAST(95,shooting+$2)),
-            passing=GREATEST(20,LEAST(95,passing+$2)),
-            defending=GREATEST(20,LEAST(95,defending+$2))
-          WHERE id=$1
-        `,[p.id,delta]);
-        await c.query(
-          `INSERT INTO club_events(club_id,event_type,title,description)
-           VALUES($1,'contract','Contrato encerrado',$2)`,
-          [ownerId,`${p.name} deixou o clube após o fim do contrato porque não houve renovação.`]
-        );
+        await c.query(`UPDATE players SET age=age+1,contract_seasons=1,salary=ROUND(salary*1.06)::int,fitness=100,morale=LEAST(100,morale+2),rating=GREATEST(45,LEAST(95,rating+$2)),pace=GREATEST(25,LEAST(95,pace+$2)),shooting=GREATEST(20,LEAST(95,shooting+$2)),passing=GREATEST(20,LEAST(95,passing+$2)),defending=GREATEST(20,LEAST(95,defending+$2)) WHERE id=$1`,[p.id,delta]);
+        await c.query(`INSERT INTO club_events(club_id,event_type,title,description) VALUES($1,'contract','Renovação automática',$2)`,[ownerId,`${p.name} renovou por mais 1 temporada com reajuste salarial.`]);
       }else{
         await c.query(`UPDATE players SET age=age+1,contract_seasons=$3,fitness=100,rating=GREATEST(45,LEAST(95,rating+$2)),pace=GREATEST(25,LEAST(95,pace+$2)),shooting=GREATEST(20,LEAST(95,shooting+$2)),passing=GREATEST(20,LEAST(95,passing+$2)),defending=GREATEST(20,LEAST(95,defending+$2)) WHERE id=$1`,[p.id,delta,remaining]);
       }
@@ -4532,52 +5768,6 @@ function suggestedSalary(player){
   return Math.max(Number(player.salary||0),salaryForRating(Number(player.rating||60)));
 }
 
-function contractRenewalTerms(player){
-  const rating=Number(player.rating||60);
-  const age=Number(player.age||25);
-  const current=Number(player.salary||salaryForRating(rating));
-  const performanceBonus=Math.min(
-    0.14,
-    (Number(player.goals||0)+Number(player.assists||0))*0.004
-  );
-  const ageFactor=age<=23?1.08:age>=32?.98:1.03;
-  const suggested=Math.max(
-    salaryForRating(rating),
-    Math.round(current*(ageFactor+performanceBonus)/10)*10
-  );
-  const signingBonus=Math.max(100,Math.round(suggested*1.25/10)*10);
-  return {suggestedSalary:suggested,signingBonus};
-}
-
-async function pendingContractRenewals(client,clubId){
-  const rows=(await client.query(`
-    SELECT p.*
-    FROM players p
-    WHERE p.club_id=$1
-      AND p.contract_seasons<=1
-      AND NOT EXISTS(
-        SELECT 1
-        FROM player_loans l
-        WHERE l.player_id=p.id
-          AND l.borrowing_club_id=$1
-          AND l.status='active'
-      )
-    ORDER BY p.is_starter DESC,p.rating DESC,p.age
-  `,[clubId])).rows;
-
-  return rows.map(p=>({
-    id:p.id,
-    name:p.name,
-    position:p.position,
-    role:p.role,
-    rating:Number(p.rating||0),
-    age:Number(p.age||0),
-    salary:Number(p.salary||0),
-    contractSeasons:Number(p.contract_seasons||0),
-    isStarter:Boolean(p.is_starter),
-    ...contractRenewalTerms(p)
-  }));
-}
 function interestChance(player,userClub,userDiv,sourceDiv,salaryOffer,years){
   const suggested=suggestedSalary(player);
   const salaryBoost=((Number(salaryOffer)/Math.max(1,suggested))-1)*58;
@@ -5183,12 +6373,12 @@ app.get("/api/dashboard",auth,async(req,res,next)=>{
     const saf=await safSummary(c,career);
     const boardExpectation=career?boardExpectationFor(career,c):null;
     const teamPerformance=career?await teamPerformanceProfile(pool,c.id,career):null;
-    const contractRenewals=await pendingContractRenewals(pool,c.id);
+    const realism=career?await realismSummary(pool,c,career):null;
     res.json({
       club:c,players:ps.rows,market:mk.rows,matches:mt.rows,friends:fr.rows,finance:fin,
       clubEvents:events.rows,trophies:trophies.rows,incomingOffers:offers.rows,calendar:cal,
       sponsorship,mediaNews:mediaNews.rows,pendingPress:pendingPress.rows[0]||null,saf,
-      boardMessages:boardMessages.rows,boardExpectation,teamPerformance,contractRenewals
+      boardMessages:boardMessages.rows,boardExpectation,teamPerformance,realism
     });
   }catch(e){next(e)}
 });
@@ -5383,7 +6573,7 @@ app.post("/api/career/manual-save",auth,async(req,res,next)=>{
         }
 
         await client.query(`UPDATE players SET is_starter=FALSE WHERE club_id=$1`,[club.id]);
-        await client.query(`UPDATE players SET is_starter=TRUE WHERE club_id=$1 AND id=ANY($2::bigint[])`,[club.id,starterIds]);
+        await client.query(`UPDATE players SET is_starter=TRUE,is_bench=FALSE WHERE club_id=$1 AND id=ANY($2::bigint[])`,[club.id,starterIds]);
         await client.query(`UPDATE clubs SET formation=$2 WHERE id=$1`,[club.id,formation]);
 
         const rating=Number((await client.query(
@@ -5499,13 +6689,18 @@ app.put("/api/lineup",auth,async(req,res,next)=>{
     const c=await userClub(req.user.id),ids=Array.isArray(req.body.starterIds)?req.body.starterIds.map(String):[],formation=String(req.body.formation||"4-3-3");
     if(ids.length!==11||new Set(ids).size!==11)return res.status(400).json({error:"Selecione exatamente 11 titulares."});
     if(!formationIsValid(formation))return res.status(400).json({error:"Formação inválida."});
-    const own=await q(`SELECT id,position,injury_games FROM players WHERE club_id=$1 AND id=ANY($2::bigint[])`,[c.id,ids]);
+    const own=await q(`SELECT id,position,injury_games,suspension_games FROM players WHERE club_id=$1 AND id=ANY($2::bigint[])`,[c.id,ids]);
     if(own.rowCount!==11||!own.rows.some(p=>p.position==="GK"))return res.status(400).json({error:"Inclua um goleiro."});
     if(own.rows.some(p=>Number(p.injury_games||0)>0))return res.status(400).json({error:"Jogadores lesionados não podem ser titulares."});
+    if(own.rows.some(p=>Number(p.suspension_games||0)>0))return res.status(400).json({error:"Jogadores suspensos não podem ser titulares."});
     const quota=formationQuotas(formation),counts={GK:0,DEF:0,MID:0,ATT:0};
     own.rows.forEach(p=>counts[p.position]=(counts[p.position]||0)+1);
     if(Object.keys(quota).some(k=>counts[k]!==quota[k]))return res.status(400).json({error:`A formação ${formation} exige ${quota.DEF} defensores, ${quota.MID} meio-campistas e ${quota.ATT} atacantes.`});
-    await tx(async x=>{await x.query(`UPDATE players SET is_starter=FALSE WHERE club_id=$1`,[c.id]);await x.query(`UPDATE players SET is_starter=TRUE WHERE club_id=$1 AND id=ANY($2::bigint[])`,[c.id,ids]);await x.query(`UPDATE clubs SET formation=$2 WHERE id=$1`,[c.id,formation])});
+    await tx(async x=>{
+      await x.query(`UPDATE players SET is_starter=FALSE WHERE club_id=$1`,[c.id]);
+      await x.query(`UPDATE players SET is_starter=TRUE,is_bench=FALSE WHERE club_id=$1 AND id=ANY($2::bigint[])`,[c.id,ids]);
+      await x.query(`UPDATE clubs SET formation=$2 WHERE id=$1`,[c.id,formation]);
+    });
     res.json({ok:true});
   }catch(e){next(e)}
 });
@@ -5602,6 +6797,7 @@ app.post("/api/transfers/incoming/:offerId/accept",auth,async(req,res,next)=>{
         WHERE id=$1
       `,[p.id]);
 
+      await client.query(`UPDATE clubs SET chemistry=GREATEST(45,chemistry-1) WHERE id=$1`,[c.id]);
       await client.query(`UPDATE transfer_offers SET status='accepted',updated_at=NOW() WHERE id=$1`,[o.id]);
       await client.query(`UPDATE transfer_offers SET status='expired',updated_at=NOW() WHERE player_id=$1 AND status='pending' AND id<>$2`,[p.id,o.id]);
 
@@ -5654,6 +6850,11 @@ app.get("/api/transfers/search",auth,async(req,res,next)=>{
     const realOnly=String(req.query.realOnly||"")==="1";
     const userDiv=career?.user_division||"D";
     const profile=marketProfile(userDiv);
+    const window=transferWindowInfo(career?.data?.calendar?.date);
+    const staff=await staffLevels(pool,c.id);
+    const scoutLevel=Number(staff.levels.SCOUT||1);
+    const reportRows=(await q(`SELECT target_player_id FROM scout_reports WHERE club_id=$1`,[c.id])).rows;
+    const scoutedIds=new Set(reportRows.map(x=>String(x.target_player_id)));
 
     const rows=(await q(`
       SELECT p.*,
@@ -5688,6 +6889,8 @@ app.get("/api/transfers/search",auth,async(req,res,next)=>{
       const salary=suggestedSalary(p);
       const chance=interestChance(p,c,userDiv,sourceDiv,Math.round(salary*1.1/10)*10,3);
       const likelyImportant=Boolean(p.club_id)&&Boolean(p.is_starter)&&Number(p.rating)>=Number(p.source_base_rating||64)+2;
+      const scouted=scoutedIds.has(String(p.id))||scoutLevel>=5;
+      const uncertainty=scouted?0:Math.max(1,6-scoutLevel);
       return {
         ...p,
         fair_value:fairMarketValue(p),
@@ -5697,7 +6900,11 @@ app.get("/api/transfers/search",auth,async(req,res,next)=>{
         interest:chance>=70?"Alta":chance>=45?"Média":"Baixa",
         loan_eligible:Boolean(p.club_id)&&Boolean(p.source_is_ai)&&!likelyImportant,
         loan_reason:!p.club_id?"Jogador livre":likelyImportant?"Importante para o clube":"Disponível",
-        suggested_loan_fee:Boolean(p.club_id)&&Boolean(p.source_is_ai)?Math.max(250,Math.round(fairMarketValue(p)*0.025/50)*50):0
+        suggested_loan_fee:Boolean(p.club_id)&&Boolean(p.source_is_ai)?Math.max(250,Math.round(fairMarketValue(p)*0.025/50)*50):0,
+        scouted,
+        rating_min:Math.max(40,Number(p.rating)-uncertainty),
+        rating_max:Math.min(100,Number(p.rating)+uncertainty),
+        scout_cost:Math.max(120,600-scoutLevel*80)
       };
     });
 
@@ -5706,6 +6913,8 @@ app.get("/api/transfers/search",auth,async(req,res,next)=>{
       transferBan:ban,
       marketProfile:profile,
       userDivision:userDiv,
+      transferWindow:window,
+      scoutLevel,
       independentCareerMarket:true
     });
   }catch(e){next(e)}
@@ -5722,6 +6931,10 @@ app.post("/api/transfers/offer",auth,async(req,res,next)=>{
     const installments=clamp(Number(req.body.installments||1),1,24);
     const career=await getCareer(c.id);
     const userDiv=career?.user_division||"D";
+    const window=transferWindowInfo(career?.data?.calendar?.date);
+    if(!window.open){
+      return res.status(403).json({error:`Janela de transferências fechada. Próxima abertura: ${window.next||"próxima temporada"}.`});
+    }
 
     if(transferBanInfo(c.coins).active){
       return res.status(403).json({error:`Transfer ban ativo por endividamento. O caixa precisa voltar para pelo menos ${TRANSFER_BAN_THRESHOLD.toLocaleString("pt-BR")} moedas para contratar.`});
@@ -5802,6 +7015,7 @@ app.post("/api/transfers/offer",auth,async(req,res,next)=>{
         `,[c.id,p.club_id,signed.id,p.name,feeOffer,remaining,firstFee,realInstallments,nextDue]);
       }
 
+      await client.query(`UPDATE clubs SET chemistry=GREATEST(45,chemistry-2) WHERE id=$1`,[c.id]);
       await applyFelipeMode(client,c.id);
 
       const installmentText=realInstallments>1?` em ${realInstallments}x`:"";
@@ -5836,6 +7050,8 @@ app.post("/api/transfers/loan",auth,async(req,res,next)=>{
     const purchaseOptionPrice=Math.max(0,Number(req.body.purchaseOptionPrice||0));
     const career=await getCareer(c.id);
     const userDiv=career?.user_division||"D";
+    const window=transferWindowInfo(career?.data?.calendar?.date);
+    if(!window.open)return res.status(403).json({error:`Janela de transferências fechada. Próxima abertura: ${window.next||"próxima temporada"}.`});
 
     const result=await tx(async client=>{
       const balance=Number((await client.query(`SELECT coins FROM clubs WHERE id=$1 FOR UPDATE`,[c.id])).rows[0]?.coins||0);
@@ -5917,6 +7133,7 @@ app.post("/api/transfers/loan",auth,async(req,res,next)=>{
         Math.round(monthlyFee),agreedPurchaseOption
       ]);
 
+      await client.query(`UPDATE clubs SET chemistry=GREATEST(45,chemistry-1) WHERE id=$1`,[c.id]);
       await applyFelipeMode(client,c.id);
 
       const optionText=agreedPurchaseOption
@@ -5950,6 +7167,9 @@ app.post("/api/transfers/loans/:loanId/buy",auth,async(req,res,next)=>{
     const c=await userClub(req.user.id);
     if(!c)return res.status(404).json({error:"Clube não encontrado."});
     if(transferBanInfo(c.coins).active)return res.status(403).json({error:"Transfer ban ativo. A opção de compra não pode ser exercida enquanto o clube estiver bloqueado."});
+    const loanCareer=await getCareer(c.id);
+    const loanWindow=transferWindowInfo(loanCareer?.data?.calendar?.date);
+    if(!loanWindow.open)return res.status(403).json({error:`Janela de transferências fechada. A opção poderá ser exercida a partir de ${loanWindow.next||"próxima temporada"}.`});
 
     const loanId=String(req.params.loanId||"");
     const result=await tx(async client=>{
@@ -6026,85 +7246,370 @@ app.post("/api/transfers/loans/:loanId/buy",auth,async(req,res,next)=>{
   }catch(e){next(e)}
 });
 
-app.post("/api/contracts/:playerId/renew",auth,async(req,res,next)=>{
+app.post("/api/scouting/:playerId",auth,async(req,res,next)=>{
+  try{
+    const c=await userClub(req.user.id);
+    if(!c)return res.status(404).json({error:"Clube não encontrado."});
+    const playerId=String(req.params.playerId||"");
+
+    const result=await tx(async client=>{
+      const staff=await staffLevels(client,c.id);
+      const scoutLevel=Number(staff.levels.SCOUT||1);
+      const cost=Math.max(120,600-scoutLevel*80);
+      const club=(await client.query(`SELECT coins FROM clubs WHERE id=$1 FOR UPDATE`,[c.id])).rows[0];
+      if(Number(club?.coins||0)<cost)throw Object.assign(new Error(`Caixa insuficiente para o relatório. Custo: ${cost.toLocaleString("pt-BR")} moedas.`),{status:400});
+
+      const p=(await client.query(`SELECT id,name,rating,potential FROM players WHERE id=$1`,[playerId])).rows[0];
+      if(!p)throw Object.assign(new Error("Jogador não encontrado."),{status:404});
+
+      await addFinance(client,c.id,-cost,"scouting",`Relatório de olheiro — ${p.name}`);
+      await client.query(`
+        INSERT INTO scout_reports(club_id,target_player_id,exact_rating)
+        VALUES($1,$2,$3)
+        ON CONFLICT(club_id,target_player_id) DO UPDATE SET exact_rating=EXCLUDED.exact_rating,created_at=NOW()
+      `,[c.id,p.id,p.rating]);
+
+      return {ok:true,playerId:p.id,playerName:p.name,rating:Number(p.rating),potential:Number(p.potential||p.rating),cost};
+    });
+
+    res.json(result);
+  }catch(e){next(e)}
+});
+
+app.put("/api/realism/tactics",auth,async(req,res,next)=>{
   try{
     const c=await userClub(req.user.id);
     if(!c)return res.status(404).json({error:"Clube não encontrado."});
 
+    const pressing=String(req.body.pressing||"NORMAL").toUpperCase();
+    const defensiveLine=String(req.body.defensiveLine||"NORMAL").toUpperCase();
+    const tempo=String(req.body.tempo||"NORMAL").toUpperCase();
+    const width=String(req.body.width||"NORMAL").toUpperCase();
+    const style=String(req.body.style||"BALANCED").toUpperCase();
+    const marking=String(req.body.marking||"NORMAL").toUpperCase();
+
+    if(!["LOW","NORMAL","HIGH"].includes(pressing))return res.status(400).json({error:"Pressão inválida."});
+    if(!["LOW","NORMAL","HIGH"].includes(defensiveLine))return res.status(400).json({error:"Linha defensiva inválida."});
+    if(!["SLOW","NORMAL","FAST"].includes(tempo))return res.status(400).json({error:"Ritmo inválido."});
+    if(!["NARROW","NORMAL","WIDE"].includes(width))return res.status(400).json({error:"Largura inválida."});
+    if(!["BALANCED","POSSESSION","COUNTER","DIRECT"].includes(style))return res.status(400).json({error:"Estilo inválido."});
+    if(!["NORMAL","AGGRESSIVE"].includes(marking))return res.status(400).json({error:"Marcação inválida."});
+
+    await q(`
+      UPDATE clubs SET
+        tactic_pressing=$2,
+        tactic_defensive_line=$3,
+        tactic_tempo=$4,
+        tactic_width=$5,
+        tactic_style=$6,
+        tactic_marking=$7
+      WHERE id=$1
+    `,[c.id,pressing,defensiveLine,tempo,width,style,marking]);
+
+    res.json({ok:true,tactics:{pressing,defensiveLine,tempo,width,style,marking}});
+  }catch(e){next(e)}
+});
+
+app.put("/api/realism/players/:playerId",auth,async(req,res,next)=>{
+  try{
+    const c=await userClub(req.user.id);
+    if(!c)return res.status(404).json({error:"Clube não encontrado."});
     const playerId=String(req.params.playerId||"");
-    const years=[2,3,4].includes(Number(req.body.years))?Number(req.body.years):3;
-    const salaryOffer=Math.max(0,Number(req.body.salaryOffer||0));
+    const squadStatus=String(req.body.squadStatus||"").toUpperCase();
+    const tacticalRole=String(req.body.tacticalRole||"").toUpperCase();
+    const setPieceRole=String(req.body.setPieceRole||"").toUpperCase();
+    const isCaptain=req.body.isCaptain===true;
+    const isBench=req.body.isBench===true;
+
+    const allowedStatus=new Set(["STAR","STARTER","ROTATION","BACKUP","PROSPECT"]);
+    const allowedRole=new Set(["BALANCED","STOPPER","BALL_PLAYING","ANCHOR","PLAYMAKER","BOX_TO_BOX","WINGER","INSIDE_FORWARD","TARGET","POACHER","SWEEPER_KEEPER"]);
+    const allowedSetPiece=new Set(["NONE","PENALTY","FREE_KICK","CORNER"]);
+
+    if(squadStatus&&!allowedStatus.has(squadStatus))return res.status(400).json({error:"Status de elenco inválido."});
+    if(tacticalRole&&!allowedRole.has(tacticalRole))return res.status(400).json({error:"Função tática inválida."});
+    if(setPieceRole&&!allowedSetPiece.has(setPieceRole))return res.status(400).json({error:"Função de bola parada inválida."});
 
     const result=await tx(async client=>{
-      const club=(await client.query(`SELECT id,coins,name FROM clubs WHERE id=$1 FOR UPDATE`,[c.id])).rows[0];
-      const p=(await client.query(`
-        SELECT *
-        FROM players
-        WHERE id=$1 AND club_id=$2
-        FOR UPDATE
-      `,[playerId,c.id])).rows[0];
+      const p=(await client.query(`SELECT * FROM players WHERE id=$1 AND club_id=$2 FOR UPDATE`,[playerId,c.id])).rows[0];
+      if(!p)throw Object.assign(new Error("Jogador não encontrado."),{status:404});
 
-      if(!p)throw Object.assign(new Error("Jogador não encontrado no seu elenco."),{status:404});
-
-      const activeLoan=(await client.query(`
-        SELECT 1 FROM player_loans
-        WHERE player_id=$1 AND borrowing_club_id=$2 AND status='active'
-        LIMIT 1
-      `,[p.id,c.id])).rowCount>0;
-      if(activeLoan)throw Object.assign(new Error("Jogadores emprestados não podem renovar contrato com o clube enquanto o empréstimo estiver ativo."),{status:400});
-
-      if(Number(p.contract_seasons||0)>1){
-        throw Object.assign(new Error("Este jogador ainda não está no último ano de contrato."),{status:400});
+      if(isCaptain)await client.query(`UPDATE players SET is_captain=FALSE WHERE club_id=$1`,[c.id]);
+      if(isBench&&!p.is_starter){
+        const count=Number((await client.query(`SELECT COUNT(*)::int count FROM players WHERE club_id=$1 AND is_bench=TRUE AND id<>$2`,[c.id,p.id])).rows[0]?.count||0);
+        if(count>=9)throw Object.assign(new Error("O banco pode ter no máximo 9 jogadores relacionados."),{status:400});
+      }
+      if(setPieceRole&&setPieceRole!=="NONE"){
+        await client.query(`UPDATE players SET set_piece_role='NONE' WHERE club_id=$1 AND set_piece_role=$2`,[c.id,setPieceRole]);
       }
 
-      const terms=contractRenewalTerms(p);
-      if(salaryOffer<Math.round(terms.suggestedSalary*.90)){
-        return {
-          accepted:false,
-          message:`${p.name} recusou. O salário esperado está próximo de ${terms.suggestedSalary.toLocaleString("pt-BR")} moedas por mês.`,
-          suggestedSalary:terms.suggestedSalary,
-          signingBonus:terms.signingBonus
-        };
-      }
-
-      const signingBonus=Math.max(
-        terms.signingBonus,
-        Math.round(salaryOffer*1.10/10)*10
-      );
-
-      if(Number(club.coins||0)<signingBonus){
-        throw Object.assign(new Error(`Caixa insuficiente para as luvas da renovação. São necessárias ${signingBonus.toLocaleString("pt-BR")} moedas.`),{status:400});
-      }
-
-      await addFinance(
-        client,c.id,-signingBonus,"contract_renewal",
-        `Luvas de renovação — ${p.name}`
-      );
-
-      const totalContract=Number(p.contract_seasons||1)+years;
       await client.query(`
         UPDATE players SET
-          contract_seasons=$2,
-          salary=$3,
-          morale=LEAST(100,morale+3)
+          squad_status=COALESCE(NULLIF($3,''),squad_status),
+          tactical_role=COALESCE(NULLIF($4,''),tactical_role),
+          is_captain=$5,
+          set_piece_role=CASE WHEN $6='' THEN set_piece_role ELSE $6 END,
+          is_bench=CASE WHEN is_starter THEN FALSE ELSE $7 END
+        WHERE id=$1 AND club_id=$2
+      `,[p.id,c.id,squadStatus,tacticalRole,isCaptain,setPieceRole,isBench]);
+
+      return (await client.query(`SELECT * FROM players WHERE id=$1`,[p.id])).rows[0];
+    });
+
+    res.json({ok:true,player:result});
+  }catch(e){next(e)}
+});
+
+app.post("/api/realism/staff/:role/upgrade",auth,async(req,res,next)=>{
+  try{
+    const c=await userClub(req.user.id);
+    if(!c)return res.status(404).json({error:"Clube não encontrado."});
+    const role=String(req.params.role||"").toUpperCase();
+    if(!STAFF_ROLES[role])return res.status(400).json({error:"Função de comissão inválida."});
+
+    const result=await tx(async client=>{
+      await ensureRealismClubData(client,c.id,await getCareer(c.id));
+      const staff=(await client.query(`SELECT * FROM club_staff WHERE club_id=$1 AND role=$2 FOR UPDATE`,[c.id,role])).rows[0];
+      if(!staff)throw new Error("Membro da comissão não encontrado.");
+      if(Number(staff.level)>=5)throw Object.assign(new Error("Este profissional já está no nível máximo."),{status:400});
+      const cost=Number(staff.level)*4500;
+      const club=(await client.query(`SELECT coins FROM clubs WHERE id=$1 FOR UPDATE`,[c.id])).rows[0];
+      if(Number(club.coins)<cost)throw Object.assign(new Error(`Caixa insuficiente. Custo da melhoria: ${cost.toLocaleString("pt-BR")} moedas.`),{status:400});
+
+      await addFinance(client,c.id,-cost,"staff",`Melhoria da comissão — ${STAFF_ROLES[role].label}`);
+      await client.query(`
+        UPDATE club_staff SET
+          level=level+1,
+          salary=ROUND(salary*1.18)::int
         WHERE id=$1
-      `,[p.id,totalContract,Math.round(salaryOffer)]);
+      `,[staff.id]);
+      return (await client.query(`SELECT * FROM club_staff WHERE id=$1`,[staff.id])).rows[0];
+    });
+
+    res.json({ok:true,staff:result});
+  }catch(e){next(e)}
+});
+
+app.post("/api/realism/academy/:academyId/promote",auth,async(req,res,next)=>{
+  try{
+    const c=await userClub(req.user.id);
+    if(!c)return res.status(404).json({error:"Clube não encontrado."});
+    const academyId=String(req.params.academyId||"");
+
+    const result=await tx(async client=>{
+      const candidate=(await client.query(`
+        SELECT * FROM academy_players
+        WHERE id=$1 AND club_id=$2 AND status='academy'
+        FOR UPDATE
+      `,[academyId,c.id])).rows[0];
+      if(!candidate)throw Object.assign(new Error("Jogador da base não encontrado."),{status:404});
+      if(Number(candidate.age)<16)throw Object.assign(new Error("O jogador ainda é muito jovem para ser promovido."),{status:400});
+
+      const squad=Number((await client.query(`SELECT COUNT(*)::int count FROM players WHERE club_id=$1`,[c.id])).rows[0]?.count||0);
+      if(squad>=30)throw Object.assign(new Error("Seu elenco principal já possui 30 jogadores."),{status:400});
+
+      const rating=Number(candidate.rating);
+      const variance=()=>clamp(rating+rand(-5,5),20,99);
+      const r=await client.query(`
+        INSERT INTO players(
+          club_id,name,position,role,rating,pace,shooting,passing,defending,price,
+          is_starter,age,salary,contract_seasons,fitness,morale,injury_games,
+          potential,form_rating,happiness,squad_status,tactical_role,academy_product
+        )
+        VALUES($1,$2,$3,$4,$5,$6,$7,$8,$9,$10,FALSE,$11,$12,4,100,78,0,$13,70,82,'PROSPECT','BALANCED',TRUE)
+        RETURNING *
+      `,[
+        c.id,candidate.name,candidate.position,candidate.role,rating,
+        variance(),variance(),variance(),variance(),
+        Math.max(500,Math.round((rating*rating*2)/100)*100),
+        candidate.age,Math.max(50,Math.round(salaryForRating(rating)*.55/10)*10),
+        candidate.potential
+      ]);
+
+      await client.query(`UPDATE academy_players SET status='promoted' WHERE id=$1`,[candidate.id]);
+      await client.query(
+        `INSERT INTO club_events(club_id,event_type,title,description)
+         VALUES($1,'academy','Promovido da base',$2)`,
+        [c.id,`${candidate.name}, ${candidate.age} anos, foi promovido ao elenco principal com OVR ${rating} e potencial ${candidate.potential}.`]
+      );
+      return r.rows[0];
+    });
+
+    res.json({ok:true,player:result});
+  }catch(e){next(e)}
+});
+
+app.post("/api/realism/academy/:academyId/release",auth,async(req,res,next)=>{
+  try{
+    const c=await userClub(req.user.id);
+    if(!c)return res.status(404).json({error:"Clube não encontrado."});
+    const r=await q(`
+      UPDATE academy_players
+      SET status='released'
+      WHERE id=$1 AND club_id=$2 AND status='academy'
+      RETURNING name
+    `,[String(req.params.academyId),c.id]);
+    if(!r.rowCount)return res.status(404).json({error:"Jogador da base não encontrado."});
+    await q(
+      `INSERT INTO club_events(club_id,event_type,title,description)
+       VALUES($1,'academy','Jogador liberado da base',$2)`,
+      [c.id,`${r.rows[0].name} foi liberado das categorias de base.`]
+    );
+    res.json({ok:true,name:r.rows[0].name});
+  }catch(e){next(e)}
+});
+
+app.put("/api/realism/stadium",auth,async(req,res,next)=>{
+  try{
+    const c=await userClub(req.user.id);
+    if(!c)return res.status(404).json({error:"Clube não encontrado."});
+    const ticketPrice=clamp(Number(req.body.ticketPrice||c.ticket_price||30),5,100);
+    const upgrade=Boolean(req.body.upgrade);
+
+    const result=await tx(async client=>{
+      const club=(await client.query(`SELECT * FROM clubs WHERE id=$1 FOR UPDATE`,[c.id])).rows[0];
+      let capacity=Number(club.stadium_capacity||12000),level=Number(club.stadium_level||1),cost=0;
+
+      if(upgrade){
+        if(level>=8)throw Object.assign(new Error("Estádio já está no nível máximo."),{status:400});
+        cost=level*level*12000;
+        if(Number(club.coins)<cost)throw Object.assign(new Error(`Caixa insuficiente. Ampliação custa ${cost.toLocaleString("pt-BR")} moedas.`),{status:400});
+        await addFinance(client,c.id,-cost,"stadium","Ampliação do estádio");
+        level++;
+        capacity+=5000;
+      }
+
+      await client.query(`UPDATE clubs SET ticket_price=$2,stadium_level=$3,stadium_capacity=$4 WHERE id=$1`,[c.id,ticketPrice,level,capacity]);
+      return {ticketPrice,level,capacity,cost};
+    });
+
+    res.json({ok:true,...result});
+  }catch(e){next(e)}
+});
+
+app.post("/api/manager-offers/:offerId/decline",auth,async(req,res,next)=>{
+  try{
+    const c=await userClub(req.user.id);
+    if(!c)return res.status(404).json({error:"Clube não encontrado."});
+    const r=await q(`
+      UPDATE manager_job_offers SET status='declined'
+      WHERE id=$1 AND user_club_id=$2 AND status='pending'
+      RETURNING id
+    `,[String(req.params.offerId),c.id]);
+    if(!r.rowCount)return res.status(404).json({error:"Proposta não encontrada."});
+    res.json({ok:true});
+  }catch(e){next(e)}
+});
+
+app.post("/api/manager-offers/:offerId/accept",auth,async(req,res,next)=>{
+  try{
+    const current=await userClub(req.user.id);
+    if(!current)return res.status(404).json({error:"Clube não encontrado."});
+    const offerId=String(req.params.offerId||"");
+
+    const result=await tx(async client=>{
+      const offer=(await client.query(`
+        SELECT o.*
+        FROM manager_job_offers o
+        WHERE o.id=$1 AND o.user_club_id=$2 AND o.status='pending'
+        FOR UPDATE
+      `,[offerId,current.id])).rows[0];
+      if(!offer)throw Object.assign(new Error("Proposta não encontrada ou já encerrada."),{status:404});
+
+      const oldClub=(await client.query(`SELECT * FROM clubs WHERE id=$1 FOR UPDATE`,[current.id])).rows[0];
+      const target=(await client.query(`SELECT * FROM clubs WHERE id=$1 FOR UPDATE`,[offer.offering_club_id])).rows[0];
+      const career=(await client.query(`SELECT * FROM careers WHERE owner_club_id=$1 FOR UPDATE`,[current.id])).rows[0];
+      if(!oldClub||!target||!career)throw new Error("Não foi possível carregar a carreira.");
+
+      if(oldClub.country_code!==target.country_code){
+        throw Object.assign(new Error("Nesta versão, propostas de treinador durante a temporada são aceitas apenas dentro do mesmo país."),{status:400});
+      }
+
+      const targetDiv=divisionOfClub(career,target.id)||career.user_division;
+      await createRoster(client,target,false);
+      const oldName=oldClub.name,targetName=target.name;
+      const oldPlayers=(await client.query(`SELECT id FROM players WHERE club_id=$1`,[oldClub.id])).rows.map(x=>Number(x.id));
+      const targetPlayers=(await client.query(`SELECT id FROM players WHERE club_id=$1`,[target.id])).rows.map(x=>Number(x.id));
+
+      await client.query(`UPDATE player_loans SET status='ended' WHERE status='active' AND borrowing_club_id=ANY($1::bigint[])`,[[oldClub.id,target.id]]);
+
+      if(oldPlayers.length)await client.query(`UPDATE players SET club_id=NULL,is_starter=FALSE WHERE id=ANY($1::bigint[])`,[oldPlayers]);
+      if(targetPlayers.length)await client.query(`UPDATE players SET club_id=$2 WHERE id=ANY($1::bigint[])`,[targetPlayers,oldClub.id]);
+      if(oldPlayers.length)await client.query(`UPDATE players SET club_id=$2 WHERE id=ANY($1::bigint[])`,[oldPlayers,target.id]);
+
+      const tempName=`__manager_swap_${oldClub.id}_${Date.now()}`;
+      await client.query(`UPDATE clubs SET name=$2 WHERE id=$1`,[oldClub.id,tempName]);
+      // Libera também o nome do clube de destino antes de atribuí-lo ao clube controlado pelo usuário.
+      await client.query(`UPDATE clubs SET name=$2 WHERE id=$1`,[target.id,oldName]);
+
+      const identityFields=[
+        target.primary_color,target.secondary_color,target.crest_data,target.state_code,target.country_code,
+        target.confederation_code,target.national_seed_division,target.base_rating,target.coins,target.formation,
+        target.team_rating,target.is_saf,target.saf_investor_name,target.saf_investment,target.saf_started_season,
+        target.saf_debt_relegations,target.board_confidence,target.media_pressure,target.chemistry,
+        target.stadium_capacity,target.stadium_level,target.ticket_price,target.rival_club_id,
+        target.tactic_pressing,target.tactic_defensive_line,target.tactic_tempo,target.tactic_width,
+        target.tactic_style,target.tactic_marking
+      ];
+      await client.query(`
+        UPDATE clubs SET
+          name=$2,primary_color=$3,secondary_color=$4,crest_data=$5,state_code=$6,country_code=$7,
+          confederation_code=$8,national_seed_division=$9,base_rating=$10,coins=$11,formation=$12,
+          team_rating=$13,is_saf=$14,saf_investor_name=$15,saf_investment=$16,saf_started_season=$17,
+          saf_debt_relegations=$18,board_confidence=$19,media_pressure=$20,chemistry=$21,
+          stadium_capacity=$22,stadium_level=$23,ticket_price=$24,rival_club_id=$25,
+          tactic_pressing=$26,tactic_defensive_line=$27,tactic_tempo=$28,tactic_width=$29,
+          tactic_style=$30,tactic_marking=$31
+        WHERE id=$1
+      `,[oldClub.id,targetName,...identityFields]);
+
+      await client.query(`
+        UPDATE clubs SET
+          name=$2,primary_color=$3,secondary_color=$4,crest_data=$5,state_code=$6,country_code=$7,
+          confederation_code=$8,national_seed_division=$9,base_rating=$10,coins=$11,formation=$12,
+          team_rating=$13,is_saf=$14,saf_investor_name=$15,saf_investment=$16,saf_started_season=$17,
+          saf_debt_relegations=$18,board_confidence=$19,media_pressure=$20,chemistry=$21,
+          stadium_capacity=$22,stadium_level=$23,ticket_price=$24,rival_club_id=$25,
+          tactic_pressing=$26,tactic_defensive_line=$27,tactic_tempo=$28,tactic_width=$29,
+          tactic_style=$30,tactic_marking=$31
+        WHERE id=$1
+      `,[
+        target.id,oldName,oldClub.primary_color,oldClub.secondary_color,oldClub.crest_data,oldClub.state_code,oldClub.country_code,
+        oldClub.confederation_code,oldClub.national_seed_division,oldClub.base_rating,oldClub.coins,oldClub.formation,
+        oldClub.team_rating,oldClub.is_saf,oldClub.saf_investor_name,oldClub.saf_investment,oldClub.saf_started_season,
+        oldClub.saf_debt_relegations,oldClub.board_confidence,oldClub.media_pressure,oldClub.chemistry,
+        oldClub.stadium_capacity,oldClub.stadium_level,oldClub.ticket_price,oldClub.rival_club_id,
+        oldClub.tactic_pressing,oldClub.tactic_defensive_line,oldClub.tactic_tempo,oldClub.tactic_width,
+        oldClub.tactic_style,oldClub.tactic_marking
+      ]);
+
+      const data=swapCareerClubReferences(career.data,oldClub.id,target.id);
+      if(!Array.isArray(data.managerHistory))data.managerHistory=[];
+      data.managerHistory.push({
+        season:career.season_no,
+        from:oldName,
+        to:targetName,
+        date:data.calendar?.date||null
+      });
+
+      await client.query(`
+        UPDATE careers SET
+          user_division=$2,
+          state_code=$3,
+          data=$4::jsonb,
+          updated_at=NOW()
+        WHERE owner_club_id=$1
+      `,[oldClub.id,targetDiv,target.state_code||"",JSON.stringify(data)]);
+
+      await client.query(`UPDATE sponsorship_contracts SET status='completed' WHERE club_id=$1 AND status='active'`,[oldClub.id]);
+      await client.query(`UPDATE manager_job_offers SET status=CASE WHEN id=$2 THEN 'accepted' ELSE 'declined' END WHERE user_club_id=$1 AND status='pending'`,[oldClub.id,offerId]);
 
       await client.query(
         `INSERT INTO club_events(club_id,event_type,title,description)
-         VALUES($1,'contract','Contrato renovado',$2)`,
-        [c.id,`${p.name} renovou por mais ${years} temporadas com salário mensal de ${Math.round(salaryOffer).toLocaleString("pt-BR")} moedas.`]
+         VALUES($1,'manager_offer','Novo desafio profissional',$2)`,
+        [oldClub.id,`Você deixou ${oldName} e aceitou a proposta para comandar ${targetName}. A carreira continua a partir da situação atual do novo clube.`]
       );
 
-      return {
-        accepted:true,
-        playerId:p.id,
-        playerName:p.name,
-        years,
-        totalContract,
-        salary:Math.round(salaryOffer),
-        signingBonus
-      };
+      return {ok:true,from:oldName,to:targetName,division:targetDiv};
     });
 
     res.json(result);
@@ -6172,8 +7677,9 @@ async function start(){
   await applyV33Migration();
   await applyV34Migration();
   await applyV35Migration();
+  await applyV38Migration();
   await seedRealMarketPlayers();
   await ensureMarket();
-  app.listen(PORT,"0.0.0.0",()=>console.log(`Dono do Clube v36 rodando na porta ${PORT}`));
+  app.listen(PORT,"0.0.0.0",()=>console.log(`Dono do Clube v38 rodando na porta ${PORT}`));
 }
 start().catch(e=>{console.error("Falha ao iniciar:",e);process.exit(1)});

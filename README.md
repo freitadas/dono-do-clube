@@ -1032,3 +1032,271 @@ Agora:
 - posição, nome, overall mínimo, valor máximo e filtro de jogadores reais permanecem selecionados depois da pesquisa;
 - os botões **Comprar** e **Empréstimo** dos novos resultados continuam sendo religados após cada busca;
 - durante a consulta, o botão mostra **PESQUISANDO...** e evita cliques duplicados.
+
+
+## Restauração do sistema antigo de contratos — v37
+
+A atualização de renovação manual de contratos foi desfeita.
+
+O sistema voltou ao comportamento anterior:
+
+- não existe mais sino/notificação de renovação;
+- não existe tela para negociar manualmente a renovação;
+- jogadores não deixam o clube automaticamente por falta de uma ação de renovação;
+- ao chegar ao fim do contrato, o jogador renova automaticamente por mais 1 temporada;
+- o salário recebe o reajuste automático já usado nas versões anteriores;
+- a renovação automática volta a aparecer nos eventos do clube.
+
+Foram mantidas as outras melhorias posteriores:
+
+- empréstimos com opção de compra;
+- botão para exercer a opção de compra;
+- correção da pesquisa do Mercado, que atualiza apenas os resultados sem recarregar a página;
+- todas as demais melhorias até a v36.
+
+
+## Realismo completo + propostas de outros clubes — v38
+
+A v38 concentra os sistemas de realismo solicitados em uma nova aba **GESTÃO**, preservando as correções e recursos das versões anteriores.
+
+### Disciplina, forma e disponibilidade
+
+- cartões amarelos passam a acumular;
+- ao atingir 3 amarelos, o jogador cumpre 1 jogo de suspensão;
+- cartões vermelhos geram suspensão de 1 ou 2 partidas;
+- suspensos não podem entrar na escalação;
+- cada jogador possui **forma**, **felicidade**, **potencial** e **status no elenco**;
+- jogadores em boa fase rendem melhor;
+- jogadores importantes sem espaço perdem felicidade e podem pedir para ser colocados no mercado;
+- o Departamento Médico agora informa também o tipo da lesão;
+- desgaste, congestionamento, viagem e tática aumentam ou reduzem o risco de lesão;
+- o fisioterapeuta reduz risco e duração das lesões.
+
+### Tática e funções individuais
+
+A aba GESTÃO permite configurar:
+
+- pressão baixa, normal ou alta;
+- linha defensiva baixa, normal ou alta;
+- ritmo lento, normal ou rápido;
+- largura estreita, normal ou ampla;
+- estilo equilibrado, posse, contra-ataque ou jogo direto;
+- marcação normal ou agressiva.
+
+As escolhas alteram força ofensiva/defensiva, desgaste e risco físico.
+
+Também é possível definir para cada jogador:
+
+- Craque, Titular, Rotação, Reserva ou Promessa;
+- função tática individual;
+- capitão;
+- cobrador de pênaltis;
+- cobrador de faltas;
+- cobrador de escanteios;
+- presença no banco.
+
+### Banco e substituições
+
+- o banco comporta até **9 jogadores relacionados**;
+- é possível escolher o banco na aba GESTÃO;
+- a simulação faz até **5 substituições**;
+- as trocas levam em conta posição, qualidade, condição física e desgaste;
+- o resumo da partida informa as substituições realizadas.
+
+### Entrosamento
+
+O clube possui nível de **entrosamento**.
+
+Vitórias e bons resultados ajudam o entrosamento; derrotas pesadas prejudicam. O entrosamento interfere diretamente no desempenho coletivo.
+
+### Calendário, fadiga, viagem e mando
+
+- jogos de competições diferentes podem ocorrer com apenas 3 a 5 dias de intervalo;
+- pouco descanso aumenta fadiga e risco de lesão;
+- partidas fora de casa geram desgaste de viagem;
+- viagens interestaduais e internacionais pesam mais;
+- jogar em casa oferece vantagem esportiva;
+- público e bilheteria passam a depender do estádio, torcida, força do adversário, clássico e preço do ingresso.
+
+### Estádio
+
+Na aba GESTÃO é possível:
+
+- definir o preço do ingresso;
+- acompanhar capacidade e último público;
+- ampliar o estádio em blocos de 5.000 lugares;
+- aumentar a receita potencial de bilheteria.
+
+Preço excessivo pode reduzir a ocupação.
+
+### Rivalidades e clássicos
+
+Cada clube passa a possuir um rival.
+
+Clássicos afetam:
+
+- público;
+- moral;
+- confiança da diretoria;
+- reputação do treinador.
+
+### Categorias de base e potencial
+
+Toda temporada gera jovens na academia.
+
+A tela mostra:
+
+- nome;
+- idade;
+- posição;
+- overall;
+- potencial.
+
+O usuário pode promover ou dispensar jovens. Após promovido, o atleta pode ser usado, vendido ou emprestado pelos mecanismos normais do elenco.
+
+A evolução dos jovens considera:
+
+- potencial;
+- idade;
+- jogos disputados;
+- forma;
+- moral;
+- felicidade;
+- qualidade do preparador físico.
+
+Veteranos passam a ter maior risco de regressão.
+
+### Comissão técnica
+
+A carreira possui:
+
+- Preparador físico;
+- Fisioterapeuta;
+- Olheiro;
+- Treinador de goleiros.
+
+Cada profissional possui nível de 1 a 5 e pode ser melhorado mediante investimento.
+
+Efeitos:
+- preparador físico: recuperação, fadiga e evolução;
+- fisioterapeuta: risco e duração de lesões;
+- olheiro: precisão e custo dos relatórios;
+- treinador de goleiros: desempenho defensivo/goleiros.
+
+Os salários da comissão entram na folha mensal.
+
+### Olheiros e mercado
+
+Jogadores não observados não exibem imediatamente todos os seus dados.
+
+Antes do relatório completo, aparece uma faixa estimada de overall. O usuário pode pagar pela observação para revelar:
+
+- overall exato;
+- atributos;
+- potencial.
+
+### Janelas de transferências
+
+Compras, novos empréstimos e exercício da opção de compra ficam disponíveis somente nas janelas do jogo:
+
+- 1º de janeiro a 30 de abril;
+- 1º de julho a 15 de setembro.
+
+Fora da janela ainda é possível pesquisar e observar jogadores.
+
+A opção de compra em empréstimos criada anteriormente foi preservada.
+
+### Mercado entre clubes controlados pela IA
+
+Durante as janelas, clubes controlados pelo jogo podem negociar jogadores entre si. As transferências aparecem na Central de Realismo.
+
+### Adversários e treinadores
+
+Clubes da IA passam a ter:
+
+- treinador;
+- estilo de jogo;
+- nível de pressão;
+- linha defensiva.
+
+Antes do próximo jogo, a aba GESTÃO mostra uma análise com:
+
+- formação;
+- treinador;
+- estilo;
+- melhor jogador;
+- faixa estimada de overall;
+- ponto forte;
+- ponto vulnerável;
+- desfalques conhecidos.
+
+### Prêmios, histórico e recordes
+
+Ao fim de cada temporada, o jogo arquiva:
+
+- posição final;
+- vitórias, empates e derrotas;
+- gols marcados e sofridos;
+- títulos;
+- artilheiro;
+- saldo financeiro.
+
+Também arquiva, por jogador:
+
+- jogos;
+- gols;
+- assistências;
+- jogos sem sofrer gol;
+- overall final.
+
+Prêmios anuais:
+- artilheiro do clube;
+- líder de assistências;
+- melhor jogador;
+- melhor goleiro;
+- revelação.
+
+Recordes acompanhados:
+- maior artilheiro atual;
+- jogador com mais partidas;
+- número de troféus;
+- maior vitória;
+- pior derrota;
+- maior venda;
+- maior contratação registrada;
+- maior sequência invicta;
+- recorde de público.
+
+### Propostas de outros clubes para o treinador
+
+Além das propostas por jogadores que já existiam, a v38 cria um **mercado de treinadores**.
+
+Quando o time entra em **Grande fase** ou **Fase excelente**, outros clubes podem procurar o treinador.
+
+- o desempenho considera a forma recente, tabela, saldo e títulos;
+- uma fase excelente força uma tentativa de proposta sempre que houver um clube elegível e nenhuma oferta pendente;
+- a proposta aparece no Início, no topo e na aba GESTÃO;
+- é possível aceitar ou recusar;
+- ao aceitar, o usuário deixa o clube atual e assume o novo clube na mesma carreira;
+- a carreira continua da situação esportiva em que o novo clube se encontra;
+- o clube anterior segue controlado pelo jogo.
+
+Por segurança estrutural, nesta versão as mudanças de clube durante a temporada acontecem dentro do mesmo país.
+
+### Recursos anteriores preservados
+
+A v38 mantém, entre outros:
+
+- renovação automática de contrato, como antes da atualização de renovação manual;
+- pesquisa do Mercado sem recarregar a página;
+- empréstimo com opção de compra;
+- Copa do Brasil classificando o campeão para a Libertadores;
+- correção que impede ganhar Copa do Brasil não disputada;
+- estado físico preservado ao alternar entre carreiras;
+- rodízio realista;
+- dois patrocinadores;
+- Departamento Médico;
+- Jornal, Diretoria e coletivas menos frequentes;
+- formações adicionais e formação personalizada;
+- simulação de temporada separada da simulação normal de uma rodada;
+- Modo Felipe.
