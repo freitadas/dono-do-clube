@@ -3066,6 +3066,42 @@ function openLoanOffer(p){
     }
   };
 }
+// FIX V38 MERCADO DELEGADO
+// Garante o clique do botão Pesquisar e o submit do formulário mesmo após re-renderizações.
+if(!window.__v38MarketSearchDelegated){
+  window.__v38MarketSearchDelegated=true;
+  document.addEventListener("click", async function(e){
+    const btn=e.target.closest("#transferSearchBtn");
+    if(!btn)return;
+    e.preventDefault();
+    e.stopPropagation();
+    if(btn.disabled)return;
+    try{
+      await searchTransfers();
+    }catch(err){
+      const msg=app.querySelector("#transferMsg");
+      const box=app.querySelector("#transferResults");
+      if(msg)msg.innerHTML=`<div class="msg">${esc(err.message)}</div>`;
+      else if(box)box.innerHTML=`<div class="msg">${esc(err.message)}</div>`;
+    }
+  }, true);
+
+  document.addEventListener("submit", async function(e){
+    const form=e.target.closest("#transferSearch");
+    if(!form)return;
+    e.preventDefault();
+    e.stopPropagation();
+    try{
+      await searchTransfers();
+    }catch(err){
+      const msg=app.querySelector("#transferMsg");
+      const box=app.querySelector("#transferResults");
+      if(msg)msg.innerHTML=`<div class="msg">${esc(err.message)}</div>`;
+      else if(box)box.innerHTML=`<div class="msg">${esc(err.message)}</div>`;
+    }
+  }, true);
+}
+
 // FIX V38 PROPOSTAS DELEGADO
 // Mantém os botões funcionando mesmo após renderizações da tela.
 if(!window.__v38ProposalButtons){
