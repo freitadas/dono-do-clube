@@ -301,3 +301,82 @@ repeating-linear-gradient(0deg,#1e7d43 0,#1e7d43 56px,#237f47 56px,#237f47 112px
   .board-metrics{grid-template-columns:1fr}
   .newspaper-section-head h2{font-size:20px}
 }
+
+
+/* v28 — novas formações e formação personalizada */
+.custom-formation-builder{
+  display:grid;
+  gap:10px;
+  margin:10px 0 14px;
+  padding:13px;
+  border:1px solid #3a6249;
+  border-radius:14px;
+  background:linear-gradient(135deg,#0b1b12,#10271a);
+}
+.custom-formation-head{
+  display:flex;
+  justify-content:space-between;
+  align-items:end;
+  gap:12px;
+}
+.custom-formation-head b{font-size:14px}
+.custom-formation-head>span{
+  padding:5px 8px;
+  border-radius:999px;
+  background:#173923;
+  color:#bdf2cc;
+  font-size:9px;
+  font-weight:900;
+}
+.custom-formation-controls{
+  display:grid;
+  grid-template-columns:repeat(3,minmax(110px,1fr)) auto;
+  gap:8px;
+  align-items:end;
+}
+.custom-formation-controls label{
+  display:grid;
+  gap:5px;
+  font-size:9px;
+  color:var(--muted);
+  font-weight:900;
+}
+.custom-formation-controls input{
+  width:100%;
+  text-align:center;
+  font-size:18px;
+  font-weight:950;
+}
+.custom-formation-controls .formation-plus,
+.custom-formation-controls .formation-equals{
+  display:none;
+}
+.custom-formation-controls button{min-height:42px}
+.custom-formation-msg{
+  padding:8px 9px;
+  border-radius:9px;
+  background:#0a1710;
+  color:#9fc2aa;
+  font-size:10px;
+}
+.custom-formation-msg.bad{
+  color:#ffb1b1;
+  border:1px solid #6c3438;
+  background:#291416;
+}
+.tactical-row{transition:top .2s ease,bottom .2s ease}
+.tactical-row.advanced-mid .pitch-player{border-color:#78d9f5}
+.tactical-row.deep-mid .pitch-player{border-color:#b4d96d}
+.pitch-caption{max-width:80%}
+
+@media(max-width:800px){
+  .custom-formation-controls{
+    grid-template-columns:repeat(3,1fr);
+  }
+  .custom-formation-controls button{grid-column:1/-1}
+}
+@media(max-width:560px){
+  .custom-formation-head{align-items:start;flex-direction:column}
+  .custom-formation-controls{grid-template-columns:1fr 1fr 1fr}
+  .custom-formation-controls label{min-width:0}
+}

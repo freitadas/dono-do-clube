@@ -359,10 +359,176 @@ function playerCard(p){
 function fitScore(p){
   return Number(p.rating)+(Number(p.fitness||100)-70)*.12+(Number(p.morale||70)-70)*.05-(Number(p.injury_games||0)>0?100:0);
 }
+const FORMATION_PRESETS_UI=[
+  ["4-3-3","4-3-3 · Equilibrada"],
+  ["4-4-2","4-4-2 · Clássica"],
+  ["3-5-2","3-5-2 · Meio forte"],
+  ["4-2-3-1","4-2-3-1 · Ofensiva equilibrada"],
+  ["4-1-4-1","4-1-4-1 · Controle de meio"],
+  ["4-5-1","4-5-1 · Compacta"],
+  ["3-4-3","3-4-3 · Ofensiva"],
+  ["3-4-2-1","3-4-2-1 · Dois meias por trás do atacante"],
+  ["3-1-4-2","3-1-4-2 · Volante + dois atacantes"],
+  ["5-3-2","5-3-2 · Defensiva com dois atacantes"],
+  ["5-4-1","5-4-1 · Muito defensiva"],
+  ["5-2-3","5-2-3 · Alas e três atacantes"],
+  ["4-2-4","4-2-4 · Ataque total"]
+];
+const FORMATION_QUOTAS_UI={
+  "4-3-3":{GK:1,DEF:4,MID:3,ATT:3},
+  "4-4-2":{GK:1,DEF:4,MID:4,ATT:2},
+  "3-5-2":{GK:1,DEF:3,MID:5,ATT:2},
+  "4-2-3-1":{GK:1,DEF:4,MID:5,ATT:1},
+  "4-1-4-1":{GK:1,DEF:4,MID:5,ATT:1},
+  "4-5-1":{GK:1,DEF:4,MID:5,ATT:1},
+  "3-4-3":{GK:1,DEF:3,MID:4,ATT:3},
+  "3-4-2-1":{GK:1,DEF:3,MID:6,ATT:1},
+  "3-1-4-2":{GK:1,DEF:3,MID:5,ATT:2},
+  "5-3-2":{GK:1,DEF:5,MID:3,ATT:2},
+  "5-4-1":{GK:1,DEF:5,MID:4,ATT:1},
+  "5-2-3":{GK:1,DEF:5,MID:2,ATT:3},
+  "4-2-4":{GK:1,DEF:4,MID:2,ATT:4}
+};
+function customFormationQuota(formation){
+  const m=String(formation||"").match(/^CUSTOM:(\d)-(\d)-(\d)$/);
+  if(!m)return null;
+  const DEF=Number(m[1]),MID=Number(m[2]),ATT=Number(m[3]);
+  if(DEF<2||DEF>5||MID<1||MID>6||ATT<1||ATT>5||DEF+MID+ATT!==10)return null;
+  return {GK:1,DEF,MID,ATT};
+}
 function formationQuota(formation){
-  if(formation==="4-4-2")return {GK:1,DEF:4,MID:4,ATT:2};
-  if(formation==="3-5-2")return {GK:1,DEF:3,MID:5,ATT:2};
-  return {GK:1,DEF:4,MID:3,ATT:3};
+  return FORMATION_QUOTAS_UI[String(formation)]||customFormationQuota(formation)||FORMATION_QUOTAS_UI["4-3-3"];
+}
+function isCustomFormation(formation){
+  return /^CUSTOM:\d-\d-\d$/.test(String(formation||""));
+}
+function formationDisplayName(formation){
+  if(isCustomFormation(formation)){
+    return `Personalizada ${String(formation).replace("CUSTOM:","")}`;
+  }
+  return String(formation||"4-3-3");
+}
+function formationSelectOptions(current){
+  const custom=isCustomFormation(current);
+  return `${FORMATION_PRESETS_UI.map(([value,label])=>`<option value="${value}" ${current===value?"selected":""}>${label}</option>`).join("")}
+    <option value="CUSTOM" ${custom?"selected":""}>⚙️ Formação personalizada</option>`;
+}
+function customFormationParts(current){
+  const q=customFormationQuota(current)||{DEF:4,MID:3,ATT:3};
+  return {DEF:q.DEF,MID:q.MID,ATT:q.ATT};
+}
+function customFormationBuilder(prefix,current){
+  const p=customFormationParts(current);
+  const visible=isCustomFormation(current);
+  return `<div id="${prefix}CustomFormation" class="custom-formation-builder" ${visible?"":'style="display:none"'}>
+    <div class="custom-formation-head">
+      <div><div class="kicker">FORMAÇÃO PERSONALIZADA</div><b>Monte os 10 jogadores de linha</b></div>
+      <span>+ 1 goleiro fixo</span>
+    </div>
+    <div class="custom-formation-controls">
+      <label>Defensores<input id="${prefix}CustomDef" type="number" min="2" max="5" value="${p.DEF}"></label>
+      <span class="formation-plus">+</span>
+      <label>Meias<input id="${prefix}CustomMid" type="number" min="1" max="6" value="${p.MID}"></label>
+      <span class="formation-plus">+</span>
+      <label>Atacantes<input id="${prefix}CustomAtt" type="number" min="1" max="5" value="${p.ATT}"></label>
+      <span class="formation-equals">= 10</span>
+      <button type="button" id="${prefix}ApplyCustom" class="primary">Aplicar personalizada</button>
+    </div>
+    <div id="${prefix}CustomMsg" class="custom-formation-msg">Exemplo: 4 defensores + 2 meias + 4 atacantes = 4-2-4.</div>
+  </div>`;
+}
+function selectedFormationValue(select){
+  if(!select)return state.club.formation||"4-3-3";
+  if(select.value==="CUSTOM"){
+    return isCustomFormation(state.club.formation)?state.club.formation:null;
+  }
+  return select.value;
+}
+function formationRosterAvailable(formation){
+  const q=formationQuota(formation);
+  const available={GK:0,DEF:0,MID:0,ATT:0};
+  state.players
+    .filter(p=>Number(p.injury_games||0)<=0)
+    .forEach(p=>available[p.position]=(available[p.position]||0)+1);
+  return Object.keys(q).every(pos=>Number(available[pos]||0)>=Number(q[pos]||0));
+}
+function customFormationValue(prefix){
+  const DEF=Number(app.querySelector(`#${prefix}CustomDef`)?.value||0);
+  const MID=Number(app.querySelector(`#${prefix}CustomMid`)?.value||0);
+  const ATT=Number(app.querySelector(`#${prefix}CustomAtt`)?.value||0);
+  if(DEF<2||DEF>5||MID<1||MID>6||ATT<1||ATT>5){
+    return {error:"Use entre 2 e 5 defensores, 1 e 6 meias e 1 e 5 atacantes."};
+  }
+  if(DEF+MID+ATT!==10){
+    return {error:`A soma precisa ser 10 jogadores de linha. Agora está em ${DEF+MID+ATT}.`};
+  }
+  return {formation:`CUSTOM:${DEF}-${MID}-${ATT}`,DEF,MID,ATT};
+}
+function bindCustomFormation(prefix,select,afterApply){
+  const box=app.querySelector(`#${prefix}CustomFormation`);
+  const btn=app.querySelector(`#${prefix}ApplyCustom`);
+  if(!btn)return;
+
+  const updateMsg=()=>{
+    const r=customFormationValue(prefix);
+    const msg=app.querySelector(`#${prefix}CustomMsg`);
+    if(!msg)return;
+    if(r.error){
+      msg.textContent=r.error;
+      msg.classList.add("bad");
+    }else{
+      msg.textContent=`Personalizada ${r.DEF}-${r.MID}-${r.ATT} · 1 goleiro + ${r.DEF} defensores + ${r.MID} meias + ${r.ATT} atacantes.`;
+      msg.classList.remove("bad");
+    }
+  };
+  ["Def","Mid","Att"].forEach(k=>{
+    const input=app.querySelector(`#${prefix}Custom${k}`);
+    if(input)input.oninput=updateMsg;
+  });
+
+  btn.onclick=()=>{
+    const r=customFormationValue(prefix);
+    if(r.error){
+      alert(r.error);
+      updateMsg();
+      return;
+    }
+    if(!formationRosterAvailable(r.formation)){
+      alert("Seu elenco saudável não possui jogadores suficientes nas posições exigidas por essa formação personalizada.");
+      return;
+    }
+    const complete=rebalanceForFormation(r.formation);
+    if(!complete){
+      alert("Não foi possível montar 11 titulares nessa formação.");
+      return;
+    }
+    state.club.formation=r.formation;
+    state.lineupDirty=true;
+    if(typeof afterApply==="function")afterApply(r.formation);
+    render();
+  };
+
+  if(select)select.onchange=()=>{
+    if(select.value==="CUSTOM"){
+      if(box)box.style.display="grid";
+      updateMsg();
+      return;
+    }
+    if(box)box.style.display="none";
+    if(!formationRosterAvailable(select.value)){
+      alert("Seu elenco saudável não possui jogadores suficientes nas posições exigidas por essa formação.");
+      select.value=isCustomFormation(state.club.formation)?"CUSTOM":state.club.formation;
+      return;
+    }
+    const complete=rebalanceForFormation(select.value);
+    if(!complete){
+      alert("Não foi possível montar 11 titulares nessa formação.");
+      return;
+    }
+    state.club.formation=select.value;
+    state.lineupDirty=true;
+    render();
+  };
 }
 function pitchToken(p,interactive=false){
   return `<button type="button" class="pitch-player ${fitnessClass(p)} ${interactive?"pitch-player-clickable":""}" ${interactive?`data-swap-id="${p.id}"`:""} title="${interactive?`Trocar ${esc(p.name)}`:esc(p.name)}">
@@ -372,18 +538,72 @@ function pitchToken(p,interactive=false){
     ${interactive?`<span class="pitch-swap-hint">TROCAR</span>`:""}
   </button>`;
 }
+function formationLineSpec(formation){
+  const custom=customFormationQuota(formation);
+  if(custom){
+    return [
+      {pos:"ATT",count:custom.ATT,top:8,cls:"attack"},
+      {pos:"MID",count:custom.MID,top:36,cls:"midfield"},
+      {pos:"DEF",count:custom.DEF,top:64,cls:"defense"},
+      {pos:"GK",count:1,bottom:5,cls:"goalkeeper"}
+    ];
+  }
+  if(formation==="4-2-3-1")return [
+    {pos:"ATT",count:1,top:5,cls:"attack"},
+    {pos:"MID",count:3,top:25,cls:"midfield advanced-mid"},
+    {pos:"MID",count:2,top:45,cls:"midfield deep-mid"},
+    {pos:"DEF",count:4,top:66,cls:"defense"},
+    {pos:"GK",count:1,bottom:5,cls:"goalkeeper"}
+  ];
+  if(formation==="4-1-4-1")return [
+    {pos:"ATT",count:1,top:5,cls:"attack"},
+    {pos:"MID",count:4,top:28,cls:"midfield advanced-mid"},
+    {pos:"MID",count:1,top:49,cls:"midfield deep-mid"},
+    {pos:"DEF",count:4,top:67,cls:"defense"},
+    {pos:"GK",count:1,bottom:5,cls:"goalkeeper"}
+  ];
+  if(formation==="3-4-2-1")return [
+    {pos:"ATT",count:1,top:4,cls:"attack"},
+    {pos:"MID",count:2,top:24,cls:"midfield advanced-mid"},
+    {pos:"MID",count:4,top:46,cls:"midfield deep-mid"},
+    {pos:"DEF",count:3,top:67,cls:"defense"},
+    {pos:"GK",count:1,bottom:5,cls:"goalkeeper"}
+  ];
+  if(formation==="3-1-4-2")return [
+    {pos:"ATT",count:2,top:7,cls:"attack"},
+    {pos:"MID",count:4,top:29,cls:"midfield advanced-mid"},
+    {pos:"MID",count:1,top:49,cls:"midfield deep-mid"},
+    {pos:"DEF",count:3,top:68,cls:"defense"},
+    {pos:"GK",count:1,bottom:5,cls:"goalkeeper"}
+  ];
+  const q=formationQuota(formation);
+  return [
+    {pos:"ATT",count:q.ATT,top:8,cls:"attack"},
+    {pos:"MID",count:q.MID,top:36,cls:"midfield"},
+    {pos:"DEF",count:q.DEF,top:64,cls:"defense"},
+    {pos:"GK",count:1,bottom:5,cls:"goalkeeper"}
+  ];
+}
 function formationPitch(formation,interactive=false){
   const starters=state.players.filter(p=>p.is_starter);
-  const rows={ATT:[],MID:[],DEF:[],GK:[]};
-  starters.forEach(p=>(rows[p.position]||rows.MID).push(p));
-  for(const k of Object.keys(rows))rows[k].sort((a,b)=>fitScore(b)-fitScore(a));
+  const pools={ATT:[],MID:[],DEF:[],GK:[]};
+  starters.forEach(p=>(pools[p.position]||pools.MID).push(p));
+  for(const k of Object.keys(pools))pools[k].sort((a,b)=>fitScore(b)-fitScore(a));
+
+  const offsets={ATT:0,MID:0,DEF:0,GK:0};
+  const lines=formationLineSpec(formation).map(line=>{
+    const start=offsets[line.pos]||0;
+    const players=pools[line.pos].slice(start,start+line.count);
+    offsets[line.pos]=start+line.count;
+    return {...line,players};
+  });
+
   return `<div class="pitch">
     <div class="pitch-line center"></div><div class="pitch-circle"></div>
-    <div class="pitch-row attack">${rows.ATT.map(p=>pitchToken(p,interactive)).join("")}</div>
-    <div class="pitch-row midfield">${rows.MID.map(p=>pitchToken(p,interactive)).join("")}</div>
-    <div class="pitch-row defense">${rows.DEF.map(p=>pitchToken(p,interactive)).join("")}</div>
-    <div class="pitch-row goalkeeper">${rows.GK.map(p=>pitchToken(p,interactive)).join("")}</div>
-    <div class="pitch-caption">${esc(formation)} · ${starters.length}/11 titulares</div>
+    ${lines.map(line=>`<div class="pitch-row tactical-row ${line.cls}" style="${line.bottom!=null?`bottom:${line.bottom}%`:`top:${line.top}%`}">
+      ${line.players.map(p=>pitchToken(p,interactive)).join("")}
+    </div>`).join("")}
+    <div class="pitch-caption">${esc(formationDisplayName(formation))} · ${starters.length}/11 titulares</div>
   </div>`;
 }
 function suggestRotation(formation){
@@ -392,11 +612,10 @@ function suggestRotation(formation){
   for(const pos of ["GK","DEF","MID","ATT"]){
     chosen.push(...state.players.filter(p=>p.position===pos&&Number(p.injury_games||0)<=0).sort((a,b)=>fitScore(b)-fitScore(a)).slice(0,q[pos]));
   }
-  if(chosen.length<11){
-    const used=new Set(chosen.map(p=>String(p.id)));
-    chosen.push(...state.players.filter(p=>!used.has(String(p.id))&&p.position!=="GK"&&Number(p.injury_games||0)<=0).sort((a,b)=>fitScore(b)-fitScore(a)).slice(0,11-chosen.length));
-  }
+  if(chosen.length!==11)return false;
   state.players.forEach(p=>p.is_starter=chosen.some(x=>String(x.id)===String(p.id)));
+  state.lineupDirty=true;
+  return true;
 }
 
 function rebalanceForFormation(formation){
@@ -414,17 +633,11 @@ function rebalanceForFormation(formation){
     chosen.push(...candidates.slice(0,q[pos]));
   }
 
-  if(chosen.length<11){
-    const used=new Set(chosen.map(p=>String(p.id)));
-    chosen.push(...state.players
-      .filter(p=>!used.has(String(p.id))&&p.position!=="GK"&&Number(p.injury_games||0)<=0)
-      .sort((x,y)=>Number(y.rating)-Number(x.rating))
-      .slice(0,11-chosen.length));
-  }
+  if(chosen.length!==11)return false;
 
   state.players.forEach(p=>p.is_starter=chosen.some(x=>String(x.id)===String(p.id)));
   state.lineupDirty=true;
-  return chosen.length===11;
+  return true;
 }
 
 function compatibleReserves(starter){
@@ -465,21 +678,14 @@ function selectBestSquad(formation){
     chosen.push(...available.slice(0,q[pos]));
   }
 
-  if(chosen.length<11){
-    const used=new Set(chosen.map(p=>String(p.id)));
-    const remaining=state.players
-      .filter(p=>!used.has(String(p.id))&&p.position!=="GK"&&Number(p.injury_games||0)<=0)
-      .sort(bestSort);
-
-    chosen.push(...remaining.slice(0,11-chosen.length));
-  }
+  if(chosen.length!==11)return false;
 
   state.players.forEach(p=>{
     p.is_starter=chosen.some(x=>String(x.id)===String(p.id));
   });
   state.lineupDirty=true;
 
-  return chosen.length===11;
+  return true;
 }
 
 function userPosition(){
@@ -681,13 +887,15 @@ function startersView(){
 
     <div class="lineup-toolbar">
       <label>Formação
-        <select id="starterFormation">${["4-3-3","4-4-2","3-5-2"].map(f=>`<option ${state.club.formation===f?"selected":""}>${f}</option>`).join("")}</select>
+        <select id="starterFormation">${formationSelectOptions(state.club.formation)}</select>
       </label>
       <button id="starterBestSquad" class="primary">⭐ Usar os melhores</button>
       <button id="starterRotateSquad" class="secondary">🔄 Priorizar descansados</button>
     </div>
 
-    <div class="lineup-tip">💡 Clique diretamente em qualquer jogador no campo para substituí-lo por um reserva da mesma posição.</div>
+    ${customFormationBuilder("starter",state.club.formation)}
+
+    <div class="lineup-tip">💡 Escolha uma formação pronta ou use <b>Formação personalizada</b>. Na personalizada, o goleiro é fixo e você distribui os outros 10 jogadores entre defesa, meio e ataque.</div>
 
     <div id="starterPitchWrap">${formationPitch(state.club.formation,true)}</div>
 
@@ -739,12 +947,13 @@ function squadView(){
     <div class="toolbar">
       <div><div class="kicker">Gestão do time</div><h2>Formação, físico e rodízio</h2></div>
       <div class="squad-tools">
-        <label>Formação<select id="formation">${["4-3-3","4-4-2","3-5-2"].map(f=>`<option ${state.club.formation===f?"selected":""}>${f}</option>`).join("")}</select></label>
+        <label>Formação<select id="formation">${formationSelectOptions(state.club.formation)}</select></label>
         <button id="bestSquad" class="primary">⭐ Escalar melhores</button>
         <button id="rotateSquad" class="secondary">Sugerir rodízio</button>
       </div>
     </div>
-    <p class="muted">O campo abaixo mostra sua escalação. Use <b>Escalar melhores</b> para selecionar automaticamente os maiores overalls disponíveis na formação escolhida. Físico baixo reduz o rendimento; lesionados não podem ser escalados.</p>
+    ${customFormationBuilder("squad",state.club.formation)}
+    <p class="muted">O campo abaixo mostra sua escalação. Há formações prontas e uma opção personalizada. Use <b>Escalar melhores</b> para selecionar automaticamente os maiores overalls disponíveis na formação escolhida.</p>
     <div id="pitchWrap">${formationPitch(state.club.formation)}</div>
     <div class="legend"><span class="good-dot"></span> Bom físico <span class="warn-dot"></span> Cansado <span class="bad-dot"></span> Muito cansado/lesionado</div>
     <div class="players" style="margin-top:16px">${state.players.map(playerCard).join("")}</div>
@@ -1540,9 +1749,10 @@ async function manualSaveCareer(){
   try{
     const payload={};
 
-    if(state.view==="squad"){
+    if(state.view==="squad"||state.view==="starters"){
       const starters=state.players.filter(p=>p.is_starter).map(p=>p.id);
-      const formation=app.querySelector("#formation")?.value||state.club.formation;
+      const select=app.querySelector(state.view==="starters"?"#starterFormation":"#formation");
+      const formation=selectedFormationValue(select)||state.club.formation;
       if(starters.length===11){
         payload.starterIds=starters;
         payload.formation=formation;
@@ -1803,20 +2013,12 @@ function openStarterSwap(starterId){
 
 function bindStarters(){
   const formation=app.querySelector("#starterFormation");
-
-  if(formation)formation.onchange=()=>{
-    const chosen=rebalanceForFormation(formation.value);
-    if(!chosen){
-      alert("Não há jogadores suficientes para usar essa formação.");
-      return;
-    }
-    state.club.formation=formation.value;
-    render();
-  };
+  bindCustomFormation("starter",formation);
 
   const best=app.querySelector("#starterBestSquad");
   if(best)best.onclick=()=>{
-    const currentFormation=formation?.value||state.club.formation;
+    const currentFormation=selectedFormationValue(formation);
+    if(!currentFormation){alert("Aplique primeiro a formação personalizada.");return}
     const complete=selectBestSquad(currentFormation);
     if(!complete){
       alert("Não há 11 jogadores disponíveis para montar a escalação.");
@@ -1828,8 +2030,12 @@ function bindStarters(){
 
   const rotate=app.querySelector("#starterRotateSquad");
   if(rotate)rotate.onclick=()=>{
-    const currentFormation=formation?.value||state.club.formation;
-    suggestRotation(currentFormation);
+    const currentFormation=selectedFormationValue(formation);
+    if(!currentFormation){alert("Aplique primeiro a formação personalizada.");return}
+    if(!suggestRotation(currentFormation)){
+      alert("Não há jogadores saudáveis suficientes nas posições exigidas por essa formação.");
+      return;
+    }
     state.club.formation=currentFormation;
     render();
   };
@@ -1846,9 +2052,16 @@ function bindStarters(){
     save.disabled=true;
     save.textContent="SALVANDO...";
     try{
+      const formationValue=selectedFormationValue(formation);
+      if(!formationValue){
+        alert("Aplique primeiro a formação personalizada.");
+        save.disabled=false;
+        save.textContent="💾 Salvar escalação";
+        return;
+      }
       await api("/api/lineup",{method:"PUT",body:JSON.stringify({
         starterIds,
-        formation:formation?.value||state.club.formation
+        formation:formationValue
       })});
       state.lineupDirty=false;
       await refreshAll();
@@ -1869,10 +2082,11 @@ function bindStarters(){
 }
 function bindSquad(){
   const formation=app.querySelector("#formation");
-  if(formation)formation.onchange=()=>{app.querySelector("#pitchWrap").innerHTML=formationPitch(formation.value)};
+  bindCustomFormation("squad",formation);
   const best=app.querySelector("#bestSquad");
   if(best)best.onclick=()=>{
-    const currentFormation=formation?.value||state.club.formation;
+    const currentFormation=selectedFormationValue(formation);
+    if(!currentFormation){alert("Aplique primeiro a formação personalizada.");return}
     const complete=selectBestSquad(currentFormation);
     if(!complete){
       alert("Não há 11 jogadores disponíveis para montar a escalação.");
@@ -1885,7 +2099,13 @@ function bindSquad(){
 
   const rotate=app.querySelector("#rotateSquad");
   if(rotate)rotate.onclick=()=>{
-    suggestRotation(formation?.value||state.club.formation);
+    const currentFormation=selectedFormationValue(formation);
+    if(!currentFormation){alert("Aplique primeiro a formação personalizada.");return}
+    if(!suggestRotation(currentFormation)){
+      alert("Não há jogadores saudáveis suficientes nas posições exigidas por essa formação.");
+      return;
+    }
+    state.club.formation=currentFormation;
     render();
   };
   app.querySelectorAll(".toggle-player").forEach(b=>b.onclick=()=>{
@@ -1913,9 +2133,11 @@ function bindSquad(){
   });
   app.querySelector("#saveLineup").onclick=async()=>{
     try{
+      const formationValue=selectedFormationValue(formation);
+      if(!formationValue){alert("Aplique primeiro a formação personalizada.");return}
       await api("/api/lineup",{method:"PUT",body:JSON.stringify({
         starterIds:state.players.filter(p=>p.is_starter).map(p=>p.id),
-        formation:formation?.value||state.club.formation
+        formation:formationValue
       })});
       state.lineupDirty=false;
       await refreshAll();render();

@@ -670,3 +670,48 @@ A diretoria envia mensagens após:
 Nas divisões B, C e D, a expectativa padrão é lutar pelo acesso e terminar no G4. Na primeira divisão, a diretoria passa a exigir campanha de elite, podendo cobrar disputa pelo título de equipes mais fortes.
 
 Se o clube for uma SAF, a expectativa também lembra que a temporada deve terminar sem dívida para evitar o rebaixamento administrativo.
+
+
+## Novas formações + formação personalizada — v28
+
+A tela de escalação agora possui mais opções táticas.
+
+Formações prontas:
+- 4-3-3
+- 4-4-2
+- 3-5-2
+- 4-2-3-1
+- 4-1-4-1
+- 4-5-1
+- 3-4-3
+- 3-4-2-1
+- 3-1-4-2
+- 5-3-2
+- 5-4-1
+- 5-2-3
+- 4-2-4
+
+Algumas formações, como 4-2-3-1, 4-1-4-1, 3-4-2-1 e 3-1-4-2, aparecem no campo com linhas de meio-campo em alturas diferentes para representar melhor o desenho tático.
+
+### Formação personalizada
+
+A opção **Formação personalizada** permite definir manualmente:
+- de 2 a 5 defensores;
+- de 1 a 6 meio-campistas;
+- de 1 a 5 atacantes.
+
+Os três setores precisam somar exatamente 10 jogadores de linha. O goleiro é sempre o 11º jogador.
+
+Exemplos válidos:
+- personalizada 4-2-4;
+- personalizada 3-3-4;
+- personalizada 5-2-3;
+- personalizada 2-5-3.
+
+O jogo verifica se o elenco saudável possui jogadores suficientes em cada setor antes de aplicar a formação.
+
+### Escalação
+
+Os recursos **Usar os melhores**, **Priorizar descansados**, troca de jogadores, salvamento normal e salvamento manual funcionam também com as novas formações e com a formação personalizada.
+
+A escalação passa a respeitar exatamente o número de jogadores de cada setor da formação escolhida. O sistema não completa mais uma posição em falta usando um jogador de outro setor apenas para chegar a 11.

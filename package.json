@@ -1,8 +1,8 @@
 {
   "name": "dono-do-clube",
-  "version": "27.0.0",
+  "version": "28.0.0",
   "private": true,
-  "description": "Dono do Clube com escalação corrigida, jornal com outros clubes e goleadas, coletiva com consequências e aba de expectativas da diretoria.",
+  "description": "Dono do Clube com 13 formações táticas prontas e formação personalizada por distribuição de defesa, meio e ataque.",
   "main": "server.js",
   "scripts": {
     "start": "node server.js"

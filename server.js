@@ -1352,10 +1352,33 @@ function basicScore(hr,ar){
     ag:Math.min(6,poisson(clamp(1.08+(ar-hr)*.032,.24,2.95)))
   };
 }
+const FORMATION_PRESETS={
+  "4-3-3":{GK:1,DEF:4,MID:3,ATT:3},
+  "4-4-2":{GK:1,DEF:4,MID:4,ATT:2},
+  "3-5-2":{GK:1,DEF:3,MID:5,ATT:2},
+  "4-2-3-1":{GK:1,DEF:4,MID:5,ATT:1},
+  "4-1-4-1":{GK:1,DEF:4,MID:5,ATT:1},
+  "4-5-1":{GK:1,DEF:4,MID:5,ATT:1},
+  "3-4-3":{GK:1,DEF:3,MID:4,ATT:3},
+  "3-4-2-1":{GK:1,DEF:3,MID:6,ATT:1},
+  "3-1-4-2":{GK:1,DEF:3,MID:5,ATT:2},
+  "5-3-2":{GK:1,DEF:5,MID:3,ATT:2},
+  "5-4-1":{GK:1,DEF:5,MID:4,ATT:1},
+  "5-2-3":{GK:1,DEF:5,MID:2,ATT:3},
+  "4-2-4":{GK:1,DEF:4,MID:2,ATT:4}
+};
+function customFormationQuotas(formation){
+  const m=String(formation||"").match(/^CUSTOM:(\d)-(\d)-(\d)$/);
+  if(!m)return null;
+  const DEF=Number(m[1]),MID=Number(m[2]),ATT=Number(m[3]);
+  if(DEF<2||DEF>5||MID<1||MID>6||ATT<1||ATT>5||DEF+MID+ATT!==10)return null;
+  return {GK:1,DEF,MID,ATT};
+}
+function formationIsValid(formation){
+  return Boolean(FORMATION_PRESETS[String(formation)]||customFormationQuotas(formation));
+}
 function formationQuotas(formation){
-  if(formation==="4-4-2")return {GK:1,DEF:4,MID:4,ATT:2};
-  if(formation==="3-5-2")return {GK:1,DEF:3,MID:5,ATT:2};
-  return {GK:1,DEF:4,MID:3,ATT:3};
+  return FORMATION_PRESETS[String(formation)]||customFormationQuotas(formation)||FORMATION_PRESETS["4-3-3"];
 }
 
 async function ensureStartingXI(client,clubId,formation="4-3-3"){
@@ -1399,61 +1422,28 @@ async function ensureStartingXI(client,clubId,formation="4-3-3"){
     }
   }
 
-  // Se alguma posição estiver curta, completa apenas com jogadores de linha.
-  // Nunca usa um segundo goleiro para preencher uma vaga de campo.
-  if(selected.length<11){
-    const remaining=healthy
-      .filter(p=>!used.has(String(p.id))&&p.position!=="GK")
-      .sort(scoreSort);
-    for(const p of remaining.slice(0,11-selected.length)){
+  // Se faltou alguém por lesão, completa apenas com atletas da MESMA posição.
+  // Assim a escalação nunca vira uma formação diferente da escolhida.
+  for(const pos of ["GK","DEF","MID","ATT"]){
+    const have=selected.filter(p=>p.position===pos).length;
+    const missing=Math.max(0,Number(quota[pos]||0)-have);
+    if(!missing)continue;
+
+    const fallback=players
+      .filter(p=>p.position===pos&&!used.has(String(p.id)))
+      .sort(scoreSort)
+      .slice(0,missing);
+
+    for(const p of fallback){
       selected.push(p);
       used.add(String(p.id));
     }
   }
 
-  // Último fallback: se o elenco estiver muito desfalcado, pode usar lesionados,
-  // mas ainda assim evita um segundo goleiro na linha.
-  if(selected.length<11){
-    const remaining=players
-      .filter(p=>!used.has(String(p.id))&&p.position!=="GK")
-      .sort(scoreSort);
-    for(const p of remaining.slice(0,11-selected.length)){
-      selected.push(p);
-      used.add(String(p.id));
-    }
-  }
-
-  // Sempre exatamente um goleiro quando existir goleiro no elenco.
-  const selectedGks=selected.filter(p=>p.position==="GK");
-  if(selectedGks.length===0){
-    const gk=players.filter(p=>p.position==="GK").sort(scoreSort)[0];
-    if(gk){
-      const replaceIndex=selected.findIndex(p=>p.position!=="GK");
-      if(replaceIndex>=0){
-        used.delete(String(selected[replaceIndex].id));
-        selected[replaceIndex]=gk;
-        used.add(String(gk.id));
-      }
-    }
-  }else if(selectedGks.length>1){
-    const keep=selectedGks.sort(scoreSort)[0];
-    const extras=selectedGks.filter(g=>String(g.id)!==String(keep.id));
-    for(const extra of extras){
-      const replacement=players
-        .filter(p=>p.position!=="GK"&&!used.has(String(p.id)))
-        .sort(scoreSort)[0];
-      if(replacement){
-        const idx=selected.findIndex(p=>String(p.id)===String(extra.id));
-        if(idx>=0){
-          used.delete(String(extra.id));
-          selected[idx]=replacement;
-          used.add(String(replacement.id));
-        }
-      }
-    }
-  }
-
-  if(selected.length!==11)return {repaired:false,count:selected.length,reason:"unable_to_build_11"};
+  const selectedCounts={GK:0,DEF:0,MID:0,ATT:0};
+  selected.forEach(p=>selectedCounts[p.position]=(selectedCounts[p.position]||0)+1);
+  const exact=selected.length===11&&Object.keys(quota).every(pos=>Number(selectedCounts[pos]||0)===Number(quota[pos]||0));
+  if(!exact)return {repaired:false,count:selected.length,reason:"formation_positions_unavailable"};
 
   const ids=selected.map(p=>String(p.id));
   await client.query(`UPDATE players SET is_starter=FALSE WHERE club_id=$1`,[clubId]);
@@ -1481,16 +1471,14 @@ async function matchStarters(client,club,isUser){
     const pool=sortForSelection(healthy.filter(p=>p.position===position),isUser);
     chosen.push(...pool.slice(0,q[position]));
   }
-  if(chosen.length<11){
-    const used=new Set(chosen.map(p=>String(p.id)));
-    const remaining=sortForSelection(
-      healthy.filter(p=>!used.has(String(p.id))&&p.position!=="GK"),
-      isUser
-    );
-    chosen.push(...remaining.slice(0,11-chosen.length));
+  if(chosen.length!==11){
+    throw Object.assign(new Error(`${club.name} não possui jogadores saudáveis suficientes nas posições exigidas pela formação ${club.formation}.`),{status:400});
   }
-  const gks=chosen.filter(p=>p.position==="GK");
-  if(gks.length!==1)throw Object.assign(new Error(`${club.name} precisa ter exatamente um goleiro disponível na escalação.`),{status:400});
+  const counts={GK:0,DEF:0,MID:0,ATT:0};
+  chosen.forEach(p=>counts[p.position]=(counts[p.position]||0)+1);
+  if(Object.keys(q).some(pos=>Number(counts[pos]||0)!==Number(q[pos]||0))){
+    throw Object.assign(new Error(`${club.name} não consegue montar a formação ${club.formation} com o elenco disponível.`),{status:400});
+  }
   return chosen.slice(0,11);
 }
 function teamMetrics(players){
@@ -4626,6 +4614,9 @@ app.post("/api/career/manual-save",auth,async(req,res,next)=>{
           throw Object.assign(new Error("Jogadores lesionados não podem ser titulares."),{status:400});
         }
 
+        if(!formationIsValid(formation)){
+          throw Object.assign(new Error("Formação inválida."),{status:400});
+        }
         const quota=formationQuotas(formation),counts={GK:0,DEF:0,MID:0,ATT:0};
         own.forEach(p=>counts[p.position]=(counts[p.position]||0)+1);
         if(Object.keys(quota).some(k=>counts[k]!==quota[k])){
@@ -4748,6 +4739,7 @@ app.put("/api/lineup",auth,async(req,res,next)=>{
   try{
     const c=await userClub(req.user.id),ids=Array.isArray(req.body.starterIds)?req.body.starterIds.map(String):[],formation=String(req.body.formation||"4-3-3");
     if(ids.length!==11||new Set(ids).size!==11)return res.status(400).json({error:"Selecione exatamente 11 titulares."});
+    if(!formationIsValid(formation))return res.status(400).json({error:"Formação inválida."});
     const own=await q(`SELECT id,position,injury_games FROM players WHERE club_id=$1 AND id=ANY($2::bigint[])`,[c.id,ids]);
     if(own.rowCount!==11||!own.rows.some(p=>p.position==="GK"))return res.status(400).json({error:"Inclua um goleiro."});
     if(own.rows.some(p=>Number(p.injury_games||0)>0))return res.status(400).json({error:"Jogadores lesionados não podem ser titulares."});
@@ -5213,6 +5205,6 @@ async function start(){
   await applyV27Migration();
   await seedRealMarketPlayers();
   await ensureMarket();
-  app.listen(PORT,"0.0.0.0",()=>console.log(`Dono do Clube v27 rodando na porta ${PORT}`));
+  app.listen(PORT,"0.0.0.0",()=>console.log(`Dono do Clube v28 rodando na porta ${PORT}`));
 }
 start().catch(e=>{console.error("Falha ao iniciar:",e);process.exit(1)});
