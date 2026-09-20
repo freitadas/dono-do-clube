@@ -3387,3 +3387,24 @@ if(!window.__v38OnlyButtonsFix){
    if(b.dataset.locked==="1") return;
  },true);
 }
+
+
+// FIX V38 REAL - recuperação de botões após render()
+// Alguns botões perdem referência quando a interface é recriada.
+if(!window.__v38RealButtonRecovery){
+ window.__v38RealButtonRecovery=true;
+ const oldRender=window.render;
+ if(typeof oldRender==='function'){
+   window.render=function(...args){
+     const result=oldRender.apply(this,args);
+     setTimeout(()=>{
+       try{
+         if(typeof bindMarket==='function' && state.view==='market') bindMarket();
+         if(typeof bindTransferButtons==='function') bindTransferButtons();
+         if(typeof bindCompetitions==='function') bindCompetitions();
+       }catch(e){console.error('button recovery',e)}
+     },0);
+     return result;
+   }
+ }
+}
