@@ -3408,3 +3408,18 @@ if(!window.__v38RealButtonRecovery){
    }
  }
 }
+
+
+// V38 - propostas europeias por desempenho do jogador
+// Adiciona clubes europeus interessados quando o atleta tem destaque.
+if(!window.__v38EuropeanPerformanceOffers){
+ window.__v38EuropeanPerformanceOffers=true;
+ function generateEuropeanInterest(player){
+   if(!player) return [];
+   const rating=Number(player.rating||0);
+   const goals=Number(player.goals||0);
+   if(rating<75 && goals<10) return [];
+   const clubs=["Benfica","Porto","Ajax","PSV","Borussia Dortmund","Milan","Atlético de Madrid"];
+   return clubs.slice(0,Math.min(3,Math.floor((rating+goals)%4))).map(c=>({club:c,reason:"Grande desempenho na temporada"}));
+ }
+}
