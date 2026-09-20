@@ -3326,14 +3326,25 @@ async function logout(){
 }
 bootstrap();
 
-// FIX GLOBAL V38 - Recuperação de eventos de botões após renderizações
-// Reanexa ações automaticamente quando a interface é reconstruída.
-if(!window.__v38GlobalButtonRecovery){
- window.__v38GlobalButtonRecovery=true;
- document.addEventListener("click", function(e){
-   const target=e.target.closest("button");
-   if(!target) return;
-   if(target.disabled) return;
-   target.classList.remove("button-error");
+
+// FIX V38 SEARCH HARD FIX
+// Pesquisa do mercado: mantém o clique funcionando após qualquer renderização.
+if(!window.__v38SearchHardFix){
+ window.__v38SearchHardFix=true;
+ document.addEventListener("click", async function(e){
+   const btn=e.target.closest("#transferSearchBtn");
+   if(!btn) return;
+   e.preventDefault();
+   e.stopImmediatePropagation();
+   if(btn.dataset.running==="1") return;
+   btn.dataset.running="1";
+   try{
+     await searchTransfers();
+   }catch(err){
+     const box=document.querySelector("#transferResults");
+     if(box) box.innerHTML=`<div class="msg">${esc(err.message)}</div>`;
+   }finally{
+     btn.dataset.running="0";
+   }
  }, true);
 }
