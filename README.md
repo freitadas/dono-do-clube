@@ -1017,3 +1017,18 @@ Jogadores que estão apenas emprestados não aparecem na fila de renovação do 
 
 
 A aba **Mercado** também ganhou uma seção **Empréstimos ativos**, onde a opção de compra pode ser exercida diretamente sem precisar procurar o jogador novamente.
+
+
+## Correção da pesquisa do Mercado — v36
+
+Foi corrigido o bug em que, depois de mudar a posição do jogador e clicar em **Pesquisar**, a interface podia se comportar como um envio normal de formulário e atualizar/recarregar a página inteira.
+
+Agora:
+- o botão **Pesquisar** não faz submit nativo do navegador;
+- clicar em **Pesquisar** executa somente a busca assíncrona do mercado;
+- pressionar Enter dentro dos filtros também não recarrega a página;
+- somente a área **Pesquisar jogadores / resultados** é atualizada;
+- a aba Mercado permanece aberta;
+- posição, nome, overall mínimo, valor máximo e filtro de jogadores reais permanecem selecionados depois da pesquisa;
+- os botões **Comprar** e **Empréstimo** dos novos resultados continuam sendo religados após cada busca;
+- durante a consulta, o botão mostra **PESQUISANDO...** e evita cliques duplicados.

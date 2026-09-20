@@ -9,6 +9,7 @@ const state={
   mediaNews:[],pendingPress:null,saf:{active:false,offers:[],debtRisk:false},
   careers:[],maxCareers:10,lineupDirty:false,
   boardMessages:[],boardExpectation:null,teamPerformance:null,rotationAdvice:null,contractRenewals:[],
+  transferSearch:{name:"",position:"",minRating:58,maxPrice:500000,realOnly:false},
   activeType:null,playerCareer:null,playerData:null,countries:{},creationMode:"club",playerView:"home",
   playerStarterClubs:[],
   view:"home",authMode:"login",competitionTab:"STATE",roundByDiv:{A:1,B:1,C:1,D:1}
@@ -1360,19 +1361,20 @@ function marketView(){
     ${state.marketProfile?`<div class="market-level">Mercado de ${esc(leagueLabel(state.competitions?.career?.user_division||"D",state.competitions?.career?.country_code||state.club?.country_code))} · jogadores normalmente entre OVR ${state.marketProfile.min} e ${state.marketProfile.max}. Ao subir de divisão, o nível disponível aumenta.</div>`:""}
     <p class="muted">O mercado agora inclui jogadores com nomes reais. Os atributos, preços e salários são valores de jogo balanceados e não representam uma base oficial ao vivo. Cada carreira mantém sua própria cópia do atleta.</p><p class="muted">O clube vendedor precisa aceitar a proposta e o jogador precisa aceitar o salário e o projeto esportivo. Compras podem ser parceladas em até 24x. Jogadores não essenciais de clubes do jogo podem chegar por empréstimo.</p>
     ${ban?.active?`<p class="muted">A pesquisa continua disponível, mas novas contratações estão bloqueadas pelo transfer ban.</p>`:""}
-    <form id="transferSearch" class="transfer-search">
-      <input id="searchName" placeholder="Nome do jogador">
+    <form id="transferSearch" class="transfer-search" action="javascript:void(0)" novalidate>
+      <input id="searchName" placeholder="Nome do jogador" value="${esc(state.transferSearch?.name||"")}">
       <select id="searchPosition">
-        <option value="">Todas as posições</option>
-        <option value="GK">Goleiro</option><option value="DEF">Defesa</option><option value="MID">Meio</option><option value="ATT">Ataque</option>
-        <option value="CB">Zagueiro</option><option value="RB">Lateral direito</option><option value="LB">Lateral esquerdo</option>
-        <option value="CDM">Volante</option><option value="CM">Meia central</option><option value="CAM">Meia ofensivo</option>
-        <option value="RW">Ponta direita</option><option value="LW">Ponta esquerda</option><option value="ST">Centroavante</option>
+        ${[
+          ["","Todas as posições"],["GK","Goleiro"],["DEF","Defesa"],["MID","Meio"],["ATT","Ataque"],
+          ["CB","Zagueiro"],["RB","Lateral direito"],["LB","Lateral esquerdo"],
+          ["CDM","Volante"],["CM","Meia central"],["CAM","Meia ofensivo"],
+          ["RW","Ponta direita"],["LW","Ponta esquerda"],["ST","Centroavante"]
+        ].map(([v,l])=>`<option value="${v}" ${String(state.transferSearch?.position||"")===v?"selected":""}>${l}</option>`).join("")}
       </select>
-      <input id="searchMinRating" type="number" min="40" max="100" value="58" placeholder="OVR mínimo">
-      <input id="searchMaxPrice" type="number" min="0" value="500000" placeholder="Valor máximo">
-      <label class="real-filter"><input id="searchRealOnly" type="checkbox"> Só jogadores reais</label>
-      <button class="primary">Pesquisar</button>
+      <input id="searchMinRating" type="number" min="40" max="100" value="${Number(state.transferSearch?.minRating??58)}" placeholder="OVR mínimo">
+      <input id="searchMaxPrice" type="number" min="0" value="${Number(state.transferSearch?.maxPrice??500000)}" placeholder="Valor máximo">
+      <label class="real-filter"><input id="searchRealOnly" type="checkbox" ${state.transferSearch?.realOnly?"checked":""}> Só jogadores reais</label>
+      <button id="transferSearchBtn" type="button" class="primary">Pesquisar</button>
     </form>
     <div id="transferMsg"></div>
     <div id="transferResults" class="market-grid">${transferCards()}</div>
@@ -2551,23 +2553,61 @@ function bindSquad(){
     }catch(err){alert(err.message)}
   };
 }
+function readTransferSearchFilters(){
+  const filters={
+    name:String(app.querySelector("#searchName")?.value||"").trim(),
+    position:String(app.querySelector("#searchPosition")?.value||""),
+    minRating:Math.max(40,Math.min(100,Number(app.querySelector("#searchMinRating")?.value||58))),
+    maxPrice:Math.max(0,Number(app.querySelector("#searchMaxPrice")?.value||500000)),
+    realOnly:Boolean(app.querySelector("#searchRealOnly")?.checked)
+  };
+  state.transferSearch=filters;
+  return filters;
+}
+
 async function searchTransfers(){
-  const qv=encodeURIComponent(app.querySelector("#searchName")?.value||"");
-  const pos=encodeURIComponent(app.querySelector("#searchPosition")?.value||"");
-  const min=encodeURIComponent(app.querySelector("#searchMinRating")?.value||"0");
-  const max=encodeURIComponent(app.querySelector("#searchMaxPrice")?.value||"999999999");
-  const realOnly=app.querySelector("#searchRealOnly")?.checked?"1":"0";
+  const filters=readTransferSearchFilters();
+  const qv=encodeURIComponent(filters.name);
+  const pos=encodeURIComponent(filters.position);
+  const min=encodeURIComponent(filters.minRating);
+  const max=encodeURIComponent(filters.maxPrice);
+  const realOnly=filters.realOnly?"1":"0";
+
   const box=app.querySelector("#transferResults");
+  const msg=app.querySelector("#transferMsg");
+  const btn=app.querySelector("#transferSearchBtn");
+
+  if(btn){
+    btn.disabled=true;
+    btn.textContent="PESQUISANDO...";
+  }
+  if(msg)msg.innerHTML="";
   if(box)box.innerHTML=`<div class="empty">Procurando jogadores...</div>`;
+
   try{
     const d=await api(`/api/transfers/search?q=${qv}&position=${pos}&minRating=${min}&maxPrice=${max}&realOnly=${realOnly}`);
     state.transferResults=d.players||[];
     state.marketProfile=d.marketProfile||state.marketProfile;
     if(state.finance&&d.transferBan)state.finance.transferBan=d.transferBan;
-    if(box)box.innerHTML=transferCards();
+
+    // Atualiza somente a área dos resultados. Não renderiza a aba inteira.
+    const liveBox=app.querySelector("#transferResults");
+    if(liveBox)liveBox.innerHTML=transferCards();
     bindTransferButtons();
+
+    if(msg){
+      const count=state.transferResults.length;
+      msg.innerHTML=`<div class="msg ok">${count} jogador(es) encontrado(s)${filters.position?` para ${esc(filters.position)}`:""}.</div>`;
+    }
   }catch(err){
-    if(box)box.innerHTML=`<div class="msg">${esc(err.message)}</div>`;
+    const liveBox=app.querySelector("#transferResults");
+    if(liveBox)liveBox.innerHTML=`<div class="msg">${esc(err.message)}</div>`;
+  }finally{
+    const liveBtn=app.querySelector("#transferSearchBtn");
+    if(liveBtn){
+      liveBtn.disabled=false;
+      liveBtn.textContent="Pesquisar";
+    }
   }
 }
 function bindTransferButtons(){
@@ -2706,8 +2746,39 @@ function openLoanOffer(p){
 }
 function bindMarket(){
   bindLoanPurchaseButtons();
+
   const form=app.querySelector("#transferSearch");
-  if(form)form.onsubmit=async e=>{e.preventDefault();await searchTransfers()};
+  const searchBtn=app.querySelector("#transferSearchBtn");
+
+  // O formulário nunca faz navegação/reload. Tanto Enter quanto o botão
+  // executam a pesquisa AJAX e atualizam somente #transferResults.
+  if(form){
+    form.addEventListener("submit",async e=>{
+      e.preventDefault();
+      e.stopPropagation();
+      await searchTransfers();
+      return false;
+    });
+  }
+  if(searchBtn){
+    searchBtn.addEventListener("click",async e=>{
+      e.preventDefault();
+      e.stopPropagation();
+      await searchTransfers();
+    });
+  }
+
+  const position=app.querySelector("#searchPosition");
+  if(position)position.addEventListener("change",()=>{readTransferSearchFilters()});
+
+  const name=app.querySelector("#searchName");
+  const min=app.querySelector("#searchMinRating");
+  const max=app.querySelector("#searchMaxPrice");
+  const real=app.querySelector("#searchRealOnly");
+  [name,min,max,real].filter(Boolean).forEach(el=>{
+    el.addEventListener(el.type==="checkbox"?"change":"input",()=>{readTransferSearchFilters()});
+  });
+
   bindTransferButtons();
   app.querySelectorAll(".accept-offer").forEach(b=>b.onclick=async()=>{
     const offer=state.incomingOffers.find(o=>String(o.id)===String(b.dataset.id));

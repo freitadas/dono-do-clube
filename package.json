@@ -1,8 +1,8 @@
 {
   "name": "dono-do-clube",
-  "version": "35.0.0",
+  "version": "36.0.0",
   "private": true,
-  "description": "Dono do Clube com opção de compra em empréstimos e renovações de contrato manuais por notificações.",
+  "description": "Dono do Clube com correção da pesquisa do Mercado para atualizar apenas os resultados sem recarregar a página.",
   "main": "server.js",
   "scripts": {
     "start": "node server.js"
