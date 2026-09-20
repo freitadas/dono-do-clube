@@ -2897,6 +2897,7 @@ async function searchTransfers(){
   if(box)box.innerHTML=`<div class="empty">Procurando jogadores...</div>`;
 
   try{
+    if(typeof api!=="function") throw new Error("Sistema de pesquisa indisponível.");
     const d=await api(`/api/transfers/search?q=${qv}&position=${pos}&minRating=${min}&maxPrice=${max}&realOnly=${realOnly}`);
     state.transferResults=d.players||[];
     state.marketProfile=d.marketProfile||state.marketProfile;
@@ -3083,11 +3084,13 @@ function bindMarket(){
     });
   }
   if(searchBtn){
-    searchBtn.addEventListener("click",async e=>{
+    // Botão restaurado: comportamento antigo, pesquisa direta sem recarregar a página.
+    searchBtn.onclick=async e=>{
       e.preventDefault();
       e.stopPropagation();
       await searchTransfers();
-    });
+      return false;
+    };
   }
 
   const position=app.querySelector("#searchPosition");
