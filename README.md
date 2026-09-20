@@ -892,3 +892,42 @@ O Mercado mostra o status da equipe como:
 - Fase excelente.
 
 As propostas continuam sendo pelos **jogadores do elenco**, preservando o sistema atual de carreira de clube.
+
+
+## Correções de carreira e Copa do Brasil — v33
+
+### Copa do Brasil não jogada
+
+Foi corrigido o problema em que o clube podia chegar ao fim da temporada e ser declarado campeão da Copa do Brasil mesmo sem o usuário ter disputado as partidas pendentes.
+
+Agora:
+- a Copa continua podendo ser jogada normalmente durante a temporada;
+- se o usuário deixar uma partida da Copa pendente e a temporada chegar ao encerramento, o jogo não simula essa partida como uma possível vitória do usuário;
+- a partida pendente é tratada como W.O. contra o clube do usuário;
+- em confronto de ida e volta, deixar a partida pendente também elimina o clube, mesmo que exista resultado anterior;
+- o restante da Copa é simulado apenas entre os clubes que continuam no torneio;
+- o usuário não recebe troféu nem premiação de uma Copa que deixou pendente.
+
+O botão **Simular Temporada Inteira** continua sendo uma ação explícita de simulação: ao utilizá-lo, as competições são simuladas normalmente, inclusive a Copa.
+
+### Troca entre carreiras sem recuperar jogadores
+
+Foi adicionada uma proteção específica para a condição do elenco ao alternar entre saves.
+
+Ao sair de uma carreira de clube, o jogo salva para cada jogador:
+- físico;
+- moral;
+- jogos restantes de lesão;
+- quantidade de partidas consecutivas como titular;
+- condição de titular ou reserva.
+
+Ao voltar para aquela carreira, exatamente esse estado é restaurado.
+
+Trocar de carreira não:
+- recupera físico;
+- reduz lesões;
+- aumenta moral;
+- zera a sequência de jogos;
+- altera a escalação.
+
+O descanso continua acontecendo somente pelas regras normais do próprio save, como ficar no banco em uma partida ou iniciar uma nova temporada.
