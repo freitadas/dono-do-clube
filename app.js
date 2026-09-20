@@ -742,24 +742,75 @@ function transferBanBanner(){
   return `<div class="transfer-ban"><b>⛔ TRANSFER BAN ATIVO</b><span>O clube está excessivamente endividado. Você pode vender jogadores, mas não pode contratar nem pedir novos empréstimos enquanto o caixa estiver abaixo de ${Number(ban.threshold).toLocaleString("pt-BR")} moedas.</span></div>`;
 }
 function sponsorshipCard(){
-  const sp=state.sponsorship||{active:null,offers:[]};
-  if(sp.active){
-    const remaining=Math.max(0,Number(sp.active.months_total||12)-Number(sp.active.months_paid||0));
-    return `<div class="card sponsor-card">
-      <div class="kicker">PATROCINADOR OFICIAL</div>
-      <h2>${esc(sp.active.sponsor_name)}</h2>
-      <div class="sponsor-money"><span>Pagamento mensal</span><b>+${Number(sp.active.monthly_amount).toLocaleString("pt-BR")}</b></div>
-      <p class="muted">${remaining} mês(es) restantes no contrato.</p>
-    </div>`;
-  }
+  const sp=state.sponsorship||{active:[],offers:[],activeCount:0,maxActive:2,slotsAvailable:2};
+  const active=Array.isArray(sp.active)?sp.active:(sp.active?[sp.active]:[]);
+  const maxActive=Number(sp.maxActive||2);
+  const slots=Math.max(0,Number(sp.slotsAvailable??(maxActive-active.length)));
   const offers=sp.offers||[];
-  return `<div class="card sponsor-card">
-    <div class="kicker">PATROCÍNIO</div><h2>Escolha um patrocinador</h2>
-    <p class="muted">As propostas melhoram conforme o clube sobe de divisão.</p>
-    <div class="sponsor-offers">${offers.map(o=>`<button class="sponsor-offer secondary" data-sponsor="${esc(o.id)}"><b>${esc(o.name)}</b><span>+${Number(o.monthly).toLocaleString("pt-BR")}/mês</span><small>Luvas +${Number(o.signing).toLocaleString("pt-BR")}</small></button>`).join("")}</div>
+
+  const categoryIcon=category=>{
+    if(String(category).includes("apostas"))return "🎯";
+    if(String(category).includes("esportivo"))return "👕";
+    if(String(category).includes("Banco"))return "🏦";
+    if(String(category).includes("Telecom"))return "📱";
+    if(String(category).includes("Automotivo"))return "🚗";
+    if(String(category).includes("Bebidas"))return "🥤";
+    if(String(category).includes("Tecnologia"))return "💻";
+    return "🏢";
+  };
+
+  return `<div class="card sponsor-card sponsor-card-v29">
+    <div class="section-title">
+      <div>
+        <div class="kicker">PATROCÍNIOS</div>
+        <h2>${active.length}/${maxActive} contratos ativos</h2>
+      </div>
+      <span class="badge ${slots>0?"blue":""}">${slots>0?`${slots} vaga(s) livre(s)`:"2/2 ocupados"}</span>
+    </div>
+
+    <p class="muted">Seu clube pode manter até <b>dois patrocinadores ao mesmo tempo</b>. Os valores aumentam conforme a divisão.</p>
+
+    ${active.length?`<div class="active-sponsors-grid">
+      ${active.map((contract,index)=>{
+        const remaining=Math.max(0,Number(contract.months_total||12)-Number(contract.months_paid||0));
+        return `<article class="active-sponsor">
+          <div class="active-sponsor-slot">PATROCÍNIO ${index+1}</div>
+          <h3>${esc(contract.sponsor_name)}</h3>
+          <span class="active-sponsor-category">${esc(contract.category||"Patrocinador")}</span>
+          <div class="sponsor-money"><span>Pagamento mensal</span><b>+${Number(contract.monthly_amount||0).toLocaleString("pt-BR")}</b></div>
+          <small>${remaining} mês(es) restantes</small>
+        </article>`;
+      }).join("")}
+    </div>`:""}
+
+    ${slots>0?`
+      <div class="sponsor-market-head">
+        <div><div class="kicker">PROPOSTAS DISPONÍVEIS</div><h3>Escolha ${slots===2?"até dois":"o segundo"} patrocinador</h3></div>
+        <span class="muted">${offers.length} propostas</span>
+      </div>
+
+      <div class="sponsor-category-legend">
+        <span>🎯 Casas de apostas</span>
+        <span>👕 Material esportivo</span>
+        <span>🏦 Finanças</span>
+        <span>📱 Telecom</span>
+        <span>💻 Tecnologia</span>
+        <span>🚗 Outros setores</span>
+      </div>
+
+      <div class="sponsor-offers sponsor-offers-v29">
+        ${offers.map(o=>`<button class="sponsor-offer secondary" data-sponsor="${esc(o.id)}">
+          <span class="sponsor-brand-icon">${categoryIcon(o.category)}</span>
+          <b>${esc(o.name)}</b>
+          <em>${esc(o.category||"Patrocinador")}</em>
+          <span>+${Number(o.monthly).toLocaleString("pt-BR")}/mês</span>
+          <small>Luvas +${Number(o.signing).toLocaleString("pt-BR")}</small>
+        </button>`).join("")}
+      </div>
+      <p class="sponsor-disclaimer">Os nomes das marcas são usados apenas como parte da simulação do jogo. Não há vínculo, parceria ou patrocínio real com estas empresas.</p>
+    `:`<div class="sponsor-limit-note">Os dois espaços de patrocínio estão ocupados. Quando um contrato terminar, uma nova vaga será liberada.</div>`}
   </div>`;
 }
-
 function copaQuickCard(){
   const copa=state.competitions?.copaBrasil,car=state.competitions?.career;
   if(!copa||car?.phase==="STATE")return "";
@@ -1962,12 +2013,12 @@ function bindHome(){
   app.querySelectorAll(".sponsor-offer").forEach(btn=>btn.onclick=async()=>{
     const sponsor=(state.sponsorship?.offers||[]).find(x=>x.id===btn.dataset.sponsor);
     if(!sponsor)return;
-    if(!confirm(`Assinar com ${sponsor.name}?\n\n${Number(sponsor.monthly).toLocaleString("pt-BR")} moedas por mês\nLuvas: ${Number(sponsor.signing).toLocaleString("pt-BR")} moedas`))return;
+    if(!confirm(`Assinar com ${sponsor.name}?\n\nCategoria: ${sponsor.category||"Patrocinador"}\n${Number(sponsor.monthly).toLocaleString("pt-BR")} moedas por mês\nLuvas: ${Number(sponsor.signing).toLocaleString("pt-BR")} moedas\n\nSeu clube pode ter até 2 patrocinadores ativos.`))return;
     btn.disabled=true;
     try{
       const d=await api("/api/sponsorships/sign",{method:"POST",body:JSON.stringify({sponsorId:sponsor.id})});
       await refreshAll();render();
-      alert(`${d.name} é o novo patrocinador do clube.`);
+      alert(`${d.name} assinou com o clube.\n\nPatrocínios ativos: ${d.activeCount}/${d.maxActive}`);
     }catch(err){alert(err.message);btn.disabled=false}
   });
   if(state.pendingPress)setTimeout(maybeShowPressConference,350);

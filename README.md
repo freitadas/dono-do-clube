@@ -715,3 +715,67 @@ O jogo verifica se o elenco saudável possui jogadores suficientes em cada setor
 Os recursos **Usar os melhores**, **Priorizar descansados**, troca de jogadores, salvamento normal e salvamento manual funcionam também com as novas formações e com a formação personalizada.
 
 A escalação passa a respeitar exatamente o número de jogadores de cada setor da formação escolhida. O sistema não completa mais uma posição em falta usando um jogador de outro setor apenas para chegar a 11.
+
+
+## Dois patrocinadores + marcas reais — v29
+
+O sistema de patrocínios foi ampliado.
+
+Agora cada clube pode manter **até dois contratos de patrocínio ativos ao mesmo tempo**.
+
+### Mais opções de patrocínio
+
+O catálogo passa a incluir marcas reais de diferentes setores, usadas apenas dentro da simulação do jogo.
+
+Casas de apostas:
+- Betano
+- Superbet
+- Betnacional
+- Sportingbet
+
+Material esportivo:
+- Nike
+- Adidas
+- Puma
+
+Bancos e finanças:
+- Nubank
+- Itaú
+- Santander
+
+Tecnologia, varejo e serviços:
+- Mercado Livre
+- Amazon
+- Samsung
+- iFood
+- Shopee
+
+Telecom:
+- Vivo
+- Claro
+- TIM
+
+Outros setores:
+- Coca-Cola
+- BYD
+
+### Funcionamento
+
+- o clube pode assinar com um primeiro patrocinador e continuar recebendo propostas para preencher o segundo espaço;
+- não é possível assinar duas vezes com a mesma marca ao mesmo tempo;
+- quando os dois espaços estiverem ocupados, novas assinaturas ficam bloqueadas;
+- quando um contrato terminar, a vaga correspondente volta a ficar disponível;
+- os dois patrocinadores pagam suas respectivas parcelas mensais;
+- as luvas de assinatura de cada contrato são pagas separadamente;
+- os valores das propostas aumentam conforme a divisão do clube;
+- os contratos continuam tendo duração de 12 meses.
+
+A interface mostra:
+- quantidade de contratos ativos, de 0/2 até 2/2;
+- valor mensal de cada patrocinador;
+- meses restantes;
+- setor da marca;
+- número de vagas livres;
+- todas as propostas disponíveis.
+
+Os nomes das marcas são usados apenas como parte da simulação do jogo. O projeto não afirma vínculo, parceria ou patrocínio real com nenhuma dessas empresas.

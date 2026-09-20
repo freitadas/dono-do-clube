@@ -1,8 +1,8 @@
 {
   "name": "dono-do-clube",
-  "version": "28.0.0",
+  "version": "29.0.0",
   "private": true,
-  "description": "Dono do Clube com 13 formações táticas prontas e formação personalizada por distribuição de defesa, meio e ataque.",
+  "description": "Dono do Clube com até dois patrocinadores simultâneos e catálogo ampliado com marcas reais de apostas, esportes, bancos, telecom e tecnologia.",
   "main": "server.js",
   "scripts": {
     "start": "node server.js"

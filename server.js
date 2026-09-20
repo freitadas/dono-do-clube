@@ -31,6 +31,7 @@ const V24_MIGRATION_KEY = "v24_two_leg_cups_penalty_scores_20260919";
 const V25_MIGRATION_KEY = "v25_starting_xi_repair_20260919";
 const V26_MIGRATION_KEY = "v26_news_press_saf_20260919";
 const V27_MIGRATION_KEY = "v27_board_media_press_lineup_20260919";
+const V29_MIGRATION_KEY = "v29_two_real_sponsors_20260919";
 const MAX_CAREERS_PER_USER = 10;
 const TRANSFER_BAN_THRESHOLD = -10000;
 const competitionLocks = new Set();
@@ -341,7 +342,7 @@ async function initDb(){
     CREATE INDEX IF NOT EXISTS idx_transfer_offers_seller_status ON transfer_offers(selling_club_id,status);
     CREATE UNIQUE INDEX IF NOT EXISTS idx_transfer_offers_pending_buyer_player ON transfer_offers(player_id,buying_club_id) WHERE status='pending';
     CREATE INDEX IF NOT EXISTS idx_trophies_club_season ON club_trophies(club_id,season_no);
-    CREATE UNIQUE INDEX IF NOT EXISTS idx_sponsorship_active_club ON sponsorship_contracts(club_id) WHERE status='active';
+    CREATE INDEX IF NOT EXISTS idx_sponsorship_club_status ON sponsorship_contracts(club_id,status);
     CREATE INDEX IF NOT EXISTS idx_installments_buying_status ON transfer_installments(buying_club_id,status);
     CREATE UNIQUE INDEX IF NOT EXISTS idx_active_loan_player ON player_loans(player_id) WHERE status='active';
     CREATE UNIQUE INDEX IF NOT EXISTS idx_player_careers_user_slot ON player_careers(user_id,career_slot);
@@ -686,6 +687,17 @@ async function applyV27Migration(){
     `);
     await c.query(`CREATE INDEX IF NOT EXISTS idx_board_messages_club_created ON board_messages(club_id,created_at DESC)`);
     await c.query(`INSERT INTO app_meta(key,value) VALUES($1,$2)`,[V27_MIGRATION_KEY,new Date().toISOString()]);
+  });
+}
+
+async function applyV29Migration(){
+  const done=await q(`SELECT 1 FROM app_meta WHERE key=$1`,[V29_MIGRATION_KEY]);
+  if(done.rowCount)return;
+  await tx(async c=>{
+    // Versões anteriores limitavam o clube a apenas um patrocinador ativo.
+    await c.query(`DROP INDEX IF EXISTS idx_sponsorship_active_club`);
+    await c.query(`CREATE INDEX IF NOT EXISTS idx_sponsorship_club_status ON sponsorship_contracts(club_id,status)`);
+    await c.query(`INSERT INTO app_meta(key,value) VALUES($1,$2)`,[V29_MIGRATION_KEY,new Date().toISOString()]);
   });
 }
 
@@ -3984,45 +3996,126 @@ async function ensureTransferPool(ownerId){
   }
   for(const id of shuffle(ids).slice(0,18))await ensureRoster(id);
 }
+const SPONSOR_CATALOG=[
+  {id:"betano",name:"Betano",category:"Casa de apostas",baseMonthly:3600,baseSigning:7000,months:12},
+  {id:"superbet",name:"Superbet",category:"Casa de apostas",baseMonthly:3400,baseSigning:7600,months:12},
+  {id:"betnacional",name:"Betnacional",category:"Casa de apostas",baseMonthly:3200,baseSigning:6800,months:12},
+  {id:"sportingbet",name:"Sportingbet",category:"Casa de apostas",baseMonthly:3000,baseSigning:7200,months:12},
+
+  {id:"nike",name:"Nike",category:"Material esportivo",baseMonthly:3100,baseSigning:6200,months:12},
+  {id:"adidas",name:"Adidas",category:"Material esportivo",baseMonthly:3200,baseSigning:6400,months:12},
+  {id:"puma",name:"Puma",category:"Material esportivo",baseMonthly:2800,baseSigning:6100,months:12},
+
+  {id:"cocacola",name:"Coca-Cola",category:"Bebidas",baseMonthly:3000,baseSigning:7000,months:12},
+  {id:"mercadolivre",name:"Mercado Livre",category:"Tecnologia e varejo",baseMonthly:3300,baseSigning:7500,months:12},
+  {id:"amazon",name:"Amazon",category:"Tecnologia e varejo",baseMonthly:3400,baseSigning:7800,months:12},
+  {id:"ifood",name:"iFood",category:"Tecnologia e serviços",baseMonthly:2900,baseSigning:6800,months:12},
+
+  {id:"nubank",name:"Nubank",category:"Banco e finanças",baseMonthly:3100,baseSigning:7600,months:12},
+  {id:"itau",name:"Itaú",category:"Banco e finanças",baseMonthly:3300,baseSigning:8200,months:12},
+  {id:"santander",name:"Santander",category:"Banco e finanças",baseMonthly:3200,baseSigning:8000,months:12},
+
+  {id:"vivo",name:"Vivo",category:"Telecom",baseMonthly:3000,baseSigning:7000,months:12},
+  {id:"claro",name:"Claro",category:"Telecom",baseMonthly:3000,baseSigning:7100,months:12},
+  {id:"tim",name:"TIM",category:"Telecom",baseMonthly:2850,baseSigning:6900,months:12},
+
+  {id:"samsung",name:"Samsung",category:"Tecnologia",baseMonthly:3300,baseSigning:8100,months:12},
+  {id:"byd",name:"BYD",category:"Automotivo",baseMonthly:3400,baseSigning:8400,months:12},
+  {id:"shopee",name:"Shopee",category:"Varejo",baseMonthly:2900,baseSigning:7200,months:12}
+];
+
 function sponsorOffersForDivision(div){
-  const table={
-    D:[
-      {id:"regional_d",name:"Rede Regional",monthly:2600,signing:4500,months:12},
-      {id:"sports_d",name:"Arena Sports",monthly:3200,signing:3000,months:12},
-      {id:"digital_d",name:"PlayNet",monthly:2200,signing:6500,months:12}
-    ],
-    C:[
-      {id:"regional_c",name:"Banco Popular",monthly:3900,signing:7000,months:12},
-      {id:"sports_c",name:"Arena Sports+",monthly:4600,signing:5200,months:12},
-      {id:"digital_c",name:"PlayNet Pro",monthly:3500,signing:8500,months:12}
-    ],
-    B:[
-      {id:"national_b",name:"Brasil Energia",monthly:6200,signing:12000,months:12},
-      {id:"sports_b",name:"Arena Sports Nacional",monthly:7000,signing:9000,months:12},
-      {id:"bank_b",name:"Banco União",monthly:5600,signing:14500,months:12}
-    ],
-    A:[
-      {id:"elite_a",name:"Prime Brasil",monthly:10500,signing:22000,months:12},
-      {id:"sports_a",name:"Arena Sports Elite",monthly:11800,signing:17000,months:12},
-      {id:"tech_a",name:"Nexa Tecnologia",monthly:9400,signing:26000,months:12}
-    ]
+  const multipliers={
+    D:{monthly:1.00,signing:1.00},
+    C:{monthly:1.35,signing:1.35},
+    B:{monthly:1.95,signing:1.90},
+    A:{monthly:3.10,signing:3.00}
   };
-  return table[div]||table.D;
+  const m=multipliers[div]||multipliers.D;
+  return SPONSOR_CATALOG.map((x,i)=>({
+    id:x.id,
+    name:x.name,
+    category:x.category,
+    monthly:Math.round((x.baseMonthly*m.monthly)/100)*100,
+    signing:Math.round((x.baseSigning*m.signing)/100)*100,
+    months:x.months,
+    priority:i
+  })).sort((a,b)=>b.monthly-a.monthly||b.signing-a.signing);
 }
+
 async function sponsorshipSummary(clubId,career){
-  const active=(await q(`SELECT * FROM sponsorship_contracts WHERE club_id=$1 AND status='active' ORDER BY id DESC LIMIT 1`,[clubId])).rows[0]||null;
-  return {active,offers:active?[]:sponsorOffersForDivision(career?.user_division||"D")};
+  const activeRows=(await q(`
+    SELECT * FROM sponsorship_contracts
+    WHERE club_id=$1 AND status='active'
+    ORDER BY id ASC
+  `,[clubId])).rows;
+
+  const catalogById=new Map(SPONSOR_CATALOG.map(x=>[x.id,x]));
+  const active=activeRows.map(x=>({
+    ...x,
+    category:catalogById.get(x.sponsor_key)?.category||"Patrocinador"
+  }));
+
+  const activeKeys=new Set(active.map(x=>x.sponsor_key));
+  const slotsAvailable=Math.max(0,2-active.length);
+  const offers=slotsAvailable>0
+    ?sponsorOffersForDivision(career?.user_division||"D").filter(x=>!activeKeys.has(x.id))
+    :[];
+
+  return {
+    active,
+    activeCount:active.length,
+    maxActive:2,
+    slotsAvailable,
+    offers
+  };
 }
+
 async function paySponsorMonth(client,clubId,month){
-  const c=(await client.query(`SELECT * FROM sponsorship_contracts WHERE club_id=$1 AND status='active' ORDER BY id DESC LIMIT 1 FOR UPDATE`,[clubId])).rows[0];
-  if(!c)return null;
-  const amount=Number(c.monthly_amount||0);
-  if(amount>0)await addFinance(client,clubId,amount,"sponsor_monthly",`Patrocínio mensal — ${c.sponsor_name} — ${month}`);
-  const paid=Number(c.months_paid||0)+1;
-  const finished=paid>=Number(c.months_total||12);
-  await client.query(`UPDATE sponsorship_contracts SET months_paid=$2,status=$3 WHERE id=$1`,[c.id,paid,finished?"completed":"active"]);
-  if(finished)await client.query(`INSERT INTO club_events(club_id,event_type,title,description) VALUES($1,'sponsor','Contrato de patrocínio encerrado',$2)`,[clubId,`O contrato com ${c.sponsor_name} terminou. Novas propostas já podem ser avaliadas.`]);
-  return {name:c.sponsor_name,amount,finished};
+  const contracts=(await client.query(`
+    SELECT * FROM sponsorship_contracts
+    WHERE club_id=$1 AND status='active'
+    ORDER BY id
+    FOR UPDATE
+  `,[clubId])).rows;
+
+  if(!contracts.length)return {contracts:[],amount:0,finished:[]};
+
+  let total=0;
+  const finished=[];
+  const paidContracts=[];
+
+  for(const c of contracts){
+    const amount=Number(c.monthly_amount||0);
+    if(amount>0){
+      await addFinance(
+        client,clubId,amount,"sponsor_monthly",
+        `Patrocínio mensal — ${c.sponsor_name} — ${month}`
+      );
+      total+=amount;
+    }
+
+    const paid=Number(c.months_paid||0)+1;
+    const isFinished=paid>=Number(c.months_total||12);
+
+    await client.query(
+      `UPDATE sponsorship_contracts SET months_paid=$2,status=$3 WHERE id=$1`,
+      [c.id,paid,isFinished?"completed":"active"]
+    );
+
+    paidContracts.push({name:c.sponsor_name,amount,finished:isFinished});
+
+    if(isFinished){
+      finished.push(c.sponsor_name);
+      await client.query(
+        `INSERT INTO club_events(club_id,event_type,title,description)
+         VALUES($1,'sponsor','Contrato de patrocínio encerrado',$2)`,
+        [clubId,`O contrato com ${c.sponsor_name} terminou. Uma vaga de patrocínio foi liberada.`]
+      );
+    }
+  }
+
+  return {contracts:paidContracts,amount:total,finished};
 }
 function addOneMonth(dateStr){
   const d=new Date(`${dateStr}T12:00:00Z`);
@@ -4486,25 +4579,71 @@ app.post("/api/sponsorships/sign",auth,async(req,res,next)=>{
     if(!c)return res.status(404).json({error:"Clube não encontrado."});
     const career=await getCareer(c.id);
     if(!career)return res.status(400).json({error:"Carreira não encontrada."});
+
     const sponsorId=String(req.body.sponsorId||"");
     const offer=sponsorOffersForDivision(career.user_division).find(x=>x.id===sponsorId);
     if(!offer)return res.status(400).json({error:"Proposta de patrocínio inválida para sua divisão."});
+
     const result=await tx(async client=>{
-      const active=(await client.query(`SELECT 1 FROM sponsorship_contracts WHERE club_id=$1 AND status='active' LIMIT 1 FOR UPDATE`,[c.id])).rowCount>0;
-      if(active)throw Object.assign(new Error("Seu clube já possui um patrocinador ativo."),{status:409});
-      await client.query(`INSERT INTO sponsorship_contracts(club_id,sponsor_key,sponsor_name,division_signed,monthly_amount,signing_bonus,months_total,months_paid,status)
-        VALUES($1,$2,$3,$4,$5,$6,$7,0,'active')`,
-        [c.id,offer.id,offer.name,career.user_division,offer.monthly,offer.signing,offer.months]);
-      if(offer.signing>0)await addFinance(client,c.id,offer.signing,"sponsor_signing",`Luvas de patrocínio — ${offer.name}`);
-      await client.query(`INSERT INTO club_events(club_id,event_type,title,description) VALUES($1,'sponsor','Novo patrocinador',$2)`,
-        [c.id,`${offer.name} assinou por ${offer.months} meses: ${offer.monthly.toLocaleString("pt-BR")} moedas por mês.`]);
-      await publishNews(client,c.id,career.season_no,"negocios",`${offer.name} fecha patrocínio com ${c.name}`,`O acordo prevê ${offer.monthly.toLocaleString("pt-BR")} moedas por mês e luvas de ${offer.signing.toLocaleString("pt-BR")} moedas.`,2,"Diário do Futebol");
-      return {ok:true,name:offer.name,monthly:offer.monthly,signing:offer.signing};
+      // Trava o clube para impedir que requisições simultâneas ultrapassem o limite de 2 contratos.
+      await client.query(`SELECT id FROM clubs WHERE id=$1 FOR UPDATE`,[c.id]);
+
+      const active=(await client.query(`
+        SELECT * FROM sponsorship_contracts
+        WHERE club_id=$1 AND status='active'
+        ORDER BY id
+        FOR UPDATE
+      `,[c.id])).rows;
+
+      if(active.length>=2){
+        throw Object.assign(new Error("Seu clube já possui os dois espaços de patrocínio ocupados."),{status:409});
+      }
+      if(active.some(x=>x.sponsor_key===offer.id)){
+        throw Object.assign(new Error(`${offer.name} já é patrocinador ativo do clube.`),{status:409});
+      }
+
+      await client.query(`
+        INSERT INTO sponsorship_contracts(
+          club_id,sponsor_key,sponsor_name,division_signed,
+          monthly_amount,signing_bonus,months_total,months_paid,status
+        )
+        VALUES($1,$2,$3,$4,$5,$6,$7,0,'active')
+      `,[c.id,offer.id,offer.name,career.user_division,offer.monthly,offer.signing,offer.months]);
+
+      if(offer.signing>0){
+        await addFinance(
+          client,c.id,offer.signing,"sponsor_signing",
+          `Luvas de patrocínio — ${offer.name}`
+        );
+      }
+
+      await client.query(
+        `INSERT INTO club_events(club_id,event_type,title,description)
+         VALUES($1,'sponsor','Novo patrocinador',$2)`,
+        [c.id,`${offer.name} (${offer.category}) assinou por ${offer.months} meses: ${offer.monthly.toLocaleString("pt-BR")} moedas por mês.`]
+      );
+
+      await publishNews(
+        client,c.id,career.season_no,"negocios",
+        `${offer.name} fecha patrocínio com ${c.name}`,
+        `O clube passa a contar com ${offer.name}, da categoria ${offer.category}. O acordo prevê ${offer.monthly.toLocaleString("pt-BR")} moedas por mês e luvas de ${offer.signing.toLocaleString("pt-BR")} moedas.`,
+        2,"Diário do Futebol"
+      );
+
+      return {
+        ok:true,
+        name:offer.name,
+        category:offer.category,
+        monthly:offer.monthly,
+        signing:offer.signing,
+        activeCount:active.length+1,
+        maxActive:2
+      };
     });
+
     res.json(result);
   }catch(e){next(e)}
 });
-
 app.post("/api/press-conferences/:id/respond",auth,async(req,res,next)=>{
   try{
     const c=await userClub(req.user.id);
@@ -5203,8 +5342,9 @@ async function start(){
   await applyV25Migration();
   await applyV26Migration();
   await applyV27Migration();
+  await applyV29Migration();
   await seedRealMarketPlayers();
   await ensureMarket();
-  app.listen(PORT,"0.0.0.0",()=>console.log(`Dono do Clube v28 rodando na porta ${PORT}`));
+  app.listen(PORT,"0.0.0.0",()=>console.log(`Dono do Clube v29 rodando na porta ${PORT}`));
 }
 start().catch(e=>{console.error("Falha ao iniciar:",e);process.exit(1)});

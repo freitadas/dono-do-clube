@@ -380,3 +380,100 @@ repeating-linear-gradient(0deg,#1e7d43 0,#1e7d43 56px,#237f47 56px,#237f47 112px
   .custom-formation-controls{grid-template-columns:1fr 1fr 1fr}
   .custom-formation-controls label{min-width:0}
 }
+
+
+/* v29 — dois patrocínios e catálogo de marcas reais */
+.sponsor-card-v29{display:grid;gap:12px}
+.active-sponsors-grid{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:9px}
+.active-sponsor{
+  display:grid;
+  gap:7px;
+  padding:13px;
+  border-radius:14px;
+  border:1px solid #3a6249;
+  background:linear-gradient(135deg,#0a1710,#10261a);
+}
+.active-sponsor-slot{font-size:8px;font-weight:950;color:#8faf98;letter-spacing:.08em}
+.active-sponsor h3{margin:0;font-size:18px}
+.active-sponsor small{color:var(--muted)}
+.sponsor-market-head{display:flex;justify-content:space-between;align-items:end;gap:10px;margin-top:4px}
+.sponsor-market-head h3{margin:3px 0 0}
+.sponsor-category-legend{display:flex;gap:7px;flex-wrap:wrap}
+.sponsor-category-legend span{
+  padding:5px 7px;
+  border-radius:999px;
+  border:1px solid var(--line);
+  background:#09150e;
+  color:#a9b9ae;
+  font-size:8px;
+  font-weight:900;
+}
+.sponsor-offers-v29{
+  display:grid;
+  grid-template-columns:repeat(4,minmax(0,1fr));
+  gap:8px;
+}
+.sponsor-offers-v29 .sponsor-offer{
+  min-height:122px;
+  display:grid;
+  justify-items:start;
+  align-content:start;
+  gap:5px;
+  text-align:left;
+  padding:11px;
+}
+.sponsor-offers-v29 .sponsor-offer b{font-size:15px}
+.sponsor-offers-v29 .sponsor-offer em{
+  font-size:8px;
+  font-style:normal;
+  color:#8ea295;
+  font-weight:800;
+}
+.sponsor-offers-v29 .sponsor-offer>span:not(.sponsor-brand-icon){
+  color:#bdf2cc;
+  font-size:10px;
+  font-weight:900;
+}
+.sponsor-offers-v29 .sponsor-offer small{color:#b1bcb4}
+.sponsor-brand-icon{font-size:20px}
+.sponsor-disclaimer{
+  margin:0;
+  padding:8px 10px;
+  border-radius:9px;
+  background:#101610;
+  border:1px solid #313831;
+  color:#8e9a90;
+  font-size:8px;
+  line-height:1.4;
+}
+.sponsor-limit-note{
+  padding:12px;
+  border-radius:11px;
+  background:#132017;
+  border:1px solid #35513d;
+  color:#b5c8ba;
+  font-size:10px;
+}
+@media(max-width:1000px){
+  .sponsor-offers-v29{grid-template-columns:repeat(3,minmax(0,1fr))}
+}
+@media(max-width:760px){
+  .active-sponsors-grid{grid-template-columns:1fr}
+  .sponsor-offers-v29{grid-template-columns:repeat(2,minmax(0,1fr))}
+}
+@media(max-width:480px){
+  .sponsor-offers-v29{grid-template-columns:1fr}
+  .sponsor-market-head{align-items:start;flex-direction:column}
+}
+
+.active-sponsor-category{
+  display:inline-flex;
+  width:max-content;
+  padding:4px 6px;
+  border-radius:999px;
+  background:#17251b;
+  border:1px solid #334b3a;
+  color:#9fb3a5;
+  font-size:8px;
+  font-weight:900;
+}
