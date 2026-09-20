@@ -1,8 +1,8 @@
 {
   "name": "dono-do-clube",
-  "version": "30.0.0",
+  "version": "31.0.0",
   "private": true,
-  "description": "Dono do Clube com coletivas de imprensa menos frequentes e reservadas a eliminações, finais, jogos decisivos e goleadas excepcionais.",
+  "description": "Dono do Clube com painel visível de jogadores lesionados no início, titulares e elenco.",
   "main": "server.js",
   "scripts": {
     "start": "node server.js"

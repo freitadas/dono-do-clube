@@ -801,3 +801,25 @@ Critério mais restrito para goleadas com coletiva:
 Além disso, coletivas que não sejam de eliminação ficam limitadas a **3 por temporada**.
 
 As coletivas de eliminação não entram nesse limite, para que uma queda importante de competição continue tendo repercussão.
+
+
+## Jogadores lesionados visíveis — v31
+
+Foi adicionado um painel específico de **Departamento Médico**.
+
+Agora os jogadores lesionados aparecem claramente em:
+- **Início**;
+- **Titulares**;
+- **Elenco**.
+
+Para cada lesionado, o jogo mostra:
+- nome;
+- posição;
+- overall;
+- se era titular;
+- físico;
+- moral;
+- quantidade de jogos restantes da lesão;
+- previsão de retorno em jogos.
+
+Quando não houver ninguém lesionado, o jogo informa que todo o elenco está disponível.

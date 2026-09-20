@@ -843,6 +843,47 @@ function newsHomeCard(){
   </section>`;
 }
 
+function injuredPlayersPanel(compact=false){
+  const injured=(state.players||[])
+    .filter(p=>Number(p.injury_games||0)>0)
+    .sort((x,y)=>Number(y.injury_games||0)-Number(x.injury_games||0)||Number(y.rating||0)-Number(x.rating||0));
+
+  if(!injured.length){
+    return compact
+      ?`<div class="injury-clear">✅ Nenhum jogador lesionado.</div>`
+      :`<section class="card injury-panel injury-panel-clear">
+          <div class="section-title"><div><div class="kicker">DEPARTAMENTO MÉDICO</div><h2>Jogadores lesionados</h2></div><span class="badge">0</span></div>
+          <p class="muted">Todo o elenco está disponível fisicamente.</p>
+        </section>`;
+  }
+
+  return `<section class="card injury-panel ${compact?"compact":""}">
+    <div class="section-title">
+      <div><div class="kicker">🩹 DEPARTAMENTO MÉDICO</div><h2>Jogadores lesionados</h2></div>
+      <span class="badge red">${injured.length}</span>
+    </div>
+    <div class="injury-list">
+      ${injured.map(p=>`<article class="injury-player">
+        <div class="injury-player-main">
+          <span class="injury-rating">${p.rating}</span>
+          <div>
+            <b>${esc(p.name)}</b>
+            <small>${esc(p.role||posName(p.position))} · ${p.age} anos${p.is_starter?" · titular":""}</small>
+          </div>
+        </div>
+        <div class="injury-time">
+          <strong>🩹 ${Number(p.injury_games)} jogo(s)</strong>
+          <span>${Number(p.injury_games)===1?"Retorno previsto após o próximo jogo":`Retorno previsto em ${Number(p.injury_games)} jogos`}</span>
+        </div>
+        <div class="injury-condition">
+          <span>Físico <b>${p.fitness??100}%</b></span>
+          <span>Moral <b>${p.morale??70}</b></span>
+        </div>
+      </article>`).join("")}
+    </div>
+  </section>`;
+}
+
 function homeView(){
   const c=state.club,car=state.competitions.career,pos=userPosition();
   let action="";
@@ -872,6 +913,7 @@ function homeView(){
       <div class="stat"><small>Elenco</small><b>${tired} cansados · ${injured} lesionados</b></div>
     </div>
   </section>
+  ${injuredPlayersPanel(true)}
   ${transferBanBanner()}
   ${copaQuickCard()}
   ${superWorldQuickCard()}
@@ -948,6 +990,8 @@ function startersView(){
 
     <div class="lineup-tip">💡 Escolha uma formação pronta ou use <b>Formação personalizada</b>. Na personalizada, o goleiro é fixo e você distribui os outros 10 jogadores entre defesa, meio e ataque.</div>
 
+    ${injuredPlayersPanel(true)}
+
     <div id="starterPitchWrap">${formationPitch(state.club.formation,true)}</div>
 
     <div class="starter-summary">
@@ -1005,6 +1049,7 @@ function squadView(){
     </div>
     ${customFormationBuilder("squad",state.club.formation)}
     <p class="muted">O campo abaixo mostra sua escalação. Há formações prontas e uma opção personalizada. Use <b>Escalar melhores</b> para selecionar automaticamente os maiores overalls disponíveis na formação escolhida.</p>
+    ${injuredPlayersPanel()}
     <div id="pitchWrap">${formationPitch(state.club.formation)}</div>
     <div class="legend"><span class="good-dot"></span> Bom físico <span class="warn-dot"></span> Cansado <span class="bad-dot"></span> Muito cansado/lesionado</div>
     <div class="players" style="margin-top:16px">${state.players.map(playerCard).join("")}</div>

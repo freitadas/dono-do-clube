@@ -477,3 +477,54 @@ repeating-linear-gradient(0deg,#1e7d43 0,#1e7d43 56px,#237f47 56px,#237f47 112px
   font-size:8px;
   font-weight:900;
 }
+
+
+/* v31 — painel de jogadores lesionados */
+.injury-panel{margin:12px 0}
+.injury-panel.compact{padding:12px}
+.injury-panel-clear{border-color:#355b43}
+.injury-clear{
+  margin:10px 0 12px;
+  padding:9px 11px;
+  border:1px solid #315843;
+  border-radius:10px;
+  background:#0d2015;
+  color:#bce5c8;
+  font-size:10px;
+  font-weight:900;
+}
+.injury-list{display:grid;gap:8px}
+.injury-player{
+  display:grid;
+  grid-template-columns:minmax(0,1.4fr) minmax(160px,.9fr) auto;
+  gap:12px;
+  align-items:center;
+  padding:10px 11px;
+  border:1px solid #67363a;
+  border-radius:12px;
+  background:linear-gradient(135deg,#241214,#160d0e);
+}
+.injury-player-main{display:flex;gap:9px;align-items:center;min-width:0}
+.injury-player-main>div{display:grid;gap:2px;min-width:0}
+.injury-player-main b{font-size:12px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.injury-player-main small{font-size:9px;color:#c4aaa9}
+.injury-rating{
+  width:34px;height:34px;border-radius:10px;
+  display:grid;place-items:center;
+  background:#35191c;border:1px solid #7b3e43;
+  font-weight:950;color:#fff
+}
+.injury-time{display:grid;gap:2px}
+.injury-time strong{font-size:10px;color:#ffb8bc}
+.injury-time span{font-size:8px;color:#caa8aa}
+.injury-condition{display:flex;gap:7px;flex-wrap:wrap;justify-content:flex-end}
+.injury-condition span{
+  padding:5px 7px;border-radius:8px;
+  background:#120b0c;border:1px solid #4b292c;
+  font-size:8px;color:#c9b4b5
+}
+.injury-condition b{color:#fff}
+@media(max-width:720px){
+  .injury-player{grid-template-columns:1fr}
+  .injury-condition{justify-content:flex-start}
+}
