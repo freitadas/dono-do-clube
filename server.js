@@ -6851,10 +6851,17 @@ app.get("/api/transfers/search",auth,async(req,res,next)=>{
     const userDiv=career?.user_division||"D";
     const profile=marketProfile(userDiv);
     const window=transferWindowInfo(career?.data?.calendar?.date);
-    const staff=await staffLevels(pool,c.id);
-    const scoutLevel=Number(staff.levels.SCOUT||1);
-    const reportRows=(await q(`SELECT target_player_id FROM scout_reports WHERE club_id=$1`,[c.id])).rows;
-    const scoutedIds=new Set(reportRows.map(x=>String(x.target_player_id)));
+    // Pesquisa de mercado deve continuar funcionando mesmo em bases criadas antes do pacote de realismo.
+    let scoutLevel=1;
+    let scoutedIds=new Set();
+    try{
+      const staff=await staffLevels(pool,c.id);
+      scoutLevel=Number(staff.levels.SCOUT||1);
+      const reportRows=(await q(`SELECT target_player_id FROM scout_reports WHERE club_id=$1`,[c.id])).rows;
+      scoutedIds=new Set(reportRows.map(x=>String(x.target_player_id)));
+    }catch(_){
+      // Compatibilidade com saves antigos: mercado básico permanece disponível.
+    }
 
     const rows=(await q(`
       SELECT p.*,
