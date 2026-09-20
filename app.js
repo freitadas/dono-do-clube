@@ -8,7 +8,7 @@ const state={
   trophies:[],incomingOffers:[],calendar:null,sponsorship:{active:null,offers:[]},marketProfile:null,
   mediaNews:[],pendingPress:null,saf:{active:false,offers:[],debtRisk:false},
   careers:[],maxCareers:10,lineupDirty:false,
-  boardMessages:[],boardExpectation:null,
+  boardMessages:[],boardExpectation:null,teamPerformance:null,rotationAdvice:null,
   activeType:null,playerCareer:null,playerData:null,countries:{},creationMode:"club",playerView:"home",
   playerStarterClubs:[],
   view:"home",authMode:"login",competitionTab:"STATE",roundByDiv:{A:1,B:1,C:1,D:1}
@@ -347,6 +347,7 @@ function playerCard(p){
       <span>J <b>${p.appearances}</b></span><span>G <b>${p.goals}</b></span>
       <span>A <b>${p.assists}</b></span><span>Sal. <b>${Number(p.salary||0).toLocaleString("pt-BR")}</b></span>
       <span>Contrato <b>${p.contract_seasons||1}T</b></span><span>Rescisão <b>${severance.toLocaleString("pt-BR")}</b></span>
+      ${Number(p.consecutive_starts||0)>=2?`<span>Carga <b>${p.consecutive_starts} jogos seguidos</b></span>`:""}
     </div>
     ${p.transfer_listed?`<div class="sale-badge">À VENDA</div>`:""}
     <div class="player-actions">
@@ -606,19 +607,157 @@ function formationPitch(formation,interactive=false){
     <div class="pitch-caption">${esc(formationDisplayName(formation))} · ${starters.length}/11 titulares</div>
   </div>`;
 }
-function suggestRotation(formation){
-  const q=formationQuota(formation);
-  const chosen=[];
-  for(const pos of ["GK","DEF","MID","ATT"]){
-    chosen.push(...state.players.filter(p=>p.position===pos&&Number(p.injury_games||0)<=0).sort((a,b)=>fitScore(b)-fitScore(a)).slice(0,q[pos]));
+function rotationContext(){
+  const car=state.competitions?.career;
+  if(!car)return {key:"normal",label:"Jogo normal",maxChanges:4};
+
+  if(car.phase==="LIBERTADORES"){
+    const stage=state.competitions?.libertadores?.stage;
+    if(["QF","SF","FINAL"].includes(stage))return {key:"decisive",label:"Jogo decisivo continental",maxChanges:2};
+    return {key:"normal",label:"Libertadores",maxChanges:3};
   }
-  if(chosen.length!==11)return false;
-  state.players.forEach(p=>p.is_starter=chosen.some(x=>String(x.id)===String(p.id)));
-  state.lineupDirty=true;
-  return true;
+  if(car.phase==="CHAMPIONS"){
+    const stage=state.competitions?.championsLeague?.stage;
+    if(["QF","SF","FINAL"].includes(stage))return {key:"decisive",label:"Jogo decisivo da Champions",maxChanges:2};
+    return {key:"normal",label:"Champions League",maxChanges:3};
+  }
+  if(car.phase==="CLUB_WORLD_CUP"){
+    const stage=state.competitions?.clubWorldCup?.stage;
+    if(["QF","SF","FINAL"].includes(stage))return {key:"decisive",label:"Jogo decisivo do Mundial",maxChanges:2};
+    return {key:"normal",label:"Mundial de Clubes",maxChanges:3};
+  }
+  if(car.phase==="STATE"){
+    const st=state.competitions?.state?.stage;
+    if(["SF","FINAL"].includes(st))return {key:"decisive",label:"Mata-mata do Estadual",maxChanges:2};
+    return {key:"rotation",label:"Fase inicial do Estadual",maxChanges:5};
+  }
+  if(car.phase==="NATIONAL"){
+    const round=Number(car.current_round||1);
+    if(round>=34)return {key:"decisive",label:"Reta final da liga",maxChanges:2};
+    if(round<=10)return {key:"rotation",label:"Início de temporada",maxChanges:5};
+  }
+
+  return {key:"normal",label:"Jogo normal",maxChanges:4};
 }
 
+function rotationPlayerScore(p,contextKey){
+  const rating=Number(p.rating||0);
+  const fitness=Number(p.fitness??100);
+  const morale=Number(p.morale??70);
+  const streak=Number(p.consecutive_starts||0);
+
+  if(contextKey==="decisive"){
+    return rating*1.00+fitness*.08+morale*.03-Math.max(0,streak-5)*1.4;
+  }
+  if(contextKey==="rotation"){
+    return rating*.58+fitness*.32+morale*.08-Math.max(0,streak-2)*3.2;
+  }
+  return rating*.76+fitness*.20+morale*.05-Math.max(0,streak-3)*2.2;
+}
+
+function shouldRotateStarter(starter,reserve,context){
+  const fit=Number(starter.fitness??100);
+  const reserveFit=Number(reserve.fitness??100);
+  const streak=Number(starter.consecutive_starts||0);
+  const ratingGap=Number(starter.rating||0)-Number(reserve.rating||0);
+
+  if(starter.position==="GK"){
+    if(fit<45&&reserveFit>=70&&ratingGap<=6)return "goleiro muito cansado";
+    if(streak>=8&&fit<68&&reserveFit>=80&&ratingGap<=4)return "sequência muito longa do goleiro";
+    return null;
+  }
+
+  if(context.key==="decisive"){
+    if(fit<50&&reserveFit>=72&&ratingGap<=5)return "físico crítico";
+    if(streak>=6&&fit<64&&reserveFit>=80&&ratingGap<=3)return "desgaste acumulado";
+    return null;
+  }
+
+  if(context.key==="rotation"){
+    if(fit<76&&reserveFit>=78&&ratingGap<=8)return "preservação física";
+    if(streak>=3&&reserveFit>=82&&ratingGap<=7)return `${streak} jogos seguidos`;
+    if(reserveFit-fit>=20&&ratingGap<=6)return "reserva muito mais descansado";
+    return null;
+  }
+
+  if(fit<62&&reserveFit>=76&&ratingGap<=7)return "físico baixo";
+  if(streak>=4&&fit<74&&reserveFit>=80&&ratingGap<=6)return `${streak} jogos seguidos`;
+  if(reserveFit-fit>=22&&ratingGap<=5)return "diferença grande de condição física";
+  return null;
+}
+
+function suggestRotation(formation){
+  const q=formationQuota(formation);
+  const healthy=state.players.filter(p=>Number(p.injury_games||0)<=0);
+  const context=rotationContext();
+  const chosen=[];
+  const changes=[];
+
+  for(const pos of ["GK","DEF","MID","ATT"]){
+    const quota=Number(q[pos]||0);
+    const current=healthy
+      .filter(p=>p.position===pos&&p.is_starter)
+      .sort((x,y)=>rotationPlayerScore(y,context.key)-rotationPlayerScore(x,context.key))
+      .slice(0,quota);
+
+    const reserves=healthy
+      .filter(p=>p.position===pos&&!current.some(c=>String(c.id)===String(p.id)))
+      .sort((x,y)=>rotationPlayerScore(y,context.key)-rotationPlayerScore(x,context.key));
+
+    const picked=[...current];
+
+    // Completa a formação caso já esteja faltando titular em alguma posição.
+    while(picked.length<quota&&reserves.length){
+      const reserve=reserves.shift();
+      picked.push(reserve);
+      changes.push({in:reserve.name,out:null,reason:"vaga livre na formação"});
+    }
+
+    // Substituições reais de rodízio: preservam qualidade e consideram desgaste.
+    if(pos!=="GK"||context.key!=="decisive"){
+      const candidates=[...picked].sort((x,y)=>
+        Number(x.fitness??100)-Number(y.fitness??100) ||
+        Number(y.consecutive_starts||0)-Number(x.consecutive_starts||0)
+      );
+
+      for(const starter of candidates){
+        if(changes.filter(x=>x.out).length>=context.maxChanges)break;
+        const reserve=reserves[0];
+        if(!reserve)break;
+
+        const reason=shouldRotateStarter(starter,reserve,context);
+        if(!reason)continue;
+
+        const idx=picked.findIndex(p=>String(p.id)===String(starter.id));
+        if(idx<0)continue;
+
+        picked[idx]=reserve;
+        reserves.shift();
+        changes.push({in:reserve.name,out:starter.name,reason});
+      }
+    }
+
+    chosen.push(...picked);
+  }
+
+  if(chosen.length!==11)return false;
+
+  state.players.forEach(p=>p.is_starter=chosen.some(x=>String(x.id)===String(p.id)));
+  state.lineupDirty=true;
+
+  const rested=changes.filter(x=>x.out);
+  state.rotationAdvice={
+    context:context.label,
+    changes:rested,
+    total:rested.length,
+    message:rested.length
+      ?`${rested.length} troca(s) sugerida(s) para equilibrar rendimento e desgaste.`
+      :"O XI atual está em condição adequada; não há necessidade de rodízio agora."
+  };
+  return true;
+}
 function rebalanceForFormation(formation){
+  state.rotationAdvice=null;
   const q=formationQuota(formation);
   const chosen=[];
 
@@ -648,6 +787,7 @@ function compatibleReserves(starter){
 }
 
 function swapStarter(starterId,reserveId){
+  state.rotationAdvice=null;
   const starter=state.players.find(p=>String(p.id)===String(starterId));
   const reserve=state.players.find(p=>String(p.id)===String(reserveId));
   if(!starter||!reserve)return false;
@@ -660,6 +800,7 @@ function swapStarter(starterId,reserveId){
 }
 
 function selectBestSquad(formation){
+  state.rotationAdvice=null;
   const q=formationQuota(formation);
   const chosen=[];
 
@@ -988,7 +1129,12 @@ function startersView(){
 
     ${customFormationBuilder("starter",state.club.formation)}
 
-    <div class="lineup-tip">💡 Escolha uma formação pronta ou use <b>Formação personalizada</b>. Na personalizada, o goleiro é fixo e você distribui os outros 10 jogadores entre defesa, meio e ataque.</div>
+    <div class="lineup-tip">💡 O rodízio inteligente leva em conta físico, jogos consecutivos, nível do reserva e importância da partida. Em decisão, ele troca menos; em jogos menos críticos, poupa mais.</div>
+
+    ${state.rotationAdvice?`<div class="rotation-advice compact">
+      <div><div class="kicker">PLANO DE RODÍZIO</div><b>${esc(state.rotationAdvice.context)}</b><span>${esc(state.rotationAdvice.message)}</span></div>
+      ${state.rotationAdvice.changes?.length?`<div class="rotation-changes">${state.rotationAdvice.changes.map(x=>`<span><b>${esc(x.out)}</b> descansa · entra <b>${esc(x.in)}</b> <small>${esc(x.reason)}</small></span>`).join("")}</div>`:""}
+    </div>`:""}
 
     ${injuredPlayersPanel(true)}
 
@@ -1010,7 +1156,7 @@ function startersView(){
         <div class="starter-number">${p.rating}</div>
         <div class="starter-info">
           <b>${esc(p.name)}</b>
-          <span>${esc(p.role||posName(p.position))} · ${p.age} anos</span>
+          <span>${esc(p.role||posName(p.position))} · ${p.age} anos${Number(p.consecutive_starts||0)>=2?` · ${p.consecutive_starts} jogos seguidos`:""}</span>
         </div>
         <div class="starter-condition">
           <span>Físico <b>${p.fitness??100}%</b></span>
@@ -1048,7 +1194,11 @@ function squadView(){
       </div>
     </div>
     ${customFormationBuilder("squad",state.club.formation)}
-    <p class="muted">O campo abaixo mostra sua escalação. Há formações prontas e uma opção personalizada. Use <b>Escalar melhores</b> para selecionar automaticamente os maiores overalls disponíveis na formação escolhida.</p>
+    <p class="muted">O rodízio agora considera físico, sequência de jogos, qualidade do reserva e importância da próxima partida. Em jogos decisivos, o sistema preserva mais os titulares; em partidas menos críticas, poupa mais.</p>
+    ${state.rotationAdvice?`<div class="rotation-advice">
+      <div><div class="kicker">PLANO DE RODÍZIO</div><b>${esc(state.rotationAdvice.context)}</b><span>${esc(state.rotationAdvice.message)}</span></div>
+      ${state.rotationAdvice.changes?.length?`<div class="rotation-changes">${state.rotationAdvice.changes.map(x=>`<span><b>${esc(x.out)}</b> descansa · entra <b>${esc(x.in)}</b> <small>${esc(x.reason)}</small></span>`).join("")}</div>`:""}
+    </div>`:""}
     ${injuredPlayersPanel()}
     <div id="pitchWrap">${formationPitch(state.club.formation)}</div>
     <div class="legend"><span class="good-dot"></span> Bom físico <span class="warn-dot"></span> Cansado <span class="bad-dot"></span> Muito cansado/lesionado</div>
@@ -1064,6 +1214,13 @@ function marketView(){
       <div class="finance-chips"><span class="coins">Caixa ● ${Number(state.club.coins).toLocaleString("pt-BR")}</span><span class="badge red">Folha mensal ${Number(state.finance?.wages||0).toLocaleString("pt-BR")}</span></div>
     </div>
     ${transferBanBanner()}
+    ${state.teamPerformance?`<div class="performance-market ${state.teamPerformance.hot?"hot":""} ${state.teamPerformance.elite?"elite":""}">
+      <div><div class="kicker">VALORIZAÇÃO DO ELENCO</div><b>${esc(state.teamPerformance.label)}</b>
+      <span>${state.teamPerformance.games} jogos analisados · ${state.teamPerformance.wins} vitórias · ${state.teamPerformance.position?`${state.teamPerformance.position}º na tabela · `:""}índice ${state.teamPerformance.score}/100</span></div>
+      <p>${state.teamPerformance.hot
+        ?"O bom desempenho está atraindo outros clubes. Titulares e jogadores decisivos têm mais chance de receber propostas e podem valer um pouco mais."
+        :"Quando o time entrar em grande fase, o interesse de outros clubes pelos seus jogadores aumenta automaticamente."}</p>
+    </div>`:""}
     <section class="incoming-section">
       <div class="section-title"><div><div class="kicker">PROPOSTAS RECEBIDAS</div><h3>Clubes interessados nos seus jogadores</h3></div><button id="checkOffers" class="secondary">Buscar novas propostas</button></div>
       <div id="incomingOffers">${incomingOfferCards()}</div>

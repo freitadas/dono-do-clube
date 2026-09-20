@@ -32,6 +32,7 @@ const V25_MIGRATION_KEY = "v25_starting_xi_repair_20260919";
 const V26_MIGRATION_KEY = "v26_news_press_saf_20260919";
 const V27_MIGRATION_KEY = "v27_board_media_press_lineup_20260919";
 const V29_MIGRATION_KEY = "v29_two_real_sponsors_20260919";
+const V32_MIGRATION_KEY = "v32_realistic_rotation_performance_offers_20260919";
 const MAX_CAREERS_PER_USER = 10;
 const TRANSFER_BAN_THRESHOLD = -10000;
 const competitionLocks = new Set();
@@ -134,6 +135,7 @@ async function initDb(){
       yellow_cards INTEGER NOT NULL DEFAULT 0,
       red_cards INTEGER NOT NULL DEFAULT 0,
       clean_sheets INTEGER NOT NULL DEFAULT 0,
+      consecutive_starts INTEGER NOT NULL DEFAULT 0,
       created_at TIMESTAMPTZ NOT NULL DEFAULT NOW()
     );
 
@@ -382,6 +384,7 @@ async function initDb(){
     `ALTER TABLE players ADD COLUMN IF NOT EXISTS is_real_name BOOLEAN NOT NULL DEFAULT FALSE`,
     `ALTER TABLE players ADD COLUMN IF NOT EXISTS real_player_key TEXT`,
     `ALTER TABLE players ADD COLUMN IF NOT EXISTS nationality_code TEXT`,
+    `ALTER TABLE players ADD COLUMN IF NOT EXISTS consecutive_starts INTEGER NOT NULL DEFAULT 0`,
     `ALTER TABLE careers ADD COLUMN IF NOT EXISTS manual_saved_at TIMESTAMPTZ`,
     `ALTER TABLE careers ADD COLUMN IF NOT EXISTS country_code TEXT NOT NULL DEFAULT 'BR'`
   ]) await q(sql);
@@ -698,6 +701,16 @@ async function applyV29Migration(){
     await c.query(`DROP INDEX IF EXISTS idx_sponsorship_active_club`);
     await c.query(`CREATE INDEX IF NOT EXISTS idx_sponsorship_club_status ON sponsorship_contracts(club_id,status)`);
     await c.query(`INSERT INTO app_meta(key,value) VALUES($1,$2)`,[V29_MIGRATION_KEY,new Date().toISOString()]);
+  });
+}
+
+async function applyV32Migration(){
+  const done=await q(`SELECT 1 FROM app_meta WHERE key=$1`,[V32_MIGRATION_KEY]);
+  if(done.rowCount)return;
+  await tx(async c=>{
+    await c.query(`ALTER TABLE players ADD COLUMN IF NOT EXISTS consecutive_starts INTEGER NOT NULL DEFAULT 0`);
+    await c.query(`UPDATE players SET consecutive_starts=0 WHERE consecutive_starts IS NULL`);
+    await c.query(`INSERT INTO app_meta(key,value) VALUES($1,$2)`,[V32_MIGRATION_KEY,new Date().toISOString()]);
   });
 }
 
@@ -1529,7 +1542,8 @@ function eventsFor(clubId,startersList,goals){
 }
 async function applyStatsAndCondition(client,clubId,startersList,conceded,events,result){
   const selectedIds=startersList.map(p=>p.id);
-  await client.query(`UPDATE players SET appearances=appearances+1 WHERE id=ANY($1::bigint[])`,[selectedIds]);
+  await client.query(`UPDATE players SET consecutive_starts=0 WHERE club_id=$1 AND NOT(id=ANY($2::bigint[]))`,[clubId,selectedIds]);
+  await client.query(`UPDATE players SET appearances=appearances+1,consecutive_starts=consecutive_starts+1 WHERE id=ANY($1::bigint[])`,[selectedIds]);
   if(conceded===0){
     const gk=startersList.find(p=>p.position==="GK");
     if(gk)await client.query(`UPDATE players SET clean_sheets=clean_sheets+1 WHERE id=$1`,[gk.id]);
@@ -1909,32 +1923,200 @@ async function maybeRecordDivisionTrophy(client,career,ownerId){
   const table=sortEntries(career.data.divisions?.[div]?.entries||[]);
   if(table[0]&&String(table[0].clubId)===String(ownerId))await recordTrophy(client,ownerId,career.season_no,`LIGA_${div}`,`Campeão — ${leagueName(career.country_code||"BR",div)}`);
 }
-async function generateIncomingOffers(client,clubId,{force=false,playerId=null}={}){
-  const pending=Number((await client.query(`SELECT COUNT(*)::int count FROM transfer_offers WHERE selling_club_id=$1 AND status='pending'`,[clubId])).rows[0].count||0);
+async function teamPerformanceProfile(client,clubId,career=null){
+  if(!career){
+    career=(await client.query(`SELECT * FROM careers WHERE owner_club_id=$1`,[clubId])).rows[0]||null;
+  }
+
+  const recent=(await client.query(`
+    SELECT user_goals,opponent_goals,played_at
+    FROM matches
+    WHERE user_club_id=$1
+    ORDER BY played_at DESC,id DESC
+    LIMIT 8
+  `,[clubId])).rows;
+
+  let wins=0,draws=0,losses=0,gf=0,ga=0;
+  for(const m of recent){
+    const ug=Number(m.user_goals||0),og=Number(m.opponent_goals||0);
+    gf+=ug;ga+=og;
+    if(ug>og)wins++;
+    else if(ug===og)draws++;
+    else losses++;
+  }
+
+  const games=recent.length;
+  const formPoints=wins*3+draws;
+  const formPct=games?formPoints/(games*3):0;
+
+  let entries=[];
+  if(career?.phase==="STATE"&&career?.data?.state?.entries?.length){
+    entries=sortEntries(career.data.state.entries);
+  }else{
+    entries=sortEntries(career?.data?.divisions?.[career?.user_division||"D"]?.entries||[]);
+  }
+
+  const idx=entries.findIndex(e=>String(e.clubId)===String(clubId));
+  const position=idx>=0?idx+1:null;
+  let tableFactor=.45;
+  if(position===1)tableFactor=1;
+  else if(position!=null&&position<=4)tableFactor=.88;
+  else if(position!=null&&position<=8)tableFactor=.68;
+  else if(position!=null&&position<=12)tableFactor=.52;
+
+  const titleCount=Number((await client.query(
+    `SELECT COUNT(*)::int count FROM club_trophies WHERE club_id=$1 AND season_no=$2`,
+    [clubId,Number(career?.season_no||1)]
+  )).rows[0]?.count||0);
+
+  const goalDiffPerGame=games?(gf-ga)/games:0;
+  const gdFactor=clamp((goalDiffPerGame+1.5)/3,0,1);
+  const score=clamp(Math.round(formPct*55+tableFactor*30+gdFactor*10+Math.min(10,titleCount*5)),0,100);
+
+  const hot=games>=4&&score>=70;
+  const elite=games>=5&&score>=84;
+  const label=elite?"Fase excelente":hot?"Grande fase":score>=55?"Boa fase":"Momento normal";
+
+  return {
+    score,label,hot,elite,games,wins,draws,losses,gf,ga,position,titleCount,
+    unbeaten:games>=4&&losses===0,
+    winRate:games?Math.round((wins/games)*100):0
+  };
+}
+
+async function generateIncomingOffers(client,clubId,{force=false,playerId=null,performanceAware=true}={}){
+  const pending=Number((await client.query(
+    `SELECT COUNT(*)::int count FROM transfer_offers WHERE selling_club_id=$1 AND status='pending'`,
+    [clubId]
+  )).rows[0].count||0);
+
   if(pending>=5&&!force)return 0;
+
+  const career=(await client.query(`SELECT * FROM careers WHERE owner_club_id=$1`,[clubId])).rows[0]||null;
+  const performance=performanceAware?await teamPerformanceProfile(client,clubId,career):null;
+
   let players;
   if(playerId){
     players=(await client.query(`SELECT * FROM players WHERE id=$1 AND club_id=$2`,[playerId,clubId])).rows;
   }else{
-    players=(await client.query(`SELECT * FROM players WHERE club_id=$1 ORDER BY transfer_listed DESC,rating DESC`,[clubId])).rows;
+    players=(await client.query(`
+      SELECT *
+      FROM players
+      WHERE club_id=$1
+      ORDER BY transfer_listed DESC,is_starter DESC,rating DESC,goals DESC,assists DESC
+    `,[clubId])).rows;
   }
   if(!players.length)return 0;
-  const already=(await client.query(`SELECT player_id FROM transfer_offers WHERE selling_club_id=$1 AND status='pending'`,[clubId])).rows.map(r=>String(r.player_id));
-  const loaned=(await client.query(`SELECT player_id FROM player_loans WHERE borrowing_club_id=$1 AND status='active'`,[clubId])).rows.map(r=>String(r.player_id));
-  const eligible=players.filter(p=>!already.includes(String(p.id))&&!loaned.includes(String(p.id))&&(p.transfer_listed||force||Math.random()<.18));
+
+  const already=(await client.query(
+    `SELECT player_id FROM transfer_offers WHERE selling_club_id=$1 AND status='pending'`,
+    [clubId]
+  )).rows.map(r=>String(r.player_id));
+
+  const loaned=(await client.query(
+    `SELECT player_id FROM player_loans WHERE borrowing_club_id=$1 AND status='active'`,
+    [clubId]
+  )).rows.map(r=>String(r.player_id));
+
+  const chance=force ? 1 : (performance?.elite ? 0.66 : performance?.hot ? 0.42 : 0.16);
+  const eligible=players.filter(p=>{
+    if(already.includes(String(p.id))||loaned.includes(String(p.id)))return false;
+    if(p.transfer_listed||force)return true;
+
+    // Em grande fase, titulares e jogadores decisivos chamam mais atenção.
+    let playerChance=chance;
+    if(p.is_starter)playerChance+=performance?.hot?.12:.04;
+    if(Number(p.goals||0)+Number(p.assists||0)>=8)playerChance+=.10;
+    if(Number(p.rating||0)>=78)playerChance+=.08;
+    return Math.random()<Math.min(.88,playerChance);
+  });
+
   if(!eligible.length)return 0;
-  const seller=(await client.query(`SELECT country_code FROM clubs WHERE id=$1`,[clubId])).rows[0];
-  const buyers=(await client.query(`SELECT id,name,base_rating FROM clubs WHERE is_ai=TRUE AND country_code=$1 ORDER BY RANDOM() LIMIT 20`,[seller?.country_code||"BR"])).rows;
+
+  const seller=(await client.query(
+    `SELECT country_code,team_rating,base_rating FROM clubs WHERE id=$1`,
+    [clubId]
+  )).rows[0];
+
+  const countries=performance?.elite
+    ?[...VALID_COUNTRIES]
+    :[seller?.country_code||"BR"];
+
+  const buyers=(await client.query(`
+    SELECT id,name,base_rating,country_code,national_seed_division
+    FROM clubs
+    WHERE is_ai=TRUE
+      AND club_kind='national'
+      AND country_code=ANY($1::text[])
+      AND id<>$2
+    ORDER BY
+      CASE WHEN base_rating >= $3 THEN 0 ELSE 1 END,
+      base_rating DESC,
+      RANDOM()
+    LIMIT 35
+  `,[countries,clubId,Math.max(60,Number(seller?.team_rating||seller?.base_rating||64)-2)])).rows;
+
   if(!buyers.length)return 0;
+
+  const maxNew=force?2:performance?.elite?2:1;
+  const sortedEligible=[...eligible].sort((a,b)=>{
+    const aScore=(a.transfer_listed?25:0)+(a.is_starter?15:0)+Number(a.rating||0)+(Number(a.goals||0)+Number(a.assists||0))*1.2;
+    const bScore=(b.transfer_listed?25:0)+(b.is_starter?15:0)+Number(b.rating||0)+(Number(b.goals||0)+Number(b.assists||0))*1.2;
+    return bScore-aScore;
+  });
+
   let created=0;
-  for(const p of shuffle(eligible).slice(0,force?2:1)){
-    const buyer=buyers.find(b=>String(b.id)!==String(clubId));if(!buyer)continue;
+  const createdOffers=[];
+
+  for(const p of sortedEligible.slice(0,maxNew)){
+    const stronger=buyers.filter(b=>Number(b.base_rating||0)>=Number(seller?.team_rating||64)-1);
+    const buyerPool=stronger.length?stronger:buyers;
+    const buyer=buyerPool[rand(0,buyerPool.length-1)];
+    if(!buyer)continue;
+
     const base=fairMarketValue(p);
-    const factor=p.transfer_listed?(rand(98,112)/100):(rand(93,106)/100);
+    let factor=p.transfer_listed?(rand(98,112)/100):(rand(93,106)/100);
+
+    // Boa campanha valoriza o elenco, mas sem preços absurdos.
+    if(performance?.elite)factor+=rand(8,16)/100;
+    else if(performance?.hot)factor+=rand(4,10)/100;
+
     const amount=Math.max(500,Math.round(base*factor/100)*100);
-    const ins=await client.query(`INSERT INTO transfer_offers(selling_club_id,player_id,buying_club_id,amount,status) VALUES($1,$2,$3,$4,'pending') ON CONFLICT DO NOTHING RETURNING id`,[clubId,p.id,buyer.id,amount]);
-    created+=ins.rowCount;
+
+    const ins=await client.query(`
+      INSERT INTO transfer_offers(selling_club_id,player_id,buying_club_id,amount,status)
+      VALUES($1,$2,$3,$4,'pending')
+      ON CONFLICT DO NOTHING
+      RETURNING id
+    `,[clubId,p.id,buyer.id,amount]);
+
+    if(ins.rowCount){
+      created++;
+      createdOffers.push({
+        playerName:p.name,
+        buyerName:buyer.name,
+        buyerCountry:buyer.country_code,
+        amount
+      });
+    }
   }
+
+  if(created>0&&performance?.hot&&!force){
+    const first=createdOffers[0];
+    await client.query(
+      `INSERT INTO club_events(club_id,event_type,title,description)
+       VALUES($1,'market','Elenco valorizado pela grande fase',$2)`,
+      [clubId,`${created} clube(s) enviaram proposta(s) após a boa sequência. ${first.buyerName} apresentou ${first.amount.toLocaleString("pt-BR")} moedas por ${first.playerName}.`]
+    );
+
+    await publishNewsOnce(
+      client,clubId,career?.season_no||1,"negocios",
+      `Grande fase valoriza jogadores de ${((await client.query(`SELECT name FROM clubs WHERE id=$1`,[clubId])).rows[0]?.name)||"seu clube"}`,
+      `O bom desempenho recente aumentou o interesse do mercado. Clubes passaram a procurar os principais jogadores do elenco e as propostas podem vir com um prêmio de valorização pela fase atual.`,
+      2,"Diário do Futebol"
+    );
+  }
+
   return created;
 }
 async function payMonthlyWages(client,career,clubId,month){
@@ -2509,6 +2691,9 @@ async function mediaAfterCompetitionAction(ownerId,action,result){
 
     // O jornal não cobre apenas o time do usuário: inclui resultados de outros clubes.
     await publishOtherClubNews(client,ownerId,career,action,result);
+
+    // Uma sequência forte passa a atrair propostas pelos principais jogadores.
+    await generateIncomingOffers(client,ownerId,{force:false,performanceAware:true});
   });
 
   return result;
@@ -3714,6 +3899,7 @@ async function nextSeason(ownerId){
         await c.query(`UPDATE players SET age=age+1,contract_seasons=$3,fitness=100,rating=GREATEST(45,LEAST(95,rating+$2)),pace=GREATEST(25,LEAST(95,pace+$2)),shooting=GREATEST(20,LEAST(95,shooting+$2)),passing=GREATEST(20,LEAST(95,passing+$2)),defending=GREATEST(20,LEAST(95,defending+$2)) WHERE id=$1`,[p.id,delta,remaining]);
       }
     }
+    await c.query(`UPDATE players SET consecutive_starts=0 WHERE club_id=$1`,[ownerId]);
   });
 
   const next=await createCareer(ownerId,club.state_code||"",career.season_no+1,transitionData,club.country_code||career.country_code||"BR");
@@ -4597,11 +4783,12 @@ app.get("/api/dashboard",auth,async(req,res,next)=>{
     const cal=career?calendarSummary(career,fin.wages):null;
     const saf=await safSummary(c,career);
     const boardExpectation=career?boardExpectationFor(career,c):null;
+    const teamPerformance=career?await teamPerformanceProfile(pool,c.id,career):null;
     res.json({
       club:c,players:ps.rows,market:mk.rows,matches:mt.rows,friends:fr.rows,finance:fin,
       clubEvents:events.rows,trophies:trophies.rows,incomingOffers:offers.rows,calendar:cal,
       sponsorship,mediaNews:mediaNews.rows,pendingPress:pendingPress.rows[0]||null,saf,
-      boardMessages:boardMessages.rows,boardExpectation
+      boardMessages:boardMessages.rows,boardExpectation,teamPerformance
     });
   }catch(e){next(e)}
 });
@@ -5376,8 +5563,9 @@ async function start(){
   await applyV26Migration();
   await applyV27Migration();
   await applyV29Migration();
+  await applyV32Migration();
   await seedRealMarketPlayers();
   await ensureMarket();
-  app.listen(PORT,"0.0.0.0",()=>console.log(`Dono do Clube v31 rodando na porta ${PORT}`));
+  app.listen(PORT,"0.0.0.0",()=>console.log(`Dono do Clube v32 rodando na porta ${PORT}`));
 }
 start().catch(e=>{console.error("Falha ao iniciar:",e);process.exit(1)});

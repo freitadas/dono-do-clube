@@ -823,3 +823,72 @@ Para cada lesionado, o jogo mostra:
 - previsão de retorno em jogos.
 
 Quando não houver ninguém lesionado, o jogo informa que todo o elenco está disponível.
+
+
+## Rodízio realista + propostas por grande fase — v32
+
+### Rodízio de elenco mais realista
+
+O botão de rodízio deixou de simplesmente escolher os jogadores com melhor combinação de overall e físico.
+
+Agora a sugestão considera:
+- físico atual;
+- número de jogos consecutivos como titular;
+- overall;
+- moral;
+- qualidade e condição física do reserva da mesma posição;
+- importância da próxima partida.
+
+O comportamento muda conforme o contexto:
+
+**Jogo decisivo**
+- finais, fases decisivas continentais e reta final da liga;
+- o jogo preserva mais os melhores titulares;
+- normalmente faz no máximo 2 trocas;
+- só poupa um jogador importante quando o desgaste realmente justifica.
+
+**Jogo normal**
+- equilíbrio entre força e descanso;
+- pode fazer até 4 trocas.
+
+**Jogo mais adequado para rotação**
+- começo de temporada e fases iniciais menos críticas;
+- pode fazer até 5 trocas;
+- jogadores com muitos jogos seguidos passam a ter prioridade para descanso.
+
+Goleiros são tratados de forma diferente: o titular só é poupado por desgaste forte ou sequência excepcionalmente longa.
+
+O jogo também passa a registrar **jogos consecutivos como titular**. Essa carga aparece nos cards dos jogadores e é zerada quando o atleta descansa ou quando uma nova temporada começa.
+
+Após usar o rodízio, a interface mostra um **Plano de Rodízio**, explicando:
+- contexto da próxima partida;
+- quem será poupado;
+- quem entra;
+- motivo da troca, como físico baixo, desgaste acumulado ou muitos jogos seguidos.
+
+### Propostas quando o time está em grande fase
+
+O mercado agora acompanha o desempenho recente do clube.
+
+O jogo calcula um **índice de desempenho de 0 a 100** usando:
+- últimos 8 jogos;
+- vitórias e empates;
+- saldo de gols;
+- posição na tabela;
+- títulos conquistados na temporada.
+
+A partir de uma grande fase:
+- outros clubes passam a procurar seus jogadores com mais frequência;
+- titulares e atletas com muitos gols/assistências chamam mais atenção;
+- jogadores de maior overall também atraem mais interesse;
+- as ofertas recebem um pequeno prêmio de valorização pela boa fase, sem criar valores exagerados;
+- em uma fase excepcional, podem surgir até 2 novas propostas de uma vez;
+- clubes estrangeiros também podem demonstrar interesse quando a campanha estiver em nível muito alto.
+
+O Mercado mostra o status da equipe como:
+- Momento normal;
+- Boa fase;
+- Grande fase;
+- Fase excelente.
+
+As propostas continuam sendo pelos **jogadores do elenco**, preservando o sistema atual de carreira de clube.

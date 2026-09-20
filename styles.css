@@ -528,3 +528,60 @@ repeating-linear-gradient(0deg,#1e7d43 0,#1e7d43 56px,#237f47 56px,#237f47 112px
   .injury-player{grid-template-columns:1fr}
   .injury-condition{justify-content:flex-start}
 }
+
+
+/* v32 — rodízio realista + valorização do elenco por desempenho */
+.rotation-advice{
+  margin:10px 0 12px;
+  padding:12px;
+  display:grid;
+  gap:9px;
+  border:1px solid #3f644c;
+  border-radius:13px;
+  background:linear-gradient(135deg,#0b1b12,#10261a);
+}
+.rotation-advice.compact{padding:10px}
+.rotation-advice>div:first-child{display:grid;gap:3px}
+.rotation-advice>div:first-child>b{font-size:13px}
+.rotation-advice>div:first-child>span{font-size:10px;color:#b6c9bd}
+.rotation-changes{display:grid;gap:6px}
+.rotation-changes>span{
+  display:flex;align-items:center;gap:5px;flex-wrap:wrap;
+  padding:7px 8px;border-radius:9px;
+  background:#08150d;border:1px solid #263f2e;
+  font-size:9px;color:#aec0b4;
+}
+.rotation-changes small{
+  margin-left:auto;
+  padding:3px 5px;border-radius:999px;
+  background:#1a3020;color:#aee4be;
+  font-weight:900;
+}
+.performance-market{
+  display:grid;
+  grid-template-columns:minmax(0,1fr) minmax(280px,.9fr);
+  gap:14px;
+  align-items:center;
+  margin:10px 0 14px;
+  padding:12px 13px;
+  border:1px solid #35483b;
+  border-radius:13px;
+  background:#0b1710;
+}
+.performance-market>div{display:grid;gap:3px}
+.performance-market b{font-size:15px}
+.performance-market span,.performance-market p{margin:0;color:#9fb0a5;font-size:9px;line-height:1.45}
+.performance-market.hot{
+  border-color:#6c6a2d;
+  background:linear-gradient(135deg,#24220d,#151a0d);
+}
+.performance-market.elite{
+  border-color:#8c7330;
+  background:linear-gradient(135deg,#30260c,#17150a);
+  box-shadow:inset 0 0 0 1px rgba(255,220,109,.08);
+}
+.performance-market.hot b,.performance-market.elite b{color:#ffe899}
+@media(max-width:720px){
+  .performance-market{grid-template-columns:1fr}
+  .rotation-changes small{margin-left:0}
+}
