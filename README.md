@@ -779,3 +779,25 @@ A interface mostra:
 - todas as propostas disponíveis.
 
 Os nomes das marcas são usados apenas como parte da simulação do jogo. O projeto não afirma vínculo, parceria ou patrocínio real com nenhuma dessas empresas.
+
+
+## Menos coletivas de imprensa — v30
+
+A frequência das coletivas foi reduzida.
+
+Agora elas aparecem principalmente em situações realmente importantes:
+
+- após uma eliminação;
+- após uma final ou outro jogo decisivo;
+- na última rodada da liga quando o jogo é tratado como decisivo;
+- depois de uma goleada muito fora do normal.
+
+As goleadas comuns continuam aparecendo no jornal e podem gerar mensagens da diretoria, mas não obrigatoriamente uma coletiva.
+
+Critério mais restrito para goleadas com coletiva:
+- derrota por diferença de 4 gols ou mais;
+- vitória por diferença de 5 gols ou mais.
+
+Além disso, coletivas que não sejam de eliminação ficam limitadas a **3 por temporada**.
+
+As coletivas de eliminação não entram nesse limite, para que uma queda importante de competição continue tendo repercussão.

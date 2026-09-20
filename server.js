@@ -1832,8 +1832,24 @@ async function ensureInitialNews(client,clubId,seasonNo,clubName){
   );
 }
 async function createPressConference(client,clubId,seasonNo,triggerType,title,question,context={}){
-  const pending=(await client.query(`SELECT id FROM press_conferences WHERE club_id=$1 AND status='pending' ORDER BY created_at DESC LIMIT 1`,[clubId])).rows[0];
+  const pending=(await client.query(
+    `SELECT id FROM press_conferences WHERE club_id=$1 AND status='pending' ORDER BY created_at DESC LIMIT 1`,
+    [clubId]
+  )).rows[0];
   if(pending)return pending;
+
+  // Coletivas comuns são raras: no máximo 3 por temporada.
+  // Eliminações continuam podendo gerar coletiva mesmo após esse limite.
+  if(triggerType!=="eliminacao"){
+    const count=Number((await client.query(
+      `SELECT COUNT(*)::int count
+       FROM press_conferences
+       WHERE club_id=$1 AND season_no=$2 AND trigger_type<>'eliminacao'`,
+      [clubId,Number(seasonNo||1)]
+    )).rows[0]?.count||0);
+    if(count>=3)return null;
+  }
+
   const r=await client.query(`
     INSERT INTO press_conferences(club_id,season_no,trigger_type,title,question,context,status)
     VALUES($1,$2,$3,$4,$5,$6::jsonb,'pending') RETURNING *
@@ -2376,34 +2392,40 @@ async function mediaAfterCompetitionAction(ownerId,action,result){
   const diff=Math.abs(userGoals-opponentGoals);
   const isRout=diff>=3;
   const competition=m.matchType||"partida";
-  let eliminated=false,important=isRout;
+  let eliminated=false,important=false,majorPressGame=false;
 
   if(action==="copa"){
     const cup=career.data?.copaBrasil;
     eliminated=Boolean(cup?.userEliminated||(result.finished&&String(cup?.champion||"")!==String(ownerId)));
-    important=important||["SF","FINAL"].includes(result.copaStage);
+    important=["SF","FINAL"].includes(result.copaStage);
+    majorPressGame=result.copaStage==="FINAL";
   }else if(action==="state"){
     const st=career.data?.state;
     if(st){
       const final=st.fixtures?.find(f=>f.stage==="FINAL");
       if(st.stage==="FINAL"&&final&&!([final.home,final.away].some(id=>String(id)===String(ownerId))))eliminated=true;
       if(st.stage==="FINISHED"&&String(st.champion)!==String(ownerId))eliminated=true;
-      important=important||st.stage==="FINAL"||st.stage==="FINISHED";
+      important=st.stage==="FINAL"||st.stage==="FINISHED";
+      majorPressGame=important;
     }
   }else if(action==="national"){
-    important=important||Number(result.round||0)>=35;
+    important=Number(result.round||0)>=35;
+    majorPressGame=Number(result.round||0)===38;
   }else if(action==="lib"){
     const lib=career.data?.libertadores;
     eliminated=Boolean(result.finished?String(lib?.champion||"")!==String(ownerId):result.userAlive===false);
-    important=important||eliminated||result.finished||(lib?.stage&&lib.stage!=="GROUP");
+    important=eliminated||result.finished||["SF","FINAL"].includes(lib?.stage);
+    majorPressGame=Boolean(result.finished||lib?.stage==="FINAL");
   }else if(action==="champions"){
     const ch=career.data?.championsLeague;
     eliminated=Boolean(result.finished?String(ch?.champion||"")!==String(ownerId):result.userAlive===false);
-    important=important||eliminated||result.finished||(ch?.stage&&ch.stage!=="LEAGUE");
+    important=eliminated||result.finished||["SF","FINAL"].includes(ch?.stage);
+    majorPressGame=Boolean(result.finished||ch?.stage==="FINAL");
   }else if(action==="world"){
     const world=career.data?.clubWorldCup;
     eliminated=Boolean(result.finished?String(world?.champion||"")!==String(ownerId):result.userAlive===false);
-    important=important||eliminated||result.finished||(world?.stage&&world.stage!=="GROUP");
+    important=eliminated||result.finished||["SF","FINAL"].includes(world?.stage);
+    majorPressGame=Boolean(result.finished||world?.stage==="FINAL");
   }
 
   await tx(async client=>{
@@ -2464,13 +2486,24 @@ async function mediaAfterCompetitionAction(ownerId,action,result){
       await client.query(`UPDATE clubs SET board_confidence=LEAST(100,board_confidence+2),media_pressure=GREATEST(0,media_pressure-1) WHERE id=$1`,[ownerId]);
     }
 
-    if(eliminated||important){
+    const severeRout=
+      (m.result==="loss"&&diff>=4) ||
+      (m.result==="win"&&diff>=5);
+
+    // Menos coletivas:
+    // - eliminação: sempre;
+    // - final/última rodada decisiva: pode gerar;
+    // - goleada: somente quando for realmente muito fora do normal.
+    const shouldPress=eliminated||majorPressGame||severeRout;
+
+    if(shouldPress){
+      const pressType=eliminated?"eliminacao":severeRout?"goleada":"jogo_importante";
       await createPressConference(
         client,ownerId,career.season_no,
-        eliminated?"eliminacao":isRout?"goleada":"jogo_importante",
-        eliminated?"Coletiva após eliminação":isRout?"Coletiva após goleada":"Coletiva pós-jogo",
+        pressType,
+        eliminated?"Coletiva após eliminação":severeRout?"Coletiva após goleada marcante":"Coletiva após jogo decisivo",
         pressQuestionFor({eliminated,result:m.result,competition}),
-        {competition,result:m.result,opponent:m.opponent,score,eliminated,isRout}
+        {competition,result:m.result,opponent:m.opponent,score,eliminated,isRout,severeRout,majorPressGame}
       );
     }
 
@@ -5345,6 +5378,6 @@ async function start(){
   await applyV29Migration();
   await seedRealMarketPlayers();
   await ensureMarket();
-  app.listen(PORT,"0.0.0.0",()=>console.log(`Dono do Clube v29 rodando na porta ${PORT}`));
+  app.listen(PORT,"0.0.0.0",()=>console.log(`Dono do Clube v30 rodando na porta ${PORT}`));
 }
 start().catch(e=>{console.error("Falha ao iniciar:",e);process.exit(1)});
