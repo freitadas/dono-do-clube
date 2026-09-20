@@ -13,6 +13,7 @@ const state={
   transferSearch:{name:"",position:"",minRating:58,maxPrice:500000,realOnly:false},
   activeType:null,playerCareer:null,playerData:null,countries:{},creationMode:"club",playerView:"home",
   playerStarterClubs:[],
+  playerExpansion:{agent:true,media:true,sponsorship:true,awards:true,nationalTeam:true,legacy:true},
   view:"home",authMode:"login",competitionTab:"STATE",roundByDiv:{A:1,B:1,C:1,D:1}
 };
 
@@ -2072,6 +2073,18 @@ function bindPlayerCareer(){
     }catch(err){alert(err.message);btn.disabled=false}
   });
 }
+
+function playerExpansionPanel(){
+  return `<section class="card player-expansion"><h3>Carreira do Jogador</h3><div class="grid">
+  <div>🤝 Agente: negociações e propostas</div>
+  <div>📰 Mídia: notícias e reputação</div>
+  <div>🏆 Prêmios: títulos individuais</div>
+  <div>🇧🇷 Seleção: convocação por desempenho</div>
+  <div>👟 Patrocínios: contratos individuais</div>
+  <div>🏅 Legado: histórico da carreira</div>
+  </div></section>`;
+}
+
 function renderPlayerCareer(){
   if(!state.playerData||!state.playerCareer)return renderCreateClub();
   const pc=state.playerData.career;
@@ -3066,42 +3079,6 @@ function openLoanOffer(p){
     }
   };
 }
-// FIX V38 MERCADO DELEGADO
-// Garante o clique do botão Pesquisar e o submit do formulário mesmo após re-renderizações.
-if(!window.__v38MarketSearchDelegated){
-  window.__v38MarketSearchDelegated=true;
-  document.addEventListener("click", async function(e){
-    const btn=e.target.closest("#transferSearchBtn");
-    if(!btn)return;
-    e.preventDefault();
-    e.stopPropagation();
-    if(btn.disabled)return;
-    try{
-      await searchTransfers();
-    }catch(err){
-      const msg=app.querySelector("#transferMsg");
-      const box=app.querySelector("#transferResults");
-      if(msg)msg.innerHTML=`<div class="msg">${esc(err.message)}</div>`;
-      else if(box)box.innerHTML=`<div class="msg">${esc(err.message)}</div>`;
-    }
-  }, true);
-
-  document.addEventListener("submit", async function(e){
-    const form=e.target.closest("#transferSearch");
-    if(!form)return;
-    e.preventDefault();
-    e.stopPropagation();
-    try{
-      await searchTransfers();
-    }catch(err){
-      const msg=app.querySelector("#transferMsg");
-      const box=app.querySelector("#transferResults");
-      if(msg)msg.innerHTML=`<div class="msg">${esc(err.message)}</div>`;
-      else if(box)box.innerHTML=`<div class="msg">${esc(err.message)}</div>`;
-    }
-  }, true);
-}
-
 // FIX V38 PROPOSTAS DELEGADO
 // Mantém os botões funcionando mesmo após renderizações da tela.
 if(!window.__v38ProposalButtons){
