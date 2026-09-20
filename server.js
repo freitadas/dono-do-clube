@@ -30,6 +30,7 @@ const V23_MIGRATION_KEY = "v23_full_season_sim_equal_wages_20260919";
 const V24_MIGRATION_KEY = "v24_two_leg_cups_penalty_scores_20260919";
 const V25_MIGRATION_KEY = "v25_starting_xi_repair_20260919";
 const V26_MIGRATION_KEY = "v26_news_press_saf_20260919";
+const V27_MIGRATION_KEY = "v27_board_media_press_lineup_20260919";
 const MAX_CAREERS_PER_USER = 10;
 const TRANSFER_BAN_THRESHOLD = -10000;
 const competitionLocks = new Set();
@@ -108,6 +109,8 @@ async function initDb(){
       saf_investment INTEGER NOT NULL DEFAULT 0,
       saf_started_season INTEGER,
       saf_debt_relegations INTEGER NOT NULL DEFAULT 0,
+      board_confidence INTEGER NOT NULL DEFAULT 60,
+      media_pressure INTEGER NOT NULL DEFAULT 0,
       created_at TIMESTAMPTZ NOT NULL DEFAULT NOW()
     );
 
@@ -210,6 +213,18 @@ async function initDb(){
       answer_key TEXT,
       created_at TIMESTAMPTZ NOT NULL DEFAULT NOW(),
       answered_at TIMESTAMPTZ
+    );
+
+    CREATE TABLE IF NOT EXISTS board_messages(
+      id BIGSERIAL PRIMARY KEY,
+      club_id BIGINT NOT NULL REFERENCES clubs(id) ON DELETE CASCADE,
+      season_no INTEGER NOT NULL DEFAULT 1,
+      message_type TEXT NOT NULL DEFAULT 'geral',
+      tone TEXT NOT NULL DEFAULT 'neutral',
+      title TEXT NOT NULL,
+      body TEXT NOT NULL,
+      importance INTEGER NOT NULL DEFAULT 1,
+      created_at TIMESTAMPTZ NOT NULL DEFAULT NOW()
     );
 
     CREATE TABLE IF NOT EXISTS club_trophies(
@@ -647,6 +662,30 @@ async function applyV26Migration(){
     await c.query(`ALTER TABLE clubs ADD COLUMN IF NOT EXISTS saf_started_season INTEGER`);
     await c.query(`ALTER TABLE clubs ADD COLUMN IF NOT EXISTS saf_debt_relegations INTEGER NOT NULL DEFAULT 0`);
     await c.query(`INSERT INTO app_meta(key,value) VALUES($1,$2)`,[V26_MIGRATION_KEY,new Date().toISOString()]);
+  });
+}
+
+async function applyV27Migration(){
+  const done=await q(`SELECT 1 FROM app_meta WHERE key=$1`,[V27_MIGRATION_KEY]);
+  if(done.rowCount)return;
+  await tx(async c=>{
+    await c.query(`ALTER TABLE clubs ADD COLUMN IF NOT EXISTS board_confidence INTEGER NOT NULL DEFAULT 60`);
+    await c.query(`ALTER TABLE clubs ADD COLUMN IF NOT EXISTS media_pressure INTEGER NOT NULL DEFAULT 0`);
+    await c.query(`
+      CREATE TABLE IF NOT EXISTS board_messages(
+        id BIGSERIAL PRIMARY KEY,
+        club_id BIGINT NOT NULL REFERENCES clubs(id) ON DELETE CASCADE,
+        season_no INTEGER NOT NULL DEFAULT 1,
+        message_type TEXT NOT NULL DEFAULT 'geral',
+        tone TEXT NOT NULL DEFAULT 'neutral',
+        title TEXT NOT NULL,
+        body TEXT NOT NULL,
+        importance INTEGER NOT NULL DEFAULT 1,
+        created_at TIMESTAMPTZ NOT NULL DEFAULT NOW()
+      )
+    `);
+    await c.query(`CREATE INDEX IF NOT EXISTS idx_board_messages_club_created ON board_messages(club_id,created_at DESC)`);
+    await c.query(`INSERT INTO app_meta(key,value) VALUES($1,$2)`,[V27_MIGRATION_KEY,new Date().toISOString()]);
   });
 }
 
@@ -1360,27 +1399,33 @@ async function ensureStartingXI(client,clubId,formation="4-3-3"){
     }
   }
 
-  // Se alguma posição estiver curta, completa com os melhores jogadores saudáveis restantes.
+  // Se alguma posição estiver curta, completa apenas com jogadores de linha.
+  // Nunca usa um segundo goleiro para preencher uma vaga de campo.
   if(selected.length<11){
-    const remaining=healthy.filter(p=>!used.has(String(p.id))).sort(scoreSort);
+    const remaining=healthy
+      .filter(p=>!used.has(String(p.id))&&p.position!=="GK")
+      .sort(scoreSort);
     for(const p of remaining.slice(0,11-selected.length)){
       selected.push(p);
       used.add(String(p.id));
     }
   }
 
-  // Último fallback: em um elenco muito desfalcado, completa visualmente com lesionados.
-  // O motor da partida continua respeitando indisponibilidade e fará sua própria seleção.
+  // Último fallback: se o elenco estiver muito desfalcado, pode usar lesionados,
+  // mas ainda assim evita um segundo goleiro na linha.
   if(selected.length<11){
-    const remaining=players.filter(p=>!used.has(String(p.id))).sort(scoreSort);
+    const remaining=players
+      .filter(p=>!used.has(String(p.id))&&p.position!=="GK")
+      .sort(scoreSort);
     for(const p of remaining.slice(0,11-selected.length)){
       selected.push(p);
       used.add(String(p.id));
     }
   }
 
-  // Sempre preservar ao menos um goleiro quando houver goleiro no elenco.
-  if(!selected.some(p=>p.position==="GK")){
+  // Sempre exatamente um goleiro quando existir goleiro no elenco.
+  const selectedGks=selected.filter(p=>p.position==="GK");
+  if(selectedGks.length===0){
     const gk=players.filter(p=>p.position==="GK").sort(scoreSort)[0];
     if(gk){
       const replaceIndex=selected.findIndex(p=>p.position!=="GK");
@@ -1388,6 +1433,22 @@ async function ensureStartingXI(client,clubId,formation="4-3-3"){
         used.delete(String(selected[replaceIndex].id));
         selected[replaceIndex]=gk;
         used.add(String(gk.id));
+      }
+    }
+  }else if(selectedGks.length>1){
+    const keep=selectedGks.sort(scoreSort)[0];
+    const extras=selectedGks.filter(g=>String(g.id)!==String(keep.id));
+    for(const extra of extras){
+      const replacement=players
+        .filter(p=>p.position!=="GK"&&!used.has(String(p.id)))
+        .sort(scoreSort)[0];
+      if(replacement){
+        const idx=selected.findIndex(p=>String(p.id)===String(extra.id));
+        if(idx>=0){
+          used.delete(String(extra.id));
+          selected[idx]=replacement;
+          used.add(String(replacement.id));
+        }
       }
     }
   }
@@ -1422,10 +1483,14 @@ async function matchStarters(client,club,isUser){
   }
   if(chosen.length<11){
     const used=new Set(chosen.map(p=>String(p.id)));
-    const remaining=sortForSelection(healthy.filter(p=>!used.has(String(p.id))),isUser);
+    const remaining=sortForSelection(
+      healthy.filter(p=>!used.has(String(p.id))&&p.position!=="GK"),
+      isUser
+    );
     chosen.push(...remaining.slice(0,11-chosen.length));
   }
-  if(!chosen.some(p=>p.position==="GK"))throw Object.assign(new Error(`${club.name} está sem goleiro disponível.`),{status:400});
+  const gks=chosen.filter(p=>p.position==="GK");
+  if(gks.length!==1)throw Object.assign(new Error(`${club.name} precisa ter exatamente um goleiro disponível na escalação.`),{status:400});
   return chosen.slice(0,11);
 }
 function teamMetrics(players){
@@ -1558,6 +1623,204 @@ async function publishNews(client,clubId,seasonNo,category,headline,body,importa
   `,[clubId,Number(seasonNo||1),category,source,headline,body,clamp(Number(importance||1),1,3)]);
   return r.rows[0];
 }
+
+async function publishNewsOnce(client,clubId,seasonNo,category,headline,body,importance=1,sourceName=null){
+  const exists=(await client.query(
+    `SELECT 1 FROM media_news WHERE club_id=$1 AND season_no=$2 AND headline=$3 LIMIT 1`,
+    [clubId,Number(seasonNo||1),headline]
+  )).rowCount>0;
+  if(exists)return null;
+  return publishNews(client,clubId,seasonNo,category,headline,body,importance,sourceName);
+}
+
+async function publishBoardMessage(client,clubId,seasonNo,messageType,title,body,tone="neutral",importance=1){
+  const r=await client.query(`
+    INSERT INTO board_messages(club_id,season_no,message_type,tone,title,body,importance)
+    VALUES($1,$2,$3,$4,$5,$6,$7)
+    RETURNING *
+  `,[clubId,Number(seasonNo||1),messageType,tone,title,body,clamp(Number(importance||1),1,3)]);
+  return r.rows[0];
+}
+
+function boardExpectationFor(career,club){
+  const div=career?.user_division||"D";
+  const entries=sortEntries(career?.data?.divisions?.[div]?.entries||[]);
+  const position=Math.max(1,entries.findIndex(e=>String(e.clubId)===String(club.id))+1);
+  const rating=Number(club.team_rating||club.base_rating||64);
+
+  let targetPosition,targetTitle,description;
+  if(div==="A"){
+    if(rating>=82){
+      targetPosition=2;
+      targetTitle="Disputar o título";
+      description="A diretoria espera o clube brigando pelo título até as últimas rodadas.";
+    }else{
+      targetPosition=6;
+      targetTitle="Ficar entre os 6 primeiros";
+      description="A meta é consolidar o clube na elite e disputar as vagas continentais.";
+    }
+  }else{
+    targetPosition=4;
+    targetTitle="Conquistar o acesso";
+    description=`A diretoria espera terminar no G4 de ${leagueName(career?.country_code||club.country_code||"BR",div)} e subir de divisão.`;
+  }
+
+  if(club.is_saf){
+    description+= " Como o clube é SAF, também é obrigatório encerrar a temporada sem saldo negativo para evitar punição administrativa.";
+  }
+
+  let status="attention";
+  if(position<=targetPosition)status="on_track";
+  else if(position<=targetPosition+4)status="attention";
+  else status="off_track";
+
+  return {
+    targetPosition,
+    targetTitle,
+    description,
+    currentPosition:position,
+    status,
+    confidence:clamp(Number(club.board_confidence||60),0,100),
+    mediaPressure:clamp(Number(club.media_pressure||0),0,100)
+  };
+}
+
+async function ensureBoardExpectationMessage(client,club,career){
+  const season=Number(career?.season_no||1);
+  const exists=(await client.query(
+    `SELECT 1 FROM board_messages WHERE club_id=$1 AND season_no=$2 AND message_type='expectativa' LIMIT 1`,
+    [club.id,season]
+  )).rowCount>0;
+  if(exists)return;
+
+  const ex=boardExpectationFor(career,club);
+  await publishBoardMessage(
+    client,club.id,season,"expectativa",
+    `Expectativa da diretoria: ${ex.targetTitle}`,
+    `${ex.description} Posição atual: ${ex.currentPosition}º.`,
+    "neutral",2
+  );
+}
+
+async function ensureOtherClubHeadlines(client,clubId,career){
+  const season=Number(career?.season_no||1);
+  const count=Number((await client.query(
+    `SELECT COUNT(*)::int count FROM media_news WHERE club_id=$1 AND season_no=$2 AND category='outros_clubes'`,
+    [clubId,season]
+  )).rows[0]?.count||0);
+  if(count>=2)return;
+
+  const div=career?.user_division||"D";
+  const table=sortEntries(career?.data?.divisions?.[div]?.entries||[]);
+  const targets=table.filter(e=>String(e.clubId)!==String(clubId)).slice(0,3);
+  if(!targets.length)return;
+
+  const ids=targets.map(e=>String(e.clubId));
+  const clubs=(await client.query(`SELECT id,name FROM clubs WHERE id=ANY($1::bigint[])`,[ids])).rows;
+  const names=new Map(clubs.map(c=>[String(c.id),c.name]));
+  const league=leagueName(career?.country_code||"BR",div);
+
+  for(let i=0;i<Math.min(2,targets.length);i++){
+    const e=targets[i],name=names.get(String(e.clubId))||"Clube";
+    const headline=i===0
+      ?`${name} aparece entre os destaques de ${league}`
+      :`${name} movimenta a disputa em ${league}`;
+    const body=`A cobertura também acompanha os rivais: ${name} soma ${Number(e.points||0)} ponto(s), com ${Number(e.wins||0)} vitória(s), e ocupa atualmente a ${table.findIndex(x=>String(x.clubId)===String(e.clubId))+1}ª posição.`;
+    await publishNewsOnce(client,clubId,season,"outros_clubes",headline,body,1,"Central da Bola");
+  }
+}
+
+function mediaFixturePool(career,action,result,ownerId){
+  let fs=[];
+  if(action==="national"){
+    const round=Number(result?.round||career.current_round||1);
+    fs=(career.data?.divisions?.[career.user_division]?.fixtures||[])
+      .filter(f=>Number(f.round)===round&&f.played);
+  }else if(action==="copa"){
+    fs=(career.data?.copaBrasil?.fixtures||[])
+      .filter(f=>f.played&&(!result?.copaStage||f.stage===result.copaStage)&&(!result?.leg||Number(f.leg||1)===Number(result.leg)));
+  }else if(action==="state"){
+    fs=(career.data?.state?.fixtures||[]).filter(f=>f.played).slice(-10);
+  }else if(action==="lib"){
+    fs=(career.data?.libertadores?.fixtures||[]).filter(f=>f.played).slice(-12);
+  }else if(action==="champions"){
+    fs=(career.data?.championsLeague?.fixtures||[]).filter(f=>f.played).slice(-16);
+  }else if(action==="world"){
+    fs=(career.data?.clubWorldCup?.fixtures||[]).filter(f=>f.played).slice(-16);
+  }
+  return fs.filter(f=>String(f.home)!==String(ownerId)&&String(f.away)!==String(ownerId)).reverse();
+}
+
+async function publishOtherClubNews(client,ownerId,career,action,result){
+  const candidates=mediaFixturePool(career,action,result,ownerId).slice(0,2);
+  if(!candidates.length)return 0;
+
+  const ids=[...new Set(candidates.flatMap(f=>[String(f.home),String(f.away)]))];
+  const clubs=(await client.query(
+    `SELECT id,name FROM clubs WHERE id=ANY($1::bigint[])`,
+    [ids]
+  )).rows;
+  const names=new Map(clubs.map(c=>[String(c.id),c.name]));
+  let created=0;
+
+  for(const f of candidates){
+    const home=names.get(String(f.home))||"Mandante";
+    const away=names.get(String(f.away))||"Visitante";
+    const hg=Number(f.hg||0),ag=Number(f.ag||0),diff=Math.abs(hg-ag);
+    const winner=hg>ag?home:ag>hg?away:null;
+    const loser=hg>ag?away:ag>hg?home:null;
+    const isRout=diff>=3;
+
+    const headline=isRout
+      ?`Goleada em destaque: ${winner} faz ${Math.max(hg,ag)} a ${Math.min(hg,ag)} em ${loser}`
+      :winner
+        ?`${winner} vence ${loser} por ${Math.max(hg,ag)} a ${Math.min(hg,ag)}`
+        :`${home} e ${away} empatam em ${hg} a ${ag}`;
+
+    const body=isRout
+      ?`A rodada teve uma goleada fora dos jogos do seu clube. ${winner} dominou o confronto e venceu ${loser} por ${Math.max(hg,ag)} a ${Math.min(hg,ag)}.`
+      :`Outros clubes também movimentaram a rodada: ${home} ${hg} a ${ag} ${away}.`;
+
+    const n=await publishNewsOnce(
+      client,ownerId,career.season_no,
+      isRout?"goleada_outros":"outros_clubes",
+      headline,body,isRout?3:1,
+      isRout?"Esporte Agora":"Central da Bola"
+    );
+    if(n)created++;
+  }
+  return created;
+}
+
+async function publishSeasonRoutHighlights(client,ownerId,career){
+  const fixtures=(career?.data?.divisions?.[career.user_division]?.fixtures||[])
+    .filter(f=>f.played&&Math.abs(Number(f.hg||0)-Number(f.ag||0))>=3)
+    .sort((a,b)=>Math.abs(Number(b.hg||0)-Number(b.ag||0))-Math.abs(Number(a.hg||0)-Number(a.ag||0)))
+    .slice(0,5);
+  if(!fixtures.length)return;
+
+  const ids=[...new Set(fixtures.flatMap(f=>[String(f.home),String(f.away)]))];
+  const clubs=(await client.query(`SELECT id,name FROM clubs WHERE id=ANY($1::bigint[])`,[ids])).rows;
+  const names=new Map(clubs.map(c=>[String(c.id),c.name]));
+
+  for(const f of fixtures){
+    const home=names.get(String(f.home))||"Mandante";
+    const away=names.get(String(f.away))||"Visitante";
+    const hg=Number(f.hg||0),ag=Number(f.ag||0);
+    const winner=hg>ag?home:away,loser=hg>ag?away:home;
+    const involvesUser=String(f.home)===String(ownerId)||String(f.away)===String(ownerId);
+    const headline=`Goleada da temporada: ${winner} ${Math.max(hg,ag)} a ${Math.min(hg,ag)} ${loser}`;
+    const body=involvesUser
+      ?`A simulação da temporada registrou uma goleada envolvendo seu clube: ${home} ${hg} a ${ag} ${away}.`
+      :`Entre os outros clubes, uma das maiores goleadas da temporada foi ${home} ${hg} a ${ag} ${away}.`;
+
+    await publishNewsOnce(
+      client,ownerId,career.season_no,
+      involvesUser?"goleada":"goleada_outros",
+      headline,body,3,"Esporte Agora"
+    );
+  }
+}
 async function ensureInitialNews(client,clubId,seasonNo,clubName){
   const exists=(await client.query(`SELECT 1 FROM media_news WHERE club_id=$1 LIMIT 1`,[clubId])).rowCount>0;
   if(exists)return;
@@ -1613,7 +1876,15 @@ async function recordTrophy(client,clubId,seasonNo,competition,title){
   const r=await client.query(`INSERT INTO club_trophies(club_id,season_no,competition,title) VALUES($1,$2,$3,$4) ON CONFLICT(club_id,season_no,competition) DO NOTHING RETURNING id`,[clubId,seasonNo,competition,title]);
   if(r.rowCount>0){
     const club=(await client.query(`SELECT name FROM clubs WHERE id=$1`,[clubId])).rows[0];
-    await publishNews(client,clubId,seasonNo,"titulo",`🏆 ${club?.name||"Clube"} conquista ${title.replace(/^Campeão — /,"")}`,`${club?.name||"O clube"} confirmou o título de ${title.replace(/^Campeão — /,"")}. A conquista passa a integrar a galeria de troféus da carreira.`,3,"Jornal do Clube");
+    const competitionName=title.replace(/^Campeão — /,"");
+    await publishNews(client,clubId,seasonNo,"titulo",`🏆 ${club?.name||"Clube"} conquista ${competitionName}`,`${club?.name||"O clube"} confirmou o título de ${competitionName}. A conquista passa a integrar a galeria de troféus da carreira.`,3,"Jornal do Clube");
+    await client.query(`UPDATE clubs SET board_confidence=LEAST(100,board_confidence+10),media_pressure=GREATEST(0,media_pressure-6) WHERE id=$1`,[clubId]);
+    await publishBoardMessage(
+      client,clubId,seasonNo,"titulo",
+      `Diretoria celebra o título de ${competitionName}`,
+      `Parabéns pelo trabalho. A conquista de ${competitionName} superou as expectativas e fortaleceu a confiança da diretoria no projeto.`,
+      "positive",3
+    );
   }
   return r.rowCount>0;
 }
@@ -2096,12 +2367,16 @@ async function mediaAfterCompetitionAction(ownerId,action,result){
   if(!result?.userMatch)return result;
   const career=await getCareer(ownerId);
   if(!career)return result;
+
   const m=result.userMatch;
   const club=(await q(`SELECT name FROM clubs WHERE id=$1`,[ownerId])).rows[0];
   const clubName=club?.name||m.userClub||"O clube";
-  const diff=Math.abs(Number(m.userGoals||0)-Number(m.opponentGoals||0));
+  const userGoals=Number(m.userGoals||0);
+  const opponentGoals=Number(m.opponentGoals||0);
+  const diff=Math.abs(userGoals-opponentGoals);
+  const isRout=diff>=3;
   const competition=m.matchType||"partida";
-  let eliminated=false,important=diff>=3;
+  let eliminated=false,important=isRout;
 
   if(action==="copa"){
     const cup=career.data?.copaBrasil;
@@ -2133,27 +2408,76 @@ async function mediaAfterCompetitionAction(ownerId,action,result){
 
   await tx(async client=>{
     const resultWord=m.result==="win"?"vence":m.result==="loss"?"é derrotado por":"empata com";
-    const score=`${Number(m.userGoals||0)} a ${Number(m.opponentGoals||0)}`;
-    await publishNews(
-      client,ownerId,career.season_no,"partida",
-      `${clubName} ${resultWord} ${m.opponent} por ${score}`,
-      `A partida por ${competition} terminou em ${score}. ${m.result==="win"?"A vitória aumenta a confiança da equipe.":m.result==="loss"?"O resultado aumenta a cobrança sobre o trabalho da comissão técnica.":"O empate dividiu opiniões entre imprensa e torcida."}`,
-      important?2:1
-    );
+    const score=`${userGoals} a ${opponentGoals}`;
+
+    if(isRout){
+      const winner=m.result==="win"?clubName:m.opponent;
+      const loser=m.result==="win"?m.opponent:clubName;
+      const high=Math.max(userGoals,opponentGoals),low=Math.min(userGoals,opponentGoals);
+      const headline=m.result==="win"
+        ?`Goleada: ${clubName} atropela ${m.opponent} por ${high} a ${low}`
+        :`Goleada sofrida: ${clubName} cai por ${high} a ${low} diante de ${m.opponent}`;
+      const body=m.result==="win"
+        ?`${clubName} teve atuação dominante em ${competition} e aplicou ${high} a ${low} em ${m.opponent}. A goleada repercutiu fortemente na imprensa e aumentou a expectativa sobre a equipe.`
+        :`${clubName} sofreu uma derrota pesada em ${competition}: ${high} a ${low} para ${m.opponent}. O resultado elevou a pressão da imprensa e da diretoria.`;
+      await publishNews(client,ownerId,career.season_no,"goleada",headline,body,3,"Esporte Agora");
+    }else{
+      await publishNews(
+        client,ownerId,career.season_no,"partida",
+        `${clubName} ${resultWord} ${m.opponent} por ${score}`,
+        `A partida por ${competition} terminou em ${score}. ${m.result==="win"?"A vitória aumenta a confiança da equipe.":m.result==="loss"?"O resultado aumenta a cobrança sobre o trabalho da comissão técnica.":"O empate dividiu opiniões entre imprensa e torcida."}`,
+        important?2:1
+      );
+    }
 
     if(eliminated){
-      await publishNews(client,ownerId,career.season_no,"eliminacao",`Eliminação pressiona ${clubName}`,`${clubName} foi eliminado de ${competition}. A diretoria e a comissão técnica agora enfrentam questionamentos sobre os próximos passos da temporada.`,3,"Esporte Agora");
+      await publishNews(
+        client,ownerId,career.season_no,"eliminacao",
+        `Eliminação pressiona ${clubName}`,
+        `${clubName} foi eliminado de ${competition}. A diretoria e a comissão técnica agora enfrentam questionamentos sobre os próximos passos da temporada.`,
+        3,"Esporte Agora"
+      );
+      await client.query(`UPDATE clubs SET board_confidence=GREATEST(0,board_confidence-8),media_pressure=LEAST(100,media_pressure+8) WHERE id=$1`,[ownerId]);
+      await publishBoardMessage(
+        client,ownerId,career.season_no,"eliminacao",
+        `Diretoria cobra resposta após eliminação`,
+        `A eliminação em ${competition} ficou abaixo da expectativa. A diretoria espera reação imediata e melhora do desempenho nas competições restantes.`,
+        "negative",3
+      );
+    }else if(isRout&&m.result==="loss"){
+      await client.query(`UPDATE clubs SET board_confidence=GREATEST(0,board_confidence-6),media_pressure=LEAST(100,media_pressure+7) WHERE id=$1`,[ownerId]);
+      await publishBoardMessage(
+        client,ownerId,career.season_no,"goleada_sofrida",
+        `Diretoria exige explicações após goleada`,
+        `A derrota por ${Math.max(userGoals,opponentGoals)} a ${Math.min(userGoals,opponentGoals)} para ${m.opponent} foi considerada inaceitável. A diretoria exige uma resposta forte no próximo compromisso.`,
+        "negative",3
+      );
+    }else if(isRout&&m.result==="win"){
+      await client.query(`UPDATE clubs SET board_confidence=LEAST(100,board_confidence+5),media_pressure=GREATEST(0,media_pressure-3) WHERE id=$1`,[ownerId]);
+      await publishBoardMessage(
+        client,ownerId,career.season_no,"goleada_aplicada",
+        `Diretoria elogia atuação dominante`,
+        `A goleada sobre ${m.opponent} agradou a diretoria. O desempenho foi visto como sinal de evolução e aumentou a confiança no trabalho.`,
+        "positive",2
+      );
+    }else if(important&&m.result==="win"){
+      await client.query(`UPDATE clubs SET board_confidence=LEAST(100,board_confidence+2),media_pressure=GREATEST(0,media_pressure-1) WHERE id=$1`,[ownerId]);
     }
 
     if(eliminated||important){
       await createPressConference(
-        client,ownerId,career.season_no,eliminated?"eliminacao":"jogo_importante",
-        eliminated?"Coletiva após eliminação":"Coletiva pós-jogo",
+        client,ownerId,career.season_no,
+        eliminated?"eliminacao":isRout?"goleada":"jogo_importante",
+        eliminated?"Coletiva após eliminação":isRout?"Coletiva após goleada":"Coletiva pós-jogo",
         pressQuestionFor({eliminated,result:m.result,competition}),
-        {competition,result:m.result,opponent:m.opponent,score,eliminated}
+        {competition,result:m.result,opponent:m.opponent,score,eliminated,isRout}
       );
     }
+
+    // O jornal não cobre apenas o time do usuário: inclui resultados de outros clubes.
+    await publishOtherClubNews(client,ownerId,career,action,result);
   });
+
   return result;
 }
 async function ratingsMap(ids){
@@ -4135,8 +4459,14 @@ app.get("/api/dashboard",auth,async(req,res,next)=>{
     c.team_rating=await clubRating(c.id);
     const career=await getCareer(c.id);
     Object.assign(c,(await q(`SELECT * FROM clubs WHERE id=$1`,[c.id])).rows[0]||c);
-    await tx(async client=>{await ensureInitialNews(client,c.id,career?.season_no||1,c.name)});
-    const [ps,mk,mt,fr,fin,events,trophies,offers,sponsorship,mediaNews,pendingPress]=await Promise.all([
+    await tx(async client=>{
+      await ensureInitialNews(client,c.id,career?.season_no||1,c.name);
+      if(career){
+        await ensureBoardExpectationMessage(client,c,career);
+        await ensureOtherClubHeadlines(client,c.id,career);
+      }
+    });
+    const [ps,mk,mt,fr,fin,events,trophies,offers,sponsorship,mediaNews,pendingPress,boardMessages]=await Promise.all([
       q(`SELECT * FROM players WHERE club_id=$1 ORDER BY is_starter DESC,CASE position WHEN 'GK' THEN 1 WHEN 'DEF' THEN 2 WHEN 'MID' THEN 3 ELSE 4 END,rating DESC`,[c.id]),
       q(`SELECT * FROM players WHERE club_id IS NULL ORDER BY rating DESC,price DESC LIMIT 40`),
       q(`SELECT m.*,o.name opponent_name FROM matches m JOIN clubs o ON o.id=m.opponent_club_id WHERE m.user_club_id=$1 ORDER BY played_at DESC LIMIT 30`,[c.id]),
@@ -4146,12 +4476,19 @@ app.get("/api/dashboard",auth,async(req,res,next)=>{
       q(`SELECT id,season_no,competition,title,won_at FROM club_trophies WHERE club_id=$1 ORDER BY season_no DESC,won_at DESC`,[c.id]),
       q(`SELECT o.id,o.amount,o.status,o.offer_kind,o.created_at,p.id player_id,p.name player_name,p.position,p.role,p.rating,p.age,p.transfer_listed,b.id buying_club_id,b.name buying_club_name FROM transfer_offers o JOIN players p ON p.id=o.player_id JOIN clubs b ON b.id=o.buying_club_id WHERE o.selling_club_id=$1 AND o.status='pending' AND b.is_ai=TRUE AND o.offer_kind<>'human' ORDER BY o.amount DESC,o.created_at DESC`,[c.id]),
       sponsorshipSummary(c.id,career),
-      q(`SELECT id,season_no,category,source_name,headline,body,importance,created_at FROM media_news WHERE club_id=$1 ORDER BY created_at DESC,id DESC LIMIT 50`,[c.id]),
-      q(`SELECT id,season_no,trigger_type,title,question,context,created_at FROM press_conferences WHERE club_id=$1 AND status='pending' ORDER BY created_at ASC,id ASC LIMIT 1`,[c.id])
+      q(`SELECT id,season_no,category,source_name,headline,body,importance,created_at FROM media_news WHERE club_id=$1 ORDER BY created_at DESC,id DESC LIMIT 80`,[c.id]),
+      q(`SELECT id,season_no,trigger_type,title,question,context,created_at FROM press_conferences WHERE club_id=$1 AND status='pending' ORDER BY created_at ASC,id ASC LIMIT 1`,[c.id]),
+      q(`SELECT id,season_no,message_type,tone,title,body,importance,created_at FROM board_messages WHERE club_id=$1 ORDER BY created_at DESC,id DESC LIMIT 40`,[c.id])
     ]);
     const cal=career?calendarSummary(career,fin.wages):null;
     const saf=await safSummary(c,career);
-    res.json({club:c,players:ps.rows,market:mk.rows,matches:mt.rows,friends:fr.rows,finance:fin,clubEvents:events.rows,trophies:trophies.rows,incomingOffers:offers.rows,calendar:cal,sponsorship,mediaNews:mediaNews.rows,pendingPress:pendingPress.rows[0]||null,saf});
+    const boardExpectation=career?boardExpectationFor(career,c):null;
+    res.json({
+      club:c,players:ps.rows,market:mk.rows,matches:mt.rows,friends:fr.rows,finance:fin,
+      clubEvents:events.rows,trophies:trophies.rows,incomingOffers:offers.rows,calendar:cal,
+      sponsorship,mediaNews:mediaNews.rows,pendingPress:pendingPress.rows[0]||null,saf,
+      boardMessages:boardMessages.rows,boardExpectation
+    });
   }catch(e){next(e)}
 });
 
@@ -4192,26 +4529,44 @@ app.post("/api/press-conferences/:id/respond",auth,async(req,res,next)=>{
       const press=(await client.query(`SELECT * FROM press_conferences WHERE id=$1 AND club_id=$2 FOR UPDATE`,[id,c.id])).rows[0];
       if(!press||press.status!=="pending")throw Object.assign(new Error("Esta coletiva não está mais pendente."),{status:409});
 
-      let headline,body,fans=0,morale=0;
+      let headline,body,fans=0,morale=0,board=0,pressure=0,consequence="";
       if(answerKey==="responsibility"){
-        fans=220;morale=3;
+        fans=250;morale=3;board=4;pressure=-2;
         headline=`${c.name}: treinador assume responsabilidade em coletiva`;
         body="Na entrevista após o jogo, o treinador assumiu a responsabilidade pelo resultado e prometeu corrigir os problemas internamente.";
+        consequence="A diretoria valorizou a postura. A pressão externa diminuiu e o elenco recebeu a mensagem com relativa tranquilidade.";
       }else if(answerKey==="protect_squad"){
-        fans=80;morale=6;
+        fans=60;morale=7;board=-1;pressure=-3;
         headline=`${c.name}: treinador protege elenco diante da imprensa`;
         body="O comandante evitou individualizar erros, defendeu os jogadores e disse que o grupo seguirá unido para a sequência da temporada.";
+        consequence="O elenco ganhou moral e a pressão da imprensa caiu, mas a diretoria considerou a resposta excessivamente protetora.";
       }else{
-        fans=320;morale=-2;
+        fans=320;morale=-3;board=1;pressure=4;
         headline=`${c.name}: cobrança pública aumenta pressão por reação`;
         body="O treinador cobrou uma resposta imediata do elenco. A declaração agradou parte da torcida, mas elevou a pressão interna.";
+        consequence="A torcida aprovou a cobrança, porém o moral do elenco caiu e a repercussão da imprensa aumentou.";
       }
 
-      await client.query(`UPDATE clubs SET fans=GREATEST(0,fans+$2) WHERE id=$1`,[c.id,fans]);
+      await client.query(`
+        UPDATE clubs SET
+          fans=GREATEST(0,fans+$2),
+          board_confidence=GREATEST(0,LEAST(100,board_confidence+$3)),
+          media_pressure=GREATEST(0,LEAST(100,media_pressure+$4))
+        WHERE id=$1
+      `,[c.id,fans,board,pressure]);
       await client.query(`UPDATE players SET morale=GREATEST(30,LEAST(100,morale+$2)) WHERE club_id=$1`,[c.id,morale]);
       await client.query(`UPDATE press_conferences SET status='answered',answer_key=$2,answered_at=NOW() WHERE id=$1`,[press.id,answerKey]);
-      await publishNews(client,c.id,press.season_no,"coletiva",headline,body,2,"Central da Bola");
-      return {ok:true,headline,fansDelta:fans,moraleDelta:morale};
+      await publishNews(client,c.id,press.season_no,"coletiva",headline,`${body} ${consequence}`,2,"Central da Bola");
+      await client.query(`INSERT INTO club_events(club_id,event_type,title,description) VALUES($1,'press','Consequência da coletiva',$2)`,[c.id,consequence]);
+
+      return {
+        ok:true,headline,
+        fansDelta:fans,
+        moraleDelta:morale,
+        boardDelta:board,
+        pressureDelta:pressure,
+        consequence
+      };
     });
     res.json(result);
   }catch(e){next(e)}
@@ -4365,6 +4720,7 @@ app.post("/api/career/simulate-season",auth,async(req,res,next)=>{
       const career=await getCareer(c.id);
       await tx(async client=>{
         await publishNews(client,c.id,career?.season_no||1,"temporada",`Temporada de ${c.name} é simulada até o fim`,`A comissão técnica optou por simular o restante da temporada. O clube terminou na ${r.position||"—"}ª posição de sua divisão, com ${r.simulatedMatches||0} partidas processadas automaticamente.`,2,"Jornal do Clube");
+        if(career)await publishSeasonRoutHighlights(client,c.id,career);
       });
       return r;
     }));
@@ -4854,8 +5210,9 @@ async function start(){
   await applyV24Migration();
   await applyV25Migration();
   await applyV26Migration();
+  await applyV27Migration();
   await seedRealMarketPlayers();
   await ensureMarket();
-  app.listen(PORT,"0.0.0.0",()=>console.log(`Dono do Clube v26 rodando na porta ${PORT}`));
+  app.listen(PORT,"0.0.0.0",()=>console.log(`Dono do Clube v27 rodando na porta ${PORT}`));
 }
 start().catch(e=>{console.error("Falha ao iniciar:",e);process.exit(1)});

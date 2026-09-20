@@ -8,6 +8,7 @@ const state={
   trophies:[],incomingOffers:[],calendar:null,sponsorship:{active:null,offers:[]},marketProfile:null,
   mediaNews:[],pendingPress:null,saf:{active:false,offers:[],debtRisk:false},
   careers:[],maxCareers:10,lineupDirty:false,
+  boardMessages:[],boardExpectation:null,
   activeType:null,playerCareer:null,playerData:null,countries:{},creationMode:"club",playerView:"home",
   playerStarterClubs:[],
   view:"home",authMode:"login",competitionTab:"STATE",roundByDiv:{A:1,B:1,C:1,D:1}
@@ -54,7 +55,20 @@ function formatNewsDate(value){
   if(Number.isNaN(d.getTime()))return "";
   return d.toLocaleString("pt-BR",{day:"2-digit",month:"2-digit",hour:"2-digit",minute:"2-digit"});
 }
-function mediaCategoryLabel(c){return ({partida:"JOGO",eliminacao:"ELIMINAÇÃO",coletiva:"COLETIVA",titulo:"TÍTULO",negocios:"NEGÓCIOS",saf:"SAF",bastidores:"BASTIDORES",temporada:"TEMPORADA",institucional:"CLUBE"})[c]||String(c||"NOTÍCIA").toUpperCase()}
+function mediaCategoryLabel(c){return ({
+  partida:"JOGO",
+  goleada:"GOLEADA",
+  goleada_outros:"GOLEADA · OUTROS CLUBES",
+  outros_clubes:"OUTROS CLUBES",
+  eliminacao:"ELIMINAÇÃO",
+  coletiva:"COLETIVA",
+  titulo:"TÍTULO",
+  negocios:"NEGÓCIOS",
+  saf:"SAF",
+  bastidores:"BASTIDORES",
+  temporada:"TEMPORADA",
+  institucional:"CLUBE"
+})[c]||String(c||"NOTÍCIA").toUpperCase()}
 function phaseName(p){
   if(p==="STATE")return "Estadual";
   if(p==="NATIONAL")return state.activeType==="player"?"Liga nacional":(state.competitions?.career?leagueLabel(state.competitions.career.user_division):"Liga nacional");
@@ -380,7 +394,7 @@ function suggestRotation(formation){
   }
   if(chosen.length<11){
     const used=new Set(chosen.map(p=>String(p.id)));
-    chosen.push(...state.players.filter(p=>!used.has(String(p.id))&&Number(p.injury_games||0)<=0).sort((a,b)=>fitScore(b)-fitScore(a)).slice(0,11-chosen.length));
+    chosen.push(...state.players.filter(p=>!used.has(String(p.id))&&p.position!=="GK"&&Number(p.injury_games||0)<=0).sort((a,b)=>fitScore(b)-fitScore(a)).slice(0,11-chosen.length));
   }
   state.players.forEach(p=>p.is_starter=chosen.some(x=>String(x.id)===String(p.id)));
 }
@@ -403,7 +417,7 @@ function rebalanceForFormation(formation){
   if(chosen.length<11){
     const used=new Set(chosen.map(p=>String(p.id)));
     chosen.push(...state.players
-      .filter(p=>!used.has(String(p.id))&&Number(p.injury_games||0)<=0)
+      .filter(p=>!used.has(String(p.id))&&p.position!=="GK"&&Number(p.injury_games||0)<=0)
       .sort((x,y)=>Number(y.rating)-Number(x.rating))
       .slice(0,11-chosen.length));
   }
@@ -454,7 +468,7 @@ function selectBestSquad(formation){
   if(chosen.length<11){
     const used=new Set(chosen.map(p=>String(p.id)));
     const remaining=state.players
-      .filter(p=>!used.has(String(p.id))&&Number(p.injury_games||0)<=0)
+      .filter(p=>!used.has(String(p.id))&&p.position!=="GK"&&Number(p.injury_games||0)<=0)
       .sort(bestSort);
 
     chosen.push(...remaining.slice(0,11-chosen.length));
@@ -1355,29 +1369,104 @@ function careersView(){
 }
 function newsView(){
   const news=state.mediaNews||[];
-  const featured=news[0];
+  const otherCats=new Set(["outros_clubes","goleada_outros"]);
+  const clubNews=news.filter(n=>!otherCats.has(n.category));
+  const otherNews=news.filter(n=>otherCats.has(n.category));
+  const featured=clubNews[0]||news[0];
+
   return `<section class="newspaper">
     <div class="newspaper-masthead">
       <div class="kicker">EDIÇÃO DA CARREIRA</div>
       <h1>O Dono do Clube</h1>
       <p>${esc(state.club?.name||"Clube")} · Temporada ${state.competitions?.career?.season_no||1}</p>
     </div>
+
     ${featured?`<article class="news-featured importance-${featured.importance||1}">
       <div class="news-meta"><span>${esc(featured.source_name)}</span><span>${formatNewsDate(featured.created_at)}</span></div>
       <span class="news-category">${esc(mediaCategoryLabel(featured.category))}</span>
       <h2>${esc(featured.headline)}</h2>
       <p>${esc(featured.body)}</p>
     </article>`:`<div class="empty">As notícias da carreira aparecerão aqui após partidas e decisões importantes.</div>`}
+
+    <div class="newspaper-section-head">
+      <div><div class="kicker">SEU CLUBE</div><h2>Últimas notícias</h2></div>
+    </div>
     <div class="news-grid">
-      ${news.slice(1).map(n=>`<article class="news-card importance-${n.importance||1}">
+      ${clubNews.filter(n=>!featured||String(n.id)!==String(featured.id)).map(n=>`<article class="news-card importance-${n.importance||1}">
         <div class="news-meta"><span>${esc(n.source_name)}</span><span>${formatNewsDate(n.created_at)}</span></div>
         <span class="news-category">${esc(mediaCategoryLabel(n.category))}</span>
         <h3>${esc(n.headline)}</h3>
         <p>${esc(n.body)}</p>
-      </article>`).join("")}
+      </article>`).join("")||`<div class="empty">Ainda não há outras notícias do seu clube.</div>`}
+    </div>
+
+    <div class="newspaper-section-head other-clubs-head">
+      <div><div class="kicker">GIRO DO FUTEBOL</div><h2>Notícias de outros clubes</h2></div>
+      <span class="badge">${otherNews.length}</span>
+    </div>
+    <div class="news-grid other-clubs-news">
+      ${otherNews.length?otherNews.map(n=>`<article class="news-card other-club-news importance-${n.importance||1}">
+        <div class="news-meta"><span>${esc(n.source_name)}</span><span>${formatNewsDate(n.created_at)}</span></div>
+        <span class="news-category">${esc(mediaCategoryLabel(n.category))}</span>
+        <h3>${esc(n.headline)}</h3>
+        <p>${esc(n.body)}</p>
+      </article>`).join(""):`<div class="empty">As notícias dos rivais aparecerão conforme a temporada avança.</div>`}
     </div>
   </section>`;
 }
+
+function boardStatusLabel(status){
+  return ({
+    on_track:"Dentro da expectativa",
+    attention:"Atenção",
+    off_track:"Abaixo da expectativa"
+  })[status]||"Em avaliação";
+}
+function boardToneLabel(tone){
+  return ({positive:"POSITIVA",negative:"ALERTA",neutral:"INFORMATIVA"})[tone]||"DIRETORIA";
+}
+function boardView(){
+  const ex=state.boardExpectation;
+  const messages=state.boardMessages||[];
+  if(!ex)return `<section class="card"><div class="empty">As expectativas da diretoria aparecerão quando a carreira estiver ativa.</div></section>`;
+
+  return `<section class="board-page">
+    <div class="board-hero">
+      <div>
+        <div class="kicker">CONSELHO DE ADMINISTRAÇÃO</div>
+        <h1>Expectativa da Diretoria</h1>
+        <p>${esc(ex.description)}</p>
+      </div>
+      <div class="board-status ${esc(ex.status)}">
+        <small>SITUAÇÃO</small>
+        <b>${esc(boardStatusLabel(ex.status))}</b>
+      </div>
+    </div>
+
+    <div class="board-metrics">
+      <div class="board-metric"><small>META DA TEMPORADA</small><b>${esc(ex.targetTitle)}</b><span>Alvo: até ${ex.targetPosition}º lugar</span></div>
+      <div class="board-metric"><small>POSIÇÃO ATUAL</small><b>${ex.currentPosition}º</b><span>${esc(leagueLabel(state.competitions?.career?.user_division||"D",state.competitions?.career?.country_code))}</span></div>
+      <div class="board-metric confidence"><small>CONFIANÇA DA DIRETORIA</small><b>${ex.confidence}%</b><div class="meter"><i style="width:${Math.max(0,Math.min(100,Number(ex.confidence||0)))}%"></i></div></div>
+      <div class="board-metric pressure"><small>PRESSÃO DA MÍDIA</small><b>${ex.mediaPressure}%</b><div class="meter"><i style="width:${Math.max(0,Math.min(100,Number(ex.mediaPressure||0)))}%"></i></div></div>
+    </div>
+
+    <div class="card board-inbox">
+      <div class="section-title">
+        <div><div class="kicker">CAIXA DE ENTRADA</div><h2>Mensagens da diretoria</h2></div>
+        <span class="badge">${messages.length}</span>
+      </div>
+      <p class="muted">A diretoria envia mensagens após títulos, eliminações, goleadas aplicadas e goleadas sofridas.</p>
+      <div class="board-message-list">
+        ${messages.length?messages.map(m=>`<article class="board-message tone-${esc(m.tone)} importance-${m.importance||1}">
+          <div class="board-message-meta"><span>${esc(boardToneLabel(m.tone))}</span><span>${formatNewsDate(m.created_at)}</span></div>
+          <h3>${esc(m.title)}</h3>
+          <p>${esc(m.body)}</p>
+        </article>`).join(""):`<div class="empty">Nenhuma mensagem da diretoria ainda.</div>`}
+      </div>
+    </div>
+  </section>`;
+}
+
 function safProjectCard(){
   const saf=state.saf||{active:false,offers:[]};
   const car=state.competitions?.career;
@@ -1497,6 +1586,7 @@ function render(){
     state.view==="squad"?squadView():
     state.view==="market"?marketView():
     state.view==="news"?newsView():
+    state.view==="board"?boardView():
     state.view==="friends"?friendsView():
     state.view==="league"?competitionsView():
     state.view==="club"?clubView():
@@ -1514,6 +1604,7 @@ function render(){
   <nav class="nav">
     <button data-view="home" class="${state.view==="home"?"on":""}">INÍCIO</button>
     <button data-view="news" class="${state.view==="news"?"on":""}">JORNAL</button>
+    <button data-view="board" class="${state.view==="board"?"on":""}">DIRETORIA</button>
     <button data-view="starters" class="${state.view==="starters"?"on":""}">TITULARES</button>
     <button data-view="squad" class="${state.view==="squad"?"on":""}">ELENCO</button>
     <button data-view="market" class="${state.view==="market"?"on":""}">MERCADO</button>
@@ -1552,10 +1643,11 @@ function maybeShowPressConference(){
     <div class="press-banner"><div class="press-mics">🎙️ 🎤 🎙️</div><div><div class="kicker">COLETIVA DE IMPRENSA</div><h2>${esc(press.title||"Coletiva pós-jogo")}</h2></div></div>
     <div class="press-question"><span>${esc(press.context?.competition||"Imprensa")}</span><p>${esc(press.question)}</p></div>
     <div class="press-answers">
-      <button data-press-answer="responsibility"><b>Assumir responsabilidade</b><span>Reduz a pressão sobre o elenco e melhora a relação com a torcida.</span></button>
-      <button data-press-answer="protect_squad"><b>Proteger o elenco</b><span>Aumenta mais o moral dos jogadores, com repercussão pública moderada.</span></button>
-      <button data-press-answer="demand_reaction"><b>Cobrar reação</b><span>Agrada parte da torcida, mas aumenta a pressão sobre o grupo.</span></button>
+      <button data-press-answer="responsibility"><b>Assumir responsabilidade</b><span>Torcida +250 · Moral +3 · Diretoria +4 · Pressão da mídia -2</span></button>
+      <button data-press-answer="protect_squad"><b>Proteger o elenco</b><span>Moral +7 · Torcida +60 · Diretoria -1 · Pressão da mídia -3</span></button>
+      <button data-press-answer="demand_reaction"><b>Cobrar reação</b><span>Torcida +320 · Moral -3 · Diretoria +1 · Pressão da mídia +4</span></button>
     </div>
+    <p class="press-consequence-note">Sua resposta altera de verdade o ambiente do clube e pode afetar a confiança da diretoria, o moral do elenco e a pressão da imprensa.</p>
   </div>`;
   document.body.appendChild(bg);
   bg.querySelectorAll("[data-press-answer]").forEach(btn=>btn.onclick=async()=>{
@@ -1565,7 +1657,7 @@ function maybeShowPressConference(){
       bg.remove();
       await refreshAll();
       render();
-      alert(d.headline||"Coletiva concluída.");
+      alert(`${d.headline||"Coletiva concluída."}\n\n${d.consequence||""}\nTorcida: ${d.fansDelta>=0?"+":""}${d.fansDelta||0} · Moral: ${d.moraleDelta>=0?"+":""}${d.moraleDelta||0} · Diretoria: ${d.boardDelta>=0?"+":""}${d.boardDelta||0} · Pressão: ${d.pressureDelta>=0?"+":""}${d.pressureDelta||0}`);
     }catch(err){
       alert(err.message);
       bg.querySelectorAll("button").forEach(x=>x.disabled=false);
@@ -1800,6 +1892,10 @@ function bindSquad(){
     const p=state.players.find(x=>String(x.id)===String(b.dataset.id));if(!p)return;
     if(Number(p.injury_games||0)>0&&!p.is_starter){alert(`${p.name} está lesionado por ${p.injury_games} jogo(s).`);return}
     if(!p.is_starter&&state.players.filter(x=>x.is_starter).length>=11){alert("Já existem 11 titulares.");return}
+    if(!p.is_starter&&p.position==="GK"&&state.players.some(x=>x.is_starter&&x.position==="GK")){
+      alert("A escalação pode ter apenas um goleiro titular.");
+      return;
+    }
     p.is_starter=!p.is_starter;state.lineupDirty=true;render();
   });
   app.querySelectorAll(".list-player").forEach(b=>b.onclick=async()=>{

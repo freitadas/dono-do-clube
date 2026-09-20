@@ -580,3 +580,93 @@ O rebaixamento é administrativo e independe da posição esportiva do time na t
 Clubes que **não são SAF** não sofrem esse rebaixamento automático por dívida.
 
 O saldo de fim de ano fica registrado quando a temporada encerra, portanto recuperar dinheiro depois do encerramento não apaga a sanção daquela temporada.
+
+
+## Jornal ampliado, Diretoria e correção da escalação — v27
+
+### Correção do campo / goleiros
+
+Foi corrigido o problema em que uma formação podia aparecer com dois goleiros e menos jogadores de linha do que deveria.
+
+Agora:
+- a escalação tenta respeitar exatamente a quantidade de jogadores de cada setor da formação;
+- o sistema nunca usa um segundo goleiro para preencher uma vaga de zagueiro, meio-campista ou atacante;
+- ao carregar a carreira, uma escalação inválida é reparada automaticamente;
+- a seleção manual impede escolher um segundo goleiro como titular enquanto já existe um goleiro no XI;
+- os botões **Usar os melhores**, **Priorizar descansados** e a troca de formação também evitam esse problema.
+
+### Jornal com notícias dos outros clubes
+
+O **JORNAL** deixou de acompanhar apenas o clube do usuário.
+
+Agora existe a seção **Giro do Futebol**, com:
+- resultados de outros clubes;
+- situação dos rivais na tabela;
+- notícias de clubes que estão brigando pelas primeiras posições;
+- goleadas de outros clubes.
+
+O jornal continua mostrando também as notícias do seu próprio time.
+
+### Goleadas no jornal
+
+Uma partida com diferença de **3 gols ou mais** passa a ser tratada como goleada.
+
+Quando o seu clube aplica uma goleada:
+- a notícia recebe destaque;
+- a confiança da diretoria aumenta;
+- a pressão da mídia pode cair;
+- a diretoria envia uma mensagem de elogio.
+
+Quando o seu clube sofre uma goleada:
+- a notícia aparece em destaque;
+- a confiança da diretoria cai;
+- a pressão da mídia aumenta;
+- a diretoria envia uma cobrança.
+
+As maiores goleadas também são publicadas quando a temporada inteira é simulada.
+
+### Coletiva de imprensa com consequências
+
+As respostas da coletiva agora têm efeitos objetivos no jogo.
+
+**Assumir responsabilidade**
+- torcida +250;
+- moral do elenco +3;
+- confiança da diretoria +4;
+- pressão da mídia -2.
+
+**Proteger o elenco**
+- torcida +60;
+- moral do elenco +7;
+- confiança da diretoria -1;
+- pressão da mídia -3.
+
+**Cobrar reação**
+- torcida +320;
+- moral do elenco -3;
+- confiança da diretoria +1;
+- pressão da mídia +4.
+
+Após escolher uma resposta, o jogo mostra as consequências e registra a repercussão no jornal.
+
+### Aba DIRETORIA
+
+Foi criada a nova aba **DIRETORIA**.
+
+Ela mostra:
+- expectativa da temporada;
+- posição-alvo;
+- posição atual;
+- confiança da diretoria, de 0 a 100;
+- pressão da mídia, de 0 a 100;
+- caixa de mensagens do conselho.
+
+A diretoria envia mensagens após:
+- títulos;
+- eliminações;
+- goleadas aplicadas;
+- goleadas sofridas.
+
+Nas divisões B, C e D, a expectativa padrão é lutar pelo acesso e terminar no G4. Na primeira divisão, a diretoria passa a exigir campanha de elite, podendo cobrar disputa pelo título de equipes mais fortes.
+
+Se o clube for uma SAF, a expectativa também lembra que a temporada deve terminar sem dívida para evitar o rebaixamento administrativo.

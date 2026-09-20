@@ -1,8 +1,8 @@
 {
   "name": "dono-do-clube",
-  "version": "26.0.0",
+  "version": "27.0.0",
   "private": true,
-  "description": "Dono do Clube com jornal da carreira, coletivas de imprensa e projeto SAF com aporte e rebaixamento administrativo por dívida.",
+  "description": "Dono do Clube com escalação corrigida, jornal com outros clubes e goleadas, coletiva com consequências e aba de expectativas da diretoria.",
   "main": "server.js",
   "scripts": {
     "start": "node server.js"
