@@ -14,6 +14,7 @@ const state={
   activeType:null,playerCareer:null,playerData:null,countries:{},creationMode:"club",playerView:"home",
   playerStarterClubs:[],
   playerExpansion:{agent:true,media:true,sponsorship:true,awards:true,nationalTeam:true,legacy:true},
+  europeOffersExpansion:true,
   view:"home",authMode:"login",competitionTab:"STATE",roundByDiv:{A:1,B:1,C:1,D:1}
 };
 
@@ -3364,8 +3365,14 @@ function improveYouthAcademy(player){
 }
 
 
-// V38 LOADING GUARD - evita travamento infinito de carregamento
-if(!window.__v38LoadingGuard){
- window.__v38LoadingGuard=true;
- window.addEventListener("unhandledrejection", e=>{ console.error(e.reason); });
+
+// EXPANSÃO MODO JOGADOR - propostas de clubes europeus por desempenho
+function europePerformanceOffers(player){
+ if(!player)return [];
+ const rating=Number(player.rating||0);
+ const goals=Number(player.goals||0);
+ if(rating<75 && goals<10)return [];
+ const clubs=["Benfica","Porto","Ajax","PSV","Borussia Dortmund","Sevilla","Napoli","Atalanta","Villarreal"];
+ const amount=Math.min(100000000,Math.max(5000000,rating*rating*1000+goals*250000));
+ return clubs.slice(0,Math.floor(Math.random()*3)+1).map(c=>({club:c,offer:Math.round(amount),reason:"Bom desempenho na temporada"}));
 }
