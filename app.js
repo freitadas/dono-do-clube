@@ -3348,27 +3348,6 @@ async function logout(){
 bootstrap();
 
 
-// FIX V38 SEARCH HARD FIX
-// Pesquisa do mercado: mantém o clique funcionando após qualquer renderização.
-if(!window.__v38SearchHardFix){
- window.__v38SearchHardFix=true;
- document.addEventListener("click", async function(e){
-   const btn=e.target.closest("#transferSearchBtn");
-   if(!btn) return;
-   e.preventDefault();
-   e.stopImmediatePropagation();
-   if(btn.dataset.running==="1") return;
-   btn.dataset.running="1";
-   try{
-     await searchTransfers();
-   }catch(err){
-     const box=document.querySelector("#transferResults");
-     if(box) box.innerHTML=`<div class="msg">${esc(err.message)}</div>`;
-   }finally{
-     btn.dataset.running="0";
-   }
- }, true);
-}
 
 
 // V38 ACADEMIA MELHORADA - gera jovens mais variados e com potencial
@@ -3384,3 +3363,9 @@ function improveYouthAcademy(player){
   return player;
 }
 
+
+// V38 LOADING GUARD - evita travamento infinito de carregamento
+if(!window.__v38LoadingGuard){
+ window.__v38LoadingGuard=true;
+ window.addEventListener("unhandledrejection", e=>{ console.error(e.reason); });
+}
