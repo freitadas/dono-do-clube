@@ -3425,25 +3425,3 @@ if(!window.__v38EuropeanPerformanceOffers){
 }
 
 
-// FIX V38 - exercer opção de compra em empréstimos
-// Garante que o botão continue funcionando após renderizações.
-if(!window.__v38LoanPurchaseFix){
- window.__v38LoanPurchaseFix=true;
- document.addEventListener("click", async function(e){
-   const btn=e.target.closest(".exercise-loan-option, #exerciseLoanPurchase");
-   if(!btn) return;
-   e.preventDefault();
-   if(btn.disabled) return;
-   btn.disabled=true;
-   try{
-     const id=btn.dataset.id || btn.dataset.loanId;
-     if(!id) throw new Error("Empréstimo não identificado.");
-     await api(`/api/transfers/loan/${id}/purchase-option`,{method:"POST",body:"{}"});
-     await refreshAll();
-     render();
-   }catch(err){
-     alert(err.message);
-     btn.disabled=false;
-   }
- }, true);
-}
