@@ -1589,10 +1589,10 @@ function transferCards(){
       </div>`}
 
       <div class="pstats">
-        <span>Valor justo <b>${Number(p.fair_value||p.price||0).toLocaleString("pt-BR")}</b></span>
-        <span>Pedido <b>${Number(p.asking_price||p.fair_value||p.price||0).toLocaleString("pt-BR")}</b></span>
-        <span>Salário mensal <b>${Number(p.suggested_salary||p.salary||0).toLocaleString("pt-BR")}</b></span>
-        <span>Interesse <b>${esc(p.interest||"Normal")}</b></span>
+        <span>Valor justo <b>${Number(p.fair_value||0).toLocaleString("pt-BR")}</b></span>
+        <span>Pedido <b>${Number(p.asking_price||0).toLocaleString("pt-BR")}</b></span>
+        <span>Salário mensal <b>${Number(p.suggested_salary||0).toLocaleString("pt-BR")}</b></span>
+        <span>Interesse <b>${esc(p.interest)}</b></span>
         ${scouted?`<span>Potencial <b>${p.potential??p.rating}</b></span>`:""}
       </div>
       <div class="loan-status ${p.loan_eligible?"loan-ok":"loan-no"}">${p.loan_eligible?`Empréstimo disponível · sugerido ${Number(p.suggested_loan_fee||0).toLocaleString("pt-BR")}/mês`:`Empréstimo: ${esc(p.loan_reason||"indisponível")}`}</div>
@@ -3121,6 +3121,17 @@ function bindMarket(){
     check.disabled=true;check.textContent="PROCURANDO...";
     try{const d=await api("/api/transfers/incoming/generate",{method:"POST",body:"{}"});await refreshAll();render();if(!d.created)alert("Nenhuma nova proposta apareceu agora.")}catch(err){alert(err.message);check.disabled=false}
   };
+  // v33 FIX FINAL: garante o clique do botão de pesquisa mesmo após re-renderizações
+  const finalSearchBtn=app.querySelector("#transferSearchBtn");
+  if(finalSearchBtn){
+    finalSearchBtn.onclick=async function(e){
+      e.preventDefault();
+      e.stopPropagation();
+      await searchTransfers();
+      return false;
+    };
+  }
+
   if(!state.transferResults?.length)searchTransfers();
 }
 function bindFriends(){
