@@ -3116,6 +3116,21 @@ if(!window.__v38ProposalButtons){
   }, true);
 }
 
+// FIX V38 PESQUISA DE JOGADORES - evento estável
+if(!window.__v38SearchClickFix){
+ window.__v38SearchClickFix=true;
+ document.addEventListener("click",async e=>{
+   const btn=e.target.closest("#transferSearchBtn");
+   if(!btn) return;
+   e.preventDefault();
+   try{ await searchTransfers(); }
+   catch(err){
+     const box=document.querySelector("#transferResults");
+     if(box) box.innerHTML=`<div class="msg">${esc(err.message)}</div>`;
+   }
+ },true);
+}
+
 function bindMarket(){
   bindLoanPurchaseButtons();
 
@@ -3133,11 +3148,10 @@ function bindMarket(){
     });
   }
   if(searchBtn){
-    searchBtn.addEventListener("click",async e=>{
+    searchBtn.onclick=async e=>{
       e.preventDefault();
-      e.stopPropagation();
       await searchTransfers();
-    });
+    };
   }
 
   const position=app.querySelector("#searchPosition");
