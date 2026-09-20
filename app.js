@@ -8,9 +8,7 @@ const state={
   trophies:[],incomingOffers:[],calendar:null,sponsorship:{active:null,offers:[]},marketProfile:null,
   mediaNews:[],pendingPress:null,saf:{active:false,offers:[],debtRisk:false},
   careers:[],maxCareers:10,lineupDirty:false,
-  boardMessages:[],boardExpectation:null,teamPerformance:null,rotationAdvice:null,realism:null,
-  transferWindow:null,scoutLevel:1,
-  transferSearch:{name:"",position:"",minRating:58,maxPrice:500000,realOnly:false},
+  boardMessages:[],boardExpectation:null,teamPerformance:null,rotationAdvice:null,contractRenewals:[],
   activeType:null,playerCareer:null,playerData:null,countries:{},creationMode:"club",playerView:"home",
   playerStarterClubs:[],
   view:"home",authMode:"login",competitionTab:"STATE",roundByDiv:{A:1,B:1,C:1,D:1}
@@ -331,30 +329,16 @@ function fitnessClass(p){
   if(Number(p.fitness||100)>=50)return "warn";
   return "bad";
 }
-function squadStatusLabel(v){
-  return ({STAR:"Craque",STARTER:"Titular",ROTATION:"Rotação",BACKUP:"Reserva",PROSPECT:"Promessa"})[v]||"Rotação";
-}
-function tacticalRoleLabel(v){
-  return ({
-    BALANCED:"Equilibrado",STOPPER:"Zagueiro marcador",BALL_PLAYING:"Zagueiro construtor",
-    ANCHOR:"Volante marcador",PLAYMAKER:"Armador",BOX_TO_BOX:"Box-to-box",
-    WINGER:"Ponta aberto",INSIDE_FORWARD:"Ponta invertido",TARGET:"Referência",
-    POACHER:"Finalizador",SWEEPER_KEEPER:"Goleiro-líbero"
-  })[v]||"Equilibrado";
-}
 function playerCard(p){
   const severance=Math.max(100,Number(p.salary||0)*2);
-  return `<article class="player ${p.is_starter?"starter":""} ${Number(p.suspension_games||0)>0?"suspended":""}">
+  return `<article class="player ${p.is_starter?"starter":""}">
     <span class="pos">${esc(p.role||posName(p.position))} · ${p.age} anos</span>
     <span class="rating">${p.rating}</span>
     <h4>${esc(p.name)}</h4>
     <div class="condition-line ${fitnessClass(p)}">
       <span>Físico <b>${p.fitness??100}%</b></span>
       <span>Moral <b>${p.morale??70}</b></span>
-      <span>Forma <b>${p.form_rating??70}</b></span>
-      <span>Felicidade <b>${p.happiness??75}</b></span>
-      ${Number(p.injury_games||0)>0?`<span>🩹 <b>${esc(p.injury_type||"Lesão")} · ${p.injury_games} jogo(s)</b></span>`:""}
-      ${Number(p.suspension_games||0)>0?`<span>🟥 <b>Suspenso ${p.suspension_games} jogo(s)</b></span>`:""}
+      ${Number(p.injury_games||0)>0?`<span>🩹 <b>${p.injury_games} jogo(s)</b></span>`:""}
     </div>
     <div class="attrs">
       <span>VEL <b>${p.pace}</b></span><span>CHU <b>${p.shooting}</b></span>
@@ -364,20 +348,11 @@ function playerCard(p){
       <span>J <b>${p.appearances}</b></span><span>G <b>${p.goals}</b></span>
       <span>A <b>${p.assists}</b></span><span>Sal. <b>${Number(p.salary||0).toLocaleString("pt-BR")}</b></span>
       <span>Contrato <b>${p.contract_seasons||1}T</b></span><span>Rescisão <b>${severance.toLocaleString("pt-BR")}</b></span>
-      <span>Potencial <b>${p.potential??p.rating}</b></span>
-      <span>Status <b>${esc(squadStatusLabel(p.squad_status))}</b></span>
-      <span>Cartões <b>${p.yellow_accumulation||0}/3 🟨 · ${p.red_cards||0} 🟥</b></span>
       ${Number(p.consecutive_starts||0)>=2?`<span>Carga <b>${p.consecutive_starts} jogos seguidos</b></span>`:""}
-    </div>
-    <div class="player-role-line">
-      ${p.is_captain?`<span>© Capitão</span>`:""}
-      ${p.set_piece_role&&p.set_piece_role!=="NONE"?`<span>⚽ ${esc(p.set_piece_role.replace("_"," "))}</span>`:""}
-      ${p.academy_product?`<span>🌱 Base</span>`:""}
-      <span>${esc(tacticalRoleLabel(p.tactical_role))}</span>
     </div>
     ${p.transfer_listed?`<div class="sale-badge">À VENDA</div>`:""}
     <div class="player-actions">
-      <button class="${p.is_starter?"primary":"secondary"} toggle-player" data-id="${p.id}" ${(Number(p.injury_games||0)>0||Number(p.suspension_games||0)>0)&&!p.is_starter?"disabled":""}>${p.is_starter?"Titular":"Reserva"}</button>
+      <button class="${p.is_starter?"primary":"secondary"} toggle-player" data-id="${p.id}" ${Number(p.injury_games||0)>0&&!p.is_starter?"disabled":""}>${p.is_starter?"Titular":"Reserva"}</button>
       <button class="secondary list-player" data-id="${p.id}">${p.transfer_listed?"Retirar da venda":"Colocar à venda"}</button>
       <button class="danger release-player" data-id="${p.id}" ${p.is_starter?"disabled":""}>Rescindir</button>
     </div>
@@ -475,7 +450,7 @@ function formationRosterAvailable(formation){
   const q=formationQuota(formation);
   const available={GK:0,DEF:0,MID:0,ATT:0};
   state.players
-    .filter(p=>Number(p.injury_games||0)<=0&&Number(p.suspension_games||0)<=0)
+    .filter(p=>Number(p.injury_games||0)<=0)
     .forEach(p=>available[p.position]=(available[p.position]||0)+1);
   return Object.keys(q).every(pos=>Number(available[pos]||0)>=Number(q[pos]||0));
 }
@@ -714,7 +689,7 @@ function shouldRotateStarter(starter,reserve,context){
 
 function suggestRotation(formation){
   const q=formationQuota(formation);
-  const healthy=state.players.filter(p=>Number(p.injury_games||0)<=0&&Number(p.suspension_games||0)<=0);
+  const healthy=state.players.filter(p=>Number(p.injury_games||0)<=0);
   const context=rotationContext();
   const chosen=[];
   const changes=[];
@@ -789,7 +764,7 @@ function rebalanceForFormation(formation){
 
   for(const pos of ["GK","DEF","MID","ATT"]){
     const candidates=state.players
-      .filter(p=>p.position===pos&&Number(p.injury_games||0)<=0&&Number(p.suspension_games||0)<=0)
+      .filter(p=>p.position===pos&&Number(p.injury_games||0)<=0)
       .sort((x,y)=>{
         if(Boolean(x.is_starter)!==Boolean(y.is_starter))return x.is_starter?-1:1;
         return Number(y.rating)-Number(x.rating) ||
@@ -807,7 +782,7 @@ function rebalanceForFormation(formation){
 
 function compatibleReserves(starter){
   return state.players
-    .filter(p=>!p.is_starter&&p.position===starter.position&&Number(p.injury_games||0)<=0&&Number(p.suspension_games||0)<=0)
+    .filter(p=>!p.is_starter&&p.position===starter.position&&Number(p.injury_games||0)<=0)
     .sort((x,y)=>Number(y.rating)-Number(x.rating) ||
       Number(y.fitness||100)-Number(x.fitness||100));
 }
@@ -839,7 +814,7 @@ function selectBestSquad(formation){
 
   for(const pos of ["GK","DEF","MID","ATT"]){
     const available=state.players
-      .filter(p=>p.position===pos&&Number(p.injury_games||0)<=0&&Number(p.suspension_games||0)<=0)
+      .filter(p=>p.position===pos&&Number(p.injury_games||0)<=0)
       .sort(bestSort);
 
     chosen.push(...available.slice(0,q[pos]));
@@ -1069,7 +1044,7 @@ function injuredPlayersPanel(compact=false){
           </div>
         </div>
         <div class="injury-time">
-          <strong>🩹 ${esc(p.injury_type||"Lesão")} · ${Number(p.injury_games)} jogo(s)</strong>
+          <strong>🩹 ${Number(p.injury_games)} jogo(s)</strong>
           <span>${Number(p.injury_games)===1?"Retorno previsto após o próximo jogo":`Retorno previsto em ${Number(p.injury_games)} jogos`}</span>
         </div>
         <div class="injury-condition">
@@ -1081,238 +1056,96 @@ function injuredPlayersPanel(compact=false){
   </section>`;
 }
 
-function disciplinePanel(compact=false){
-  const suspended=(state.players||[])
-    .filter(p=>Number(p.suspension_games||0)>0)
-    .sort((a,b)=>Number(b.suspension_games||0)-Number(a.suspension_games||0)||Number(b.rating||0)-Number(a.rating||0));
-  const atRisk=(state.players||[])
-    .filter(p=>Number(p.suspension_games||0)<=0&&Number(p.yellow_accumulation||0)>=2)
-    .sort((a,b)=>Number(b.rating||0)-Number(a.rating||0));
+function contractRenewalNotifications(){
+  const list=state.contractRenewals||[];
+  if(!list.length)return "";
 
-  if(!suspended.length&&!atRisk.length)return "";
-
-  return `<section class="card discipline-panel ${compact?"compact":""}">
+  return `<section class="card contract-renewal-card">
     <div class="section-title">
-      <div><div class="kicker">🟨 DISCIPLINA</div><h2>Cartões e suspensões</h2></div>
-      <span class="badge red">${suspended.length} suspenso(s)</span>
+      <div><div class="kicker">🔔 NOTIFICAÇÕES</div><h2>Renovações de contrato pendentes</h2></div>
+      <span class="badge red">${list.length}</span>
     </div>
-    ${suspended.length?`<div class="discipline-list">
-      ${suspended.map(p=>`<div class="discipline-row"><b>🟥 ${esc(p.name)}</b><span>${p.suspension_games} jogo(s) de suspensão</span></div>`).join("")}
-    </div>`:""}
-    ${atRisk.length?`<div class="discipline-risk"><b>Com 2 amarelos:</b> ${atRisk.map(p=>`${esc(p.name)} (${p.yellow_accumulation}/3)`).join(" · ")}</div>`:""}
-  </section>`;
-}
-
-function benchPanel(){
-  const bench=(state.players||[])
-    .filter(p=>!p.is_starter&&Number(p.injury_games||0)<=0&&Number(p.suspension_games||0)<=0)
-    .sort((a,b)=>{
-      if(Boolean(a.is_bench)!==Boolean(b.is_bench))return a.is_bench?-1:1;
-      return Number(b.rating||0)-Number(a.rating||0);
-    })
-    .slice(0,9);
-  return `<section class="bench-panel">
-    <div class="section-title"><div><div class="kicker">BANCO DE RESERVAS</div><h3>9 relacionados</h3></div><span class="badge">${bench.length}/9</span></div>
-    <div class="bench-grid">
-      ${bench.map(p=>`<div class="bench-player"><span>${p.rating}</span><b>${esc(p.name)}</b><small>${esc(p.role||posName(p.position))} · físico ${p.fitness??100}% · forma ${p.form_rating??70}</small></div>`).join("")}
-    </div>
-    <p class="muted">Durante a simulação, o treinador pode fazer até 5 substituições automáticas usando este banco, priorizando desgaste, posição e qualidade.</p>
-  </section>`;
-}
-
-function managerOffersCard(compact=false){
-  const offers=state.realism?.managerOffers||[];
-  if(!offers.length)return "";
-  return `<section class="card manager-offers-card ${compact?"compact":""}">
-    <div class="section-title">
-      <div><div class="kicker">📩 MERCADO DE TREINADORES</div><h2>Propostas de outros clubes</h2></div>
-      <span class="badge red">${offers.length}</span>
-    </div>
-    <p class="muted">Seu desempenho chamou atenção. Aceitar uma proposta troca o clube que você comanda dentro desta mesma carreira e você assume a situação atual da nova equipe.</p>
-    <div class="manager-offer-list">
-      ${offers.map(o=>`<article class="manager-offer">
-        <div><b>${esc(o.club_name)}</b><small>OVR-base ${o.base_rating} · desempenho que gerou a oferta ${o.performance_score}/100${o.coach_name?` · atual treinador ${esc(o.coach_name)}`:""}</small></div>
-        <div class="offer-value"><small>SALÁRIO</small><b>${Number(o.salary||0).toLocaleString("pt-BR")}/mês</b></div>
-        <div class="offer-actions">
-          <button class="primary accept-manager-offer" data-id="${o.id}">Aceitar cargo</button>
-          <button class="danger decline-manager-offer" data-id="${o.id}">Recusar</button>
+    <p class="muted">Estes jogadores estão no último ano de contrato. Se você não renovar antes da próxima temporada, eles deixam o clube sem renovação automática.</p>
+    <div class="contract-renewal-list">
+      ${list.map(p=>`<article class="contract-renewal-item">
+        <div class="contract-player">
+          <span class="contract-rating">${p.rating}</span>
+          <div>
+            <b>${esc(p.name)}</b>
+            <small>${esc(p.role||p.position)} · ${p.age} anos${p.isStarter?" · titular":""}</small>
+          </div>
         </div>
+        <div class="contract-values">
+          <span>Salário atual <b>${Number(p.salary||0).toLocaleString("pt-BR")}</b></span>
+          <span>Pedido estimado <b>${Number(p.suggestedSalary||0).toLocaleString("pt-BR")}</b></span>
+          <span>Luvas <b>${Number(p.signingBonus||0).toLocaleString("pt-BR")}</b></span>
+        </div>
+        <button class="primary renew-contract" data-player="${p.id}">Renovar contrato</button>
       </article>`).join("")}
     </div>
   </section>`;
 }
 
-function tacticLabel(v){
-  return ({
-    LOW:"Baixa",NORMAL:"Normal",HIGH:"Alta",SLOW:"Lento",FAST:"Rápido",
-    NARROW:"Estreita",WIDE:"Ampla",BALANCED:"Equilibrado",POSSESSION:"Posse",
-    COUNTER:"Contra-ataque",DIRECT:"Jogo direto",AGGRESSIVE:"Agressiva"
-  })[v]||v;
-}
-function tacticOptions(values,current){
-  return values.map(v=>`<option value="${v}" ${current===v?"selected":""}>${esc(tacticLabel(v))}</option>`).join("");
-}
-function realismView(){
-  const r=state.realism||{};
-  const tactics=r.tactics||{};
-  const opp=r.opponent;
-  const window=r.transferWindow||state.transferWindow||{};
-  const records=r.records||{};
-  const history=r.history||[];
-  const awards=r.awards||[];
-  const playerHistory=r.playerHistory||[];
+function openContractRenewal(playerId){
+  const p=(state.contractRenewals||[]).find(x=>String(x.id)===String(playerId));
+  if(!p)return;
 
-  return `<section class="realism-page">
-    <div class="card realism-hero">
-      <div>
-        <div class="kicker">CENTRAL DE REALISMO</div>
-        <h1>Gestão esportiva completa</h1>
-        <p class="muted">Tática, comissão técnica, base, estádio, olheiros, rivalidade, histórico e mercado de treinadores.</p>
-      </div>
-      <div class="realism-kpis">
-        <span>Entrosamento <b>${r.chemistry??70}</b></span>
-        <span>Reputação do treinador <b>${r.managerReputation??50}</b></span>
-        <span>Rival <b>${esc(r.rival?.name||"A definir")}</b></span>
-        <span>Janela <b>${window.open?"ABERTA":"FECHADA"}</b></span>
-      </div>
+  const bg=document.createElement("div");bg.className="modal-bg";
+  bg.innerHTML=`<div class="modal">
+    <div class="modal-head">
+      <div><div class="kicker">RENOVAÇÃO DE CONTRATO</div><h2>${esc(p.name)}</h2><span class="muted">${esc(p.role||p.position)} · OVR ${p.rating}</span></div>
+      <button class="secondary close-modal">Fechar</button>
     </div>
-
-    ${managerOffersCard(false)}
-
-    <section class="card opponent-analysis">
-      <div class="section-title"><div><div class="kicker">PRÓXIMO ADVERSÁRIO</div><h2>Análise pré-jogo</h2></div></div>
-      ${opp?`
-        <div class="opponent-grid">
-          <div><b>${esc(opp.name)}</b><span>OVR ${opp.rating} · ${esc(opp.formation)} · treinador ${esc(opp.coachName||"Treinador")}</span></div>
-          <div><small>ESTILO</small><b>${esc(tacticLabel(opp.style))}</b><span>Pressão ${esc(tacticLabel(opp.pressing))}</span></div>
-          <div><small>PONTO FORTE</small><b>${esc(opp.strength)}</b><span>Ponto vulnerável: ${esc(opp.weakness)}</span></div>
-          <div><small>DESTAQUE</small><b>${esc(opp.star?.name||"Sem informação")}</b><span>${opp.star?`${esc(opp.star.role)} · OVR estimado ${opp.star.ratingMin}–${opp.star.ratingMax}`:""}</span></div>
-        </div>
-        ${opp.unavailable?.length?`<div class="opponent-unavailable"><b>Desfalques:</b> ${opp.unavailable.map(x=>`${esc(x.name)}${x.injury?` · lesão ${x.injury}j`:` · suspensão ${x.suspension}j`}`).join(" | ")}</div>`:""}
-      `:`<div class="empty">Nenhum próximo adversário definido.</div>`}
-    </section>
-
-    <section class="card">
-      <div class="section-title"><div><div class="kicker">TÁTICA</div><h2>Instruções da equipe</h2></div></div>
-      <form id="realismTactics" class="realism-form-grid">
-        <label>Pressão<select id="tacticPressing">${tacticOptions(["LOW","NORMAL","HIGH"],tactics.pressing||"NORMAL")}</select></label>
-        <label>Linha defensiva<select id="tacticLine">${tacticOptions(["LOW","NORMAL","HIGH"],tactics.defensiveLine||"NORMAL")}</select></label>
-        <label>Ritmo<select id="tacticTempo">${tacticOptions(["SLOW","NORMAL","FAST"],tactics.tempo||"NORMAL")}</select></label>
-        <label>Largura<select id="tacticWidth">${tacticOptions(["NARROW","NORMAL","WIDE"],tactics.width||"NORMAL")}</select></label>
-        <label>Estilo ofensivo<select id="tacticStyle">${tacticOptions(["BALANCED","POSSESSION","COUNTER","DIRECT"],tactics.style||"BALANCED")}</select></label>
-        <label>Marcação<select id="tacticMarking">${tacticOptions(["NORMAL","AGGRESSIVE"],tactics.marking||"NORMAL")}</select></label>
-        <button class="primary">Salvar instruções</button>
-      </form>
-      <p class="muted">Pressão alta, ritmo rápido e marcação agressiva podem melhorar a intensidade, mas aumentam fadiga e risco de lesão.</p>
-    </section>
-
-    <section class="card">
-      <div class="section-title"><div><div class="kicker">FUNÇÕES INDIVIDUAIS</div><h2>Status, capitão e bolas paradas</h2></div></div>
-      <div class="realism-player-list">
-        ${(r.players||state.players||[]).map(p=>`<div class="realism-player-row" data-realism-player="${p.id}">
-          <div class="rp-name"><span>${p.rating}</span><div><b>${esc(p.name)}</b><small>${esc(p.role||p.position)} · forma ${p.form_rating??70} · felicidade ${p.happiness??75} · potencial ${p.potential??p.rating}</small></div></div>
-          <select class="rp-status">
-            ${[["STAR","Craque"],["STARTER","Titular"],["ROTATION","Rotação"],["BACKUP","Reserva"],["PROSPECT","Promessa"]].map(([v,l])=>`<option value="${v}" ${p.squad_status===v?"selected":""}>${l}</option>`).join("")}
-          </select>
-          <select class="rp-role">
-            ${[["BALANCED","Equilibrado"],["STOPPER","Marcador"],["BALL_PLAYING","Construtor"],["ANCHOR","Volante marcador"],["PLAYMAKER","Armador"],["BOX_TO_BOX","Box-to-box"],["WINGER","Ponta aberto"],["INSIDE_FORWARD","Ponta invertido"],["TARGET","Referência"],["POACHER","Finalizador"],["SWEEPER_KEEPER","Goleiro-líbero"]].map(([v,l])=>`<option value="${v}" ${p.tactical_role===v?"selected":""}>${l}</option>`).join("")}
-          </select>
-          <select class="rp-setpiece">
-            ${[["NONE","Sem bola parada"],["PENALTY","Pênaltis"],["FREE_KICK","Faltas"],["CORNER","Escanteios"]].map(([v,l])=>`<option value="${v}" ${p.set_piece_role===v?"selected":""}>${l}</option>`).join("")}
-          </select>
-          <div class="rp-checks">
-            <label class="captain-check"><input class="rp-captain" type="checkbox" ${p.is_captain?"checked":""}> Capitão</label>
-            <label class="captain-check"><input class="rp-bench" type="checkbox" ${p.is_bench?"checked":""} ${p.is_starter?"disabled":""}> Banco</label>
-          </div>
-          <button type="button" class="secondary save-player-realism" data-id="${p.id}">Salvar</button>
-        </div>`).join("")}
+    <form id="renewForm" class="stack" style="margin-top:16px">
+      <label>Novo contrato
+        <select id="renewYears">
+          <option value="2">+2 temporadas</option>
+          <option value="3" selected>+3 temporadas</option>
+          <option value="4">+4 temporadas</option>
+        </select>
+      </label>
+      <label>Salário mensal
+        <input id="renewSalary" type="number" min="0" value="${Number(p.suggestedSalary||0)}">
+      </label>
+      <div class="offer-summary">
+        Salário atual: <b>${Number(p.salary||0).toLocaleString("pt-BR")}</b><br>
+        Pedido estimado: <b>${Number(p.suggestedSalary||0).toLocaleString("pt-BR")}/mês</b><br>
+        Luvas previstas: <b>${Number(p.signingBonus||0).toLocaleString("pt-BR")} moedas</b>
       </div>
-    </section>
+      <div id="renewMsg"></div>
+      <button class="primary">Enviar proposta de renovação</button>
+    </form>
+  </div>`;
 
-    <section class="grid realism-two">
-      <div class="card">
-        <div class="section-title"><div><div class="kicker">COMISSÃO TÉCNICA</div><h2>Especialistas</h2></div></div>
-        <div class="staff-list">
-          ${(r.staff||[]).map(x=>`<div class="staff-row">
-            <div><b>${esc(x.staff_name)}</b><small>${esc(({FITNESS:"Preparador físico",PHYSIO:"Fisioterapeuta",SCOUT:"Olheiro",GK_COACH:"Treinador de goleiros"})[x.role]||x.role)} · nível ${x.level}/5 · salário ${Number(x.salary).toLocaleString("pt-BR")}</small></div>
-            <button class="secondary upgrade-staff" data-role="${x.role}" ${Number(x.level)>=5?"disabled":""}>${Number(x.level)>=5?"Nível máximo":`Melhorar · ${Number(x.level)*4500}`}</button>
-          </div>`).join("")}
-        </div>
-      </div>
+  document.body.appendChild(bg);
+  bg.querySelector(".close-modal").onclick=()=>bg.remove();
+  bg.onclick=e=>{if(e.target===bg)bg.remove()};
 
-      <div class="card">
-        <div class="section-title"><div><div class="kicker">ESTÁDIO E TORCIDA</div><h2>Receita de jogos</h2></div></div>
-        <div class="stadium-stats">
-          <span>Capacidade <b>${Number(r.stadium?.capacity||0).toLocaleString("pt-BR")}</b></span>
-          <span>Nível <b>${r.stadium?.level||1}/8</b></span>
-          <span>Último público <b>${Number(r.stadium?.lastAttendance||0).toLocaleString("pt-BR")}</b></span>
-        </div>
-        <form id="stadiumForm" class="stack">
-          <label>Preço do ingresso<input id="ticketPrice" type="number" min="5" max="100" value="${Number(r.stadium?.ticketPrice||30)}"></label>
-          <div class="stadium-actions">
-            <button class="secondary" name="stadiumAction" value="price">Salvar preço</button>
-            <button class="primary" name="stadiumAction" value="upgrade">Ampliar estádio</button>
-          </div>
-        </form>
-        <p class="muted">Preço alto pode reduzir ocupação. Jogos em casa, clássicos e adversários fortes aumentam demanda e receita.</p>
-      </div>
-    </section>
-
-    <section class="card">
-      <div class="section-title"><div><div class="kicker">CATEGORIAS DE BASE</div><h2>Jovens da academia</h2></div><span class="badge">${(r.academy||[]).length}</span></div>
-      <div class="academy-grid">
-        ${(r.academy||[]).length?(r.academy||[]).map(y=>`<article class="academy-card">
-          <span class="rating">${y.rating}</span>
-          <b>${esc(y.name)}</b>
-          <small>${esc(y.role)} · ${y.age} anos</small>
-          <div>Potencial <strong>${y.potential}</strong></div>
-          <div class="academy-actions">
-            <button class="primary promote-youth" data-id="${y.id}" ${Number(y.age)<16?"disabled":""}>${Number(y.age)<16?"Muito jovem":"Promover ao profissional"}</button>
-            <button class="danger release-youth" data-id="${y.id}" data-name="${esc(y.name)}">Dispensar</button>
-          </div>
-        </article>`).join(""):`<div class="empty">Sem atletas disponíveis na base.</div>`}
-      </div>
-    </section>
-
-    <section class="grid realism-two">
-      <div class="card">
-        <div class="section-title"><div><div class="kicker">HISTÓRICO DA CARREIRA</div><h2>Temporadas concluídas</h2></div></div>
-        ${history.length?`<div class="history-list">${history.map(h=>`<div class="history-row"><b>T${h.season_no} · ${esc(leagueLabel(h.division,state.club.country_code))} · ${h.final_position}º</b><span>${h.wins}V ${h.draws}E ${h.losses}D · ${h.gf}:${h.ga} · ${h.trophies} título(s)</span><small>Artilheiro: ${esc(h.top_scorer||"—")} ${h.top_scorer_goals||0} gols · caixa ${Number(h.balance||0).toLocaleString("pt-BR")}</small></div>`).join("")}</div>`:`<div class="empty">O histórico será preenchido quando uma temporada for encerrada.</div>`}
-      </div>
-      <div class="card">
-        <div class="section-title"><div><div class="kicker">RECORDES</div><h2>Marcas do clube</h2></div></div>
-        <div class="record-grid">
-          <span>Maior artilheiro atual <b>${esc(records.topScorer?.name||"—")} · ${records.topScorer?.goals||0}</b></span>
-          <span>Mais jogos no elenco <b>${esc(records.topAppearances?.name||"—")} · ${records.topAppearances?.appearances||0}</b></span>
-          <span>Troféus <b>${records.trophies||0}</b></span>
-          <span>Maior vitória <b>${records.biggestWin?`${records.biggestWin.user_goals}×${records.biggestWin.opponent_goals}`:"—"}</b></span>
-          <span>Pior derrota <b>${records.biggestLoss?`${records.biggestLoss.user_goals}×${records.biggestLoss.opponent_goals}`:"—"}</b></span>
-          <span>Maior venda <b>${records.biggestSale?`${esc(records.biggestSale.player_name||"Jogador")} · ${Number(records.biggestSale.amount||0).toLocaleString("pt-BR")}`:"—"}</b></span>
-          <span>Maior contratação <b>${records.biggestPurchase?`${esc(records.biggestPurchase.player_name||records.biggestPurchase.description||"Contratação")} · ${Number(records.biggestPurchase.amount||0).toLocaleString("pt-BR")}`:"—"}</b></span>
-          <span>Maior invencibilidade <b>${records.unbeatenStreak||0} jogo(s)</b></span>
-          <span>Recorde de público <b>${records.recordAttendance?Number(records.recordAttendance.attendance||0).toLocaleString("pt-BR"):"—"}</b></span>
-        </div>
-      </div>
-    </section>
-
-    <section class="grid realism-two">
-      <div class="card">
-        <div class="section-title"><div><div class="kicker">PRÊMIOS INDIVIDUAIS</div><h2>Destaques por temporada</h2></div></div>
-        ${awards.length?awards.map(x=>`<div class="award-row"><span>🏅</span><div><b>${esc(x.award_title)}</b><small>${esc(x.player_name)} · temporada ${x.season_no}</small></div></div>`).join(""):`<div class="empty">Ainda não há prêmios encerrados.</div>`}
-      </div>
-      <div class="card">
-        <div class="section-title"><div><div class="kicker">MERCADO DA IA</div><h2>Transferências entre clubes</h2></div></div>
-        ${(r.aiTransfers||[]).length?(r.aiTransfers||[]).map(x=>`<div class="ai-transfer-row"><b>${esc(x.player_name)}</b><span>${esc(x.from_club_name)} → ${esc(x.to_club_name)}</span><small>${Number(x.fee||0).toLocaleString("pt-BR")} moedas</small></div>`).join(""):`<div class="empty">A movimentação aparecerá durante as janelas de transferências.</div>`}
-      </div>
-    </section>
-
-    <section class="card">
-      <div class="section-title"><div><div class="kicker">ESTATÍSTICAS HISTÓRICAS</div><h2>Jogadores por temporada</h2></div></div>
-      ${playerHistory.length?`<div class="table-wrap"><table><thead><tr><th>Temporada</th><th>Jogador</th><th>J</th><th>G</th><th>A</th><th>SG</th><th>OVR final</th></tr></thead><tbody>
-        ${playerHistory.slice(0,60).map(x=>`<tr><td>${x.season_no}</td><td>${esc(x.player_name)}</td><td>${x.appearances}</td><td>${x.goals}</td><td>${x.assists}</td><td>${x.clean_sheets}</td><td>${x.rating_end}</td></tr>`).join("")}
-      </tbody></table></div>`:`<div class="empty">Os números por temporada serão arquivados ao fim do primeiro ano.</div>`}
-    </section>
-  </section>`;
+  bg.querySelector("#renewForm").onsubmit=async e=>{
+    e.preventDefault();
+    const btn=e.target.querySelector("button.primary");
+    btn.disabled=true;btn.textContent="NEGOCIANDO...";
+    try{
+      const d=await api(`/api/contracts/${p.id}/renew`,{
+        method:"POST",
+        body:JSON.stringify({
+          years:Number(bg.querySelector("#renewYears").value||3),
+          salaryOffer:Number(bg.querySelector("#renewSalary").value||0)
+        })
+      });
+      bg.querySelector("#renewMsg").innerHTML=`<div class="msg ${d.accepted?"ok":""}">${esc(d.accepted?`${d.playerName} renovou por mais ${d.years} temporadas.`:d.message)}</div>`;
+      if(d.accepted){
+        await refreshAll();
+        setTimeout(()=>{bg.remove();state.view="home";render()},500);
+      }else{
+        if(d.suggestedSalary)bg.querySelector("#renewSalary").value=d.suggestedSalary;
+        btn.disabled=false;btn.textContent="Enviar proposta de renovação";
+      }
+    }catch(err){
+      bg.querySelector("#renewMsg").innerHTML=`<div class="msg">${esc(err.message)}</div>`;
+      btn.disabled=false;btn.textContent="Enviar proposta de renovação";
+    }
+  };
 }
 
 function homeView(){
@@ -1344,9 +1177,8 @@ function homeView(){
       <div class="stat"><small>Elenco</small><b>${tired} cansados · ${injured} lesionados</b></div>
     </div>
   </section>
-  ${managerOffersCard(true)}
   ${injuredPlayersPanel(true)}
-  ${disciplinePanel(true)}
+  ${contractRenewalNotifications()}
   ${transferBanBanner()}
   ${copaQuickCard()}
   ${superWorldQuickCard()}
@@ -1429,10 +1261,8 @@ function startersView(){
     </div>`:""}
 
     ${injuredPlayersPanel(true)}
-    ${disciplinePanel(true)}
 
     <div id="starterPitchWrap">${formationPitch(state.club.formation,true)}</div>
-    ${benchPanel()}
 
     <div class="starter-summary">
       <span><small>TITULARES</small><b>${starters.length}/11</b></span>
@@ -1494,9 +1324,7 @@ function squadView(){
       ${state.rotationAdvice.changes?.length?`<div class="rotation-changes">${state.rotationAdvice.changes.map(x=>`<span><b>${esc(x.out)}</b> descansa · entra <b>${esc(x.in)}</b> <small>${esc(x.reason)}</small></span>`).join("")}</div>`:""}
     </div>`:""}
     ${injuredPlayersPanel()}
-    ${disciplinePanel()}
     <div id="pitchWrap">${formationPitch(state.club.formation)}</div>
-    ${benchPanel()}
     <div class="legend"><span class="good-dot"></span> Bom físico <span class="warn-dot"></span> Cansado <span class="bad-dot"></span> Muito cansado/lesionado</div>
     <div class="players" style="margin-top:16px">${state.players.map(playerCard).join("")}</div>
     <button id="saveLineup" class="primary" style="margin-top:14px">Salvar escalação</button>
@@ -1504,17 +1332,12 @@ function squadView(){
 }
 function marketView(){
   const ban=state.finance?.transferBan;
-  const window=state.realism?.transferWindow||state.transferWindow||{open:true};
   return `<section class="card">
     <div class="section-title">
       <div><div class="kicker">Scout, compras e vendas</div><h2>Mercado de transferências</h2></div>
       <div class="finance-chips"><span class="coins">Caixa ● ${Number(state.club.coins).toLocaleString("pt-BR")}</span><span class="badge red">Folha mensal ${Number(state.finance?.wages||0).toLocaleString("pt-BR")}</span></div>
     </div>
     ${transferBanBanner()}
-    <div class="transfer-window-banner ${window.open?"open":"closed"}">
-      <b>${window.open?"🟢 JANELA DE TRANSFERÊNCIAS ABERTA":"🔒 JANELA DE TRANSFERÊNCIAS FECHADA"}</b>
-      <span>${window.open?"Compras e empréstimos podem ser registrados agora.":`Você pode pesquisar e observar jogadores, mas só poderá contratar quando a janela reabrir${window.next?` em ${esc(window.next)}`:""}.`}</span>
-    </div>
     ${activeLoansMarketCard()}
     ${state.teamPerformance?`<div class="performance-market ${state.teamPerformance.hot?"hot":""} ${state.teamPerformance.elite?"elite":""}">
       <div><div class="kicker">VALORIZAÇÃO DO ELENCO</div><b>${esc(state.teamPerformance.label)}</b>
@@ -1537,20 +1360,19 @@ function marketView(){
     ${state.marketProfile?`<div class="market-level">Mercado de ${esc(leagueLabel(state.competitions?.career?.user_division||"D",state.competitions?.career?.country_code||state.club?.country_code))} · jogadores normalmente entre OVR ${state.marketProfile.min} e ${state.marketProfile.max}. Ao subir de divisão, o nível disponível aumenta.</div>`:""}
     <p class="muted">O mercado agora inclui jogadores com nomes reais. Os atributos, preços e salários são valores de jogo balanceados e não representam uma base oficial ao vivo. Cada carreira mantém sua própria cópia do atleta.</p><p class="muted">O clube vendedor precisa aceitar a proposta e o jogador precisa aceitar o salário e o projeto esportivo. Compras podem ser parceladas em até 24x. Jogadores não essenciais de clubes do jogo podem chegar por empréstimo.</p>
     ${ban?.active?`<p class="muted">A pesquisa continua disponível, mas novas contratações estão bloqueadas pelo transfer ban.</p>`:""}
-    <form id="transferSearch" class="transfer-search" action="javascript:void(0)" novalidate>
-      <input id="searchName" placeholder="Nome do jogador" value="${esc(state.transferSearch?.name||"")}">
+    <form id="transferSearch" class="transfer-search">
+      <input id="searchName" placeholder="Nome do jogador">
       <select id="searchPosition">
-        ${[
-          ["","Todas as posições"],["GK","Goleiro"],["DEF","Defesa"],["MID","Meio"],["ATT","Ataque"],
-          ["CB","Zagueiro"],["RB","Lateral direito"],["LB","Lateral esquerdo"],
-          ["CDM","Volante"],["CM","Meia central"],["CAM","Meia ofensivo"],
-          ["RW","Ponta direita"],["LW","Ponta esquerda"],["ST","Centroavante"]
-        ].map(([v,l])=>`<option value="${v}" ${String(state.transferSearch?.position||"")===v?"selected":""}>${l}</option>`).join("")}
+        <option value="">Todas as posições</option>
+        <option value="GK">Goleiro</option><option value="DEF">Defesa</option><option value="MID">Meio</option><option value="ATT">Ataque</option>
+        <option value="CB">Zagueiro</option><option value="RB">Lateral direito</option><option value="LB">Lateral esquerdo</option>
+        <option value="CDM">Volante</option><option value="CM">Meia central</option><option value="CAM">Meia ofensivo</option>
+        <option value="RW">Ponta direita</option><option value="LW">Ponta esquerda</option><option value="ST">Centroavante</option>
       </select>
-      <input id="searchMinRating" type="number" min="40" max="100" value="${Number(state.transferSearch?.minRating??58)}" placeholder="OVR mínimo">
-      <input id="searchMaxPrice" type="number" min="0" value="${Number(state.transferSearch?.maxPrice??500000)}" placeholder="Valor máximo">
-      <label class="real-filter"><input id="searchRealOnly" type="checkbox" ${state.transferSearch?.realOnly?"checked":""}> Só jogadores reais</label>
-      <button id="transferSearchBtn" type="button" class="primary">Pesquisar</button>
+      <input id="searchMinRating" type="number" min="40" max="100" value="58" placeholder="OVR mínimo">
+      <input id="searchMaxPrice" type="number" min="0" value="500000" placeholder="Valor máximo">
+      <label class="real-filter"><input id="searchRealOnly" type="checkbox"> Só jogadores reais</label>
+      <button class="primary">Pesquisar</button>
     </form>
     <div id="transferMsg"></div>
     <div id="transferResults" class="market-grid">${transferCards()}</div>
@@ -1566,44 +1388,25 @@ function incomingOfferCards(){
 }
 function transferCards(){
   if(!state.transferResults?.length)return `<div class="empty">Use a pesquisa para encontrar jogadores livres e atletas de outros clubes. A qualidade do mercado aumenta conforme sua divisão.</div>`;
-  const window=state.realism?.transferWindow||state.transferWindow||{open:true};
-  const blocked=Boolean(state.finance?.transferBan?.active)||!window.open;
-
-  return state.transferResults.map(p=>{
-    const scouted=Boolean(p.scouted);
-    const ratingText=scouted?String(p.rating):`${p.rating_min}–${p.rating_max}`;
-    const blockLabel=state.finance?.transferBan?.active?"Transfer ban":!window.open?"Janela fechada":"Comprar";
-
-    return `<article class="player transfer-player ${scouted?"scouted":"unscouted"}">
-      <span class="pos">${esc(p.role||posName(p.position))} · ${p.age} anos${p.nationality_code?` · ${esc(p.nationality_code)}`:""}</span>
-      <span class="rating">${ratingText}</span>
-      <h4>${esc(p.name)} ${p.is_real_name?`<span class="real-player-badge">REAL</span>`:""}</h4>
-      <div class="transfer-source">${p.source_club_name?esc(p.source_club_name):(p.is_real_name?"Mercado global":"Livre no mercado")}${p.source_division?` · ${esc(leagueLabel(p.source_division,state.competitions?.career?.country_code||state.club?.country_code))}`:""}</div>
-
-      ${scouted?`<div class="attrs">
-        <span>VEL <b>${p.pace}</b></span><span>CHU <b>${p.shooting}</b></span>
-        <span>PAS <b>${p.passing}</b></span><span>DEF <b>${p.defending}</b></span>
-      </div>`:`<div class="scouting-unknown">
-        <b>Relatório parcial do olheiro</b>
-        <span>OVR estimado ${p.rating_min}–${p.rating_max}. Faça a observação completa para revelar o overall exato.</span>
-      </div>`}
-
-      <div class="pstats">
-        <span>Valor justo <b>${Number(p.fair_value||0).toLocaleString("pt-BR")}</b></span>
-        <span>Pedido <b>${Number(p.asking_price||0).toLocaleString("pt-BR")}</b></span>
-        <span>Salário mensal <b>${Number(p.suggested_salary||0).toLocaleString("pt-BR")}</b></span>
-        <span>Interesse <b>${esc(p.interest)}</b></span>
-        ${scouted?`<span>Potencial <b>${p.potential??p.rating}</b></span>`:""}
-      </div>
-      <div class="loan-status ${p.loan_eligible?"loan-ok":"loan-no"}">${p.loan_eligible?`Empréstimo disponível · sugerido ${Number(p.suggested_loan_fee||0).toLocaleString("pt-BR")}/mês`:`Empréstimo: ${esc(p.loan_reason||"indisponível")}`}</div>
-      <div class="player-actions">
-        ${!scouted?`<button class="secondary scout-player" data-id="${p.id}">🔎 Observar · ${Number(p.scout_cost||0).toLocaleString("pt-BR")}</button>`:""}
-        <button class="primary negotiate-player" data-id="${p.id}" ${blocked?"disabled":""}>${blockLabel}</button>
-        ${p.loan_eligible?`<button class="secondary loan-player" data-id="${p.id}" ${blocked?"disabled":""}>Empréstimo</button>`:""}
-      </div>
-    </article>`;
-  }).join("");
+  return state.transferResults.map(p=>`<article class="player">
+    <span class="pos">${esc(p.role||posName(p.position))} · ${p.age} anos${p.nationality_code?` · ${esc(p.nationality_code)}`:""}</span><span class="rating">${p.rating}</span>
+    <h4>${esc(p.name)} ${p.is_real_name?`<span class="real-player-badge">REAL</span>`:""}</h4>
+    <div class="transfer-source">${p.source_club_name?esc(p.source_club_name):(p.is_real_name?"Mercado global":"Livre no mercado")}${p.source_division?` · ${esc(leagueLabel(p.source_division,state.competitions?.career?.country_code||state.club?.country_code))}`:""}</div>
+    <div class="attrs"><span>VEL <b>${p.pace}</b></span><span>CHU <b>${p.shooting}</b></span><span>PAS <b>${p.passing}</b></span><span>DEF <b>${p.defending}</b></span></div>
+    <div class="pstats">
+      <span>Valor justo <b>${Number(p.fair_value||p.price||0).toLocaleString("pt-BR")}</b></span>
+      <span>Pedido <b>${Number(p.asking_price||p.fair_value||p.price||0).toLocaleString("pt-BR")}</b></span>
+      <span>Salário mensal <b>${Number(p.suggested_salary||p.salary||0).toLocaleString("pt-BR")}</b></span>
+      <span>Interesse <b>${esc(p.interest||"Normal")}</b></span>
+    </div>
+    <div class="loan-status ${p.loan_eligible?"loan-ok":"loan-no"}">${p.loan_eligible?`Empréstimo disponível · sugerido ${Number(p.suggested_loan_fee||0).toLocaleString("pt-BR")}/mês`:`Empréstimo: ${esc(p.loan_reason||"indisponível")}`}</div>
+    <div class="player-actions">
+      <button class="primary negotiate-player" data-id="${p.id}" ${state.finance?.transferBan?.active?"disabled":""}>${state.finance?.transferBan?.active?"Transfer ban":"Comprar"}</button>
+      ${p.loan_eligible?`<button class="secondary loan-player" data-id="${p.id}" ${state.finance?.transferBan?.active?"disabled":""}>Empréstimo</button>`:""}
+    </div>
+  </article>`).join("");
 }
+
 function friendsView(){
   return `<section class="card">
     <div class="section-title"><div><div class="kicker">Multiplayer assíncrono</div><h2>Jogar contra amigos</h2></div><span class="badge">${state.friends.length} amigos</span></div>
@@ -2376,7 +2179,6 @@ function render(){
     state.view==="market"?marketView():
     state.view==="news"?newsView():
     state.view==="board"?boardView():
-    state.view==="realism"?realismView():
     state.view==="friends"?friendsView():
     state.view==="league"?competitionsView():
     state.view==="club"?clubView():
@@ -2386,7 +2188,7 @@ function render(){
     <header class="topbar"><div class="brand"><span class="logo">⚽</span>Dono do Clube</div>
       <div class="top-actions">
         <button class="career-top-btn" data-view="careers">${esc(state.club.career_label||`Carreira ${state.club.career_slot||1}`)}</button>
-        ${(state.realism?.managerOffers||[]).length?`<button class="notification-top-btn" data-view="realism" title="Propostas de outros clubes">📩 ${(state.realism.managerOffers||[]).length}</button>`:""}
+        ${(state.contractRenewals||[]).length?`<button class="notification-top-btn" data-view="home" title="Renovações de contrato pendentes">🔔 ${(state.contractRenewals||[]).length}</button>`:""}
         <button id="manualSave" class="manual-save-btn" title="Salvar a carreira agora">💾 SALVAR</button>
         <span class="coins">● ${Number(state.club.coins).toLocaleString("pt-BR")}</span><button id="logout" class="icon-btn">↪</button>
       </div>
@@ -2398,7 +2200,6 @@ function render(){
     <button data-view="board" class="${state.view==="board"?"on":""}">DIRETORIA</button>
     <button data-view="starters" class="${state.view==="starters"?"on":""}">TITULARES</button>
     <button data-view="squad" class="${state.view==="squad"?"on":""}">ELENCO</button>
-    <button data-view="realism" class="${state.view==="realism"?"on":""}">GESTÃO</button>
     <button data-view="market" class="${state.view==="market"?"on":""}">MERCADO</button>
     <button data-view="friends" class="${state.view==="friends"?"on":""}">AMIGOS</button>
     <button data-view="league" class="${state.view==="league"?"on":""}">COMPETIÇÕES</button>
@@ -2419,7 +2220,6 @@ function render(){
   if(state.view==="home")bindHome();
   if(state.view==="starters")bindStarters();
   if(state.view==="squad")bindSquad();
-  if(state.view==="realism")bindRealism();
   if(state.view==="market")bindMarket();
   if(state.view==="friends")bindFriends();
   if(state.view==="league")bindCompetitions();
@@ -2466,16 +2266,8 @@ function showMatch(m){
     <button class="secondary close-modal">Fechar</button></div>
     <div class="board"><span>${esc(m.userClub)}<br><small class="muted">OVR ${m.userRating}</small></span><b>${m.userGoals} × ${m.opponentGoals}</b>
     <span>${esc(m.opponent)}<br><small class="muted">OVR ${m.opponentRating}</small></span></div>
-    <div class="match-realism-meta">
-      <span>${m.isHome?"🏟️ Casa":"✈️ Fora"}</span>
-      ${m.attendance?`<span>👥 Público ${Number(m.attendance).toLocaleString("pt-BR")}</span>`:""}
-      ${m.congestionDays!=null?`<span>📅 ${m.congestionDays} dia(s) desde o jogo anterior</span>`:""}
-      ${m.travelLoad?`<span>🧳 Desgaste de viagem +${m.travelLoad}</span>`:""}
-      ${m.isRival?`<span>🔥 CLÁSSICO</span>`:""}
-    </div>
     ${m.finance?`<div class="finance-match"><span>Patrocínio: pagamento mensal</span><span>Bilheteria +${Number(m.finance.gate).toLocaleString("pt-BR")}</span><span>Resultado +${Number(m.finance.performance).toLocaleString("pt-BR")}</span><span>Salários: pagamento mensal pelo calendário</span><b>Receita líquida desta partida ${Number(m.finance.net)>=0?"+":""}${Number(m.finance.net).toLocaleString("pt-BR")}</b></div>${m.finance.event?`<div class="msg ok"><b>${esc(m.finance.event.title)}</b><br>${esc(m.finance.event.description)}</div>`:""}`:""}
-    ${m.substitutions?.length?`<div class="substitution-summary"><b>🔄 Substituições (${m.substitutions.length}/5)</b>${m.substitutions.map(x=>`<span>${x.minute}' · ${esc(x.text)}</span>`).join("")}</div>`:""}
-    <h3>Lances</h3>${m.events?.length?m.events.map(e=>`<div class="event ${e.type==="substitution"?"sub-event":""}"><b>${e.minute}'</b> ${esc(e.text)}</div>`).join(""):`<div class="empty">Sem lances relevantes.</div>`}
+    <h3>Lances</h3>${m.events?.length?m.events.map(e=>`<div class="event"><b>${e.minute}'</b> ${esc(e.text)}</div>`).join(""):`<div class="empty">Sem lances relevantes.</div>`}
   </div>`;
   document.body.appendChild(bg);
   const closeMatch=()=>{bg.remove();setTimeout(maybeShowPressConference,120)};
@@ -2528,114 +2320,7 @@ function bindLoanPurchaseButtons(){
   bindLoanPurchaseButtons();
 }
 
-function bindManagerOfferButtons(){
-  app.querySelectorAll(".decline-manager-offer").forEach(btn=>btn.onclick=async()=>{
-    btn.disabled=true;
-    try{
-      await api(`/api/manager-offers/${btn.dataset.id}/decline`,{method:"POST",body:"{}"});
-      await refreshAll();render();
-    }catch(err){alert(err.message);btn.disabled=false}
-  });
-
-  app.querySelectorAll(".accept-manager-offer").forEach(btn=>btn.onclick=async()=>{
-    const offer=(state.realism?.managerOffers||[]).find(x=>String(x.id)===String(btn.dataset.id));
-    if(!offer)return;
-    if(!confirm(`Aceitar a proposta do ${offer.club_name}?\n\nVocê deixará o clube atual e assumirá a situação esportiva do novo time nesta mesma carreira. O antigo clube continuará controlado pela IA.`))return;
-    btn.disabled=true;btn.textContent="ASSUMINDO...";
-    try{
-      const d=await api(`/api/manager-offers/${btn.dataset.id}/accept`,{method:"POST",body:"{}"});
-      state.view="home";
-      await bootstrap();
-      alert(`Novo trabalho: você deixou ${d.from} e assumiu ${d.to}.`);
-    }catch(err){alert(err.message);btn.disabled=false;btn.textContent="Aceitar cargo"}
-  });
-}
-
-function bindRealism(){
-  bindManagerOfferButtons();
-
-  const tactics=app.querySelector("#realismTactics");
-  if(tactics)tactics.onsubmit=async e=>{
-    e.preventDefault();
-    const btn=e.target.querySelector("button.primary");
-    btn.disabled=true;btn.textContent="SALVANDO...";
-    try{
-      await api("/api/realism/tactics",{method:"PUT",body:JSON.stringify({
-        pressing:app.querySelector("#tacticPressing").value,
-        defensiveLine:app.querySelector("#tacticLine").value,
-        tempo:app.querySelector("#tacticTempo").value,
-        width:app.querySelector("#tacticWidth").value,
-        style:app.querySelector("#tacticStyle").value,
-        marking:app.querySelector("#tacticMarking").value
-      })});
-      await refreshAll();state.view="realism";render();
-    }catch(err){alert(err.message);btn.disabled=false;btn.textContent="Salvar instruções"}
-  };
-
-  app.querySelectorAll(".save-player-realism").forEach(btn=>btn.onclick=async()=>{
-    const row=btn.closest("[data-realism-player]");
-    if(!row)return;
-    btn.disabled=true;btn.textContent="SALVANDO...";
-    try{
-      await api(`/api/realism/players/${btn.dataset.id}`,{method:"PUT",body:JSON.stringify({
-        squadStatus:row.querySelector(".rp-status").value,
-        tacticalRole:row.querySelector(".rp-role").value,
-        setPieceRole:row.querySelector(".rp-setpiece").value,
-        isCaptain:row.querySelector(".rp-captain").checked,
-        isBench:row.querySelector(".rp-bench")?.checked||false
-      })});
-      await refreshAll();state.view="realism";render();
-    }catch(err){alert(err.message);btn.disabled=false;btn.textContent="Salvar"}
-  });
-
-  app.querySelectorAll(".upgrade-staff").forEach(btn=>btn.onclick=async()=>{
-    if(!confirm("Investir para melhorar este profissional da comissão técnica?"))return;
-    btn.disabled=true;
-    try{
-      await api(`/api/realism/staff/${btn.dataset.role}/upgrade`,{method:"POST",body:"{}"});
-      await refreshAll();state.view="realism";render();
-    }catch(err){alert(err.message);btn.disabled=false}
-  });
-
-  app.querySelectorAll(".promote-youth").forEach(btn=>btn.onclick=async()=>{
-    if(!confirm("Promover este jogador da base ao elenco profissional?"))return;
-    btn.disabled=true;
-    try{
-      const d=await api(`/api/realism/academy/${btn.dataset.id}/promote`,{method:"POST",body:"{}"});
-      await refreshAll();state.view="realism";render();
-      alert(`${d.player.name} foi promovido ao time profissional.`);
-    }catch(err){alert(err.message);btn.disabled=false}
-  });
-
-  app.querySelectorAll(".release-youth").forEach(btn=>btn.onclick=async()=>{
-    if(!confirm(`Dispensar ${btn.dataset.name||"este jogador"} das categorias de base?`))return;
-    btn.disabled=true;
-    try{
-      await api(`/api/realism/academy/${btn.dataset.id}/release`,{method:"POST",body:"{}"});
-      await refreshAll();state.view="realism";render();
-    }catch(err){alert(err.message);btn.disabled=false}
-  });
-
-  const stadium=app.querySelector("#stadiumForm");
-  if(stadium)stadium.onsubmit=async e=>{
-    e.preventDefault();
-    const submitter=e.submitter;
-    const upgrade=submitter?.value==="upgrade";
-    if(upgrade&&!confirm("Ampliar o estádio em 5.000 lugares?"))return;
-    if(submitter)submitter.disabled=true;
-    try{
-      const d=await api("/api/realism/stadium",{method:"PUT",body:JSON.stringify({
-        ticketPrice:Number(app.querySelector("#ticketPrice").value||30),
-        upgrade
-      })});
-      await refreshAll();state.view="realism";render();
-      if(upgrade)alert(`Estádio ampliado para ${Number(d.capacity).toLocaleString("pt-BR")} lugares.`);
-    }catch(err){alert(err.message);if(submitter)submitter.disabled=false}
-  };
-}
-
 function bindHome(){
-  bindManagerOfferButtons();
   const b=app.querySelector("#careerAction");
   if(b)b.onclick=async()=>{b.disabled=true;b.textContent=b.dataset.action==="national"?"SIMULANDO RODADA...":"SIMULANDO...";await careerAction(b.dataset.action)};
 
@@ -2661,6 +2346,8 @@ function bindHome(){
   const news=app.querySelector("#goNews");if(news)news.onclick=()=>{state.view="news";render()};
   const cup=app.querySelector("#playCopaHome");if(cup)cup.onclick=async()=>{cup.disabled=true;await careerAction("copa")};
   const world=app.querySelector("#goWorldCompetition");if(world)world.onclick=()=>{state.view="league";state.competitionTab="WORLD";render()};
+  app.querySelectorAll(".renew-contract").forEach(btn=>btn.onclick=()=>openContractRenewal(btn.dataset.player));
+
   app.querySelectorAll(".buy-loan-option").forEach(btn=>btn.onclick=async()=>{
     const loanId=btn.dataset.loan;
     const name=btn.dataset.name||"jogador";
@@ -2831,7 +2518,6 @@ function bindSquad(){
   app.querySelectorAll(".toggle-player").forEach(b=>b.onclick=()=>{
     const p=state.players.find(x=>String(x.id)===String(b.dataset.id));if(!p)return;
     if(Number(p.injury_games||0)>0&&!p.is_starter){alert(`${p.name} está lesionado por ${p.injury_games} jogo(s).`);return}
-    if(Number(p.suspension_games||0)>0&&!p.is_starter){alert(`${p.name} está suspenso por ${p.suspension_games} jogo(s).`);return}
     if(!p.is_starter&&state.players.filter(x=>x.is_starter).length>=11){alert("Já existem 11 titulares.");return}
     if(!p.is_starter&&p.position==="GK"&&state.players.some(x=>x.is_starter&&x.position==="GK")){
       alert("A escalação pode ter apenas um goleiro titular.");
@@ -2865,75 +2551,32 @@ function bindSquad(){
     }catch(err){alert(err.message)}
   };
 }
-function readTransferSearchFilters(){
-  const filters={
-    name:String(app.querySelector("#searchName")?.value||"").trim(),
-    position:String(app.querySelector("#searchPosition")?.value||""),
-    minRating:Math.max(40,Math.min(100,Number(app.querySelector("#searchMinRating")?.value||58))),
-    maxPrice:Math.max(0,Number(app.querySelector("#searchMaxPrice")?.value||500000)),
-    realOnly:Boolean(app.querySelector("#searchRealOnly")?.checked)
-  };
-  state.transferSearch=filters;
-  return filters;
-}
-
 async function searchTransfers(){
-  const filters=readTransferSearchFilters();
-  const qv=encodeURIComponent(filters.name);
-  const pos=encodeURIComponent(filters.position);
-  const min=encodeURIComponent(filters.minRating);
-  const max=encodeURIComponent(filters.maxPrice);
-  const realOnly=filters.realOnly?"1":"0";
-
+  const qv=encodeURIComponent(app.querySelector("#searchName")?.value||"");
+  const pos=encodeURIComponent(app.querySelector("#searchPosition")?.value||"");
+  const min=encodeURIComponent(app.querySelector("#searchMinRating")?.value||"0");
+  const max=encodeURIComponent(app.querySelector("#searchMaxPrice")?.value||"999999999");
+  const realOnly=app.querySelector("#searchRealOnly")?.checked?"1":"0";
   const box=app.querySelector("#transferResults");
-  const msg=app.querySelector("#transferMsg");
-  const btn=app.querySelector("#transferSearchBtn");
-
-  if(btn){
-    btn.disabled=true;
-    btn.textContent="PESQUISANDO...";
-  }
-  if(msg)msg.innerHTML="";
   if(box)box.innerHTML=`<div class="empty">Procurando jogadores...</div>`;
-
   try{
-    if(typeof api!=="function") throw new Error("Sistema de pesquisa indisponível.");
     const d=await api(`/api/transfers/search?q=${qv}&position=${pos}&minRating=${min}&maxPrice=${max}&realOnly=${realOnly}`);
     state.transferResults=d.players||[];
     state.marketProfile=d.marketProfile||state.marketProfile;
-    state.transferWindow=d.transferWindow||state.transferWindow;
-    state.scoutLevel=Number(d.scoutLevel||state.scoutLevel||1);
     if(state.finance&&d.transferBan)state.finance.transferBan=d.transferBan;
-
-    // Atualiza somente a área dos resultados. Não renderiza a aba inteira.
-    const liveBox=app.querySelector("#transferResults");
-    if(liveBox)liveBox.innerHTML=transferCards();
+    if(box){
+      try{
+        box.innerHTML=transferCards();
+      }catch(err){
+        box.innerHTML=`<div class="msg">${esc(err.message)}</div>`;
+      }
+    }
     bindTransferButtons();
-
-    if(msg){
-      const count=state.transferResults.length;
-      msg.innerHTML=`<div class="msg ok">${count} jogador(es) encontrado(s)${filters.position?` para ${esc(filters.position)}`:""}.</div>`;
-    }
   }catch(err){
-    const liveBox=app.querySelector("#transferResults");
-    if(liveBox)liveBox.innerHTML=`<div class="msg">${esc(err.message)}</div>`;
-  }finally{
-    const liveBtn=app.querySelector("#transferSearchBtn");
-    if(liveBtn){
-      liveBtn.disabled=false;
-      liveBtn.textContent="Pesquisar";
-    }
+    if(box)box.innerHTML=`<div class="msg">${esc(err.message)}</div>`;
   }
 }
 function bindTransferButtons(){
-  app.querySelectorAll(".scout-player").forEach(b=>b.onclick=async()=>{
-    b.disabled=true;b.textContent="OBSERVANDO...";
-    try{
-      const d=await api(`/api/scouting/${b.dataset.id}`,{method:"POST",body:"{}"});
-      await searchTransfers();
-      alert(`Relatório concluído: ${d.playerName} tem OVR ${d.rating}.`);
-    }catch(err){alert(err.message);b.disabled=false}
-  });
   app.querySelectorAll(".negotiate-player").forEach(b=>b.onclick=()=>{
     const p=state.transferResults.find(x=>String(x.id)===String(b.dataset.id));
     if(p)openTransferOffer(p);
@@ -3069,41 +2712,8 @@ function openLoanOffer(p){
 }
 function bindMarket(){
   bindLoanPurchaseButtons();
-
   const form=app.querySelector("#transferSearch");
-  const searchBtn=app.querySelector("#transferSearchBtn");
-
-  // O formulário nunca faz navegação/reload. Tanto Enter quanto o botão
-  // executam a pesquisa AJAX e atualizam somente #transferResults.
-  if(form){
-    form.addEventListener("submit",async e=>{
-      e.preventDefault();
-      e.stopPropagation();
-      await searchTransfers();
-      return false;
-    });
-  }
-  if(searchBtn){
-    // Botão restaurado: comportamento antigo, pesquisa direta sem recarregar a página.
-    searchBtn.onclick=async e=>{
-      e.preventDefault();
-      e.stopPropagation();
-      await searchTransfers();
-      return false;
-    };
-  }
-
-  const position=app.querySelector("#searchPosition");
-  if(position)position.addEventListener("change",()=>{readTransferSearchFilters()});
-
-  const name=app.querySelector("#searchName");
-  const min=app.querySelector("#searchMinRating");
-  const max=app.querySelector("#searchMaxPrice");
-  const real=app.querySelector("#searchRealOnly");
-  [name,min,max,real].filter(Boolean).forEach(el=>{
-    el.addEventListener(el.type==="checkbox"?"change":"input",()=>{readTransferSearchFilters()});
-  });
-
+  if(form)form.onsubmit=async e=>{e.preventDefault();await searchTransfers()};
   bindTransferButtons();
   app.querySelectorAll(".accept-offer").forEach(b=>b.onclick=async()=>{
     const offer=state.incomingOffers.find(o=>String(o.id)===String(b.dataset.id));
