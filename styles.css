@@ -585,3 +585,158 @@ repeating-linear-gradient(0deg,#1e7d43 0,#1e7d43 56px,#237f47 56px,#237f47 112px
   .performance-market{grid-template-columns:1fr}
   .rotation-changes small{margin-left:0}
 }
+
+
+/* v34 — classificação à Libertadores via Copa do Brasil */
+.libertadores-qualified-banner{
+  margin:10px 0 12px;
+  padding:10px 12px;
+  border:1px solid #3c7d57;
+  border-radius:11px;
+  background:linear-gradient(135deg,#0f2b1b,#112519);
+  color:#c8f3d5;
+  font-size:10px;
+  font-weight:850;
+  line-height:1.4;
+}
+.champion-card .libertadores-qualified-banner{
+  margin-bottom:0;
+}
+
+
+/* v35 — opção de compra no empréstimo + renovações de contrato */
+.notification-top-btn{
+  min-width:44px;
+  height:36px;
+  border-radius:10px;
+  border:1px solid #806a2c;
+  background:#2b240d;
+  color:#ffe58b;
+  font-weight:950;
+}
+.contract-renewal-card{
+  margin:12px 0;
+  border-color:#765e27;
+  background:linear-gradient(135deg,#1d190b,#12160e);
+}
+.contract-renewal-list{display:grid;gap:8px}
+.contract-renewal-item{
+  display:grid;
+  grid-template-columns:minmax(0,1.2fr) minmax(260px,1fr) auto;
+  align-items:center;
+  gap:12px;
+  padding:11px;
+  border:1px solid #55471f;
+  border-radius:12px;
+  background:#0e130c;
+}
+.contract-player{display:flex;align-items:center;gap:9px;min-width:0}
+.contract-player>div{display:grid;gap:2px;min-width:0}
+.contract-player b{white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.contract-player small{font-size:9px;color:#b1b6a0}
+.contract-rating{
+  width:36px;height:36px;border-radius:10px;
+  display:grid;place-items:center;
+  background:#29220c;border:1px solid #756027;
+  color:#ffe58b;font-weight:950
+}
+.contract-values{
+  display:grid;
+  grid-template-columns:repeat(3,minmax(0,1fr));
+  gap:6px;
+}
+.contract-values span{
+  display:grid;gap:2px;
+  padding:6px 7px;border-radius:8px;
+  background:#11170e;border:1px solid #2d3829;
+  font-size:8px;color:#9eaa98
+}
+.contract-values b{font-size:10px;color:#fff}
+.loan-option-toggle{
+  display:flex!important;
+  align-items:flex-start;
+  gap:9px;
+  padding:10px;
+  border:1px solid #38533f;
+  border-radius:10px;
+  background:#0c1b11;
+}
+.loan-option-toggle input{margin-top:2px}
+.loan-option-toggle span{display:grid;gap:2px}
+.loan-option-toggle small{color:#a9b8ad;font-size:9px}
+.loan-purchase-box{
+  gap:8px;
+  padding:10px;
+  border:1px solid #5e592a;
+  border-radius:10px;
+  background:#1c190b;
+}
+.loan-calendar-list{display:grid;gap:7px}
+.loan-calendar-item{
+  display:grid;
+  grid-template-columns:minmax(0,1fr) auto;
+  gap:8px;
+  align-items:center;
+  padding:7px;
+  border:1px solid #2d3d31;
+  border-radius:9px;
+  background:#0c1510;
+}
+.loan-calendar-item small{color:#8f9d92;font-size:8px}
+.loan-calendar-item button{min-height:34px;padding:6px 9px}
+
+@media(max-width:850px){
+  .contract-renewal-item{grid-template-columns:1fr}
+  .contract-values{grid-template-columns:1fr 1fr 1fr}
+}
+@media(max-width:560px){
+  .contract-values{grid-template-columns:1fr}
+  .loan-calendar-item{grid-template-columns:1fr}
+}
+
+
+/* v35 — empréstimos ativos no mercado */
+.active-loans-market{
+  margin:10px 0 14px;
+  padding:12px;
+  border:1px solid #334c3a;
+  border-radius:13px;
+  background:#0a1510;
+}
+.active-loan-grid{
+  display:grid;
+  grid-template-columns:repeat(3,minmax(0,1fr));
+  gap:8px;
+}
+.active-loan-card{
+  display:grid;
+  gap:8px;
+  padding:10px;
+  border:1px solid #2e4234;
+  border-radius:11px;
+  background:#0c1811;
+}
+.active-loan-card>div:first-child{display:grid;gap:2px}
+.active-loan-card small{color:#98a89d;font-size:8px}
+.active-loan-meta{display:flex;gap:6px;flex-wrap:wrap}
+.active-loan-meta span{
+  padding:4px 6px;
+  border-radius:999px;
+  background:#142219;
+  color:#a9b9ae;
+  font-size:8px;
+}
+.loan-no-option{
+  padding:7px 8px;
+  border-radius:8px;
+  background:#141414;
+  color:#888;
+  font-size:9px;
+  text-align:center;
+}
+@media(max-width:900px){
+  .active-loan-grid{grid-template-columns:1fr 1fr}
+}
+@media(max-width:600px){
+  .active-loan-grid{grid-template-columns:1fr}
+}

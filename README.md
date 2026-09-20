@@ -931,3 +931,89 @@ Trocar de carreira não:
 - altera a escalação.
 
 O descanso continua acontecendo somente pelas regras normais do próprio save, como ficar no banco em uma partida ou iniciar uma nova temporada.
+
+
+## Copa do Brasil dá vaga na Libertadores — v34
+
+O campeão da **Copa do Brasil** agora se classifica para a **Libertadores**.
+
+Regras implementadas:
+
+- os 4 primeiros da Série A continuam classificados;
+- o campeão da Copa do Brasil também ganha vaga;
+- se o campeão da Copa do Brasil já estiver no G4, não é criada uma vaga duplicada;
+- se o campeão estiver fora do G4 — inclusive disputando Série B, C ou D — ele entra na Libertadores mesmo assim;
+- nesse caso, a Libertadores continua com 32 clubes e a vaga da Copa é adicionada ao grupo brasileiro;
+- o título da Copa do Brasil passa a exibir a mensagem **Vaga na Libertadores garantida**;
+- o Jornal publica uma notícia específica sobre a classificação continental;
+- a Diretoria também menciona a vaga continental na mensagem de comemoração do título.
+
+Na estrutura atual do jogo, a Libertadores começa depois do encerramento do Campeonato Brasileiro. Portanto, ganhar a Copa garante a participação quando a fase continental daquela temporada for iniciada.
+
+O botão **Simular Temporada Inteira** também respeita essa regra: se o clube vencer a Copa do Brasil na simulação, ele passa a disputar a Libertadores mesmo sem terminar no G4.
+
+
+## Opção de compra em empréstimos + renovação manual de contratos — v35
+
+### Empréstimo com opção de compra
+
+Ao pedir um jogador por empréstimo, agora é possível marcar **Incluir opção de compra**.
+
+O fluxo funciona assim:
+- escolha 3, 6 ou 12 meses;
+- negocie a taxa mensal do empréstimo;
+- opcionalmente marque **opção de compra**;
+- informe o valor da opção;
+- o clube dono do jogador pode recusar uma opção muito abaixo do valor considerado justo;
+- se o acordo for aceito, o valor da opção fica fixado durante o empréstimo.
+
+Enquanto o empréstimo estiver ativo, o calendário financeiro mostra:
+- jogador emprestado;
+- meses decorridos e duração;
+- taxa mensal;
+- valor da opção de compra;
+- botão **Comprar por X**.
+
+Ao exercer a opção:
+- o valor é pago à vista;
+- o jogador passa a pertencer definitivamente ao clube;
+- o empréstimo é encerrado como compra;
+- o jogador recebe contrato de pelo menos 3 temporadas;
+- a compra aparece nos eventos e no Jornal.
+
+Se a opção não for exercida até o empréstimo terminar, o atleta retorna e a opção deixa de existir.
+
+### Renovação de contratos nas notificações
+
+A renovação automática foi removida.
+
+Jogadores que entram no último ano de contrato agora aparecem em **Notificações**, na página inicial, com um indicador 🔔 no topo.
+
+Para cada jogador, o jogo mostra:
+- overall;
+- idade;
+- salário atual;
+- salário estimado para renovação;
+- luvas previstas;
+- botão **Renovar contrato**.
+
+Na negociação você escolhe:
+- adicionar 2 temporadas;
+- adicionar 3 temporadas;
+- adicionar 4 temporadas;
+- novo salário mensal.
+
+O jogador pode recusar uma proposta salarial muito baixa.
+
+Quando a renovação é aceita:
+- as luvas são pagas;
+- o novo salário passa a valer;
+- o contrato é atualizado;
+- a renovação é registrada nos eventos.
+
+Se um jogador chegar ao fim da temporada com o contrato expirando e você não tiver renovado, ele deixa o clube. Não existe mais renovação automática.
+
+Jogadores que estão apenas emprestados não aparecem na fila de renovação do clube enquanto o empréstimo estiver ativo.
+
+
+A aba **Mercado** também ganhou uma seção **Empréstimos ativos**, onde a opção de compra pode ser exercida diretamente sem precisar procurar o jogador novamente.

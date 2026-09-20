@@ -8,7 +8,7 @@ const state={
   trophies:[],incomingOffers:[],calendar:null,sponsorship:{active:null,offers:[]},marketProfile:null,
   mediaNews:[],pendingPress:null,saf:{active:false,offers:[],debtRisk:false},
   careers:[],maxCareers:10,lineupDirty:false,
-  boardMessages:[],boardExpectation:null,teamPerformance:null,rotationAdvice:null,
+  boardMessages:[],boardExpectation:null,teamPerformance:null,rotationAdvice:null,contractRenewals:[],
   activeType:null,playerCareer:null,playerData:null,countries:{},creationMode:"club",playerView:"home",
   playerStarterClubs:[],
   view:"home",authMode:"login",competitionTab:"STATE",roundByDiv:{A:1,B:1,C:1,D:1}
@@ -63,6 +63,7 @@ function mediaCategoryLabel(c){return ({
   eliminacao:"ELIMINAÇÃO",
   coletiva:"COLETIVA",
   titulo:"TÍTULO",
+  classificacao:"CLASSIFICAÇÃO",
   negocios:"NEGÓCIOS",
   saf:"SAF",
   bastidores:"BASTIDORES",
@@ -873,7 +874,10 @@ function calendarCard(){
     <p class="muted">No início de cada novo mês o jogo paga salários, parcelas de transferências, taxas de empréstimos e recebe o patrocínio mensal.</p>
     ${(cal.payrolls||[]).slice(0,3).map(x=>`<div class="finance-row"><span>Fechamento ${esc(x.month)}</span><b class="${Number(x.balance)>=0?"income":"expense"}">Saldo ${Number(x.balance).toLocaleString("pt-BR")}</b></div>`).join("")}
     ${installments.length?`<div class="calendar-sub"><b>Parcelas de transferências</b>${installments.slice(0,4).map(x=>`<span>${esc(x.player_name)} · ${x.installments_paid}/${x.installments_total} pagas · restante ${Number(x.amount_remaining).toLocaleString("pt-BR")}</span>`).join("")}</div>`:""}
-    ${loans.length?`<div class="calendar-sub"><b>Empréstimos ativos</b>${loans.slice(0,4).map(x=>`<span>${esc(x.player_name)} · ${x.months_elapsed}/${x.months_total} meses · taxa ${Number(x.monthly_fee).toLocaleString("pt-BR")}/mês</span>`).join("")}</div>`:""}
+    ${loans.length?`<div class="calendar-sub loan-calendar-list"><b>Empréstimos ativos</b>${loans.slice(0,6).map(x=>`<div class="loan-calendar-item">
+      <span>${esc(x.player_name)} · ${x.months_elapsed}/${x.months_total} meses · taxa ${Number(x.monthly_fee).toLocaleString("pt-BR")}/mês</span>
+      ${x.purchase_option_price?`<button class="secondary buy-loan-option" data-loan="${x.id}" data-name="${esc(x.player_name)}" data-price="${Number(x.purchase_option_price)}">Comprar por ${Number(x.purchase_option_price).toLocaleString("pt-BR")}</button>`:`<small>Sem opção de compra</small>`}
+    </div>`).join("")}</div>`:""}
   </div>`;
 }
 
@@ -882,6 +886,33 @@ function transferBanBanner(){
   if(!ban?.active)return "";
   return `<div class="transfer-ban"><b>⛔ TRANSFER BAN ATIVO</b><span>O clube está excessivamente endividado. Você pode vender jogadores, mas não pode contratar nem pedir novos empréstimos enquanto o caixa estiver abaixo de ${Number(ban.threshold).toLocaleString("pt-BR")} moedas.</span></div>`;
 }
+function activeLoansMarketCard(){
+  const loans=state.finance?.loans||[];
+  if(!loans.length)return "";
+
+  return `<section class="active-loans-market">
+    <div class="section-title">
+      <div><div class="kicker">EMPRÉSTIMOS ATIVOS</div><h3>Jogadores emprestados ao clube</h3></div>
+      <span class="badge">${loans.length}</span>
+    </div>
+    <div class="active-loan-grid">
+      ${loans.map(x=>`<article class="active-loan-card">
+        <div>
+          <b>${esc(x.player_name)}</b>
+          <small>${esc(x.parent_club_name)} · OVR ${x.rating}</small>
+        </div>
+        <div class="active-loan-meta">
+          <span>${x.months_elapsed}/${x.months_total} meses</span>
+          <span>Taxa ${Number(x.monthly_fee).toLocaleString("pt-BR")}/mês</span>
+        </div>
+        ${x.purchase_option_price
+          ?`<button class="primary buy-loan-option" data-loan="${x.id}" data-name="${esc(x.player_name)}" data-price="${Number(x.purchase_option_price)}">Exercer opção · ${Number(x.purchase_option_price).toLocaleString("pt-BR")}</button>`
+          :`<div class="loan-no-option">Sem opção de compra</div>`}
+      </article>`).join("")}
+    </div>
+  </section>`;
+}
+
 function sponsorshipCard(){
   const sp=state.sponsorship||{active:[],offers:[],activeCount:0,maxActive:2,slotsAvailable:2};
   const active=Array.isArray(sp.active)?sp.active:(sp.active?[sp.active]:[]);
@@ -1025,6 +1056,98 @@ function injuredPlayersPanel(compact=false){
   </section>`;
 }
 
+function contractRenewalNotifications(){
+  const list=state.contractRenewals||[];
+  if(!list.length)return "";
+
+  return `<section class="card contract-renewal-card">
+    <div class="section-title">
+      <div><div class="kicker">🔔 NOTIFICAÇÕES</div><h2>Renovações de contrato pendentes</h2></div>
+      <span class="badge red">${list.length}</span>
+    </div>
+    <p class="muted">Estes jogadores estão no último ano de contrato. Se você não renovar antes da próxima temporada, eles deixam o clube sem renovação automática.</p>
+    <div class="contract-renewal-list">
+      ${list.map(p=>`<article class="contract-renewal-item">
+        <div class="contract-player">
+          <span class="contract-rating">${p.rating}</span>
+          <div>
+            <b>${esc(p.name)}</b>
+            <small>${esc(p.role||p.position)} · ${p.age} anos${p.isStarter?" · titular":""}</small>
+          </div>
+        </div>
+        <div class="contract-values">
+          <span>Salário atual <b>${Number(p.salary||0).toLocaleString("pt-BR")}</b></span>
+          <span>Pedido estimado <b>${Number(p.suggestedSalary||0).toLocaleString("pt-BR")}</b></span>
+          <span>Luvas <b>${Number(p.signingBonus||0).toLocaleString("pt-BR")}</b></span>
+        </div>
+        <button class="primary renew-contract" data-player="${p.id}">Renovar contrato</button>
+      </article>`).join("")}
+    </div>
+  </section>`;
+}
+
+function openContractRenewal(playerId){
+  const p=(state.contractRenewals||[]).find(x=>String(x.id)===String(playerId));
+  if(!p)return;
+
+  const bg=document.createElement("div");bg.className="modal-bg";
+  bg.innerHTML=`<div class="modal">
+    <div class="modal-head">
+      <div><div class="kicker">RENOVAÇÃO DE CONTRATO</div><h2>${esc(p.name)}</h2><span class="muted">${esc(p.role||p.position)} · OVR ${p.rating}</span></div>
+      <button class="secondary close-modal">Fechar</button>
+    </div>
+    <form id="renewForm" class="stack" style="margin-top:16px">
+      <label>Novo contrato
+        <select id="renewYears">
+          <option value="2">+2 temporadas</option>
+          <option value="3" selected>+3 temporadas</option>
+          <option value="4">+4 temporadas</option>
+        </select>
+      </label>
+      <label>Salário mensal
+        <input id="renewSalary" type="number" min="0" value="${Number(p.suggestedSalary||0)}">
+      </label>
+      <div class="offer-summary">
+        Salário atual: <b>${Number(p.salary||0).toLocaleString("pt-BR")}</b><br>
+        Pedido estimado: <b>${Number(p.suggestedSalary||0).toLocaleString("pt-BR")}/mês</b><br>
+        Luvas previstas: <b>${Number(p.signingBonus||0).toLocaleString("pt-BR")} moedas</b>
+      </div>
+      <div id="renewMsg"></div>
+      <button class="primary">Enviar proposta de renovação</button>
+    </form>
+  </div>`;
+
+  document.body.appendChild(bg);
+  bg.querySelector(".close-modal").onclick=()=>bg.remove();
+  bg.onclick=e=>{if(e.target===bg)bg.remove()};
+
+  bg.querySelector("#renewForm").onsubmit=async e=>{
+    e.preventDefault();
+    const btn=e.target.querySelector("button.primary");
+    btn.disabled=true;btn.textContent="NEGOCIANDO...";
+    try{
+      const d=await api(`/api/contracts/${p.id}/renew`,{
+        method:"POST",
+        body:JSON.stringify({
+          years:Number(bg.querySelector("#renewYears").value||3),
+          salaryOffer:Number(bg.querySelector("#renewSalary").value||0)
+        })
+      });
+      bg.querySelector("#renewMsg").innerHTML=`<div class="msg ${d.accepted?"ok":""}">${esc(d.accepted?`${d.playerName} renovou por mais ${d.years} temporadas.`:d.message)}</div>`;
+      if(d.accepted){
+        await refreshAll();
+        setTimeout(()=>{bg.remove();state.view="home";render()},500);
+      }else{
+        if(d.suggestedSalary)bg.querySelector("#renewSalary").value=d.suggestedSalary;
+        btn.disabled=false;btn.textContent="Enviar proposta de renovação";
+      }
+    }catch(err){
+      bg.querySelector("#renewMsg").innerHTML=`<div class="msg">${esc(err.message)}</div>`;
+      btn.disabled=false;btn.textContent="Enviar proposta de renovação";
+    }
+  };
+}
+
 function homeView(){
   const c=state.club,car=state.competitions.career,pos=userPosition();
   let action="";
@@ -1055,6 +1178,7 @@ function homeView(){
     </div>
   </section>
   ${injuredPlayersPanel(true)}
+  ${contractRenewalNotifications()}
   ${transferBanBanner()}
   ${copaQuickCard()}
   ${superWorldQuickCard()}
@@ -1214,6 +1338,7 @@ function marketView(){
       <div class="finance-chips"><span class="coins">Caixa ● ${Number(state.club.coins).toLocaleString("pt-BR")}</span><span class="badge red">Folha mensal ${Number(state.finance?.wages||0).toLocaleString("pt-BR")}</span></div>
     </div>
     ${transferBanBanner()}
+    ${activeLoansMarketCard()}
     ${state.teamPerformance?`<div class="performance-market ${state.teamPerformance.hot?"hot":""} ${state.teamPerformance.elite?"elite":""}">
       <div><div class="kicker">VALORIZAÇÃO DO ELENCO</div><b>${esc(state.teamPerformance.label)}</b>
       <span>${state.teamPerformance.games} jogos analisados · ${state.teamPerformance.wins} vitórias · ${state.teamPerformance.position?`${state.teamPerformance.position}º na tabela · `:""}índice ${state.teamPerformance.score}/100</span></div>
@@ -1421,12 +1546,14 @@ function knockoutList(lib){
 }
 function libertadoresView(){
   const lib=state.competitions.libertadores;
-  if(!lib)return `<div class="empty"><h2>🏆 Libertadores</h2><p>Somente os 4 primeiros da Série A se classificam.</p></div>`;
-  if(lib.status==="finished")return `<div class="champion-card"><div class="kicker">CAMPEÃO DA LIBERTADORES</div><h2>🏆 ${esc(lib.championClub?.name||"Campeão")}</h2></div>${knockoutList(lib)}`;
+  if(!lib)return `<div class="empty"><h2>🏆 Libertadores</h2><p>Classificam-se os 4 primeiros da Série A e também o campeão da Copa do Brasil. Se o campeão da Copa estiver fora do G4, ele entra como vaga adicional.</p></div>`;
+  const qualificationReason=lib.qualification?.userReason;
+  const qualificationBanner=qualificationReason?`<div class="libertadores-qualified-banner">✅ Seu clube se classificou: <b>${esc(qualificationReason)}</b>.</div>`:"";
+  if(lib.status==="finished")return `${qualificationBanner}<div class="champion-card"><div class="kicker">CAMPEÃO DA LIBERTADORES</div><h2>🏆 ${esc(lib.championClub?.name||"Campeão")}</h2></div>${knockoutList(lib)}`;
   const button=state.competitions.career.phase==="LIBERTADORES"?`<button id="playLib" class="primary">Jogar próxima fase</button>`:"";
-  if(lib.stage==="GROUP")return `<div class="section-title"><div><div class="kicker">32 CLUBES · 8 GRUPOS</div><h2>Libertadores — fase de grupos</h2><span class="muted">6 jogos por clube · 2 classificados por grupo</span></div>${button}</div>
+  if(lib.stage==="GROUP")return `${qualificationBanner}<div class="section-title"><div><div class="kicker">32 CLUBES · 8 GRUPOS</div><h2>Libertadores — fase de grupos</h2><span class="muted">6 jogos por clube · 2 classificados por grupo</span></div>${button}</div>
     <div class="groups-grid">${"ABCDEFGH".split("").map(groupCard).join("")}</div>`;
-  return `<div class="section-title"><div><div class="kicker">MATA-MATA</div><h2>${({R16:"Oitavas",QF:"Quartas",SF:"Semifinais",FINAL:"Final"})[lib.stage]}</h2></div>${button}</div>${knockoutList(lib)}`;
+  return `${qualificationBanner}<div class="section-title"><div><div class="kicker">MATA-MATA</div><h2>${({R16:"Oitavas",QF:"Quartas",SF:"Semifinais",FINAL:"Final"})[lib.stage]}</h2></div>${button}</div>${knockoutList(lib)}`;
 }
 
 function championsTableRows(){
@@ -1546,7 +1673,9 @@ function copaView(){
     </div>
     ${active?`<button id="playCopa" class="primary">${brazilTwoLeg?`Jogar ${Number(copa.leg||1)===1?"ida":"volta"}`:"Jogar próxima fase"}</button>`:""}
   </div>
-  ${copa.status==="finished"?`<div class="champion-card"><div class="kicker">CAMPEÃO DA COPA</div><h2>🏆 ${esc(copa.championClub?.name||"Campeão")}</h2></div>`:""}
+  ${copa.status==="finished"?`<div class="champion-card"><div class="kicker">CAMPEÃO DA COPA</div><h2>🏆 ${esc(copa.championClub?.name||"Campeão")}</h2>
+    ${String(copa.champion||"")===String(state.club.id)&&state.competitions.career.country_code==="BR"?`<div class="libertadores-qualified-banner">🌎 Vaga na Libertadores garantida pelo título da Copa do Brasil.</div>`:""}
+  </div>`:""}
   ${copa.userEliminated?`<div class="msg">Seu clube foi eliminado. O restante do torneio foi simulado automaticamente.</div>`:""}
   <div class="knockout-grid copa-grid">
     ${[["R32","1ª fase"],["R16","Oitavas"],["QF","Quartas"],["SF","Semifinais"],["FINAL","Final"]].map(([code,label])=>{
@@ -2059,6 +2188,7 @@ function render(){
     <header class="topbar"><div class="brand"><span class="logo">⚽</span>Dono do Clube</div>
       <div class="top-actions">
         <button class="career-top-btn" data-view="careers">${esc(state.club.career_label||`Carreira ${state.club.career_slot||1}`)}</button>
+        ${(state.contractRenewals||[]).length?`<button class="notification-top-btn" data-view="home" title="Renovações de contrato pendentes">🔔 ${(state.contractRenewals||[]).length}</button>`:""}
         <button id="manualSave" class="manual-save-btn" title="Salvar a carreira agora">💾 SALVAR</button>
         <span class="coins">● ${Number(state.club.coins).toLocaleString("pt-BR")}</span><button id="logout" class="icon-btn">↪</button>
       </div>
@@ -2186,6 +2316,10 @@ async function careerAction(action){
   }
 }
 
+function bindLoanPurchaseButtons(){
+  bindLoanPurchaseButtons();
+}
+
 function bindHome(){
   const b=app.querySelector("#careerAction");
   if(b)b.onclick=async()=>{b.disabled=true;b.textContent=b.dataset.action==="national"?"SIMULANDO RODADA...":"SIMULANDO...";await careerAction(b.dataset.action)};
@@ -2212,6 +2346,26 @@ function bindHome(){
   const news=app.querySelector("#goNews");if(news)news.onclick=()=>{state.view="news";render()};
   const cup=app.querySelector("#playCopaHome");if(cup)cup.onclick=async()=>{cup.disabled=true;await careerAction("copa")};
   const world=app.querySelector("#goWorldCompetition");if(world)world.onclick=()=>{state.view="league";state.competitionTab="WORLD";render()};
+  app.querySelectorAll(".renew-contract").forEach(btn=>btn.onclick=()=>openContractRenewal(btn.dataset.player));
+
+  app.querySelectorAll(".buy-loan-option").forEach(btn=>btn.onclick=async()=>{
+    const loanId=btn.dataset.loan;
+    const name=btn.dataset.name||"jogador";
+    const price=Number(btn.dataset.price||0);
+    if(!confirm(`Exercer a opção de compra de ${name} por ${price.toLocaleString("pt-BR")} moedas?\n\nO pagamento é à vista e o jogador passa a pertencer definitivamente ao clube.`))return;
+    btn.disabled=true;
+    btn.textContent="COMPRANDO...";
+    try{
+      const d=await api(`/api/transfers/loans/${loanId}/buy`,{method:"POST",body:"{}"});
+      await refreshAll();
+      render();
+      alert(`${d.playerName} foi comprado em definitivo por ${Number(d.price).toLocaleString("pt-BR")} moedas.`);
+    }catch(err){
+      alert(err.message);
+      btn.disabled=false;
+      btn.textContent=`Comprar por ${price.toLocaleString("pt-BR")}`;
+    }
+  });
   app.querySelectorAll(".sponsor-offer").forEach(btn=>btn.onclick=async()=>{
     const sponsor=(state.sponsorship?.offers||[]).find(x=>x.id===btn.dataset.sponsor);
     if(!sponsor)return;
@@ -2488,43 +2642,70 @@ function openTransferOffer(p){
 function openLoanOffer(p){
   if(!p.loan_eligible){alert(p.loan_reason||"Jogador indisponível para empréstimo.");return}
   const suggested=Number(p.suggested_loan_fee||0);
+  const suggestedPurchase=Math.max(1000,Math.round(Number(p.asking_price||p.fair_value||0)*1.03/100)*100);
+
   const bg=document.createElement("div");bg.className="modal-bg";
   bg.innerHTML=`<div class="modal">
     <div class="modal-head"><div><div class="kicker">EMPRÉSTIMO</div><h2>${esc(p.name)}</h2><span class="muted">${esc(p.source_club_name)} · ${esc(p.role||p.position)} · OVR ${p.rating}</span></div><button class="secondary close-modal">Fechar</button></div>
     <form id="loanForm" class="stack" style="margin-top:16px">
       <label>Duração<select id="loanMonths"><option value="3">3 meses</option><option value="6" selected>6 meses</option><option value="12">12 meses</option></select></label>
       <label>Taxa mensal ao clube<input id="loanFee" type="number" min="0" value="${suggested}"></label>
+
+      <label class="loan-option-toggle">
+        <input id="loanPurchaseOption" type="checkbox">
+        <span><b>Incluir opção de compra</b><small>Permite comprar o jogador em definitivo enquanto o empréstimo estiver ativo.</small></span>
+      </label>
+
+      <div id="loanPurchaseBox" class="loan-purchase-box" style="display:none">
+        <label>Valor da opção de compra<input id="loanPurchasePrice" type="number" min="0" value="${suggestedPurchase}"></label>
+        <div class="offer-summary">Valor sugerido para a opção: <b>${suggestedPurchase.toLocaleString("pt-BR")} moedas</b>. A compra será à vista se você decidir exercer a opção.</div>
+      </div>
+
       <div class="offer-summary">Taxa sugerida: <b>${suggested.toLocaleString("pt-BR")}/mês</b>. O seu clube também assume o salário mensal do jogador durante o empréstimo.</div>
       <div id="loanMsg"></div>
       <button class="primary">Pedir empréstimo</button>
     </form>
   </div>`;
+
   document.body.appendChild(bg);
   bg.querySelector(".close-modal").onclick=()=>bg.remove();
   bg.onclick=e=>{if(e.target===bg)bg.remove()};
+
+  const optionCheck=bg.querySelector("#loanPurchaseOption");
+  const optionBox=bg.querySelector("#loanPurchaseBox");
+  optionCheck.onchange=()=>{optionBox.style.display=optionCheck.checked?"grid":"none"};
+
   bg.querySelector("#loanForm").onsubmit=async e=>{
     e.preventDefault();
     const btn=e.target.querySelector("button.primary");btn.disabled=true;btn.textContent="NEGOCIANDO...";
     try{
+      const purchaseOption=optionCheck.checked;
       const d=await api("/api/transfers/loan",{method:"POST",body:JSON.stringify({
         playerId:p.id,
         months:Number(bg.querySelector("#loanMonths").value||6),
-        monthlyFee:Number(bg.querySelector("#loanFee").value||0)
+        monthlyFee:Number(bg.querySelector("#loanFee").value||0),
+        purchaseOption,
+        purchaseOptionPrice:purchaseOption?Number(bg.querySelector("#loanPurchasePrice").value||0):0
       })});
       bg.querySelector("#loanMsg").innerHTML=`<div class="msg ${d.accepted?"ok":""}">${esc(d.message)}</div>`;
+      if(!d.accepted&&d.suggestedPurchasePrice&&purchaseOption){
+        bg.querySelector("#loanPurchasePrice").value=d.suggestedPurchasePrice;
+      }
       if(d.accepted){
         state.transferResults=(state.transferResults||[]).filter(x=>String(x.id)!==String(p.id));
         await refreshAll();
         setTimeout(()=>{bg.remove();state.view="market";render()},550);
-      }else{btn.disabled=false;btn.textContent="Pedir empréstimo"}
+      }else{
+        btn.disabled=false;btn.textContent="Pedir empréstimo";
+      }
     }catch(err){
       bg.querySelector("#loanMsg").innerHTML=`<div class="msg">${esc(err.message)}</div>`;
       btn.disabled=false;btn.textContent="Pedir empréstimo";
     }
   };
 }
-
 function bindMarket(){
+  bindLoanPurchaseButtons();
   const form=app.querySelector("#transferSearch");
   if(form)form.onsubmit=async e=>{e.preventDefault();await searchTransfers()};
   bindTransferButtons();
