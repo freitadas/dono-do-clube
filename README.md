@@ -515,3 +515,68 @@ Agora, sempre que a carreira de clube é carregada:
 - a correção também funciona depois de vendas, empréstimos, lesões ou outras alterações de elenco.
 
 O campo passa a mostrar novamente os **11 jogadores** em vez de manter uma escalação quebrada.
+
+
+## Jornal, coletivas e Projeto SAF — v26
+
+### Jornal da carreira
+
+Foi criada a nova aba **JORNAL**. Ela acompanha a carreira como uma cobertura esportiva e publica notícias sobre:
+- resultados das partidas;
+- eliminações;
+- títulos;
+- acontecimentos de bastidores;
+- patrocínios;
+- decisões financeiras;
+- venda do clube para uma SAF;
+- sanções por dívida.
+
+As matérias têm diferentes veículos fictícios dentro do jogo, como **Jornal do Clube**, **Central da Bola**, **Esporte Agora**, **Diário do Futebol** e **Portal da Torcida**.
+
+A página inicial também mostra as últimas manchetes e um botão para abrir o jornal completo.
+
+### Coletivas de imprensa
+
+Após uma eliminação ou um jogo considerado importante, pode surgir uma coletiva de imprensa.
+
+O treinador precisa escolher uma resposta entre três linhas:
+- **Assumir responsabilidade** — melhora a relação com a torcida e dá pequeno ganho de moral;
+- **Proteger o elenco** — produz o maior ganho de moral do grupo;
+- **Cobrar reação** — aumenta o apoio de parte da torcida, mas pode reduzir o moral do elenco.
+
+A resposta escolhida gera uma nova matéria na imprensa.
+
+São considerados importantes, entre outros:
+- semifinais e finais de copas;
+- mata-matas continentais;
+- jogos decisivos no fim da liga;
+- goleadas;
+- eliminações.
+
+### Projeto SAF
+
+Na aba **CLUBE** existe agora a seção **Projeto SAF**. Antes da venda, aparecem propostas de investidores com aportes diferentes.
+
+O valor do investimento aumenta conforme a divisão do clube. As propostas representam um aporte grande em relação à economia normal da carreira.
+
+Depois de aceitar uma proposta:
+- o clube passa definitivamente a ser uma **SAF** naquela carreira;
+- o aporte entra imediatamente no caixa;
+- a operação vira notícia de destaque;
+- a SAF não pode ser desfeita nessa carreira.
+
+### Regra financeira exclusiva da SAF
+
+A consequência especial pedida existe **somente para clubes que foram vendidos para SAF**.
+
+Ao fim de cada temporada, o jogo registra o saldo financeiro daquele momento. Se uma SAF terminar o ano com saldo negativo:
+- Série A / primeira divisão → cai para a divisão B;
+- divisão B → cai para C;
+- divisão C → cai para D;
+- divisão D → permanece na divisão mais baixa, pois não existe divisão inferior no sistema atual.
+
+O rebaixamento é administrativo e independe da posição esportiva do time na tabela.
+
+Clubes que **não são SAF** não sofrem esse rebaixamento automático por dívida.
+
+O saldo de fim de ano fica registrado quando a temporada encerra, portanto recuperar dinheiro depois do encerramento não apaga a sanção daquela temporada.

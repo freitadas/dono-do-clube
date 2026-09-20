@@ -6,6 +6,7 @@ const state={
   me:null,club:null,players:[],market:[],matches:[],friends:[],competitions:null,
   finance:{wages:0,recent:[],transferBan:{active:false}},clubEvents:[],transferResults:[],
   trophies:[],incomingOffers:[],calendar:null,sponsorship:{active:null,offers:[]},marketProfile:null,
+  mediaNews:[],pendingPress:null,saf:{active:false,offers:[],debtRisk:false},
   careers:[],maxCareers:10,lineupDirty:false,
   activeType:null,playerCareer:null,playerData:null,countries:{},creationMode:"club",playerView:"home",
   playerStarterClubs:[],
@@ -46,6 +47,14 @@ function locationLabel(club){
   if(!club)return "";
   return (club.country_code||"BR")==="BR"&&club.state_code?STATES[club.state_code]:countryName(club.country_code||"BR");
 }
+function lowerDivision(div){return ({A:"B",B:"C",C:"D",D:"D"})[div]||div}
+function formatNewsDate(value){
+  if(!value)return "";
+  const d=new Date(value);
+  if(Number.isNaN(d.getTime()))return "";
+  return d.toLocaleString("pt-BR",{day:"2-digit",month:"2-digit",hour:"2-digit",minute:"2-digit"});
+}
+function mediaCategoryLabel(c){return ({partida:"JOGO",eliminacao:"ELIMINAÇÃO",coletiva:"COLETIVA",titulo:"TÍTULO",negocios:"NEGÓCIOS",saf:"SAF",bastidores:"BASTIDORES",temporada:"TEMPORADA",institucional:"CLUBE"})[c]||String(c||"NOTÍCIA").toUpperCase()}
 function phaseName(p){
   if(p==="STATE")return "Estadual";
   if(p==="NATIONAL")return state.activeType==="player"?"Liga nacional":(state.competitions?.career?leagueLabel(state.competitions.career.user_division):"Liga nacional");
@@ -555,6 +564,14 @@ function superWorldQuickCard(){
   </div>`;
 }
 
+function newsHomeCard(){
+  const news=(state.mediaNews||[]).slice(0,3);
+  return `<section class="card newsroom-home">
+    <div class="section-title"><div><div class="kicker">NA MÍDIA</div><h2>Últimas notícias</h2></div><button id="goNews" class="secondary">Abrir jornal</button></div>
+    ${news.length?news.map(n=>`<article class="news-home-item"><span>${esc(mediaCategoryLabel(n.category))}</span><div><b>${esc(n.headline)}</b><small>${esc(n.source_name)} · ${formatNewsDate(n.created_at)}</small></div></article>`).join(""):`<p class="muted">As notícias da carreira aparecerão aqui.</p>`}
+  </section>`;
+}
+
 function homeView(){
   const c=state.club,car=state.competitions.career,pos=userPosition();
   let action="";
@@ -589,7 +606,9 @@ function homeView(){
   ${superWorldQuickCard()}
   ${car.phase==="END"?`<section class="season-end" style="margin-top:14px">
     <div class="kicker">FIM DA TEMPORADA</div>
-    <h2>${nextDivision()!==car.user_division?`Você vai para ${esc(leagueLabel(nextDivision(),car.country_code||c.country_code))}`:`Você permanece em ${esc(leagueLabel(car.user_division,car.country_code||c.country_code))}`}</h2>
+    <h2>${state.saf?.active&&state.saf?.debtRisk
+      ?(car.user_division==="D"?"SAF fecha o ano no vermelho: sanção financeira na divisão atual":`SAF no vermelho: rebaixamento administrativo para ${esc(leagueLabel(lowerDivision(car.user_division),car.country_code||c.country_code))}`)
+      :(nextDivision()!==car.user_division?`Você vai para ${esc(leagueLabel(nextDivision(),car.country_code||c.country_code))}`:`Você permanece em ${esc(leagueLabel(car.user_division,car.country_code||c.country_code))}`)}</h2>
     <p>A próxima temporada reinicia as tabelas${(car.country_code||c.country_code)==="BR"?" e o Estadual":""}. Seu elenco, dinheiro, escudo e estatísticas de carreira continuam.</p>
     <h3>Troféus conquistados nesta temporada</h3>
     ${trophyCards(seasonTrophies())}
@@ -615,6 +634,7 @@ function homeView(){
     </div>
   </section>
   <section class="grid calendar-grid">${calendarCard()}${sponsorshipCard()}</section>
+  ${newsHomeCard()}
   <section class="card" style="margin-top:14px"><div class="kicker">GALERIA</div><h2>Troféus do clube</h2>${trophyCards((state.trophies||[]).slice(0,6))}</section>`;
 }
 function startersView(){
@@ -1333,6 +1353,54 @@ function careersView(){
     ${!canCreate?`<div class="msg">Você atingiu o limite de ${state.maxCareers||10} carreiras. Apague uma carreira para criar outra.</div>`:""}
   </section>`;
 }
+function newsView(){
+  const news=state.mediaNews||[];
+  const featured=news[0];
+  return `<section class="newspaper">
+    <div class="newspaper-masthead">
+      <div class="kicker">EDIÇÃO DA CARREIRA</div>
+      <h1>O Dono do Clube</h1>
+      <p>${esc(state.club?.name||"Clube")} · Temporada ${state.competitions?.career?.season_no||1}</p>
+    </div>
+    ${featured?`<article class="news-featured importance-${featured.importance||1}">
+      <div class="news-meta"><span>${esc(featured.source_name)}</span><span>${formatNewsDate(featured.created_at)}</span></div>
+      <span class="news-category">${esc(mediaCategoryLabel(featured.category))}</span>
+      <h2>${esc(featured.headline)}</h2>
+      <p>${esc(featured.body)}</p>
+    </article>`:`<div class="empty">As notícias da carreira aparecerão aqui após partidas e decisões importantes.</div>`}
+    <div class="news-grid">
+      ${news.slice(1).map(n=>`<article class="news-card importance-${n.importance||1}">
+        <div class="news-meta"><span>${esc(n.source_name)}</span><span>${formatNewsDate(n.created_at)}</span></div>
+        <span class="news-category">${esc(mediaCategoryLabel(n.category))}</span>
+        <h3>${esc(n.headline)}</h3>
+        <p>${esc(n.body)}</p>
+      </article>`).join("")}
+    </div>
+  </section>`;
+}
+function safProjectCard(){
+  const saf=state.saf||{active:false,offers:[]};
+  const car=state.competitions?.career;
+  if(saf.active){
+    const debt=Boolean(saf.debtRisk);
+    const from=car?.user_division||"D",to=lowerDivision(from);
+    return `<div class="saf-project active">
+      <div class="kicker">PROJETO SAF ATIVO</div>
+      <h3>${esc(saf.investorName||"Investidor SAF")}</h3>
+      <div class="saf-stats"><span>Aporte inicial <b>${Number(saf.investment||0).toLocaleString("pt-BR")}</b></span><span>Desde a temporada <b>${saf.startedSeason||"—"}</b></span><span>Sanções por dívida <b>${saf.debtRelegations||0}</b></span></div>
+      <p>A venda é permanente nesta carreira. A SAF aumenta o poder de investimento, mas existe uma cláusula financeira: <b>se o clube terminar a temporada com saldo negativo, sofre rebaixamento administrativo de uma divisão.</b></p>
+      ${debt?`<div class="saf-risk">⚠️ O clube está no vermelho. Se a temporada terminar assim, ${from==="D"?"o time permanecerá na divisão mais baixa sob sanção":`cairá de ${esc(leagueLabel(from,car?.country_code))} para ${esc(leagueLabel(to,car?.country_code))}`}.</div>`:`<div class="saf-ok">✓ Situação financeira regular. Nenhuma sanção prevista.</div>`}
+    </div>`;
+  }
+  return `<div class="saf-project">
+    <div class="kicker">VENDA DO CLUBE</div><h3>Projeto SAF</h3>
+    <p class="muted">Venda o controle do clube para um investidor e receba um grande aporte imediato. A contrapartida é permanente: se uma SAF fechar qualquer temporada devendo, sofre rebaixamento administrativo.</p>
+    <div class="saf-offers">${(saf.offers||[]).map(o=>`<button type="button" class="saf-offer" data-saf="${esc(o.id)}">
+      <b>${esc(o.name)}</b><span>${esc(o.profile)}</span><strong>+${Number(o.investment).toLocaleString("pt-BR")} moedas</strong>
+    </button>`).join("")}</div>
+  </div>`;
+}
+
 function clubView(){
   const c=state.club;
   return `<section class="custom-grid">
@@ -1357,6 +1425,7 @@ function clubView(){
         <div id="customMsg"></div>
       </form>
 
+      ${safProjectCard()}
       <div class="club-trophy-section"><div class="kicker">GALERIA DE TROFÉUS</div><h3>Conquistas do clube</h3>${trophyCards(state.trophies||[])}</div>
 
       <div class="danger-zone">
@@ -1427,6 +1496,7 @@ function render(){
   const body=state.view==="starters"?startersView():
     state.view==="squad"?squadView():
     state.view==="market"?marketView():
+    state.view==="news"?newsView():
     state.view==="friends"?friendsView():
     state.view==="league"?competitionsView():
     state.view==="club"?clubView():
@@ -1443,6 +1513,7 @@ function render(){
   </div>
   <nav class="nav">
     <button data-view="home" class="${state.view==="home"?"on":""}">INÍCIO</button>
+    <button data-view="news" class="${state.view==="news"?"on":""}">JORNAL</button>
     <button data-view="starters" class="${state.view==="starters"?"on":""}">TITULARES</button>
     <button data-view="squad" class="${state.view==="squad"?"on":""}">ELENCO</button>
     <button data-view="market" class="${state.view==="market"?"on":""}">MERCADO</button>
@@ -1472,6 +1543,36 @@ function render(){
   if(state.view==="careers")bindCareers();
 }
 
+function maybeShowPressConference(){
+  const press=state.pendingPress;
+  if(!press||document.querySelector(".modal-bg"))return;
+  const bg=document.createElement("div");
+  bg.className="modal-bg press-modal-bg";
+  bg.innerHTML=`<div class="modal press-modal">
+    <div class="press-banner"><div class="press-mics">🎙️ 🎤 🎙️</div><div><div class="kicker">COLETIVA DE IMPRENSA</div><h2>${esc(press.title||"Coletiva pós-jogo")}</h2></div></div>
+    <div class="press-question"><span>${esc(press.context?.competition||"Imprensa")}</span><p>${esc(press.question)}</p></div>
+    <div class="press-answers">
+      <button data-press-answer="responsibility"><b>Assumir responsabilidade</b><span>Reduz a pressão sobre o elenco e melhora a relação com a torcida.</span></button>
+      <button data-press-answer="protect_squad"><b>Proteger o elenco</b><span>Aumenta mais o moral dos jogadores, com repercussão pública moderada.</span></button>
+      <button data-press-answer="demand_reaction"><b>Cobrar reação</b><span>Agrada parte da torcida, mas aumenta a pressão sobre o grupo.</span></button>
+    </div>
+  </div>`;
+  document.body.appendChild(bg);
+  bg.querySelectorAll("[data-press-answer]").forEach(btn=>btn.onclick=async()=>{
+    bg.querySelectorAll("button").forEach(x=>x.disabled=true);
+    try{
+      const d=await api(`/api/press-conferences/${press.id}/respond`,{method:"POST",body:JSON.stringify({answerKey:btn.dataset.pressAnswer})});
+      bg.remove();
+      await refreshAll();
+      render();
+      alert(d.headline||"Coletiva concluída.");
+    }catch(err){
+      alert(err.message);
+      bg.querySelectorAll("button").forEach(x=>x.disabled=false);
+    }
+  });
+}
+
 function showMatch(m){
   if(!m)return;
   const bg=document.createElement("div");bg.className="modal-bg";
@@ -1483,7 +1584,10 @@ function showMatch(m){
     ${m.finance?`<div class="finance-match"><span>Patrocínio: pagamento mensal</span><span>Bilheteria +${Number(m.finance.gate).toLocaleString("pt-BR")}</span><span>Resultado +${Number(m.finance.performance).toLocaleString("pt-BR")}</span><span>Salários: pagamento mensal pelo calendário</span><b>Receita líquida desta partida ${Number(m.finance.net)>=0?"+":""}${Number(m.finance.net).toLocaleString("pt-BR")}</b></div>${m.finance.event?`<div class="msg ok"><b>${esc(m.finance.event.title)}</b><br>${esc(m.finance.event.description)}</div>`:""}`:""}
     <h3>Lances</h3>${m.events?.length?m.events.map(e=>`<div class="event"><b>${e.minute}'</b> ${esc(e.text)}</div>`).join(""):`<div class="empty">Sem lances relevantes.</div>`}
   </div>`;
-  document.body.appendChild(bg);bg.querySelector(".close-modal").onclick=()=>bg.remove();bg.onclick=e=>{if(e.target===bg)bg.remove()};
+  document.body.appendChild(bg);
+  const closeMatch=()=>{bg.remove();setTimeout(maybeShowPressConference,120)};
+  bg.querySelector(".close-modal").onclick=closeMatch;
+  bg.onclick=e=>{if(e.target===bg)closeMatch()};
 }
 
 async function showClub(id){
@@ -1512,7 +1616,14 @@ async function careerAction(action){
   try{
     const d=await api(endpoints[action],{method:"POST",body:"{}"});
     await refreshAll();render();
+    if(action==="next"&&d.career?.safPenalty?.applied){
+      const p=d.career.safPenalty;
+      alert(p.from===p.to
+        ?`A SAF encerrou a temporada com dívida. Como o clube já estava na divisão mais baixa, permaneceu nela sob sanção administrativa.`
+        :`A SAF encerrou a temporada com dívida. Rebaixamento administrativo aplicado: ${leagueLabel(p.from,state.club?.country_code)} → ${leagueLabel(p.to,state.club?.country_code)}.`);
+    }
     if(d.userMatch)showMatch(d.userMatch);
+    else setTimeout(maybeShowPressConference,150);
   }catch(err){
     alert(err.message);
     await refreshAll().catch(()=>{});
@@ -1543,6 +1654,7 @@ function bindHome(){
   };
 
   const gs=app.querySelector("#goSquad");if(gs)gs.onclick=()=>{state.view="squad";render()};
+  const news=app.querySelector("#goNews");if(news)news.onclick=()=>{state.view="news";render()};
   const cup=app.querySelector("#playCopaHome");if(cup)cup.onclick=async()=>{cup.disabled=true;await careerAction("copa")};
   const world=app.querySelector("#goWorldCompetition");if(world)world.onclick=()=>{state.view="league";state.competitionTab="WORLD";render()};
   app.querySelectorAll(".sponsor-offer").forEach(btn=>btn.onclick=async()=>{
@@ -1556,6 +1668,7 @@ function bindHome(){
       alert(`${d.name} é o novo patrocinador do clube.`);
     }catch(err){alert(err.message);btn.disabled=false}
   });
+  if(state.pendingPress)setTimeout(maybeShowPressConference,350);
 }
 function openStarterSwap(starterId){
   const starter=state.players.find(p=>String(p.id)===String(starterId));
@@ -1952,6 +2065,7 @@ function bindClub(){
       state.competitions=null;state.finance={wages:0,recent:[],transferBan:{active:false}};
       state.clubEvents=[];state.transferResults=[];state.trophies=[];state.incomingOffers=[];
       state.calendar=null;state.sponsorship={active:null,offers:[]};state.marketProfile=null;
+      state.mediaNews=[];state.pendingPress=null;state.saf={active:false,offers:[],debtRisk:false};
       state.view="careers";
       await bootstrap();
       if(!(state.careers||[]).length)renderCreateClub();
@@ -1962,6 +2076,19 @@ function bindClub(){
       deleteClub.textContent="Apagar meu time";
     }
   };
+
+  app.querySelectorAll(".saf-offer").forEach(btn=>btn.onclick=async()=>{
+    const offer=(state.saf?.offers||[]).find(x=>x.id===btn.dataset.saf);
+    if(!offer)return;
+    if(!confirm(`Vender o clube para ${offer.name}?\n\nAporte imediato: ${Number(offer.investment).toLocaleString("pt-BR")} moedas.\n\nATENÇÃO: a venda é permanente nesta carreira. Se a SAF terminar qualquer temporada com saldo negativo, o clube sofre rebaixamento administrativo de uma divisão.`))return;
+    btn.disabled=true;
+    try{
+      const d=await api("/api/saf/accept",{method:"POST",body:JSON.stringify({investorId:offer.id})});
+      await refreshAll();
+      render();
+      alert(`${d.investorName} assumiu a SAF. O clube recebeu ${Number(d.investment).toLocaleString("pt-BR")} moedas.`);
+    }catch(err){alert(err.message);btn.disabled=false}
+  });
 
   app.querySelector("#customForm").onsubmit=async e=>{
     e.preventDefault();

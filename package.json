@@ -1,8 +1,8 @@
 {
   "name": "dono-do-clube",
-  "version": "25.0.0",
+  "version": "26.0.0",
   "private": true,
-  "description": "Dono do Clube com reparo automático do XI titular para impedir campo com menos de 11 jogadores.",
+  "description": "Dono do Clube com jornal da carreira, coletivas de imprensa e projeto SAF com aporte e rebaixamento administrativo por dívida.",
   "main": "server.js",
   "scripts": {
     "start": "node server.js"
