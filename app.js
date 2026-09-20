@@ -150,7 +150,28 @@ function renderAuth(){
     const f=new FormData(e.target);
     try{
       await api(`/api/auth/${state.authMode}`,{method:"POST",body:JSON.stringify({email:f.get("email"),password:f.get("password")})});
-      await bootstrap();
+      await 
+// FIX V38 EVENTOS ESTÁVEIS
+// Evita perda de cliques após renderizações sem criar múltiplos listeners.
+if(!window.__v38StableEvents){
+ window.__v38StableEvents=true;
+ document.addEventListener("click", async function(e){
+   const search=e.target.closest("#transferSearchBtn");
+   if(search){
+     e.preventDefault();
+     if(!search.dataset.lock){
+       search.dataset.lock="1";
+       try{ await searchTransfers(); }
+       catch(err){ console.error(err); }
+       finally{ delete search.dataset.lock; }
+     }
+   }
+ }, false);
+ window.addEventListener("error", function(e){
+   console.error("Erro recuperável da interface:", e.message);
+ });
+}
+bootstrap();
     }catch(err){
       app.querySelector("#authMsg").innerHTML=`<div class="msg">${esc(err.message)}</div>`;
     }
@@ -3363,12 +3384,3 @@ function improveYouthAcademy(player){
   return player;
 }
 
-// V38 BUTTON WATCHDOG - recupera listeners após telas dinâmicas
-if(!window.__v38ButtonWatchdog){
- window.__v38ButtonWatchdog=true;
- const observer=new MutationObserver(()=>{
-   if(typeof bindMarket==="function" && state.view==="market") bindMarket();
-   if(typeof bindTransferButtons==="function") bindTransferButtons();
- });
- observer.observe(document.body,{childList:true,subtree:true});
-}
