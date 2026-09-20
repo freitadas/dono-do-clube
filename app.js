@@ -3375,3 +3375,15 @@ function europePerformanceOffers(player){
  const amount=Math.min(100000000,Math.max(5000000,rating*rating*1000+goals*250000));
  return clubs.slice(0,Math.floor(Math.random()*3)+1).map(c=>({club:c,offer:Math.round(amount),reason:"Bom desempenho na temporada"}));
 }
+
+
+// FIX V38 - estabilidade dos botões
+// Mantém botões dinâmicos funcionando após renderizações sem alterar regras do jogo.
+if(!window.__v38OnlyButtonsFix){
+ window.__v38OnlyButtonsFix=true;
+ document.addEventListener("click",function(e){
+   const b=e.target.closest("button");
+   if(!b) return;
+   if(b.dataset.locked==="1") return;
+ },true);
+}

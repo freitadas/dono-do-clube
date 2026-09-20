@@ -5433,11 +5433,21 @@ async function nextSeason(ownerId){
     await finalizeSeasonRealism(c,ownerId,career,club);
     const developmentStaff=await staffLevels(c,ownerId);
 
-    const borrowed=(await c.query(`SELECT l.player_id,l.parent_club_id,p.name FROM player_loans l JOIN players p ON p.id=l.player_id WHERE l.borrowing_club_id=$1 AND l.status='active' FOR UPDATE OF l`,[ownerId])).rows;
+    // Empréstimos não terminam mais automaticamente na virada da temporada.
+    // Eles acabam somente quando a duração contratada (meses) for cumprida.
+    const borrowed=(await c.query(`
+      SELECT l.player_id,l.parent_club_id,p.name
+      FROM player_loans l
+      JOIN players p ON p.id=l.player_id
+      WHERE l.borrowing_club_id=$1
+      AND l.status='active'
+      AND l.months_elapsed >= l.months_total
+      FOR UPDATE OF l
+    `,[ownerId])).rows;
     for(const l of borrowed){
       await c.query(`UPDATE player_loans SET status='ended' WHERE player_id=$1 AND borrowing_club_id=$2 AND status='active'`,[l.player_id,ownerId]);
       await c.query(`UPDATE players SET club_id=NULL,is_starter=FALSE,transfer_listed=FALSE,fitness=100,morale=72 WHERE id=$1`,[l.player_id]);
-      await c.query(`INSERT INTO club_events(club_id,event_type,title,description) VALUES($1,'loan','Fim de empréstimo',$2)`,[ownerId,`${l.name} deixou esta carreira ao fim da temporada.`]);
+      await c.query(`INSERT INTO club_events(club_id,event_type,title,description) VALUES($1,'loan','Fim de empréstimo',$2)`,[ownerId,`${l.name} retornou ao clube após o término do empréstimo.`]);
     }
 
     const ps=(await c.query(`
