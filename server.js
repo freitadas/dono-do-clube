@@ -7763,21 +7763,67 @@ function canReceiveEuropeanProposal(player){
 }
 
 
-// player_career_realistic_system
-const playerCareerConfig = {
-  proposal: { europeanMinOverall: 68, europeanMinPotential: 78 },
-  retirementAge: 38,
-  training: ['finalizacao','passe','drible','fisico']
+// playerCareerCompleteBackend
+const playerCareerCompleteBackend = {
+ creation:['height','weight','dominant_foot','position','style'],
+ training:['finishing','passing','dribbling','physical'],
+ evolution:['performance','potential','attributes'],
+ career:['starter','coach_relation','competition','morale'],
+ market:['european_offers','loans'],
+ history:['statistics','awards','retirement']
 };
 
-function calculatePlayerGrowth(matchRating, goals, assists){
-  const performance = Number(matchRating||0) + Number(goals||0)*2 + Number(assists||0);
-  return Math.max(0, Math.min(3, Math.floor(performance/20)));
+function playerDevelopmentGain(match={}){
+ const value=Number(match.rating||0)+Number(match.goals||0)*3+Number(match.assists||0)*2;
+ return Math.max(0,Math.min(3,Math.floor(value/25)));
 }
 
-function playerCanReceiveClubProposal(player){
-  if(!player) return false;
-  return Number(player.overall||0) >= playerCareerConfig.proposal.europeanMinOverall ||
-         Number(player.potential||0) >= playerCareerConfig.proposal.europeanMinPotential ||
-         Number(player.goals||0) >= 5 || Number(player.assists||0) >= 5;
+function shouldReceiveEuropeanOffer(player={}){
+ return Number(player.overall||0)>=68 ||
+        Number(player.potential||0)>=75 ||
+        Number(player.goals||0)>=5 ||
+        Number(player.assists||0)>=5;
+}
+
+
+// MODO CARREIRA JOGADOR - aumento de interesse europeu
+const europeanProposalBoost = {
+  baseChance: 45,
+  overallThreshold: 60,
+  potentialThreshold: 70,
+  performanceBonus: 25
+};
+
+function europeanProposalChance(player={}){
+  let chance = europeanProposalBoost.baseChance;
+  const overall = Number(player.overall || 0);
+  const potential = Number(player.potential || 0);
+  const goals = Number(player.goals || 0);
+  const assists = Number(player.assists || 0);
+  const rating = Number(player.average_rating || 0);
+
+  if(overall >= europeanProposalBoost.overallThreshold) chance += 20;
+  if(potential >= europeanProposalBoost.potentialThreshold) chance += 20;
+  if(goals >= 3) chance += 10;
+  if(assists >= 3) chance += 10;
+  if(rating >= 7) chance += europeanProposalBoost.performanceBonus;
+
+  return Math.min(95,chance);
+}
+
+
+// MODO CARREIRA TREINADOR - mais propostas de clubes europeus
+const coachEuropeanOffersBoost = {
+  baseChance: 50,
+  titleBonus: 15,
+  winBonus: 10,
+  reputationBonus: 20
+};
+
+function coachEuropeanProposalChance(coach={}){
+  let chance=coachEuropeanOffersBoost.baseChance;
+  chance += Number(coach.titles||0)*coachEuropeanOffersBoost.titleBonus;
+  chance += Number(coach.wins||0)>20 ? coachEuropeanOffersBoost.winBonus : 0;
+  chance += Number(coach.reputation||0)>70 ? coachEuropeanOffersBoost.reputationBonus : 0;
+  return Math.min(95,chance);
 }

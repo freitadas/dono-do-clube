@@ -3455,12 +3455,24 @@ window.playerCareerProFeatures={
 window.europeanOffersEasyMode=true;
 
 
-// playerCareerRealisticSystem
-window.playerCareerRealisticSystem = {
- creation:['altura','peso','pe_dominante','posicao','estilo'],
- training:['finalizacao','passe','drible','fisico'],
- progression:['desempenho','potencial','atributos'],
- career:['titularidade','concorrencia','treinador','moral','confianca'],
- market:['propostas_europeias','emprestimos'],
- history:['estatisticas','premios','historico','aposentadoria']
+// careerPlayerCompleteUI
+window.careerPlayerCompleteUI={
+ createPlayer:true,
+ training:true,
+ attributeEvolution:true,
+ potential:true,
+ europeanOffers:true,
+ loansDevelopment:true,
+ coachRelationship:true,
+ starterCompetition:true,
+ moraleConfidence:true,
+ injuriesRecovery:true,
+ objectives:true,
+ awards:true,
+ careerHistory:true,
+ retirement:true
 };
+
+window.europeanProposalBoostMode=true;
+
+window.coachEuropeanOffersBoost=true;
