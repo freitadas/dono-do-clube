@@ -1,8 +1,8 @@
 {
   "name": "dono-do-clube",
-  "version": "38.0.0",
+  "version": "18.0.0",
   "private": true,
-  "description": "Dono do Clube v38 com pacote de realismo: disciplina, forma, táticas, banco e substituições, base, potencial, scouting, comissão, estádio, rivalidades, histórico, mercado vivo e propostas de outros clubes ao treinador.",
+  "description": "Dono do Clube com até 10 carreiras independentes e botão de salvamento manual.",
   "main": "server.js",
   "scripts": {
     "start": "node server.js"
