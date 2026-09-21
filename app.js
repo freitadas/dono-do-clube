@@ -3450,3 +3450,17 @@ window.playerCareerProFeatures={
  management:['treinador','titularidade','concorrencia','moral'],
  history:['estatisticas','premios','historico','aposentadoria']
 };
+
+// propostas europeias facilitadas
+window.europeanOffersEasyMode=true;
+
+
+// playerCareerRealisticSystem
+window.playerCareerRealisticSystem = {
+ creation:['altura','peso','pe_dominante','posicao','estilo'],
+ training:['finalizacao','passe','drible','fisico'],
+ progression:['desempenho','potencial','atributos'],
+ career:['titularidade','concorrencia','treinador','moral','confianca'],
+ market:['propostas_europeias','emprestimos'],
+ history:['estatisticas','premios','historico','aposentadoria']
+};

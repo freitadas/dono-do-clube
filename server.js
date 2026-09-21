@@ -7740,3 +7740,44 @@ app.post('/api/player-career/training/:id', async(req,res)=>{
   res.json({ok:true});
  }catch(e){res.status(500).json({error:e.message})}
 });
+
+
+// Modo Jogador - propostas europeias facilitadas
+const european_offer_chance = {
+  minimumOverall: 65,
+  minimumPotential: 75,
+  goodSeasonGoals: 5,
+  goodSeasonAssists: 3
+};
+
+function canReceiveEuropeanProposal(player){
+  if(!player) return false;
+  const overall=Number(player.overall||player.rating||0);
+  const potential=Number(player.potential||0);
+  const goals=Number(player.goals||0);
+  const assists=Number(player.assists||0);
+  return overall>=european_offer_chance.minimumOverall ||
+         potential>=european_offer_chance.minimumPotential ||
+         goals>=european_offer_chance.goodSeasonGoals ||
+         assists>=european_offer_chance.goodSeasonAssists;
+}
+
+
+// player_career_realistic_system
+const playerCareerConfig = {
+  proposal: { europeanMinOverall: 68, europeanMinPotential: 78 },
+  retirementAge: 38,
+  training: ['finalizacao','passe','drible','fisico']
+};
+
+function calculatePlayerGrowth(matchRating, goals, assists){
+  const performance = Number(matchRating||0) + Number(goals||0)*2 + Number(assists||0);
+  return Math.max(0, Math.min(3, Math.floor(performance/20)));
+}
+
+function playerCanReceiveClubProposal(player){
+  if(!player) return false;
+  return Number(player.overall||0) >= playerCareerConfig.proposal.europeanMinOverall ||
+         Number(player.potential||0) >= playerCareerConfig.proposal.europeanMinPotential ||
+         Number(player.goals||0) >= 5 || Number(player.assists||0) >= 5;
+}
