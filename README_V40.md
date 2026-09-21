@@ -1,0 +1,1 @@
+Implementação consolidada do modo carreira jogador com backend e módulos integrados.

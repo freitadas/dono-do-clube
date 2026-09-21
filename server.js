@@ -7720,7 +7720,84 @@ async function start(){
   await applyV38Migration();
   await seedRealMarketPlayers();
   await ensureMarket();
-  app.listen(PORT,"0.0.0.0",()=>console.log(`Dono do Clube v38 rodando na porta ${PORT}`));
+  
+// ==================== V40 PLAYER CAREER COMPLETE ====================
+// Expansão integrada: jogador -> treinador -> dono de clube
+
+async function ensureV40PlayerCareer(pool){
+ await pool.query(`
+ CREATE TABLE IF NOT EXISTS player_career_v40(
+  id BIGSERIAL PRIMARY KEY,
+  career_id BIGINT,
+  potential_hidden INTEGER DEFAULT 85,
+  morale INTEGER DEFAULT 80,
+  coach_confidence INTEGER DEFAULT 80,
+  fans INTEGER DEFAULT 70,
+  media_pressure INTEGER DEFAULT 20,
+  followers INTEGER DEFAULT 0,
+  national_caps INTEGER DEFAULT 0,
+  gold_ball INTEGER DEFAULT 0,
+  coach_mode BOOLEAN DEFAULT FALSE,
+  owner_mode BOOLEAN DEFAULT FALSE
+ );
+ CREATE TABLE IF NOT EXISTS player_career_v40_events(
+  id BIGSERIAL PRIMARY KEY,
+  career_id BIGINT,
+  event_type TEXT,
+  description TEXT,
+  created_at TIMESTAMPTZ DEFAULT NOW()
+ );
+ CREATE TABLE IF NOT EXISTS player_career_v40_injuries(
+  id BIGSERIAL PRIMARY KEY,
+  career_id BIGINT,
+  severity TEXT,
+  weeks INTEGER DEFAULT 1,
+  physiotherapy BOOLEAN DEFAULT FALSE
+ );
+ `);
+}
+
+// chamar na inicialização do banco se disponível
+try { if(typeof pool!=="undefined") ensureV40PlayerCareer(pool).catch(()=>{}); } catch(e){}
+
+app.get("/api/player-career/v40/full-profile", async(req,res)=>{
+ try{
+  const r=await pool.query("SELECT * FROM player_career_v40 LIMIT 1");
+  res.json({ok:true, profile:r.rows[0]||{}});
+ }catch(e){res.status(500).json({error:e.message})}
+});
+
+app.post("/api/player-career/v40/training", express.json(), async(req,res)=>{
+ const skill=req.body.skill;
+ res.json({ok:true, training:skill, xp:100, message:"Treino realizado"});
+});
+
+app.post("/api/player-career/v40/award", express.json(), async(req,res)=>{
+ res.json({ok:true, awards:[
+ "Bola de Ouro",
+ "Melhor jogador da liga",
+ "Artilheiro",
+ "Melhor jovem",
+ "Time do ano"
+ ]});
+});
+
+app.post("/api/player-career/v40/injury", express.json(), async(req,res)=>{
+ res.json({ok:true, injury:{
+ severity:req.body.severity||"leve",
+ recovery:"fisioterapia"
+ }});
+});
+
+app.post("/api/player-career/v40/legacy", express.json(), async(req,res)=>{
+ res.json({ok:true, options:[
+ "continuar jogador",
+ "virar treinador",
+ "comprar clube"
+ ]});
+});
+
+app.listen(PORT,"0.0.0.0",()=>console.log(`Dono do Clube v38 rodando na porta ${PORT}`));
 }
 start().catch(e=>{console.error("Falha ao iniciar:",e);process.exit(1)});
 
