@@ -2423,7 +2423,7 @@ async function applyStatsAndCondition(
     const happinessDelta=status==="STAR"||status==="STARTER"?0:status==="PROSPECT"?3:2;
     await client.query(`
       UPDATE players SET
-        fitness=GREATEST(25,fitness-$2),
+        fitness=GREATEST(25,fitness-ROUND($2::numeric)),
         morale=GREATEST(35,LEAST(100,morale+$3)),
         form_rating=GREATEST(45,LEAST(100,form_rating+$4)),
         happiness=GREATEST(20,LEAST(100,happiness+$5))
