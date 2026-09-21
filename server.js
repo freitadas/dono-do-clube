@@ -7812,18 +7812,34 @@ function europeanProposalChance(player={}){
 }
 
 
-// MODO CARREIRA TREINADOR - mais propostas de clubes europeus
-const coachEuropeanOffersBoost = {
-  baseChance: 50,
-  titleBonus: 15,
-  winBonus: 10,
-  reputationBonus: 20
+// PLAYER_MODE_REAL_UPGRADE_V2
+// Sistemas reais do Modo Carreira Jogador
+const PLAYER_MODE_REAL_UPGRADE_V2 = {
+  attributes:['pace','shooting','passing','dribbling','physical','defending'],
+  training:['finishing','passing','dribbling','fitness'],
+  career:['academy','starter','bench','coach_trust','position_battle'],
+  market:['europe_offers','loan_development'],
+  history:['goals','assists','matches','rating','awards']
 };
 
-function coachEuropeanProposalChance(coach={}){
-  let chance=coachEuropeanOffersBoost.baseChance;
-  chance += Number(coach.titles||0)*coachEuropeanOffersBoost.titleBonus;
-  chance += Number(coach.wins||0)>20 ? coachEuropeanOffersBoost.winBonus : 0;
-  chance += Number(coach.reputation||0)>70 ? coachEuropeanOffersBoost.reputationBonus : 0;
+function calculatePlayerCareerPerformance(match={}){
+  const rating=Number(match.rating||0);
+  const goals=Number(match.goals||0);
+  const assists=Number(match.assists||0);
+  return Math.max(0,Math.min(5,Math.floor((rating+goals*2+assists*1.5)/2)));
+}
+
+function calculateEuropeanClubInterest(player={}){
+  let chance=25;
+  const overall=Number(player.overall||0);
+  const potential=Number(player.potential||0);
+  const rating=Number(player.average_rating||0);
+  const goals=Number(player.goals||0);
+  const assists=Number(player.assists||0);
+  if(overall>=65) chance+=20;
+  if(potential>=75) chance+=20;
+  if(rating>=7) chance+=20;
+  if(goals>=5) chance+=10;
+  if(assists>=5) chance+=10;
   return Math.min(95,chance);
 }

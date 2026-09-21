@@ -3475,4 +3475,14 @@ window.careerPlayerCompleteUI={
 
 window.europeanProposalBoostMode=true;
 
-window.coachEuropeanOffersBoost=true;
+
+// PLAYER_MODE_REAL_UPGRADE_V2
+window.PLAYER_MODE_REAL_UPGRADE_V2={
+ creation:['altura','peso','pe_dominante','posicao','estilo'],
+ training:['finalizacao','passe','drible','fisico'],
+ evolution:['atributos','potencial','desempenho'],
+ career:['titularidade','reserva','treinador','concorrencia'],
+ market:['propostas_europeias','emprestimos'],
+ season:['objetivos','premios','historico','estatisticas'],
+ future:['idade','aposentadoria']
+};
