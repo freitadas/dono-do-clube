@@ -7797,6 +7797,131 @@ app.post("/api/player-career/v40/legacy", express.json(), async(req,res)=>{
  ]});
 });
 
+
+// ===== MODO CARREIRA USAVEL =====
+app.post("/api/player-career/features/update", express.json(), async (req,res)=>{
+  const data=req.body||{};
+  res.json({
+    ok:true,
+    playerCareer:{
+      potential:data.potential||85,
+      morale:data.morale||80,
+      coachTrust:data.coachTrust||75,
+      fans:data.fans||70,
+      press:data.press||20,
+      followers:data.followers||1000,
+      injury:data.injury||null
+    }
+  });
+});
+
+app.get("/api/player-career/events", (req,res)=>{
+ res.json({
+  events:[
+   {title:"Torcida pede titularidade",impact:"+moral"},
+   {title:"Treinador critica desempenho",impact:"-confiança"},
+   {title:"Sequência de bons jogos",impact:"+torcida"}
+  ]
+ });
+});
+
+app.get("/api/player-career/awards", (req,res)=>{
+ res.json({
+  awards:[
+   "Bola de Ouro",
+   "Melhor jogador da liga",
+   "Artilheiro",
+   "Melhor jovem",
+   "Time do ano"
+  ]
+ });
+});
+
+app.get("/api/player-career/national-team", (req,res)=>{
+ res.json({
+  callUp:true,
+  competitions:["Eliminatórias","Copa América","Copa do Mundo"],
+  history:[]
+ });
+});
+
+app.get("/api/player-career/post-career", (req,res)=>{
+ res.json({
+  options:[
+   "Virar treinador",
+   "Comprar um clube",
+   "Administrar equipe"
+  ]
+ });
+});
+
+
+// ===== PLAYER CAREER PERSISTENT SYSTEM =====
+await pool.query(`
+CREATE TABLE IF NOT EXISTS player_careers (
+ id BIGSERIAL PRIMARY KEY,
+ user_id BIGINT,
+ player_name TEXT NOT NULL,
+ age INTEGER DEFAULT 18,
+ position TEXT DEFAULT 'AT',
+ overall INTEGER DEFAULT 60,
+ potential INTEGER DEFAULT 85,
+ morale INTEGER DEFAULT 80,
+ coach_trust INTEGER DEFAULT 75,
+ fans INTEGER DEFAULT 70,
+ media_pressure INTEGER DEFAULT 20,
+ followers BIGINT DEFAULT 0,
+ money BIGINT DEFAULT 0,
+ injury JSONB DEFAULT '{}'::jsonb,
+ national_team JSONB DEFAULT '{}'::jsonb,
+ awards JSONB DEFAULT '[]'::jsonb,
+ sponsors JSONB DEFAULT '[]'::jsonb,
+ agent JSONB DEFAULT '{}'::jsonb,
+ events JSONB DEFAULT '[]'::jsonb,
+ stats JSONB DEFAULT '{}'::jsonb,
+ career_stage TEXT DEFAULT 'PLAYER',
+ created_at TIMESTAMPTZ DEFAULT NOW(),
+ updated_at TIMESTAMPTZ DEFAULT NOW()
+);
+`);
+
+app.get("/api/player-career/save/:id", async (req,res)=>{
+ const r=await pool.query("SELECT * FROM player_careers WHERE id=$1",[req.params.id]);
+ res.json(r.rows[0]||null);
+});
+
+app.post("/api/player-career/save", express.json(), async (req,res)=>{
+ const p=req.body;
+ const r=await pool.query(`
+ INSERT INTO player_careers
+ (player_name,age,position,overall,potential,morale,coach_trust,fans,media_pressure,followers,money,injury,national_team,awards,sponsors,agent,events,stats,career_stage)
+ VALUES($1,$2,$3,$4,$5,$6,$7,$8,$9,$10,$11,$12,$13,$14,$15,$16,$17,$18,$19)
+ RETURNING *
+ `,[
+ p.player_name,p.age,p.position,p.overall,p.potential,p.morale,p.coach_trust,
+ p.fans,p.media_pressure,p.followers,p.money,p.injury||{},p.national_team||{},
+ p.awards||[],p.sponsors||[],p.agent||{},p.events||[],p.stats||{},p.career_stage||"PLAYER"
+ ]);
+ res.json(r.rows[0]);
+});
+
+app.put("/api/player-career/save/:id", express.json(), async(req,res)=>{
+ const p=req.body;
+ const r=await pool.query(`
+ UPDATE player_careers SET
+ morale=$1,coach_trust=$2,fans=$3,media_pressure=$4,followers=$5,
+ injury=$6,national_team=$7,awards=$8,sponsors=$9,agent=$10,
+ events=$11,stats=$12,career_stage=$13,updated_at=NOW()
+ WHERE id=$14 RETURNING *
+ `,[
+ p.morale,p.coach_trust,p.fans,p.media_pressure,p.followers,
+ p.injury||{},p.national_team||{},p.awards||[],p.sponsors||[],
+ p.agent||{},p.events||[],p.stats||{},p.career_stage||"PLAYER",
+ req.params.id
+ ]);
+ res.json(r.rows[0]);
+});
+
 app.listen(PORT,"0.0.0.0",()=>console.log(`Dono do Clube v38 rodando na porta ${PORT}`));
 }
 start().catch(e=>{console.error("Falha ao iniciar:",e);process.exit(1)});

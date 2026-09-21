@@ -1949,6 +1949,39 @@ function playerTransferOffersView(){
     </div>
   </section>`;
 }
+
+function playerCareerRealisticPanel(){
+  const pc=state.playerData?.career||{};
+  return `<section class="card realistic-career-panel">
+    <div class="kicker">NOVO MODO CARREIRA</div>
+    <h2>Vida de Jogador</h2>
+    <div class="real-grid">
+      <div><small>Potencial oculto</small><b>${pc.potential||95}</b></div>
+      <div><small>Moral</small><b>${pc.morale||90}</b></div>
+      <div><small>Confiança técnico</small><b>${pc.coach_trust||85}</b></div>
+      <div><small>Torcida</small><b>${pc.fans||80}</b></div>
+      <div><small>Imprensa</small><b>${pc.pressure||20}</b></div>
+      <div><small>Seguidores</small><b>${pc.followers||1000}</b></div>
+    </div>
+
+    <div class="career-modules">
+      <div><h3>🏥 Lesões</h3><p>Leves, médias, graves e recuperação com fisioterapia.</p></div>
+      <div><h3>🇧🇷 Seleção</h3><p>Convocações, eliminatórias, Copa América, Copa do Mundo e histórico.</p></div>
+      <div><h3>🏆 Prêmios</h3><p>Bola de Ouro, melhor da liga, artilheiro, melhor jovem e time do ano.</p></div>
+      <div><h3>📱 Fama</h3><p>Seguidores, patrocinadores, entrevistas e personalidade.</p></div>
+      <div><h3>🤝 Agente</h3><p>Propostas, salário, negociação e transferências.</p></div>
+      <div><h3>👔 Futuro</h3><p>Jogador → Treinador → Dono de clube.</p></div>
+    </div>
+
+    <div class="career-events">
+      <h3>Eventos de carreira</h3>
+      <p>Torcida pede titularidade</p>
+      <p>Treinador critica desempenho</p>
+      <p>Você recebe elogios após sequência de jogos</p>
+    </div>
+  </section>`;
+}
+
 function playerCareerHome(){
   const d=state.playerData,pc=d?.career;
   if(!pc)return `<div class="empty">Carreira de jogador não carregada.</div>`;
@@ -1989,6 +2022,7 @@ function playerCareerHome(){
     </div>
   </section>`:""}
   ${statusEnd?playerTransferOffersView():""}
+  ${playerCareerRealisticPanel()}
   <section class="grid">
     <div class="card"><div class="kicker">CONTRATO</div><h2>${esc(pc.club_name)}</h2>
       <div class="finance-row"><span>Salário</span><b class="income">+${Number(pc.salary).toLocaleString("pt-BR")}/mês</b></div>
@@ -3694,3 +3728,24 @@ window.PLAYER_CAREER_COMPLETE_BUILD_UI = {
  ],
  systems:'integrated'
 };
+
+
+function renderCareerCompleteTools(){
+ return `
+ <section class="card">
+ <div class="kicker">CARREIRA COMPLETA</div>
+ <h2>Gestão do Jogador</h2>
+ <div class="career-actions">
+ <button onclick="careerAction('events')">Eventos</button>
+ <button onclick="careerAction('awards')">Prêmios</button>
+ <button onclick="careerAction('national-team')">Seleção</button>
+ <button onclick="careerAction('post-career')">Futuro</button>
+ </div>
+ <div id="careerActionResult"></div>
+ </section>`;
+}
+async function careerAction(type){
+ const r=await fetch('/api/player-career/'+type);
+ const j=await r.json();
+ document.querySelector("#careerActionResult").innerHTML="<pre>"+JSON.stringify(j,null,2)+"</pre>";
+}
