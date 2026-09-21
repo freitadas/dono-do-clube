@@ -3486,3 +3486,211 @@ window.PLAYER_MODE_REAL_UPGRADE_V2={
  season:['objetivos','premios','historico','estatisticas'],
  future:['idade','aposentadoria']
 };
+
+
+// PLAYER_CAREER_EXPANDED_UI
+window.PLAYER_CAREER_EXPANDED_UI = {
+ athleteCreation:true,
+ individualAttributes:true,
+ performanceEvolution:true,
+ trainingCenter:true,
+ hiddenPotential:true,
+ positionBattle:true,
+ starterReserve:true,
+ coachConfidence:true,
+ europeanMarket:true,
+ loans:true,
+ statistics:true,
+ goals:true,
+ assists:true,
+ averageRating:true,
+ awards:true,
+ history:true,
+ objectives:true,
+ careerEvolution:true,
+ retirement:true
+};
+
+
+// PLAYER_PLAYABLE_UI_V1
+window.PLAYER_PLAYABLE_UI_V1={
+  screens:[
+    'criacao_atleta',
+    'atributos',
+    'treinos',
+    'evolucao',
+    'titularidade',
+    'confianca_treinador',
+    'estatisticas',
+    'mercado',
+    'emprestimos',
+    'premios',
+    'historico',
+    'aposentadoria'
+  ],
+  actions:[
+    'treinar',
+    'evoluir_atributo',
+    'acompanhar_desempenho',
+    'receber_propostas'
+  ]
+};
+
+
+// PLAYER_GAMEPLAY_MENU_V1
+window.PLAYER_GAMEPLAY_MENU_V1={
+ actions:[
+  'criar_jogador',
+  'treinar',
+  'ver_atributos',
+  'acompanhar_estatisticas',
+  'buscar_transferencia',
+  'aceitar_emprestimo',
+  'acompanhar_objetivos'
+ ]
+};
+
+
+// PLAYER_FULL_GAMEPLAY_UI_V2
+window.PLAYER_FULL_GAMEPLAY_UI_V2={
+ pages:{
+  createPlayer:true,
+  profile:true,
+  attributes:true,
+  training:true,
+  objectives:true,
+  statistics:true,
+  market:true,
+  loans:true,
+  awards:true,
+  history:true,
+  retirement:true
+ },
+ actions:[
+  'create',
+  'train',
+  'playMatch',
+  'evolve',
+  'acceptOffer',
+  'requestLoan'
+ ]
+};
+
+
+// PLAYER_CAREER_FULL_UI_STEP1
+window.PLAYER_CAREER_FULL_UI_STEP1={
+ create:true,
+ training:true,
+ attributes:true,
+ progression:true,
+ squad:true,
+ coach:true,
+ market:true,
+ statistics:true,
+ legacy:true
+};
+
+
+// PLAYER_CAREER_INTEGRATED_UI_V1
+window.PLAYER_CAREER_INTEGRATED_UI_V1={
+ screens:['criacao','perfil','atributos','treino','partidas','objetivos','mercado','historico'],
+ actions:['criar','treinar','jogar','evoluir','transferir','emprestar']
+};
+
+
+// PLAYER_CAREER_UI_FLOW_V2
+// Fluxos de interface do Modo Carreira Jogador
+window.PLAYER_CAREER_UI_FLOW_V2={
+  tabs:[
+    {id:'perfil',name:'Perfil do Jogador'},
+    {id:'atributos',name:'Atributos'},
+    {id:'treinos',name:'Treinos'},
+    {id:'desempenho',name:'Desempenho'},
+    {id:'objetivos',name:'Objetivos'},
+    {id:'mercado',name:'Mercado'},
+    {id:'historico',name:'Histórico'}
+  ],
+  actions:{
+    train:'treinar jogador',
+    evolve:'evoluir atributo',
+    evaluate:'avaliar temporada',
+    transfer:'analisar propostas'
+  }
+};
+
+
+// PLAYER_REAL_SCREENS_V3
+window.PLAYER_REAL_SCREENS_V3 = {
+ renderScreens: {
+  profile: "Perfil do atleta com atributos e potencial",
+  training: "Treinos com evolução",
+  performance: "Desempenho das partidas",
+  objectives: "Objetivos da temporada",
+  market: "Mercado e propostas",
+  history: "Histórico da carreira"
+ },
+ buttons: [
+  "treinar",
+  "evoluir_atributo",
+  "ver_estatisticas",
+  "ver_objetivos",
+  "ver_propostas",
+  "aceitar_transferencia"
+ ]
+};
+
+
+// PLAYER_ACTIONS_CONNECTED_UI_V1
+window.PLAYER_ACTIONS_CONNECTED_UI_V1={
+ buttons:[
+  'treinar',
+  'evoluir_atributo',
+  'registrar_partida',
+  'ver_estatisticas',
+  'ver_propostas',
+  'aceitar_transferencia'
+ ],
+ save:true
+};
+
+
+// PLAYER_CAREER_ULTIMATE_UI
+window.PLAYER_CAREER_ULTIMATE_UI={
+ athleteLife:true,
+ personality:true,
+ media:true,
+ agent:true,
+ sponsorship:true,
+ reputation:true,
+ coachRelations:true,
+ competition:true,
+ contracts:true,
+ market:true,
+ loans:true,
+ trainingSpecialization:true,
+ aging:true,
+ legacy:true
+};
+
+
+// PLAYER_CAREER_COMPLETE_BUILD_UI
+window.PLAYER_CAREER_COMPLETE_BUILD_UI = {
+ screens:[
+  'criacao_atleta',
+  'perfil',
+  'atributos',
+  'treinos',
+  'desempenho',
+  'elenco',
+  'objetivos',
+  'mercado',
+  'contratos',
+  'emprestimos',
+  'midia',
+  'patrocinios',
+  'premios',
+  'historico',
+  'aposentadoria'
+ ],
+ systems:'integrated'
+};

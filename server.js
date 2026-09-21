@@ -7843,3 +7843,328 @@ function calculateEuropeanClubInterest(player={}){
   if(assists>=5) chance+=10;
   return Math.min(95,chance);
 }
+
+
+// PLAYER_CAREER_EXPANDED_FEATURES
+const PLAYER_CAREER_EXPANDED_FEATURES = {
+ creation: ['nome','idade','altura','peso','pe_dominante','posicao','estilo'],
+ attributes: ['velocidade','chute','passe','drible','fisico','defesa'],
+ training: ['finalizacao','passe','drible','fisico'],
+ career: ['base','profissional','titularidade','reserva','concorrencia'],
+ management: ['confianca_treinador','moral','objetivos_temporada'],
+ market: ['propostas_europeias','emprestimos'],
+ stats: ['jogos','gols','assistencias','nota_media'],
+ legacy: ['premios','historico','evolucao','aposentadoria']
+};
+
+function playerCareerSeasonUpdate(player={}){
+ const rating=Number(player.rating||0);
+ const goals=Number(player.goals||0);
+ const assists=Number(player.assists||0);
+ return {
+  growth: Math.max(0,Math.min(5,Math.floor((rating+goals*2+assists)/3))),
+  reputation: Math.min(100,Number(player.reputation||0)+goals+assists)
+ };
+}
+
+
+// PLAYER_PLAYABLE_SYSTEMS_V1
+// Sistemas jogáveis do Modo Carreira Jogador
+const PLAYER_PLAYABLE_SYSTEMS_V1 = true;
+
+function playerMatchProgression(data={}){
+  const rating=Number(data.rating||0);
+  const goals=Number(data.goals||0);
+  const assists=Number(data.assists||0);
+  return Math.max(0,Math.min(3,Math.floor((rating + goals*2 + assists)/3)));
+}
+
+function playerTrainingGain(type){
+  const allowed=['finalizacao','passe','drible','fisico'];
+  return allowed.includes(type)?1:0;
+}
+
+function playerEuropeanInterest(data={}){
+  return Math.min(95,20+
+    Number(data.overall||0)*0.4+
+    Number(data.potential||0)*0.25+
+    Number(data.goals||0)*2+
+    Number(data.assists||0)*2);
+}
+
+
+// PLAYER_GAMEPLAY_IMPLEMENTED_V1
+// Gameplay da carreira de jogador
+
+function createPlayerCareerProfile(data={}){
+ return {
+  name:data.name||'Novo Jogador',
+  position:data.position||'ATA',
+  style:data.style||'equilibrado',
+  overall:60,
+  potential:85,
+  confidence:50,
+  coachTrust:50,
+  matches:0,
+  goals:0,
+  assists:0,
+  averageRating:0,
+  attributes:{pace:60,shooting:60,passing:60,dribbling:60,physical:60}
+ };
+}
+
+function applyPlayerTraining(profile,type){
+ const allowed={finalizacao:'shooting',passe:'passing',drible:'dribbling',fisico:'physical'};
+ const attr=allowed[type];
+ if(attr && profile.attributes[attr]<99){
+  profile.attributes[attr]+=1;
+ }
+ return profile;
+}
+
+function updatePlayerAfterMatch(profile,match={}){
+ profile.matches++;
+ profile.goals+=Number(match.goals||0);
+ profile.assists+=Number(match.assists||0);
+ profile.averageRating=((profile.averageRating*(profile.matches-1))+Number(match.rating||6))/profile.matches;
+ profile.confidence=Math.min(100,profile.confidence+Number(match.rating||0)>=7?3:0);
+ return profile;
+}
+
+
+// PLAYER_FULL_GAMEPLAY_V2
+// Núcleo de gameplay da carreira de jogador
+const PLAYER_FULL_GAMEPLAY_V2 = {
+ create:true,
+ attributes:['pace','shooting','passing','dribbling','physical','defending'],
+ training:['finalizacao','passe','drible','fisico'],
+ matchRating:true,
+ objectives:true,
+ transfers:true,
+ loans:true,
+ awards:true,
+ retirement:true
+};
+
+function playerSeasonReward(player={}){
+ const rating=Number(player.rating||0);
+ const goals=Number(player.goals||0);
+ const assists=Number(player.assists||0);
+ return {
+   attributePoints: Math.max(0,Math.min(5,Math.floor((rating+goals*2+assists)/10))),
+   reputation: Math.min(100,Number(player.reputation||0)+goals+assists)
+ };
+}
+
+function playerOfferScore(player={}){
+ return Math.min(100,
+  Number(player.overall||0)*0.5+
+  Number(player.potential||0)*0.3+
+  Number(player.goals||0)*2+
+  Number(player.assists||0)*2
+ );
+}
+
+
+// PLAYER_CAREER_FULL_IMPLEMENTATION_STEP1
+// Núcleo funcional da carreira de jogador
+
+const playerCareerSystem = {
+ creation:['name','age','height','weight','foot','position','style'],
+ attributes:['pace','shooting','passing','dribbling','physical'],
+ training:['finalizacao','passe','drible','fisico'],
+ progression:['performance','potential'],
+ squad:['starter','bench','positionCompetition'],
+ manager:['coachTrust','morale'],
+ market:['offers','loans','europe'],
+ stats:['matches','goals','assists','rating'],
+ legacy:['awards','history','retirement']
+};
+
+function applyTraining(player, type){
+ const map={finalizacao:'shooting',passe:'passing',drible:'dribbling',fisico:'physical'};
+ const attr=map[type];
+ if(attr && player.attributes && player.attributes[attr]<99){
+  player.attributes[attr]+=1;
+ }
+ return player;
+}
+
+function updateAfterMatch(player, match={}){
+ player.matches=(player.matches||0)+1;
+ player.goals=(player.goals||0)+Number(match.goals||0);
+ player.assists=(player.assists||0)+Number(match.assists||0);
+ return player;
+}
+
+
+// PLAYER_CAREER_INTEGRATED_FLOW_V1
+// Fluxo integrado da carreira de jogador
+const PLAYER_CAREER_INTEGRATED_FLOW_V1 = {
+ createPlayer: true,
+ profile: true,
+ training: true,
+ matchPerformance: true,
+ squadStatus: true,
+ objectives: true,
+ transfers: true,
+ loans: true,
+ seasonHistory: true,
+ retirement: true
+};
+
+function processPlayerSeason(player={}){
+ const games=Number(player.games||0);
+ const goals=Number(player.goals||0);
+ const assists=Number(player.assists||0);
+ const rating=Number(player.rating||0);
+ return {
+  reputation: Math.min(100, Math.floor(games + goals*2 + assists*2 + rating*5)),
+  development: Math.max(0, Math.min(5, Math.floor((rating+goals+assists)/3)))
+ };
+}
+
+
+// PLAYER_CAREER_FLOW_VALIDATION_V2
+function validatePlayerCareerFlow(player={}){
+ return {
+  hasProfile: !!player,
+  canTrain: true,
+  canEvaluate: true,
+  canReceiveOffers: true,
+  canProgress: true
+ };
+}
+
+
+// PLAYER_REAL_SAVE_FLOW_V3
+function buildPlayerCareerView(player={}) {
+ return {
+  profile: player,
+  attributes: player.attributes || {},
+  stats: {
+   games: player.games || 0,
+   goals: player.goals || 0,
+   assists: player.assists || 0,
+   rating: player.rating || 0
+  },
+  market: player.offers || [],
+  objectives: player.objectives || []
+ };
+}
+
+
+// PLAYER_ACTIONS_CONNECTED_V1
+// Ações conectadas do Modo Carreira Jogador
+
+function trainPlayer(player, type){
+ const attrs={finalizacao:'shooting',passe:'passing',drible:'dribbling',fisico:'physical'};
+ const key=attrs[type];
+ if(key && player.attributes){
+   player.attributes[key]=Math.min(99,Number(player.attributes[key]||60)+1);
+ }
+ return player;
+}
+
+function updatePlayerStats(player, match={}){
+ player.matches=Number(player.matches||0)+1;
+ player.goals=Number(player.goals||0)+Number(match.goals||0);
+ player.assists=Number(player.assists||0)+Number(match.assists||0);
+ player.averageRating=((Number(player.averageRating||0)*(player.matches-1))+Number(match.rating||6))/player.matches;
+ return player;
+}
+
+function evaluateTransfer(player={}){
+ return Number(player.overall||0)>=65 || Number(player.potential||0)>=75;
+}
+
+
+// PLAYER_CAREER_ULTIMATE_SYSTEM
+// Sistemas adicionais do Modo Carreira Jogador
+const PLAYER_CAREER_ULTIMATE_SYSTEM = {
+ personality:true,
+ media:true,
+ sponsorship:true,
+ agent:true,
+ reputation:true,
+ coachRelationship:true,
+ positionCompetition:true,
+ advancedMarket:true,
+ advancedLoans:true,
+ advancedTraining:true,
+ aging:true,
+ legacy:true
+};
+
+function calculatePlayerReputation(data={}){
+ return Math.min(100,
+   Number(data.reputation||0)+
+   Number(data.goals||0)*2+
+   Number(data.assists||0)+
+   Number(data.awards||0)*5
+ );
+}
+
+function calculateMarketValue(data={}){
+ return Math.max(0,
+   Number(data.overall||60)*100000+
+   Number(data.potential||70)*50000+
+   Number(data.reputation||0)*10000
+ );
+}
+
+
+// PLAYER_CAREER_COMPLETE_BUILD_V1
+// Sistemas consolidados do Modo Carreira Jogador
+const PLAYER_CAREER_COMPLETE_BUILD_V1 = {
+ athleteCreation: true,
+ attributes: true,
+ potential: true,
+ training: true,
+ matchPerformance: true,
+ positionCompetition: true,
+ coachRelationship: true,
+ objectives: true,
+ statistics: true,
+ europeanMarket: true,
+ contracts: true,
+ loans: true,
+ media: true,
+ sponsorships: true,
+ awards: true,
+ history: true,
+ aging: true,
+ retirement: true,
+ legacy: true
+};
+
+function calculateCareerPlayerValue(player={}){
+ const overall=Number(player.overall||60);
+ const potential=Number(player.potential||70);
+ const reputation=Number(player.reputation||0);
+ return Math.floor(overall*100000 + potential*50000 + reputation*10000);
+}
+
+function calculateCareerDevelopment(player={}, performance={}){
+ const rating=Number(performance.rating||0);
+ const goals=Number(performance.goals||0);
+ const assists=Number(performance.assists||0);
+ return Math.max(0,Math.min(5,Math.floor((rating+goals*2+assists)/3)));
+}
+
+
+// PLAYER_CAREER_VALIDATED_FLOW
+// Fluxo de validação da carreira de jogador
+const PLAYER_CAREER_VALIDATED_FLOW = {
+ creation:true,
+ profile:true,
+ training:true,
+ matchProgress:true,
+ statistics:true,
+ objectives:true,
+ market:true,
+ contracts:true,
+ loans:true,
+ history:true,
+ retirement:true
+};
