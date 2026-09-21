@@ -346,7 +346,35 @@ async function initDb(){
       created_at TIMESTAMPTZ NOT NULL DEFAULT NOW()
     );
 
-    CREATE TABLE IF NOT EXISTS player_careers(
+    
+    CREATE TABLE IF NOT EXISTS player_career_development(
+      id BIGSERIAL PRIMARY KEY,
+      player_career_id BIGINT NOT NULL REFERENCES player_careers(id) ON DELETE CASCADE,
+      potential INTEGER NOT NULL DEFAULT 85,
+      coach_relation INTEGER NOT NULL DEFAULT 50,
+      confidence INTEGER NOT NULL DEFAULT 50,
+      starter_status TEXT NOT NULL DEFAULT 'reserve',
+      position_competition INTEGER NOT NULL DEFAULT 50,
+      goals INTEGER NOT NULL DEFAULT 0,
+      assists INTEGER NOT NULL DEFAULT 0,
+      appearances INTEGER NOT NULL DEFAULT 0,
+      average_rating NUMERIC(4,2) NOT NULL DEFAULT 0,
+      individual_awards INTEGER NOT NULL DEFAULT 0,
+      career_history JSONB NOT NULL DEFAULT '[]'::jsonb,
+      season_objectives JSONB NOT NULL DEFAULT '[]'::jsonb,
+      retirement_age INTEGER NOT NULL DEFAULT 38,
+      created_at TIMESTAMPTZ NOT NULL DEFAULT NOW()
+    );
+
+    CREATE TABLE IF NOT EXISTS player_training_sessions(
+      id BIGSERIAL PRIMARY KEY,
+      player_career_id BIGINT NOT NULL REFERENCES player_careers(id) ON DELETE CASCADE,
+      training_type TEXT NOT NULL,
+      attribute_gain INTEGER NOT NULL DEFAULT 0,
+      created_at TIMESTAMPTZ NOT NULL DEFAULT NOW()
+    );
+
+CREATE TABLE IF NOT EXISTS player_careers(
       id BIGSERIAL PRIMARY KEY,
       user_id BIGINT NOT NULL REFERENCES users(id) ON DELETE CASCADE,
       career_slot INTEGER NOT NULL,
@@ -7695,3 +7723,20 @@ async function start(){
   app.listen(PORT,"0.0.0.0",()=>console.log(`Dono do Clube v38 rodando na porta ${PORT}`));
 }
 start().catch(e=>{console.error("Falha ao iniciar:",e);process.exit(1)});
+
+
+app.get('/api/player-career/development/:id', async(req,res)=>{
+ try{
+  const r=await q(`SELECT * FROM player_career_development WHERE player_career_id=$1`,[req.params.id]);
+  res.json(r.rows[0]||null);
+ }catch(e){res.status(500).json({error:e.message})}
+});
+
+app.post('/api/player-career/training/:id', async(req,res)=>{
+ try{
+  const type=req.body?.type||'technical';
+  await q(`INSERT INTO player_training_sessions(player_career_id,training_type,attribute_gain) VALUES($1,$2,1)`,[req.params.id,type]);
+  await q(`UPDATE player_career_development SET confidence=LEAST(100,confidence+1) WHERE player_career_id=$1`,[req.params.id]);
+  res.json({ok:true});
+ }catch(e){res.status(500).json({error:e.message})}
+});

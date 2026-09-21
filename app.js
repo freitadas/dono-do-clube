@@ -3439,3 +3439,14 @@ if(!window.__v38EuropeanPerformanceOffers){
 }
 
 
+
+
+// Modo Jogador Pro v38
+window.playerCareerProFeatures={
+ creation:['altura','peso','pe_dominante','estilo'],
+ evolution:['desempenho','potencial','atributos'],
+ training:['finalizacao','passe','fisico','drible'],
+ market:['propostas_europeias','emprestimos'],
+ management:['treinador','titularidade','concorrencia','moral'],
+ history:['estatisticas','premios','historico','aposentadoria']
+};
