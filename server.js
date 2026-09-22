@@ -8417,3 +8417,16 @@ function simulateCoachMatch(home={}, away={}){
 
 // COACH_NEXT_SEASON_SAFE_FIX_V2
 async function safeNextSeason(clubId){ await repairCareer(clubId); return await nextSeason(clubId); }
+
+
+// JSON_RESPONSE_GUARD_FIX_V1
+// Garante respostas JSON nas rotas de carreira
+function sendCareerJSON(res, payload, status=200){
+  res.status(status);
+  res.setHeader('Content-Type','application/json');
+  return res.json(payload);
+}
+
+function safeJSONError(error){
+  return {success:false,error:String(error?.message || error)};
+}
