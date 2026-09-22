@@ -8370,3 +8370,47 @@ const PLAYER_CAREER_VALIDATED_FLOW = {
  history:true,
  retirement:true
 };
+
+
+// PLAYER_SIMULATION_ROUND_FIX_V1
+// Correção do avanço de rodada no Modo Carreira Jogador
+function normalizePlayerRound(data){
+  if(!data.league) return data;
+  if(!Array.isArray(data.league.fixtures)) data.league.fixtures=[];
+  data.league.fixtures.forEach(f=>{
+    if(f.played===undefined) f.played=false;
+  });
+  return data;
+}
+
+function ensurePlayerSimulationAdvance(data){
+  data=normalizePlayerRound(data);
+  const maxRound=Math.max(0,...data.league.fixtures.map(f=>Number(f.round||0)));
+  if(Number(data.current_round)>=maxRound){
+    data.current_round=maxRound;
+  } else {
+    data.current_round=Number(data.current_round||1)+1;
+  }
+  return data;
+}
+
+
+// COACH_MODE_SIMULATION_FIX_V1
+// Correção da simulação do Modo Carreira Treinador
+function validateCoachSimulation(state={}){
+  if(!state.matches) state.matches=[];
+  if(!state.currentRound) state.currentRound=1;
+  return state;
+}
+
+function advanceCoachRound(state={}){
+  state=validateCoachSimulation(state);
+  state.currentRound=Number(state.currentRound)+1;
+  return state;
+}
+
+function simulateCoachMatch(home={}, away={}){
+  const h=Math.max(0,Math.floor(Math.random()*4));
+  const a=Math.max(0,Math.floor(Math.random()*4));
+  return {homeScore:h,awayScore:a,played:true};
+}

@@ -3749,3 +3749,11 @@ async function careerAction(type){
  const j=await r.json();
  document.querySelector("#careerActionResult").innerHTML="<pre>"+JSON.stringify(j,null,2)+"</pre>";
 }
+
+
+// PLAYER_SIMULATION_BUTTON_FIX_V1
+window.PLAYER_SIMULATION_BUTTON_FIX_V1=true;
+
+
+// COACH_MODE_SIMULATION_UI_FIX_V1
+window.COACH_MODE_SIMULATION_UI_FIX_V1=true;
