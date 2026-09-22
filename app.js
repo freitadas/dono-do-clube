@@ -2700,7 +2700,7 @@ function bindRealism(){
 function bindHome(){
   bindManagerOfferButtons();
   const b=app.querySelector("#careerAction");
-  if(b)b.onclick=async()=>{b.disabled=true;b.textContent=b.dataset.action==="national"?"SIMULANDO RODADA...":"SIMULANDO...";await careerAction(b.dataset.action)};
+  if(b)b.onclick=async()=>{b.disabled=true;b.textContent=b.dataset.action==="next"?"CRIANDO PRÓXIMA TEMPORADA...":(b.dataset.action==="national"?"SIMULANDO RODADA...":"SIMULANDO...");try{await careerAction(b.dataset.action)}catch(e){b.disabled=false;b.textContent="📅 IR PARA A PRÓXIMA TEMPORADA";alert(e.message)}};
 
   const fullSeason=app.querySelector("#simulateFullSeason");
   if(fullSeason)fullSeason.onclick=async()=>{

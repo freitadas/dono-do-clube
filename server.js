@@ -6710,7 +6710,7 @@ app.post("/api/career/simulate-season",auth,async(req,res,next)=>{
 app.post("/api/career/next-season",auth,async(req,res,next)=>{
   try{
     const c=await userClub(req.user.id);
-    res.json({career:await withCompetitionLock(c.id,async()=>{await repairCareer(c.id);return nextSeason(c.id)})});
+    res.json({career:await withCompetitionLock(c.id,async()=>{await repairCareer(c.id);return safeNextSeason(c.id)})});
   }catch(e){next(e)}
 });
 
@@ -8414,3 +8414,6 @@ function simulateCoachMatch(home={}, away={}){
   const a=Math.max(0,Math.floor(Math.random()*4));
   return {homeScore:h,awayScore:a,played:true};
 }
+
+// COACH_NEXT_SEASON_SAFE_FIX_V2
+async function safeNextSeason(clubId){ await repairCareer(clubId); return await nextSeason(clubId); }
