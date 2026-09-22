@@ -6707,11 +6707,18 @@ app.post("/api/career/simulate-season",auth,async(req,res,next)=>{
   }catch(e){next(e)}
 });
 
-app.post("/api/career/next-season",auth,async(req,res,next)=>{
+app.post("/api/career/next-season",auth,async(req,res)=>{
   try{
     const c=await userClub(req.user.id);
-    res.json({career:await withCompetitionLock(c.id,async()=>{await repairCareer(c.id);return safeNextSeason(c.id)})});
-  }catch(e){next(e)}
+    const career=await withCompetitionLock(c.id,async()=>{
+      await repairCareer(c.id);
+      return await nextSeason(c.id);
+    });
+    res.status(200).json({success:true,career});
+  }catch(e){
+    console.error("NEXT_SEASON_ERROR",e);
+    res.status(e.status||500).json({success:false,error:e.message||"Erro ao criar próxima temporada"});
+  }
 });
 
 app.get("/api/clubs/:id",auth,async(req,res,next)=>{
