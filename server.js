@@ -8437,3 +8437,10 @@ function sendCareerJSON(res, payload, status=200){
 function safeJSONError(error){
   return {success:false,error:String(error?.message || error)};
 }
+
+
+// FINAL_JSON_ERROR_MIDDLEWARE_FIX
+app.use((err, req, res, next)=>{
+ console.error(err);
+ res.status(500).json({ok:false,error:err.message||"Erro interno"});
+});

@@ -24,7 +24,10 @@ async function api(url,options={}){
     headers:{"Content-Type":"application/json",...(options.headers||{})},
     ...options
   });
-  const data=await res.json().catch(()=>({}));
+  const raw=await res.text();
+  let data={};
+  try { data=JSON.parse(raw); }
+  catch(e) { throw new Error("Resposta inválida do servidor: " + raw.slice(0,120)); }
   if(!res.ok)throw new Error(data.error||"Falha na requisição.");
   return data;
 }
