@@ -3768,3 +3768,13 @@ async function safeCareerJSON(response){
  try { return JSON.parse(text); }
  catch(e){ throw new Error('Servidor retornou resposta inválida'); }
 }
+
+
+// MY_CAREER_FETCH_GUARD_FIX
+async function parseCareerResponse(response){
+ const text=await response.text();
+ if(!text.trim().startsWith('{')){
+   throw new Error('Falha na carreira: resposta inválida da API');
+ }
+ return JSON.parse(text);
+}

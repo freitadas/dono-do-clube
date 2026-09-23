@@ -8457,3 +8457,11 @@ app.use((err,req,res,next)=>{
  if(res.headersSent) return next(err);
  res.status(500).json({ok:false,error:String(err.message||err)});
 });
+
+
+// MY_CAREER_JSON_ISOLATION_FIX
+// Proteção específica para dados de carreira individual
+function careerJSON(res, payload, status=200){
+  return res.status(status).type('application/json').json(payload);
+}
+
