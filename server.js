@@ -8444,3 +8444,16 @@ app.use((err, req, res, next)=>{
  console.error(err);
  res.status(500).json({ok:false,error:err.message||"Erro interno"});
 });
+
+
+// GLOBAL_API_JSON_GUARD_V2
+app.use((req,res,next)=>{
+ res.jsonError=(status,msg)=>res.status(status).json({ok:false,error:msg});
+ next();
+});
+
+app.use((err,req,res,next)=>{
+ console.error(err);
+ if(res.headersSent) return next(err);
+ res.status(500).json({ok:false,error:String(err.message||err)});
+});
