@@ -9079,6 +9079,103 @@ const NATIONAL_TEAM_DATA={
 const NATIONAL_TACTICS=new Set(["BALANCED","POSSESSION","COUNTER","HIGH_PRESS"]);
 const NATIONAL_FORMATIONS=new Set(["4-3-3","4-2-3-1","4-4-2","3-5-2"]);
 
+const NATIONAL_FORMATION_REQUIREMENTS={
+  "4-3-3":{GK:1,DEF:4,MID:3,ATT:3},
+  "4-2-3-1":{GK:1,DEF:4,MID:5,ATT:1},
+  "4-4-2":{GK:1,DEF:4,MID:4,ATT:2},
+  "3-5-2":{GK:1,DEF:3,MID:5,ATT:2}
+};
+
+function nationalFormationRequirements(formation){
+  return NATIONAL_FORMATION_REQUIREMENTS[formation]||NATIONAL_FORMATION_REQUIREMENTS["4-3-3"];
+}
+function nationalLineupCounts(players){
+  const counts={GK:0,DEF:0,MID:0,ATT:0};
+  for(const p of players||[]){
+    if(counts[p.position]!=null)counts[p.position]++;
+  }
+  return counts;
+}
+function nationalLineupValidation(players,formation){
+  const req=nationalFormationRequirements(formation);
+  const counts=nationalLineupCounts(players);
+  const total=(players||[]).length;
+  const valid=total===11&&Object.keys(req).every(pos=>Number(counts[pos]||0)===Number(req[pos]));
+  return {valid,total,counts,requirements:req};
+}
+function nationalAutoLineup(squad,formation){
+  const req=nationalFormationRequirements(formation);
+  const chosen=[];
+  for(const pos of ["GK","DEF","MID","ATT"]){
+    const candidates=(squad||[])
+      .filter(p=>p.position===pos)
+      .sort((a,b)=>
+        Number(b.rating||0)-Number(a.rating||0) ||
+        Number(b.form_rating||0)-Number(a.form_rating||0) ||
+        Number(b.fitness||0)-Number(a.fitness||0)
+      )
+      .slice(0,Number(req[pos]||0));
+    chosen.push(...candidates);
+  }
+  return chosen;
+}
+function ensureNationalLineupData(data,squad,formation){
+  if(!data||typeof data!=="object")data={};
+  const ids=Array.isArray(data.lineupPlayerIds)?data.lineupPlayerIds.map(Number).filter(Boolean):[];
+  const idSet=new Set(ids.map(String));
+  const selected=(squad||[]).filter(p=>idSet.has(String(p.id)));
+  let validation=nationalLineupValidation(selected,formation);
+
+  if(!validation.valid){
+    const auto=nationalAutoLineup(squad,formation);
+    data.lineupPlayerIds=auto.map(p=>Number(p.id));
+    if(!auto.some(p=>String(p.id)===String(data.captainPlayerId))){
+      data.captainPlayerId=Number(auto.find(p=>p.position!=="GK")?.id||auto[0]?.id||0)||null;
+    }
+    if(!auto.some(p=>String(p.id)===String(data.penaltyTakerPlayerId))){
+      data.penaltyTakerPlayerId=Number(
+        [...auto].sort((a,b)=>Number(b.shooting||b.rating||0)-Number(a.shooting||a.rating||0))[0]?.id||0
+      )||null;
+    }
+    validation=nationalLineupValidation(auto,formation);
+    return {data,players:auto,validation,autoSelected:true};
+  }
+
+  if(!selected.some(p=>String(p.id)===String(data.captainPlayerId))){
+    data.captainPlayerId=Number(selected.find(p=>p.position!=="GK")?.id||selected[0]?.id||0)||null;
+  }
+  if(!selected.some(p=>String(p.id)===String(data.penaltyTakerPlayerId))){
+    data.penaltyTakerPlayerId=Number(
+      [...selected].sort((a,b)=>Number(b.shooting||b.rating||0)-Number(a.shooting||a.rating||0))[0]?.id||0
+    )||null;
+  }
+  return {data,players:selected,validation,autoSelected:false};
+}
+function nationalLineupMetrics(players,formation,captainId=null){
+  const validation=nationalLineupValidation(players,formation);
+  if(!players?.length)return {
+    overall:0,averageForm:0,averageFitness:0,strength:0,validation
+  };
+  const avg=(key,fallback=0)=>players.reduce((n,p)=>n+Number(p[key]??fallback),0)/players.length;
+  const overall=avg("rating",60);
+  const averageForm=avg("form_rating",70);
+  const averageFitness=avg("fitness",85);
+  const captain=players.find(p=>String(p.id)===String(captainId));
+  const captainBonus=captain?Math.max(0,(Number(captain.rating||60)-68)*.025):0;
+  const strength=
+    overall +
+    (averageForm-70)*.035 +
+    (averageFitness-80)*.025 +
+    captainBonus;
+  return {
+    overall:Math.round(overall*10)/10,
+    averageForm:Math.round(averageForm),
+    averageFitness:Math.round(averageFitness),
+    strength:Math.round(strength*10)/10,
+    validation
+  };
+}
+
 function nationalCompetitionName(seasonNo){
   return Number(seasonNo)%4===0?"Copa do Mundo":"Copa Internacional de Seleções";
 }
@@ -9193,7 +9290,8 @@ async function ensureNationalSquad(countryCode){
   const squad=[];
   for(const [position,limit] of [["GK",3],["DEF",8],["MID",7],["ATT",5]]){
     const rows=(await q(`
-      SELECT p.id,p.name,p.position,p.role,p.rating,p.age,p.form_rating,p.fitness,c.name club_name
+      SELECT p.id,p.name,p.position,p.role,p.rating,p.age,p.form_rating,p.fitness,
+             p.pace,p.shooting,p.passing,p.defending,c.name club_name
       FROM players p LEFT JOIN clubs c ON c.id=p.club_id
       WHERE p.nationality_code=$1 AND p.position=$2
       ORDER BY p.rating DESC,p.form_rating DESC,p.age ASC
@@ -9207,6 +9305,8 @@ async function ensureNationalJobSeason(job,career){
   if(!job)return null;
   if(Number(job.season_no)===Number(career.season_no))return job;
   const data=createNationalTournament(job.nation_code,career.season_no);
+  const squad=await ensureNationalSquad(job.nation_code);
+  ensureNationalLineupData(data,squad,job.formation||"4-3-3");
   const row=(await q(`
     UPDATE manager_national_jobs
     SET season_no=$2,competition_name=$3,stage='GROUP',matchday=1,confidence=GREATEST(45,confidence),
@@ -9222,6 +9322,19 @@ async function nationalTeamSummary(club,career){
   job=await ensureNationalJobSeason(job,career);
   const data=typeof job.data==="string"?JSON.parse(job.data):job.data;
   const squad=await ensureNationalSquad(job.nation_code);
+  const lineupState=ensureNationalLineupData(data,squad,job.formation||"4-3-3");
+
+  if(lineupState.autoSelected){
+    await q(`UPDATE manager_national_jobs SET data=$2::jsonb,updated_at=NOW() WHERE club_id=$1`,[
+      club.id,JSON.stringify(data)
+    ]);
+  }
+
+  const selectedIds=new Set((data.lineupPlayerIds||[]).map(String));
+  const lineup=squad.filter(p=>selectedIds.has(String(p.id)));
+  const bench=squad.filter(p=>!selectedIds.has(String(p.id)));
+  const metrics=nationalLineupMetrics(lineup,job.formation,data.captainPlayerId);
+
   const entries=(data.entries||[]).filter(e=>e.group&&(data.entries.find(x=>String(x.clubId)===String(job.nation_code))?.group===e.group))
     .sort((a,b)=>b.points-a.points||((b.gf-b.ga)-(a.gf-a.ga))||b.gf-a.gf)
     .map(e=>({...e,name:nationalTeamName(e.clubId),flag:nationalTeamFlag(e.clubId),gd:Number(e.gf||0)-Number(e.ga||0)}));
@@ -9229,6 +9342,7 @@ async function nationalTeamSummary(club,career){
     ...f,homeName:nationalTeamName(f.home),awayName:nationalTeamName(f.away),
     homeFlag:nationalTeamFlag(f.home),awayFlag:nationalTeamFlag(f.away)
   }));
+
   return {
     job:{
       ...job,data:undefined,
@@ -9237,10 +9351,14 @@ async function nationalTeamSummary(club,career){
       rating:NATIONAL_TEAM_DATA[job.nation_code]?.rating||75,
       competition:data.competition,status:data.status,champion:data.champion,
       championName:data.champion?nationalTeamName(data.champion):null,
-      history:data.history||[]
+      history:data.history||[],
+      captainPlayerId:data.captainPlayerId||null,
+      penaltyTakerPlayerId:data.penaltyTakerPlayerId||null
     },
     offers:[],
-    table:entries,fixtures,squad
+    table:entries,fixtures,squad,lineup,bench,
+    lineupRequirements:nationalFormationRequirements(job.formation||"4-3-3"),
+    lineupMetrics:metrics
   };
 }
 function nationalKnockoutWinners(data,stage,userCode,penaltyCorner){
@@ -9264,6 +9382,16 @@ async function playNationalTeamStep(club,career,penaltyCorner=null){
     const data=typeof job.data==="string"?JSON.parse(job.data):job.data;
     if(data.status!=="active")throw Object.assign(new Error("A competição da seleção já terminou nesta temporada."),{status:400});
     const userCode=job.nation_code;
+
+    const squad=await ensureNationalSquad(userCode);
+    const lineupState=ensureNationalLineupData(data,squad,job.formation||"4-3-3");
+    if(!lineupState.validation.valid){
+      throw Object.assign(new Error("A escalação da seleção está inválida."),{status:409});
+    }
+    const lineupMetrics=nationalLineupMetrics(lineupState.players,job.formation,data.captainPlayerId);
+    const nominalRating=Number(NATIONAL_TEAM_DATA[userCode]?.rating||75);
+    const lineupBoost=(Number(lineupMetrics.strength||nominalRating)-nominalRating)*.22;
+
     let userMatch=null;
 
     if(data.stage==="GROUP"){
@@ -9274,7 +9402,10 @@ async function playNationalTeamStep(club,career,penaltyCorner=null){
         let hr=Number(home?.rating||74),ar=Number(away?.rating||74);
         if(userGame){
           const isHome=String(f.home)===String(userCode);
-          const boost=nationalTacticBoost(job.tactic,isHome)+(Number(club.manager_reputation||50)-50)*.018;
+          const boost=
+            nationalTacticBoost(job.tactic,isHome)+
+            (Number(club.manager_reputation||50)-50)*.018+
+            lineupBoost;
           if(isHome)hr+=boost;else ar+=boost;
         }
         const sc=basicScore(hr,ar);
@@ -9284,7 +9415,10 @@ async function playNationalTeamStep(club,career,penaltyCorner=null){
         if(userGame){
           userMatch={home:f.home,away:f.away,homeName:nationalTeamName(f.home),awayName:nationalTeamName(f.away),
             homeFlag:nationalTeamFlag(f.home),awayFlag:nationalTeamFlag(f.away),homeGoals:sc.hg,awayGoals:sc.ag,
-            stage:"Fase de grupos",competition:data.competition};
+            stage:"Fase de grupos",competition:data.competition,
+            lineupOverall:lineupMetrics.overall,
+            lineupPlayerIds:(data.lineupPlayerIds||[]).map(Number),
+            captainPlayerId:data.captainPlayerId||null};
         }
       }
       if(Number(data.matchday)>=3){
@@ -9313,7 +9447,10 @@ async function playNationalTeamStep(club,career,penaltyCorner=null){
         let hr=Number(home?.rating||74),ar=Number(away?.rating||74);
         if(userGame){
           const isHome=String(f.home)===String(userCode);
-          const boost=nationalTacticBoost(job.tactic,isHome)+(Number(club.manager_reputation||50)-50)*.018;
+          const boost=
+            nationalTacticBoost(job.tactic,isHome)+
+            (Number(club.manager_reputation||50)-50)*.018+
+            lineupBoost;
           if(isHome)hr+=boost;else ar+=boost;
         }
         const sc=basicScore(hr,ar);
@@ -9323,6 +9460,9 @@ async function playNationalTeamStep(club,career,penaltyCorner=null){
           userMatch={home:f.home,away:f.away,homeName:nationalTeamName(f.home),awayName:nationalTeamName(f.away),
             homeFlag:nationalTeamFlag(f.home),awayFlag:nationalTeamFlag(f.away),homeGoals:sc.hg,awayGoals:sc.ag,
             stage,competition:data.competition,
+            lineupOverall:lineupMetrics.overall,
+            lineupPlayerIds:(data.lineupPlayerIds||[]).map(Number),
+            captainPlayerId:data.captainPlayerId||null,
             penaltyShootout:f.penHome!=null?{homePens:f.penHome,awayPens:f.penAway,winnerId:f.pw,...(f.userPenalty||{})}:null};
         }
       }
@@ -9392,6 +9532,8 @@ app.post("/api/national-team/accept",auth,async(req,res,next)=>{
     const offer=nationalTeamOffers(club,career).find(x=>x.code===code);
     if(!offer)return res.status(400).json({error:"Essa seleção não está entre as propostas disponíveis."});
     const data=createNationalTournament(code,career.season_no);
+    const squad=await ensureNationalSquad(code);
+    ensureNationalLineupData(data,squad,"4-3-3");
     await q(`
       INSERT INTO manager_national_jobs(club_id,nation_code,season_no,competition_name,stage,matchday,confidence,tactic,formation,titles,data)
       VALUES($1,$2,$3,$4,'GROUP',1,60,'BALANCED','4-3-3',0,$5::jsonb)
@@ -9411,15 +9553,147 @@ app.post("/api/national-team/accept",auth,async(req,res,next)=>{
 app.put("/api/national-team/tactics",auth,async(req,res,next)=>{
   try{
     const club=await userClub(req.user.id);
+    if(!club)return res.status(404).json({error:"Clube não encontrado."});
     const tactic=String(req.body.tactic||"BALANCED");
     const formation=String(req.body.formation||"4-3-3");
     if(!NATIONAL_TACTICS.has(tactic))return res.status(400).json({error:"Tática de seleção inválida."});
     if(!NATIONAL_FORMATIONS.has(formation))return res.status(400).json({error:"Formação de seleção inválida."});
-    const r=await q(`UPDATE manager_national_jobs SET tactic=$2,formation=$3,updated_at=NOW() WHERE club_id=$1 RETURNING *`,[club.id,tactic,formation]);
-    if(!r.rowCount)return res.status(404).json({error:"Você ainda não comanda uma seleção."});
-    res.json({ok:true,tactic,formation});
+
+    const result=await tx(async client=>{
+      const job=(await client.query(`SELECT * FROM manager_national_jobs WHERE club_id=$1 FOR UPDATE`,[club.id])).rows[0];
+      if(!job)throw Object.assign(new Error("Você ainda não comanda uma seleção."),{status:404});
+      const data=typeof job.data==="string"?JSON.parse(job.data):job.data;
+      const squad=await ensureNationalSquad(job.nation_code);
+      const beforeIds=Array.isArray(data.lineupPlayerIds)?data.lineupPlayerIds.map(String):[];
+      const currentPlayers=squad.filter(p=>beforeIds.includes(String(p.id)));
+      const oldValid=nationalLineupValidation(currentPlayers,formation).valid;
+      let autoAdjusted=false;
+
+      if(!oldValid){
+        const auto=nationalAutoLineup(squad,formation);
+        data.lineupPlayerIds=auto.map(p=>Number(p.id));
+        data.captainPlayerId=Number(auto.find(p=>p.position!=="GK")?.id||auto[0]?.id||0)||null;
+        data.penaltyTakerPlayerId=Number(
+          [...auto].sort((a,b)=>Number(b.shooting||b.rating||0)-Number(a.shooting||a.rating||0))[0]?.id||0
+        )||null;
+        autoAdjusted=true;
+      }
+
+      await client.query(`
+        UPDATE manager_national_jobs
+        SET tactic=$2,formation=$3,data=$4::jsonb,updated_at=NOW()
+        WHERE club_id=$1
+      `,[club.id,tactic,formation,JSON.stringify(data)]);
+
+      return {ok:true,tactic,formation,autoAdjusted};
+    });
+
+    res.json(result);
   }catch(e){next(e)}
 });
+
+app.put("/api/national-team/lineup",auth,async(req,res,next)=>{
+  try{
+    const club=await userClub(req.user.id);
+    if(!club)return res.status(404).json({error:"Clube não encontrado."});
+
+    const playerIds=Array.isArray(req.body.playerIds)
+      ?[...new Set(req.body.playerIds.map(Number).filter(Boolean))]
+      :[];
+    const captainId=Number(req.body.captainId||0)||null;
+    const penaltyTakerId=Number(req.body.penaltyTakerId||0)||null;
+
+    if(playerIds.length!==11){
+      return res.status(400).json({error:"A escalação precisa ter exatamente 11 jogadores."});
+    }
+
+    const result=await tx(async client=>{
+      const job=(await client.query(`SELECT * FROM manager_national_jobs WHERE club_id=$1 FOR UPDATE`,[club.id])).rows[0];
+      if(!job)throw Object.assign(new Error("Você ainda não comanda uma seleção."),{status:404});
+
+      const squad=await ensureNationalSquad(job.nation_code);
+      const allowed=new Map(squad.map(p=>[String(p.id),p]));
+      const selected=playerIds.map(id=>allowed.get(String(id))).filter(Boolean);
+
+      if(selected.length!==11){
+        throw Object.assign(new Error("Todos os titulares precisam fazer parte da convocação atual."),{status:400});
+      }
+
+      const validation=nationalLineupValidation(selected,job.formation||"4-3-3");
+      if(!validation.valid){
+        const req=validation.requirements;
+        throw Object.assign(new Error(
+          `A formação ${job.formation} exige ${req.GK} GOL, ${req.DEF} DEF, ${req.MID} MEI e ${req.ATT} ATA.`
+        ),{status:400});
+      }
+
+      const captain=captainId&&playerIds.some(id=>String(id)===String(captainId))
+        ?captainId
+        :Number(selected.find(p=>p.position!=="GK")?.id||selected[0]?.id||0)||null;
+      const penaltyTaker=penaltyTakerId&&playerIds.some(id=>String(id)===String(penaltyTakerId))
+        ?penaltyTakerId
+        :Number([...selected].sort((a,b)=>Number(b.shooting||b.rating||0)-Number(a.shooting||a.rating||0))[0]?.id||0)||null;
+
+      const data=typeof job.data==="string"?JSON.parse(job.data):job.data;
+      data.lineupPlayerIds=playerIds;
+      data.captainPlayerId=captain;
+      data.penaltyTakerPlayerId=penaltyTaker;
+
+      const metrics=nationalLineupMetrics(selected,job.formation,captain);
+
+      await client.query(`
+        UPDATE manager_national_jobs
+        SET data=$2::jsonb,updated_at=NOW()
+        WHERE club_id=$1
+      `,[club.id,JSON.stringify(data)]);
+
+      return {
+        ok:true,
+        playerIds,
+        captainId:captain,
+        penaltyTakerId:penaltyTaker,
+        metrics
+      };
+    });
+
+    res.json(result);
+  }catch(e){next(e)}
+});
+
+app.post("/api/national-team/lineup/auto",auth,async(req,res,next)=>{
+  try{
+    const club=await userClub(req.user.id);
+    if(!club)return res.status(404).json({error:"Clube não encontrado."});
+
+    const result=await tx(async client=>{
+      const job=(await client.query(`SELECT * FROM manager_national_jobs WHERE club_id=$1 FOR UPDATE`,[club.id])).rows[0];
+      if(!job)throw Object.assign(new Error("Você ainda não comanda uma seleção."),{status:404});
+      const squad=await ensureNationalSquad(job.nation_code);
+      const selected=nationalAutoLineup(squad,job.formation||"4-3-3");
+      const data=typeof job.data==="string"?JSON.parse(job.data):job.data;
+      data.lineupPlayerIds=selected.map(p=>Number(p.id));
+      data.captainPlayerId=Number(selected.find(p=>p.position!=="GK")?.id||selected[0]?.id||0)||null;
+      data.penaltyTakerPlayerId=Number(
+        [...selected].sort((a,b)=>Number(b.shooting||b.rating||0)-Number(a.shooting||a.rating||0))[0]?.id||0
+      )||null;
+
+      await client.query(`UPDATE manager_national_jobs SET data=$2::jsonb,updated_at=NOW() WHERE club_id=$1`,[
+        club.id,JSON.stringify(data)
+      ]);
+
+      return {
+        ok:true,
+        playerIds:data.lineupPlayerIds,
+        captainId:data.captainPlayerId,
+        penaltyTakerId:data.penaltyTakerPlayerId,
+        metrics:nationalLineupMetrics(selected,job.formation,data.captainPlayerId)
+      };
+    });
+
+    res.json(result);
+  }catch(e){next(e)}
+});
+
 app.post("/api/national-team/play",auth,async(req,res,next)=>{
   try{
     const club=await userClub(req.user.id);

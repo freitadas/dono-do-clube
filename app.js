@@ -8,6 +8,7 @@ const state={
   trophies:[],incomingOffers:[],calendar:null,sponsorship:{active:null,offers:[]},marketProfile:null,
   mediaNews:[],pendingPress:null,saf:{active:false,offers:[],debtRisk:false},
   nationalTeam:{job:null,offers:[]},
+  nationalTab:"overview",
   careers:[],maxCareers:10,lineupDirty:false,
   boardMessages:[],boardExpectation:null,teamPerformance:null,rotationAdvice:null,realism:null,
   transferWindow:null,scoutLevel:1,
@@ -3191,6 +3192,106 @@ function nationalTacticLabel(v){
 function nationalStageLabel(v){
   return ({GROUP:"Fase de grupos",QF:"Quartas de final",SF:"Semifinais",FINAL:"Final",FINISHED:"Encerrado",ELIMINATED:"Eliminado"})[v]||v;
 }
+
+function nationalFormationRequirementText(formation){
+  const req={
+    "4-3-3":{GK:1,DEF:4,MID:3,ATT:3},
+    "4-2-3-1":{GK:1,DEF:4,MID:5,ATT:1},
+    "4-4-2":{GK:1,DEF:4,MID:4,ATT:2},
+    "3-5-2":{GK:1,DEF:3,MID:5,ATT:2}
+  }[formation]||{GK:1,DEF:4,MID:3,ATT:3};
+  return `${req.GK} GOL · ${req.DEF} DEF · ${req.MID} MEI · ${req.ATT} ATA`;
+}
+function nationalInnerTabs(){
+  return `<div class="national-inner-tabs">
+    <button data-national-tab="overview" class="${(state.nationalTab||"overview")==="overview"?"on":""}">Visão geral</button>
+    <button data-national-tab="lineup" class="${state.nationalTab==="lineup"?"on":""}">📋 Escalação</button>
+  </div>`;
+}
+function nationalLineupPitch(nt){
+  const j=nt.job;
+  const lineup=nt.lineup||[];
+  const selectedIds=new Set(lineup.map(p=>String(p.id)));
+  const captainId=String(j.captainPlayerId||"");
+  const penaltyId=String(j.penaltyTakerPlayerId||"");
+  const row=pos=>lineup.filter(p=>p.position===pos).map(p=>`
+    <div class="national-pitch-player">
+      <span class="national-shirt">${posName(p.position)}</span>
+      <b>${esc(p.name)}</b>
+      <small>OVR ${p.rating}${String(p.id)===captainId?" · C":""}${String(p.id)===penaltyId?" · P":""}</small>
+    </div>`).join("");
+
+  return `<div class="national-pitch formation-${String(j.formation||"4-3-3").replaceAll("-","")}">
+    <div class="national-pitch-row att">${row("ATT")}</div>
+    <div class="national-pitch-row mid">${row("MID")}</div>
+    <div class="national-pitch-row def">${row("DEF")}</div>
+    <div class="national-pitch-row gk">${row("GK")}</div>
+  </div>`;
+}
+function nationalLineupSubView(nt){
+  const j=nt.job;
+  const lineupIds=new Set((nt.lineup||[]).map(p=>String(p.id)));
+  const metrics=nt.lineupMetrics||{};
+  const selectedCount=(nt.lineup||[]).length;
+  const selectedPlayers=nt.lineup||[];
+  const selectedOptions=selectedPlayers.map(p=>
+    `<option value="${p.id}" ${String(j.captainPlayerId)===String(p.id)?"selected":""}>${esc(p.name)} · ${posName(p.position)} · ${p.rating}</option>`
+  ).join("");
+  const penaltyOptions=selectedPlayers.map(p=>
+    `<option value="${p.id}" ${String(j.penaltyTakerPlayerId)===String(p.id)?"selected":""}>${esc(p.name)} · ${posName(p.position)} · ${p.rating}</option>`
+  ).join("");
+
+  return `<div class="national-lineup-page">
+    <div class="national-lineup-summary">
+      <div><small>FORMAÇÃO</small><b>${esc(j.formation||"4-3-3")}</b><span>${nationalFormationRequirementText(j.formation)}</span></div>
+      <div><small>TITULARES</small><b id="nationalSelectedCount">${selectedCount}/11</b><span>Escolha exatamente onze</span></div>
+      <div><small>OVR DO XI</small><b>${metrics.overall||"—"}</b><span>Força: ${metrics.strength||"—"}</span></div>
+      <div><small>FÍSICO MÉDIO</small><b>${metrics.averageFitness||"—"}</b><span>Forma: ${metrics.averageForm||"—"}</span></div>
+    </div>
+
+    <div class="national-lineup-layout">
+      <section class="card">
+        <div class="section-title">
+          <div><div class="kicker">CAMPO</div><h2>Time titular</h2></div>
+          <button id="nationalAutoLineup" class="secondary">Escalar melhores</button>
+        </div>
+        ${nationalLineupPitch(nt)}
+        <div class="national-lineup-leaders">
+          <label>Capitão
+            <select id="nationalCaptain">${selectedOptions}</select>
+          </label>
+          <label>Cobrador de pênalti
+            <select id="nationalPenaltyTaker">${penaltyOptions}</select>
+          </label>
+        </div>
+      </section>
+
+      <section class="card">
+        <div class="section-title">
+          <div><div class="kicker">23 CONVOCADOS</div><h2>Escolher titulares</h2></div>
+          <button id="saveNationalLineup" class="primary">Salvar escalação</button>
+        </div>
+        <p class="muted">A escalação influencia diretamente a força da seleção nas partidas. A composição precisa respeitar a formação escolhida.</p>
+        <div class="national-selection-list">
+          ${["GK","DEF","MID","ATT"].map(pos=>`
+            <div class="national-selection-group">
+              <h3>${posName(pos)}</h3>
+              ${(nt.squad||[]).filter(p=>p.position===pos).map(p=>`
+                <label class="national-selection-player ${lineupIds.has(String(p.id))?"selected":""}">
+                  <input type="checkbox" class="national-lineup-check" value="${p.id}" ${lineupIds.has(String(p.id))?"checked":""}>
+                  <span class="national-pos">${posName(p.position)}</span>
+                  <span class="national-selection-name"><b>${esc(p.name)}</b><small>${esc(p.club_name||"Sem clube")} · ${p.age} anos</small></span>
+                  <span class="national-selection-rating"><b>${p.rating}</b><small>OVR</small></span>
+                  <span class="national-selection-form"><b>${p.fitness??"—"}</b><small>FIS</small></span>
+                </label>`).join("")}
+            </div>`).join("")}
+        </div>
+        <div id="nationalLineupMsg"></div>
+      </section>
+    </div>
+  </div>`;
+}
+
 function nationalTeamView(){
   const nt=state.nationalTeam||{job:null,offers:[]};
   if(!nt.job){
@@ -3218,6 +3319,27 @@ function nationalTeamView(){
   const canPlay=dataStatus==="active";
   const currentFixtures=(nt.fixtures||[]).filter(f=>!f.played);
   const userFixture=currentFixtures.find(f=>String(f.home)===String(j.nation_code)||String(f.away)===String(j.nation_code));
+
+  if((state.nationalTab||"overview")==="lineup"){
+    return `<section class="national-page">
+      <div class="national-hero">
+        <div class="national-flag huge">${j.flag}</div>
+        <div class="national-identity">
+          <div class="kicker">SELEÇÃO NACIONAL</div>
+          <h1>${esc(j.nationName)}</h1>
+          <p>${esc(j.competition)} · ${esc(nationalStageLabel(j.stage))}</p>
+        </div>
+        <div class="national-metrics">
+          <span><small>OVR BASE</small><b>${j.rating}</b></span>
+          <span><small>OVR XI</small><b>${nt.lineupMetrics?.overall||"—"}</b></span>
+          <span><small>CONFIANÇA</small><b>${j.confidence}%</b></span>
+        </div>
+      </div>
+      ${nationalInnerTabs()}
+      ${nationalLineupSubView(nt)}
+    </section>`;
+  }
+
   return `<section class="national-page">
     <div class="national-hero">
       <div class="national-flag huge">${j.flag}</div>
@@ -3232,6 +3354,8 @@ function nationalTeamView(){
         <span><small>TÍTULOS</small><b>${j.titles||0}</b></span>
       </div>
     </div>
+
+    ${nationalInnerTabs()}
 
     ${canPlay?`<div class="card national-next-match">
       <div><div class="kicker">PRÓXIMO COMPROMISSO</div>
@@ -3291,6 +3415,11 @@ function nationalTeamView(){
   </section>`;
 }
 function bindNationalTeam(){
+  app.querySelectorAll("[data-national-tab]").forEach(btn=>btn.onclick=()=>{
+    state.nationalTab=btn.dataset.nationalTab;
+    render();
+  });
+
   app.querySelectorAll(".accept-national").forEach(btn=>btn.onclick=async()=>{
     const offer=(state.nationalTeam?.offers||[]).find(x=>x.code===btn.dataset.code);
     if(!offer)return;
@@ -3298,7 +3427,7 @@ function bindNationalTeam(){
     btn.disabled=true;
     try{
       await api("/api/national-team/accept",{method:"POST",body:JSON.stringify({nationCode:offer.code})});
-      await refreshAll();state.view="national";render();
+      await refreshAll();state.view="national";state.nationalTab="overview";render();
     }catch(err){alert(err.message);btn.disabled=false}
   });
   const form=app.querySelector("#nationalTactics");
@@ -3307,10 +3436,93 @@ function bindNationalTeam(){
     const f=new FormData(form);
     const btn=form.querySelector("button");btn.disabled=true;
     try{
-      await api("/api/national-team/tactics",{method:"PUT",body:JSON.stringify({formation:f.get("formation"),tactic:f.get("tactic")})});
-      await refreshAll();render();
+      const d=await api("/api/national-team/tactics",{method:"PUT",body:JSON.stringify({formation:f.get("formation"),tactic:f.get("tactic")})});
+      await refreshAll();
+      if(d.autoAdjusted)state.nationalTab="lineup";
+      render();
+      if(d.autoAdjusted)alert("A formação mudou e o jogo ajustou automaticamente a escalação para manter 11 jogadores nas posições corretas.");
     }catch(err){alert(err.message);btn.disabled=false}
   };
+
+  const lineupChecks=[...app.querySelectorAll(".national-lineup-check")];
+  const selectedLineupPlayers=()=>lineupChecks.filter(x=>x.checked).map(x=>Number(x.value));
+
+  function syncNationalLineupUi(){
+    const ids=new Set(selectedLineupPlayers().map(String));
+    const count=ids.size;
+    const countBox=app.querySelector("#nationalSelectedCount");
+    if(countBox)countBox.textContent=`${count}/11`;
+    lineupChecks.forEach(ch=>ch.closest(".national-selection-player")?.classList.toggle("selected",ch.checked));
+
+    const squad=state.nationalTeam?.squad||[];
+    const selected=squad.filter(p=>ids.has(String(p.id)));
+    const opts=selected.map(p=>`<option value="${p.id}">${esc(p.name)} · ${posName(p.position)} · ${p.rating}</option>`).join("");
+    const captain=app.querySelector("#nationalCaptain");
+    const penalty=app.querySelector("#nationalPenaltyTaker");
+    const oldCaptain=captain?.value;
+    const oldPenalty=penalty?.value;
+    if(captain){
+      captain.innerHTML=opts;
+      if(ids.has(String(oldCaptain)))captain.value=oldCaptain;
+      else if(ids.has(String(state.nationalTeam?.job?.captainPlayerId)))captain.value=state.nationalTeam.job.captainPlayerId;
+    }
+    if(penalty){
+      penalty.innerHTML=opts;
+      if(ids.has(String(oldPenalty)))penalty.value=oldPenalty;
+      else if(ids.has(String(state.nationalTeam?.job?.penaltyTakerPlayerId)))penalty.value=state.nationalTeam.job.penaltyTakerPlayerId;
+    }
+  }
+
+  lineupChecks.forEach(ch=>ch.onchange=()=>{
+    if(ch.checked&&selectedLineupPlayers().length>11){
+      ch.checked=false;
+      alert("A escalação titular pode ter no máximo 11 jogadores.");
+    }
+    syncNationalLineupUi();
+  });
+
+  const saveLineup=app.querySelector("#saveNationalLineup");
+  if(saveLineup)saveLineup.onclick=async()=>{
+    const playerIds=selectedLineupPlayers();
+    if(playerIds.length!==11){
+      alert(`Selecione exatamente 11 jogadores. Atualmente: ${playerIds.length}.`);
+      return;
+    }
+    saveLineup.disabled=true;saveLineup.textContent="SALVANDO...";
+    try{
+      const d=await api("/api/national-team/lineup",{
+        method:"PUT",
+        body:JSON.stringify({
+          playerIds,
+          captainId:Number(app.querySelector("#nationalCaptain")?.value||0)||null,
+          penaltyTakerId:Number(app.querySelector("#nationalPenaltyTaker")?.value||0)||null
+        })
+      });
+      await refreshAll();
+      state.nationalTab="lineup";
+      render();
+      alert(`Escalação salva. OVR do XI: ${d.metrics?.overall||"—"}.`);
+    }catch(err){
+      alert(err.message);
+      saveLineup.disabled=false;saveLineup.textContent="Salvar escalação";
+    }
+  };
+
+  const autoLineup=app.querySelector("#nationalAutoLineup");
+  if(autoLineup)autoLineup.onclick=async()=>{
+    autoLineup.disabled=true;autoLineup.textContent="ESCALANDO...";
+    try{
+      const d=await api("/api/national-team/lineup/auto",{method:"POST",body:"{}"});
+      await refreshAll();
+      state.nationalTab="lineup";
+      render();
+      alert(`Melhor XI escalado automaticamente. OVR: ${d.metrics?.overall||"—"}.`);
+    }catch(err){
+      alert(err.message);
+      autoLineup.disabled=false;autoLineup.textContent="Escalar melhores";
+    }
+  };
+
   const play=app.querySelector("#playNationalTeam");
   if(play)play.onclick=async()=>{
     const knockout=["QF","SF","FINAL"].includes(String(state.nationalTeam?.job?.stage));

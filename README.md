@@ -1350,3 +1350,16 @@ Reformulação ampla do modo jogador: personalidade e objetivo de carreira, núm
 - Notícias antigas e curtas do clube são ampliadas automaticamente ao abrir o jogo.
 - Cards mostram apenas uma prévia para não poluir a tela.
 - A matéria completa abre em modo de leitura com vários parágrafos, autoria, data e tempo estimado de leitura.
+
+
+## v53 — Escalação da seleção
+- Nova subaba `Escalação` dentro da área Seleção do Modo Carreira Treinador.
+- Escolha manual dos 11 titulares entre os 23 convocados.
+- Exige composição correta para 4-3-3, 4-2-3-1, 4-4-2 e 3-5-2.
+- Exatamente um goleiro no XI.
+- Campo visual com titulares por setor.
+- Escolha de capitão e cobrador principal de pênalti.
+- Botão `Escalar melhores` monta automaticamente o XI mais forte.
+- Mudança de formação ajusta automaticamente a escalação quando necessário.
+- O XI titular influencia a força usada na simulação das partidas da seleção.
+- Compatível com carreiras existentes: escalações antigas inexistentes são preenchidas automaticamente.

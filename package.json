@@ -1,8 +1,8 @@
 {
   "name": "dono-do-clube",
-  "version": "52.0.0",
+  "version": "53.0.0",
   "private": true,
-  "description": "Dono do Clube v52 — Jornal com matérias longas, contexto e análise",
+  "description": "Dono do Clube v53 — escalação manual da seleção no modo treinador",
   "main": "server.js",
   "scripts": {
     "start": "node server.js"
