@@ -1300,3 +1300,14 @@ A v38 mantém, entre outros:
 - formações adicionais e formação personalizada;
 - simulação de temporada separada da simulação normal de uma rodada;
 - Modo Felipe.
+
+
+## v41 — SAF, interações e carreira de goleiro
+- SAF com perfis de investidor, percentual de controle, orçamento anual, tolerância à dívida, paciência e metas.
+- Reunião anual do conselho da SAF com estratégias sustentável, equilibrada ou ambiciosa.
+- Orçamento anual recorrente da SAF ajustado pela confiança da diretoria.
+- Uma interação de gestão por rodada no modo treinador: reunião com elenco, recuperação, treino intenso, evento com torcida ou alinhamento com diretoria.
+- Modo Carreira Jogador com confiança do treinador, status titular/rotação/reserva, potencial oculto e decisões de bastidor.
+- Goleiro com atributos próprios: mergulho, segurança, reflexos e posicionamento.
+- Goleiro registra defesas, jogos sem sofrer gol e pênaltis defendidos e possui treino específico.
+- Mercado do jogador prioriza clubes europeus quando desempenho, overall ou reputação justificam interesse.

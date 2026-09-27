@@ -889,3 +889,18 @@ repeating-linear-gradient(0deg,#1e7d43 0,#1e7d43 56px,#237f47 56px,#237f47 112px
 
 .career-actions{display:flex;gap:10px;flex-wrap:wrap}
 .career-actions button{padding:10px;border-radius:8px;cursor:pointer}
+
+
+/* v41 — SAF, interações de carreira e goleiro */
+.saf-objective{display:flex;flex-direction:column;gap:4px;padding:12px;border:1px solid rgba(113,255,177,.18);border-radius:12px;margin:12px 0}
+.saf-board-room{margin-top:14px;padding-top:14px;border-top:1px solid rgba(255,255,255,.08)}
+.saf-board-actions,.manager-interaction-grid,.player-interaction-grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(180px,1fr));gap:10px;margin-top:10px}
+.saf-board-actions button,.manager-interaction-grid button,.player-interaction-grid button{display:flex;flex-direction:column;align-items:flex-start;gap:4px;min-height:72px}
+.saf-board-actions small,.manager-interaction-grid small,.player-interaction-grid small{opacity:.75;font-weight:400}
+.manager-weekly-actions,.player-interactions{margin-top:14px}
+.player-overall span,.player-ovr-big span{display:block;font-size:11px;opacity:.75;margin-top:2px}
+.player-identity small{display:block;margin-top:5px;opacity:.75}
+.realistic-career-panel .career-modules{margin-top:12px}
+@media(max-width:700px){
+  .saf-board-actions,.manager-interaction-grid,.player-interaction-grid{grid-template-columns:1fr}
+}

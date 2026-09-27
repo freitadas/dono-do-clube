@@ -219,12 +219,28 @@ function renderCreateClub(){
           <label>Nacionalidade<select name="nationalityCode">${countryOptions("BR")}</select></label>
           <label>País onde vai jogar<select id="playerCountry" name="countryCode">${countryOptions("BR")}</select></label>
         </div>
-        <label>Posição<select name="position">
+        <label>Posição<select id="playerPosition" name="position">
           <option value="GK">Goleiro</option>
           <option value="DEF">Defensor / Zagueiro</option>
           <option value="MID">Meio-campista</option>
           <option value="ATT" selected>Atacante</option>
         </select></label>
+        <div class="two-cols">
+          <label>Altura (cm)<input type="number" name="heightCm" min="155" max="205" value="180"></label>
+          <label>Peso (kg)<input type="number" name="weightKg" min="50" max="110" value="75"></label>
+        </div>
+        <div class="two-cols">
+          <label>Pé dominante<select name="dominantFoot"><option value="RIGHT">Direito</option><option value="LEFT">Esquerdo</option></select></label>
+          <label>Estilo<select id="playerStyle" name="playStyle">
+            <option value="BALANCED">Equilibrado</option>
+            <option value="SPEED">Velocista</option>
+            <option value="FINISHER">Finalizador</option>
+            <option value="PLAYMAKER">Armador</option>
+            <option value="DEFENSIVE">Defensivo</option>
+            <option value="SWEEPER_KEEPER">Goleiro-líbero</option>
+            <option value="SHOT_STOPPER">Pegador de chutes</option>
+          </select></label>
+        </div>
         <label>Clube inicial da 4ª divisão<select id="playerClub" name="clubId" required><option>Carregando clubes...</option></select></label>
         <div class="player-career-note">Você começa aos 17 anos, evolui com partidas e treinos, recebe salário e pode receber propostas de transferência ao fim da temporada.</div>
         <button class="primary">Criar carreira de jogador</button>
@@ -296,7 +312,9 @@ function renderCreateClub(){
         await api("/api/player-careers",{method:"POST",body:JSON.stringify({
           careerLabel:f.get("careerLabel"),playerName:f.get("playerName"),
           nationalityCode:f.get("nationalityCode"),countryCode:f.get("countryCode"),
-          position:f.get("position"),clubId:f.get("clubId")
+          position:f.get("position"),clubId:f.get("clubId"),
+          heightCm:Number(f.get("heightCm")),weightKg:Number(f.get("weightKg")),
+          dominantFoot:f.get("dominantFoot"),playStyle:f.get("playStyle")
         })});
         state.playerView="home";
         state.creationMode="club";
@@ -1182,6 +1200,21 @@ function realismView(){
 
     ${managerOffersCard(false)}
 
+    <section class="card manager-weekly-actions">
+      <div class="section-title">
+        <div><div class="kicker">INTERAÇÕES DA SEMANA</div><h2>Decisões do treinador</h2></div>
+        <span class="badge">${r.managerInteraction?.used?"Já usada":"Disponível"}</span>
+      </div>
+      <p class="muted">${r.managerInteraction?.used?esc(r.managerInteraction?.last?.result_text||"Você já tomou uma decisão nesta rodada."):"Escolha uma ação de gestão. Apenas uma interação por rodada."}</p>
+      <div class="manager-interaction-grid">
+        <button class="secondary manager-interaction" data-type="team_talk" ${r.managerInteraction?.used?"disabled":""}>🗣️ Reunião com elenco<small>Moral +6 · forma +2</small></button>
+        <button class="secondary manager-interaction" data-type="recovery" ${r.managerInteraction?.used?"disabled":""}>🧊 Dia de recuperação<small>Físico +8</small></button>
+        <button class="secondary manager-interaction" data-type="intense_training" ${r.managerInteraction?.used?"disabled":""}>🏋️ Treino intenso<small>Forma +5 · físico -6</small></button>
+        <button class="secondary manager-interaction" data-type="fan_event" ${r.managerInteraction?.used?"disabled":""}>🎟️ Evento com torcida<small>Custa 500 · melhora ambiente</small></button>
+        <button class="secondary manager-interaction" data-type="board_alignment" ${r.managerInteraction?.used?"disabled":""}>🤝 Reunião com diretoria<small>Confiança +4</small></button>
+      </div>
+    </section>
+
     <section class="card opponent-analysis">
       <div class="section-title"><div><div class="kicker">PRÓXIMO ADVERSÁRIO</div><h2>Análise pré-jogo</h2></div></div>
       ${opp?`
@@ -1952,33 +1985,22 @@ function playerTransferOffersView(){
 
 function playerCareerRealisticPanel(){
   const pc=state.playerData?.career||{};
+  const isGK=pc.position==="GK";
   return `<section class="card realistic-career-panel">
-    <div class="kicker">NOVO MODO CARREIRA</div>
-    <h2>Vida de Jogador</h2>
+    <div class="kicker">CARREIRA PROFISSIONAL</div>
+    <h2>Seu momento</h2>
     <div class="real-grid">
-      <div><small>Potencial oculto</small><b>${pc.potential||95}</b></div>
-      <div><small>Moral</small><b>${pc.morale||90}</b></div>
-      <div><small>Confiança técnico</small><b>${pc.coach_trust||85}</b></div>
-      <div><small>Torcida</small><b>${pc.fans||80}</b></div>
-      <div><small>Imprensa</small><b>${pc.pressure||20}</b></div>
-      <div><small>Seguidores</small><b>${pc.followers||1000}</b></div>
+      <div><small>Potencial oculto</small><b>${pc.potential_hidden??"—"}</b></div>
+      <div><small>Confiança do treinador</small><b>${pc.coach_trust??"—"}%</b></div>
+      <div><small>Status no elenco</small><b>${pc.squad_role==="STARTER"?"Titular":pc.squad_role==="RESERVE"?"Reserva":"Rotação"}</b></div>
+      <div><small>Reputação</small><b>${pc.reputation??0}</b></div>
+      <div><small>Nota média</small><b>${Number(pc.avg_rating||0).toFixed(2)}</b></div>
+      <div><small>Estilo</small><b>${esc(pc.play_style||"BALANCED")}</b></div>
     </div>
-
-    <div class="career-modules">
-      <div><h3>🏥 Lesões</h3><p>Leves, médias, graves e recuperação com fisioterapia.</p></div>
-      <div><h3>🇧🇷 Seleção</h3><p>Convocações, eliminatórias, Copa América, Copa do Mundo e histórico.</p></div>
-      <div><h3>🏆 Prêmios</h3><p>Bola de Ouro, melhor da liga, artilheiro, melhor jovem e time do ano.</p></div>
-      <div><h3>📱 Fama</h3><p>Seguidores, patrocinadores, entrevistas e personalidade.</p></div>
-      <div><h3>🤝 Agente</h3><p>Propostas, salário, negociação e transferências.</p></div>
-      <div><h3>👔 Futuro</h3><p>Jogador → Treinador → Dono de clube.</p></div>
-    </div>
-
-    <div class="career-events">
-      <h3>Eventos de carreira</h3>
-      <p>Torcida pede titularidade</p>
-      <p>Treinador critica desempenho</p>
-      <p>Você recebe elogios após sequência de jogos</p>
-    </div>
+    ${isGK?`<div class="career-modules">
+      <div><h3>🧤 Especialista em goleiro</h3><p>Mergulho ${pc.gk_diving} · segurança ${pc.gk_handling} · reflexos ${pc.gk_reflexes} · posicionamento ${pc.gk_positioning}.</p></div>
+      <div><h3>🥅 Desempenho</h3><p>${pc.gk_saves||0} defesas, ${pc.clean_sheets||0} jogos sem sofrer gol e ${pc.gk_penalty_saves||0} pênaltis defendidos.</p></div>
+    </div>`:""}
   </section>`;
 }
 
@@ -1988,48 +2010,82 @@ function playerCareerHome(){
   const pos=playerCareerPosition();
   const last=d.history?.[0];
   const statusEnd=pc.status==="END";
+  const interaction=d.interaction||{used:false};
+  const isGK=pc.position==="GK";
+  const roleLabel=pc.squad_role==="STARTER"?"Titular":pc.squad_role==="RESERVE"?"Reserva":"Rotação";
+  const foot=pc.dominant_foot==="LEFT"?"Esquerdo":"Direito";
+  const styleLabels={BALANCED:"Equilibrado",SPEED:"Velocista",FINISHER:"Finalizador",PLAYMAKER:"Armador",DEFENSIVE:"Defensivo",SWEEPER_KEEPER:"Goleiro-líbero",SHOT_STOPPER:"Pegador de chutes"};
   return `<section class="player-career-hero">
     <div class="player-avatar">${esc(initials(pc.player_name))}</div>
     <div class="player-identity">
       <div class="kicker">TEMPORADA ${pc.season_no} · ${esc(countryName(pc.country_code))}</div>
       <h1>${esc(pc.player_name)}</h1>
       <p>${esc(playerPositionLabel(pc.position))} · ${esc(pc.club_name)} · ${esc(pc.league_name)}${pos?` · ${pos}º`:""}</p>
+      <small>${pc.height_cm} cm · ${pc.weight_kg} kg · pé ${foot.toLowerCase()} · ${esc(styleLabels[pc.play_style]||pc.play_style||"Equilibrado")}</small>
     </div>
-    <div class="player-overall"><small>OVR</small><b>${pc.overall}</b></div>
+    <div class="player-overall"><small>OVR</small><b>${pc.overall}</b><span>POT ${pc.potential_hidden}</span></div>
     <div class="player-season-actions">
       ${!statusEnd?`<button id="playerPlayNext" class="primary player-main-action">⚽ JOGAR RODADA ${pc.current_round}/38</button>
       <button id="playerSimSeason" class="secondary player-main-action">⏩ SIMULAR TEMPORADA INTEIRA</button>`:
       `<button id="playerNextSeason" class="primary player-main-action">📅 IR PARA A PRÓXIMA TEMPORADA</button>`}
     </div>
   </section>
+
   <section class="player-career-stats">
     <div class="stat"><small>Idade</small><b>${pc.age}</b></div>
+    <div class="stat"><small>Status</small><b>${roleLabel}</b></div>
+    <div class="stat"><small>Confiança técnico</small><b>${pc.coach_trust}%</b></div>
+    <div class="stat"><small>Nota média</small><b>${Number(pc.avg_rating||0).toFixed(2)}</b></div>
     <div class="stat"><small>Jogos</small><b>${pc.appearances}</b></div>
-    <div class="stat"><small>Gols</small><b>${pc.goals}</b></div>
-    <div class="stat"><small>Assistências</small><b>${pc.assists}</b></div>
+    ${isGK?`
+      <div class="stat"><small>Defesas</small><b>${pc.gk_saves||0}</b></div>
+      <div class="stat"><small>Jogos sem sofrer gol</small><b>${pc.clean_sheets||0}</b></div>
+      <div class="stat"><small>Pênaltis defendidos</small><b>${pc.gk_penalty_saves||0}</b></div>
+    `:`
+      <div class="stat"><small>Gols</small><b>${pc.goals}</b></div>
+      <div class="stat"><small>Assistências</small><b>${pc.assists}</b></div>
+      <div class="stat"><small>Reputação</small><b>${pc.reputation}</b></div>
+    `}
     <div class="stat"><small>Físico</small><b>${pc.fitness}%</b></div>
     <div class="stat"><small>Moral</small><b>${pc.morale}</b></div>
     <div class="stat"><small>Evolução</small><b>${pc.skill_points}</b></div>
     <div class="stat"><small>Saldo pessoal</small><b>${Number(pc.balance).toLocaleString("pt-BR")}</b></div>
   </section>
+
   ${last?`<section class="card">
     <div class="kicker">ÚLTIMA PARTIDA</div>
     <div class="player-last-match">
       <span>${esc(last.homeName)}</span><b>${last.homeGoals} × ${last.awayGoals}</b><span>${esc(last.awayName)}</span>
     </div>
     <div class="player-match-performance">
-      <span>Nota <b>${last.performance}</b></span><span>Gols <b>${last.goals}</b></span><span>Assistências <b>${last.assists}</b></span>
+      ${last.played===false?`<span><b>Você ficou no banco</b></span>`:`<span>Nota <b>${last.performance}</b></span>`}
+      ${isGK&&last.played!==false?`<span>Defesas <b>${last.saves||0}</b></span><span>Sem sofrer gol <b>${last.cleanSheet?"Sim":"Não"}</b></span>`:`<span>Gols <b>${last.goals||0}</b></span><span>Assistências <b>${last.assists||0}</b></span>`}
     </div>
   </section>`:""}
+
+  ${!statusEnd?`<section class="card player-interactions">
+    <div class="section-title">
+      <div><div class="kicker">BASTIDORES</div><h2>Uma decisão por rodada</h2></div>
+      <span class="badge">${interaction.used?"Já usada":"Disponível"}</span>
+    </div>
+    <p class="muted">${interaction.used?esc(interaction.last?.result_text||"Você já tomou uma decisão nesta rodada."):"Escolha como conduzir sua semana fora de campo."}</p>
+    <div class="player-interaction-grid">
+      <button class="secondary player-interaction" data-type="coach_talk" ${interaction.used?"disabled":""}>👔 Conversar com o treinador<small>Melhora confiança e moral</small></button>
+      <button class="secondary player-interaction" data-type="agent_push" ${interaction.used?"disabled":""}>🤝 Cobrar o agente<small>Aumenta exposição no mercado</small></button>
+      <button class="secondary player-interaction" data-type="recovery" ${interaction.used?"disabled":""}>🧊 Recuperação extra<small>Recupera físico</small></button>
+      <button class="secondary player-interaction" data-type="media" ${interaction.used?"disabled":""}>🎙️ Dar entrevista<small>Ganha reputação, com pressão</small></button>
+    </div>
+  </section>`:""}
+
   ${statusEnd?playerTransferOffersView():""}
   ${playerCareerRealisticPanel()}
   <section class="grid">
     <div class="card"><div class="kicker">CONTRATO</div><h2>${esc(pc.club_name)}</h2>
       <div class="finance-row"><span>Salário</span><b class="income">+${Number(pc.salary).toLocaleString("pt-BR")}/mês</b></div>
-      <p class="muted">O salário entra no saldo pessoal a cada 4 rodadas.</p>
+      <p class="muted">O salário entra no saldo pessoal a cada 4 rodadas. Seu status no elenco depende da confiança do treinador e das atuações.</p>
     </div>
     <div class="card"><div class="kicker">EVOLUÇÃO</div><h2>${pc.skill_points} ponto(s)</h2>
-      <p class="muted">Boas atuações geram pontos. Use a aba TREINO para melhorar os atributos.</p>
+      <p class="muted">Seu teto atual é ${pc.potential_hidden}. Boas atuações geram pontos para evoluir atributos.</p>
       <button class="secondary" id="goPlayerTraining">Abrir treino</button>
     </div>
   </section>`;
@@ -2052,15 +2108,18 @@ function playerSeasonView(){
 }
 function playerTrainingView(){
   const pc=state.playerData.career;
-  const attrs=[["pace","VEL",pc.pace],["shooting","CHU",pc.shooting],["passing","PAS",pc.passing],["defending","DEF",pc.defending]];
+  const isGK=pc.position==="GK";
+  const attrs=isGK
+    ?[["gk_diving","MERGULHO",pc.gk_diving],["gk_handling","SEGURANÇA",pc.gk_handling],["gk_reflexes","REFLEXOS",pc.gk_reflexes],["gk_positioning","POSICION.",pc.gk_positioning],["passing","REPOSIÇÃO",pc.passing]]
+    :[["pace","VEL",pc.pace],["shooting","CHU",pc.shooting],["passing","PAS",pc.passing],["defending","DEF",pc.defending]];
   return `<section class="card">
-    <div class="section-title"><div><div class="kicker">DESENVOLVIMENTO</div><h2>Treino individual</h2></div><span class="badge blue">${pc.skill_points} ponto(s)</span></div>
-    <p class="muted">Cada ponto de evolução aumenta um atributo em +1. Recuperação física não gasta ponto.</p>
+    <div class="section-title"><div><div class="kicker">DESENVOLVIMENTO</div><h2>${isGK?"Treino de goleiro":"Treino individual"}</h2></div><span class="badge blue">${pc.skill_points} ponto(s)</span></div>
+    <p class="muted">Cada ponto de evolução aumenta um atributo em +1. O overall respeita seu potencial atual (${pc.potential_hidden}). Recuperação física não gasta ponto.</p>
     <div class="player-training-grid">
-      ${attrs.map(([key,label,val])=>`<div class="training-card"><small>${label}</small><b>${val}</b><button class="secondary player-train" data-attr="${key}" ${pc.skill_points<=0||val>=99?"disabled":""}>+1</button></div>`).join("")}
+      ${attrs.map(([key,label,val])=>`<div class="training-card"><small>${label}</small><b>${val}</b><button class="secondary player-train" data-attr="${key}" ${pc.skill_points<=0||val>=99||pc.overall>=pc.potential_hidden?"disabled":""}>+1</button></div>`).join("")}
       <div class="training-card"><small>FÍSICO</small><b>${pc.fitness}%</b><button class="secondary player-train" data-attr="fitness" ${pc.fitness>=100?"disabled":""}>Recuperar +12</button></div>
     </div>
-    <div class="player-ovr-big"><small>OVERALL ATUAL</small><b>${pc.overall}</b></div>
+    <div class="player-ovr-big"><small>OVERALL ATUAL</small><b>${pc.overall}</b><span>Potencial ${pc.potential_hidden}</span></div>
   </section>`;
 }
 function bindPlayerCareer(){
@@ -2070,7 +2129,15 @@ function bindPlayerCareer(){
     try{
       const r=await api("/api/player-career/play",{method:"POST",body:"{}"});
       await refreshPlayerCareer();renderPlayerCareer();
-      if(r.match)alert(`${r.match.homeName} ${r.match.homeGoals} x ${r.match.awayGoals} ${r.match.awayName}\nSua nota: ${r.match.performance} · Gols: ${r.match.goals} · Assistências: ${r.match.assists}`);
+      if(r.match){
+        const pc=state.playerData?.career;
+        const extra=r.match.played===false
+          ?"Você ficou no banco nesta rodada."
+          :(pc?.position==="GK"
+            ?`Sua nota: ${r.match.performance} · Defesas: ${r.match.saves||0} · Pênaltis defendidos: ${r.match.penaltySaves||0}`
+            :`Sua nota: ${r.match.performance} · Gols: ${r.match.goals||0} · Assistências: ${r.match.assists||0}`);
+        alert(`${r.match.homeName} ${r.match.homeGoals} x ${r.match.awayGoals} ${r.match.awayName}\n${extra}`);
+      }
     }catch(err){alert(err.message);play.disabled=false}
   };
   const simSeason=app.querySelector("#playerSimSeason");
@@ -2099,6 +2166,16 @@ function bindPlayerCareer(){
     btn.disabled=true;
     try{await api("/api/player-career/train",{method:"POST",body:JSON.stringify({attribute:btn.dataset.attr})});await refreshPlayerCareer();renderPlayerCareer()}catch(err){alert(err.message);btn.disabled=false}
   });
+  app.querySelectorAll(".player-interaction").forEach(btn=>btn.onclick=async()=>{
+    btn.disabled=true;
+    try{
+      const d=await api("/api/player-career/interaction",{method:"POST",body:JSON.stringify({type:btn.dataset.type})});
+      await refreshPlayerCareer();
+      renderPlayerCareer();
+      alert(d.text||"Interação concluída.");
+    }catch(err){alert(err.message);btn.disabled=false}
+  });
+
   app.querySelectorAll(".accept-player-offer").forEach(btn=>btn.onclick=async()=>{
     if(!confirm("Aceitar esta transferência?"))return;
     btn.disabled=true;
@@ -2309,20 +2386,45 @@ function safProjectCard(){
   const car=state.competitions?.career;
   if(saf.active){
     const debt=Boolean(saf.debtRisk);
+    const covenant=Boolean(saf.covenantRisk);
     const from=car?.user_division||"D",to=lowerDivision(from);
     return `<div class="saf-project active">
-      <div class="kicker">PROJETO SAF ATIVO</div>
-      <h3>${esc(saf.investorName||"Investidor SAF")}</h3>
-      <div class="saf-stats"><span>Aporte inicial <b>${Number(saf.investment||0).toLocaleString("pt-BR")}</b></span><span>Desde a temporada <b>${saf.startedSeason||"—"}</b></span><span>Sanções por dívida <b>${saf.debtRelegations||0}</b></span></div>
-      <p>A venda é permanente nesta carreira. A SAF aumenta o poder de investimento, mas existe uma cláusula financeira: <b>se o clube terminar a temporada com saldo negativo, sofre rebaixamento administrativo de uma divisão.</b></p>
-      ${debt?`<div class="saf-risk">⚠️ O clube está no vermelho. Se a temporada terminar assim, ${from==="D"?"o time permanecerá na divisão mais baixa sob sanção":`cairá de ${esc(leagueLabel(from,car?.country_code))} para ${esc(leagueLabel(to,car?.country_code))}`}.</div>`:`<div class="saf-ok">✓ Situação financeira regular. Nenhuma sanção prevista.</div>`}
+      <div class="section-title">
+        <div><div class="kicker">PROJETO SAF ATIVO</div><h3>${esc(saf.investorName||"Investidor SAF")}</h3></div>
+        <span class="badge">${esc(saf.profile||"investidor")}</span>
+      </div>
+      <div class="saf-stats">
+        <span>Controle <b>${Number(saf.controlPercent||0)}%</b></span>
+        <span>Aporte inicial <b>${Number(saf.investment||0).toLocaleString("pt-BR")}</b></span>
+        <span>Orçamento anual <b>${Number(saf.annualBudget||0).toLocaleString("pt-BR")}</b></span>
+        <span>Limite de dívida <b>${Number(saf.debtLimit||0).toLocaleString("pt-BR")}</b></span>
+        <span>Paciência do investidor <b>${Number(saf.patience||0)}%</b></span>
+        <span>Sanções por dívida <b>${saf.debtRelegations||0}</b></span>
+      </div>
+      <div class="saf-objective"><small>META DO INVESTIDOR</small><b>${esc(saf.objective||"Crescimento sustentável")}</b></div>
+      <p>A venda é permanente nesta carreira. O orçamento anual pode ser reduzido se a confiança da diretoria cair. A regra financeira da SAF continua valendo: <b>saldo negativo no fechamento pode gerar sanção administrativa.</b></p>
+      ${covenant?`<div class="saf-risk">🚨 O caixa ultrapassou o limite de dívida acordado com o investidor (${Number(saf.debtLimit).toLocaleString("pt-BR")}). A pressão do conselho aumentará.</div>`:
+        debt?`<div class="saf-risk">⚠️ O clube está no vermelho. Se a temporada terminar assim, ${from==="D"?"o time permanecerá na divisão mais baixa sob sanção":`cairá de ${esc(leagueLabel(from,car?.country_code))} para ${esc(leagueLabel(to,car?.country_code))}`}.</div>`:
+        `<div class="saf-ok">✓ Situação financeira dentro do acordo com o investidor.</div>`}
+      <div class="saf-board-room">
+        <div><div class="kicker">REUNIÃO ANUAL DO CONSELHO</div><p class="muted">${saf.boardDecisionUsed?"A estratégia desta temporada já foi definida.":"Escolha uma estratégia. Só é possível uma decisão por temporada."}</p></div>
+        <div class="saf-board-actions">
+          <button type="button" class="secondary saf-board-decision" data-decision="sustainable" ${saf.boardDecisionUsed?"disabled":""}>🌱 Sustentável<small>Mais paciência, menos pressão</small></button>
+          <button type="button" class="secondary saf-board-decision" data-decision="balanced" ${saf.boardDecisionUsed?"disabled":""}>⚖️ Equilibrada<small>Aporte extra moderado</small></button>
+          <button type="button" class="secondary saf-board-decision" data-decision="ambitious" ${saf.boardDecisionUsed?"disabled":""}>🔥 Ambiciosa<small>Mais dinheiro, cobrança maior</small></button>
+        </div>
+      </div>
     </div>`;
   }
   return `<div class="saf-project">
     <div class="kicker">VENDA DO CLUBE</div><h3>Projeto SAF</h3>
-    <p class="muted">Venda o controle do clube para um investidor e receba um grande aporte imediato. A contrapartida é permanente: se uma SAF fechar qualquer temporada devendo, sofre rebaixamento administrativo.</p>
+    <p class="muted">Compare propostas de controle. Cada investidor possui perfil, participação, orçamento anual, tolerância à dívida e objetivo esportivo diferentes.</p>
     <div class="saf-offers">${(saf.offers||[]).map(o=>`<button type="button" class="saf-offer" data-saf="${esc(o.id)}">
-      <b>${esc(o.name)}</b><span>${esc(o.profile)}</span><strong>+${Number(o.investment).toLocaleString("pt-BR")} moedas</strong>
+      <b>${esc(o.name)}</b>
+      <span>${esc(o.profile)} · controle ${o.controlPercent}%</span>
+      <strong>+${Number(o.investment).toLocaleString("pt-BR")} imediato</strong>
+      <small>Orçamento anual: ${Number(o.annualBudget).toLocaleString("pt-BR")} · dívida: ${Number(o.debtLimit).toLocaleString("pt-BR")}</small>
+      <small>${esc(o.objective)}</small>
     </button>`).join("")}</div>
   </div>`;
 }
@@ -2616,6 +2718,16 @@ function bindManagerOfferButtons(){
 
 function bindRealism(){
   bindManagerOfferButtons();
+
+  app.querySelectorAll(".manager-interaction").forEach(btn=>btn.onclick=async()=>{
+    if(!confirm("Executar esta interação nesta rodada?"))return;
+    btn.disabled=true;
+    try{
+      const d=await api("/api/realism/interaction",{method:"POST",body:JSON.stringify({type:btn.dataset.type})});
+      await refreshAll();state.view="realism";render();
+      alert(d.resultText||"Interação concluída.");
+    }catch(err){alert(err.message);btn.disabled=false}
+  });
 
   const tactics=app.querySelector("#realismTactics");
   if(tactics)tactics.onsubmit=async e=>{
@@ -3337,13 +3449,25 @@ function bindClub(){
   app.querySelectorAll(".saf-offer").forEach(btn=>btn.onclick=async()=>{
     const offer=(state.saf?.offers||[]).find(x=>x.id===btn.dataset.saf);
     if(!offer)return;
-    if(!confirm(`Vender o clube para ${offer.name}?\n\nAporte imediato: ${Number(offer.investment).toLocaleString("pt-BR")} moedas.\n\nATENÇÃO: a venda é permanente nesta carreira. Se a SAF terminar qualquer temporada com saldo negativo, o clube sofre rebaixamento administrativo de uma divisão.`))return;
+    if(!confirm(`Vender o controle do clube para ${offer.name}?\n\nPerfil: ${offer.profile}\nControle: ${offer.controlPercent}%\nAporte imediato: ${Number(offer.investment).toLocaleString("pt-BR")} moedas\nOrçamento anual: ${Number(offer.annualBudget).toLocaleString("pt-BR")} moedas\nLimite de dívida: ${Number(offer.debtLimit).toLocaleString("pt-BR")} moedas\nMeta: ${offer.objective}\n\nA venda é permanente nesta carreira.`))return;
     btn.disabled=true;
     try{
       const d=await api("/api/saf/accept",{method:"POST",body:JSON.stringify({investorId:offer.id})});
       await refreshAll();
       render();
       alert(`${d.investorName} assumiu a SAF. O clube recebeu ${Number(d.investment).toLocaleString("pt-BR")} moedas.`);
+    }catch(err){alert(err.message);btn.disabled=false}
+  });
+
+  app.querySelectorAll(".saf-board-decision").forEach(btn=>btn.onclick=async()=>{
+    const labels={sustainable:"Sustentável",balanced:"Equilibrada",ambitious:"Ambiciosa"};
+    if(!confirm(`Definir a estratégia ${labels[btn.dataset.decision]||btn.dataset.decision} para esta temporada?`))return;
+    btn.disabled=true;
+    try{
+      const d=await api("/api/saf/board-decision",{method:"POST",body:JSON.stringify({decision:btn.dataset.decision})});
+      await refreshAll();
+      render();
+      alert(d.resultText||"Estratégia da SAF definida.");
     }catch(err){alert(err.message);btn.disabled=false}
   });
 
