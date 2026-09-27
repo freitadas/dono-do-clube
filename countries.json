@@ -94,5 +94,125 @@
       "C": "Federal A",
       "D": "Primera B Metropolitana"
     }
+  },
+  "NED": {
+    "name": "Países Baixos",
+    "flag": "🇳🇱",
+    "regional": false,
+    "cup": "KNVB Cup",
+    "divisions": {
+      "A": "Eredivisie",
+      "B": "Eerste Divisie",
+      "C": "Tweede Divisie",
+      "D": "Derde Divisie"
+    }
+  },
+  "BEL": {
+    "name": "Bélgica",
+    "flag": "🇧🇪",
+    "regional": false,
+    "cup": "Copa da Bélgica",
+    "divisions": {
+      "A": "Pro League",
+      "B": "Challenger Pro League",
+      "C": "National Division 1",
+      "D": "Division 2"
+    }
+  },
+  "TUR": {
+    "name": "Turquia",
+    "flag": "🇹🇷",
+    "regional": false,
+    "cup": "Türkiye Kupası",
+    "divisions": {
+      "A": "Süper Lig",
+      "B": "1. Lig",
+      "C": "2. Lig",
+      "D": "3. Lig"
+    }
+  },
+  "SCO": {
+    "name": "Escócia",
+    "flag": "🏴",
+    "regional": false,
+    "cup": "Scottish Cup",
+    "divisions": {
+      "A": "Premiership",
+      "B": "Championship",
+      "C": "League One",
+      "D": "League Two"
+    }
+  },
+  "MEX": {
+    "name": "México",
+    "flag": "🇲🇽",
+    "regional": false,
+    "cup": "Copa México",
+    "divisions": {
+      "A": "Liga MX",
+      "B": "Liga de Expansión",
+      "C": "Liga Premier",
+      "D": "Liga TDP"
+    }
+  },
+  "USA": {
+    "name": "Estados Unidos",
+    "flag": "🇺🇸",
+    "regional": false,
+    "cup": "U.S. Open Cup",
+    "divisions": {
+      "A": "Major League",
+      "B": "Championship USA",
+      "C": "League One USA",
+      "D": "League Two USA"
+    }
+  },
+  "JPN": {
+    "name": "Japão",
+    "flag": "🇯🇵",
+    "regional": false,
+    "cup": "Copa do Imperador",
+    "divisions": {
+      "A": "J1 League",
+      "B": "J2 League",
+      "C": "J3 League",
+      "D": "Japan Football League"
+    }
+  },
+  "KSA": {
+    "name": "Arábia Saudita",
+    "flag": "🇸🇦",
+    "regional": false,
+    "cup": "King's Cup",
+    "divisions": {
+      "A": "Saudi Pro League",
+      "B": "First Division",
+      "C": "Second Division",
+      "D": "Third Division"
+    }
+  },
+  "URU": {
+    "name": "Uruguai",
+    "flag": "🇺🇾",
+    "regional": false,
+    "cup": "Copa AUF Uruguay",
+    "divisions": {
+      "A": "Primera División",
+      "B": "Segunda División",
+      "C": "Primera División Amateur",
+      "D": "Divisional D"
+    }
+  },
+  "COL": {
+    "name": "Colômbia",
+    "flag": "🇨🇴",
+    "regional": false,
+    "cup": "Copa Colombia",
+    "divisions": {
+      "A": "Primera A",
+      "B": "Primera B",
+      "C": "Liga Nacional C",
+      "D": "Liga Nacional D"
+    }
   }
 }

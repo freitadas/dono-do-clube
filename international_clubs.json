@@ -5608,5 +5608,8005 @@
     "rating": 62,
     "primary": "#1f6b3a",
     "secondary": "#f4f7f5"
+  },
+  {
+    "name": "Ajax (NED)",
+    "state": null,
+    "country": "NED",
+    "kind": "national",
+    "division": "A",
+    "rating": 79,
+    "primary": "#174a78",
+    "secondary": "#f4f7f5"
+  },
+  {
+    "name": "PSV (NED)",
+    "state": null,
+    "country": "NED",
+    "kind": "national",
+    "division": "A",
+    "rating": 79,
+    "primary": "#8b1e2d",
+    "secondary": "#f4f7f5"
+  },
+  {
+    "name": "Feyenoord (NED)",
+    "state": null,
+    "country": "NED",
+    "kind": "national",
+    "division": "A",
+    "rating": 79,
+    "primary": "#1f6b48",
+    "secondary": "#f4f7f5"
+  },
+  {
+    "name": "AZ Alkmaar (NED)",
+    "state": null,
+    "country": "NED",
+    "kind": "national",
+    "division": "A",
+    "rating": 79,
+    "primary": "#6b3d87",
+    "secondary": "#f4f7f5"
+  },
+  {
+    "name": "FC Twente (NED)",
+    "state": null,
+    "country": "NED",
+    "kind": "national",
+    "division": "A",
+    "rating": 78,
+    "primary": "#a76917",
+    "secondary": "#f4f7f5"
+  },
+  {
+    "name": "FC Utrecht (NED)",
+    "state": null,
+    "country": "NED",
+    "kind": "national",
+    "division": "A",
+    "rating": 78,
+    "primary": "#2c596e",
+    "secondary": "#f4f7f5"
+  },
+  {
+    "name": "Heerenveen (NED)",
+    "state": null,
+    "country": "NED",
+    "kind": "national",
+    "division": "A",
+    "rating": 78,
+    "primary": "#7a3b32",
+    "secondary": "#f4f7f5"
+  },
+  {
+    "name": "Groningen (NED)",
+    "state": null,
+    "country": "NED",
+    "kind": "national",
+    "division": "A",
+    "rating": 78,
+    "primary": "#3d6b2f",
+    "secondary": "#f4f7f5"
+  },
+  {
+    "name": "NEC Nijmegen (NED)",
+    "state": null,
+    "country": "NED",
+    "kind": "national",
+    "division": "A",
+    "rating": 77,
+    "primary": "#5c527f",
+    "secondary": "#f4f7f5"
+  },
+  {
+    "name": "Sparta Rotterdam (NED)",
+    "state": null,
+    "country": "NED",
+    "kind": "national",
+    "division": "A",
+    "rating": 77,
+    "primary": "#296773",
+    "secondary": "#f4f7f5"
+  },
+  {
+    "name": "Heracles (NED)",
+    "state": null,
+    "country": "NED",
+    "kind": "national",
+    "division": "A",
+    "rating": 77,
+    "primary": "#174a78",
+    "secondary": "#f4f7f5"
+  },
+  {
+    "name": "PEC Zwolle (NED)",
+    "state": null,
+    "country": "NED",
+    "kind": "national",
+    "division": "A",
+    "rating": 77,
+    "primary": "#8b1e2d",
+    "secondary": "#f4f7f5"
+  },
+  {
+    "name": "Go Ahead Eagles (NED)",
+    "state": null,
+    "country": "NED",
+    "kind": "national",
+    "division": "A",
+    "rating": 76,
+    "primary": "#1f6b48",
+    "secondary": "#f4f7f5"
+  },
+  {
+    "name": "Fortuna Sittard (NED)",
+    "state": null,
+    "country": "NED",
+    "kind": "national",
+    "division": "A",
+    "rating": 76,
+    "primary": "#6b3d87",
+    "secondary": "#f4f7f5"
+  },
+  {
+    "name": "Willem II (NED)",
+    "state": null,
+    "country": "NED",
+    "kind": "national",
+    "division": "A",
+    "rating": 76,
+    "primary": "#a76917",
+    "secondary": "#f4f7f5"
+  },
+  {
+    "name": "NAC Breda (NED)",
+    "state": null,
+    "country": "NED",
+    "kind": "national",
+    "division": "A",
+    "rating": 76,
+    "primary": "#2c596e",
+    "secondary": "#f4f7f5"
+  },
+  {
+    "name": "RKC Waalwijk (NED)",
+    "state": null,
+    "country": "NED",
+    "kind": "national",
+    "division": "A",
+    "rating": 75,
+    "primary": "#7a3b32",
+    "secondary": "#f4f7f5"
+  },
+  {
+    "name": "Excelsior (NED)",
+    "state": null,
+    "country": "NED",
+    "kind": "national",
+    "division": "A",
+    "rating": 75,
+    "primary": "#3d6b2f",
+    "secondary": "#f4f7f5"
+  },
+  {
+    "name": "Vitesse (NED)",
+    "state": null,
+    "country": "NED",
+    "kind": "national",
+    "division": "A",
+    "rating": 75,
+    "primary": "#5c527f",
+    "secondary": "#f4f7f5"
+  },
+  {
+    "name": "Almere City (NED)",
+    "state": null,
+    "country": "NED",
+    "kind": "national",
+    "division": "A",
+    "rating": 75,
+    "primary": "#296773",
+    "secondary": "#f4f7f5"
+  },
+  {
+    "name": "Dutch B01 (NED)",
+    "state": null,
+    "country": "NED",
+    "kind": "national",
+    "division": "B",
+    "rating": 72,
+    "primary": "#174a78",
+    "secondary": "#f4f7f5"
+  },
+  {
+    "name": "Dutch B02 (NED)",
+    "state": null,
+    "country": "NED",
+    "kind": "national",
+    "division": "B",
+    "rating": 72,
+    "primary": "#8b1e2d",
+    "secondary": "#f4f7f5"
+  },
+  {
+    "name": "Dutch B03 (NED)",
+    "state": null,
+    "country": "NED",
+    "kind": "national",
+    "division": "B",
+    "rating": 72,
+    "primary": "#1f6b48",
+    "secondary": "#f4f7f5"
+  },
+  {
+    "name": "Dutch B04 (NED)",
+    "state": null,
+    "country": "NED",
+    "kind": "national",
+    "division": "B",
+    "rating": 72,
+    "primary": "#6b3d87",
+    "secondary": "#f4f7f5"
+  },
+  {
+    "name": "Dutch B05 (NED)",
+    "state": null,
+    "country": "NED",
+    "kind": "national",
+    "division": "B",
+    "rating": 71,
+    "primary": "#a76917",
+    "secondary": "#f4f7f5"
+  },
+  {
+    "name": "Dutch B06 (NED)",
+    "state": null,
+    "country": "NED",
+    "kind": "national",
+    "division": "B",
+    "rating": 71,
+    "primary": "#2c596e",
+    "secondary": "#f4f7f5"
+  },
+  {
+    "name": "Dutch B07 (NED)",
+    "state": null,
+    "country": "NED",
+    "kind": "national",
+    "division": "B",
+    "rating": 71,
+    "primary": "#7a3b32",
+    "secondary": "#f4f7f5"
+  },
+  {
+    "name": "Dutch B08 (NED)",
+    "state": null,
+    "country": "NED",
+    "kind": "national",
+    "division": "B",
+    "rating": 71,
+    "primary": "#3d6b2f",
+    "secondary": "#f4f7f5"
+  },
+  {
+    "name": "Dutch B09 (NED)",
+    "state": null,
+    "country": "NED",
+    "kind": "national",
+    "division": "B",
+    "rating": 70,
+    "primary": "#5c527f",
+    "secondary": "#f4f7f5"
+  },
+  {
+    "name": "Dutch B10 (NED)",
+    "state": null,
+    "country": "NED",
+    "kind": "national",
+    "division": "B",
+    "rating": 70,
+    "primary": "#296773",
+    "secondary": "#f4f7f5"
+  },
+  {
+    "name": "Dutch B11 (NED)",
+    "state": null,
+    "country": "NED",
+    "kind": "national",
+    "division": "B",
+    "rating": 70,
+    "primary": "#174a78",
+    "secondary": "#f4f7f5"
+  },
+  {
+    "name": "Dutch B12 (NED)",
+    "state": null,
+    "country": "NED",
+    "kind": "national",
+    "division": "B",
+    "rating": 70,
+    "primary": "#8b1e2d",
+    "secondary": "#f4f7f5"
+  },
+  {
+    "name": "Dutch B13 (NED)",
+    "state": null,
+    "country": "NED",
+    "kind": "national",
+    "division": "B",
+    "rating": 69,
+    "primary": "#1f6b48",
+    "secondary": "#f4f7f5"
+  },
+  {
+    "name": "Dutch B14 (NED)",
+    "state": null,
+    "country": "NED",
+    "kind": "national",
+    "division": "B",
+    "rating": 69,
+    "primary": "#6b3d87",
+    "secondary": "#f4f7f5"
+  },
+  {
+    "name": "Dutch B15 (NED)",
+    "state": null,
+    "country": "NED",
+    "kind": "national",
+    "division": "B",
+    "rating": 69,
+    "primary": "#a76917",
+    "secondary": "#f4f7f5"
+  },
+  {
+    "name": "Dutch B16 (NED)",
+    "state": null,
+    "country": "NED",
+    "kind": "national",
+    "division": "B",
+    "rating": 69,
+    "primary": "#2c596e",
+    "secondary": "#f4f7f5"
+  },
+  {
+    "name": "Dutch B17 (NED)",
+    "state": null,
+    "country": "NED",
+    "kind": "national",
+    "division": "B",
+    "rating": 68,
+    "primary": "#7a3b32",
+    "secondary": "#f4f7f5"
+  },
+  {
+    "name": "Dutch B18 (NED)",
+    "state": null,
+    "country": "NED",
+    "kind": "national",
+    "division": "B",
+    "rating": 68,
+    "primary": "#3d6b2f",
+    "secondary": "#f4f7f5"
+  },
+  {
+    "name": "Dutch B19 (NED)",
+    "state": null,
+    "country": "NED",
+    "kind": "national",
+    "division": "B",
+    "rating": 68,
+    "primary": "#5c527f",
+    "secondary": "#f4f7f5"
+  },
+  {
+    "name": "Dutch B20 (NED)",
+    "state": null,
+    "country": "NED",
+    "kind": "national",
+    "division": "B",
+    "rating": 68,
+    "primary": "#296773",
+    "secondary": "#f4f7f5"
+  },
+  {
+    "name": "Dutch C01 (NED)",
+    "state": null,
+    "country": "NED",
+    "kind": "national",
+    "division": "C",
+    "rating": 65,
+    "primary": "#174a78",
+    "secondary": "#f4f7f5"
+  },
+  {
+    "name": "Dutch C02 (NED)",
+    "state": null,
+    "country": "NED",
+    "kind": "national",
+    "division": "C",
+    "rating": 65,
+    "primary": "#8b1e2d",
+    "secondary": "#f4f7f5"
+  },
+  {
+    "name": "Dutch C03 (NED)",
+    "state": null,
+    "country": "NED",
+    "kind": "national",
+    "division": "C",
+    "rating": 65,
+    "primary": "#1f6b48",
+    "secondary": "#f4f7f5"
+  },
+  {
+    "name": "Dutch C04 (NED)",
+    "state": null,
+    "country": "NED",
+    "kind": "national",
+    "division": "C",
+    "rating": 65,
+    "primary": "#6b3d87",
+    "secondary": "#f4f7f5"
+  },
+  {
+    "name": "Dutch C05 (NED)",
+    "state": null,
+    "country": "NED",
+    "kind": "national",
+    "division": "C",
+    "rating": 64,
+    "primary": "#a76917",
+    "secondary": "#f4f7f5"
+  },
+  {
+    "name": "Dutch C06 (NED)",
+    "state": null,
+    "country": "NED",
+    "kind": "national",
+    "division": "C",
+    "rating": 64,
+    "primary": "#2c596e",
+    "secondary": "#f4f7f5"
+  },
+  {
+    "name": "Dutch C07 (NED)",
+    "state": null,
+    "country": "NED",
+    "kind": "national",
+    "division": "C",
+    "rating": 64,
+    "primary": "#7a3b32",
+    "secondary": "#f4f7f5"
+  },
+  {
+    "name": "Dutch C08 (NED)",
+    "state": null,
+    "country": "NED",
+    "kind": "national",
+    "division": "C",
+    "rating": 64,
+    "primary": "#3d6b2f",
+    "secondary": "#f4f7f5"
+  },
+  {
+    "name": "Dutch C09 (NED)",
+    "state": null,
+    "country": "NED",
+    "kind": "national",
+    "division": "C",
+    "rating": 63,
+    "primary": "#5c527f",
+    "secondary": "#f4f7f5"
+  },
+  {
+    "name": "Dutch C10 (NED)",
+    "state": null,
+    "country": "NED",
+    "kind": "national",
+    "division": "C",
+    "rating": 63,
+    "primary": "#296773",
+    "secondary": "#f4f7f5"
+  },
+  {
+    "name": "Dutch C11 (NED)",
+    "state": null,
+    "country": "NED",
+    "kind": "national",
+    "division": "C",
+    "rating": 63,
+    "primary": "#174a78",
+    "secondary": "#f4f7f5"
+  },
+  {
+    "name": "Dutch C12 (NED)",
+    "state": null,
+    "country": "NED",
+    "kind": "national",
+    "division": "C",
+    "rating": 63,
+    "primary": "#8b1e2d",
+    "secondary": "#f4f7f5"
+  },
+  {
+    "name": "Dutch C13 (NED)",
+    "state": null,
+    "country": "NED",
+    "kind": "national",
+    "division": "C",
+    "rating": 62,
+    "primary": "#1f6b48",
+    "secondary": "#f4f7f5"
+  },
+  {
+    "name": "Dutch C14 (NED)",
+    "state": null,
+    "country": "NED",
+    "kind": "national",
+    "division": "C",
+    "rating": 62,
+    "primary": "#6b3d87",
+    "secondary": "#f4f7f5"
+  },
+  {
+    "name": "Dutch C15 (NED)",
+    "state": null,
+    "country": "NED",
+    "kind": "national",
+    "division": "C",
+    "rating": 62,
+    "primary": "#a76917",
+    "secondary": "#f4f7f5"
+  },
+  {
+    "name": "Dutch C16 (NED)",
+    "state": null,
+    "country": "NED",
+    "kind": "national",
+    "division": "C",
+    "rating": 62,
+    "primary": "#2c596e",
+    "secondary": "#f4f7f5"
+  },
+  {
+    "name": "Dutch C17 (NED)",
+    "state": null,
+    "country": "NED",
+    "kind": "national",
+    "division": "C",
+    "rating": 61,
+    "primary": "#7a3b32",
+    "secondary": "#f4f7f5"
+  },
+  {
+    "name": "Dutch C18 (NED)",
+    "state": null,
+    "country": "NED",
+    "kind": "national",
+    "division": "C",
+    "rating": 61,
+    "primary": "#3d6b2f",
+    "secondary": "#f4f7f5"
+  },
+  {
+    "name": "Dutch C19 (NED)",
+    "state": null,
+    "country": "NED",
+    "kind": "national",
+    "division": "C",
+    "rating": 61,
+    "primary": "#5c527f",
+    "secondary": "#f4f7f5"
+  },
+  {
+    "name": "Dutch C20 (NED)",
+    "state": null,
+    "country": "NED",
+    "kind": "national",
+    "division": "C",
+    "rating": 61,
+    "primary": "#296773",
+    "secondary": "#f4f7f5"
+  },
+  {
+    "name": "Dutch D01 (NED)",
+    "state": null,
+    "country": "NED",
+    "kind": "national",
+    "division": "D",
+    "rating": 58,
+    "primary": "#174a78",
+    "secondary": "#f4f7f5"
+  },
+  {
+    "name": "Dutch D02 (NED)",
+    "state": null,
+    "country": "NED",
+    "kind": "national",
+    "division": "D",
+    "rating": 58,
+    "primary": "#8b1e2d",
+    "secondary": "#f4f7f5"
+  },
+  {
+    "name": "Dutch D03 (NED)",
+    "state": null,
+    "country": "NED",
+    "kind": "national",
+    "division": "D",
+    "rating": 58,
+    "primary": "#1f6b48",
+    "secondary": "#f4f7f5"
+  },
+  {
+    "name": "Dutch D04 (NED)",
+    "state": null,
+    "country": "NED",
+    "kind": "national",
+    "division": "D",
+    "rating": 58,
+    "primary": "#6b3d87",
+    "secondary": "#f4f7f5"
+  },
+  {
+    "name": "Dutch D05 (NED)",
+    "state": null,
+    "country": "NED",
+    "kind": "national",
+    "division": "D",
+    "rating": 57,
+    "primary": "#a76917",
+    "secondary": "#f4f7f5"
+  },
+  {
+    "name": "Dutch D06 (NED)",
+    "state": null,
+    "country": "NED",
+    "kind": "national",
+    "division": "D",
+    "rating": 57,
+    "primary": "#2c596e",
+    "secondary": "#f4f7f5"
+  },
+  {
+    "name": "Dutch D07 (NED)",
+    "state": null,
+    "country": "NED",
+    "kind": "national",
+    "division": "D",
+    "rating": 57,
+    "primary": "#7a3b32",
+    "secondary": "#f4f7f5"
+  },
+  {
+    "name": "Dutch D08 (NED)",
+    "state": null,
+    "country": "NED",
+    "kind": "national",
+    "division": "D",
+    "rating": 57,
+    "primary": "#3d6b2f",
+    "secondary": "#f4f7f5"
+  },
+  {
+    "name": "Dutch D09 (NED)",
+    "state": null,
+    "country": "NED",
+    "kind": "national",
+    "division": "D",
+    "rating": 56,
+    "primary": "#5c527f",
+    "secondary": "#f4f7f5"
+  },
+  {
+    "name": "Dutch D10 (NED)",
+    "state": null,
+    "country": "NED",
+    "kind": "national",
+    "division": "D",
+    "rating": 56,
+    "primary": "#296773",
+    "secondary": "#f4f7f5"
+  },
+  {
+    "name": "Dutch D11 (NED)",
+    "state": null,
+    "country": "NED",
+    "kind": "national",
+    "division": "D",
+    "rating": 56,
+    "primary": "#174a78",
+    "secondary": "#f4f7f5"
+  },
+  {
+    "name": "Dutch D12 (NED)",
+    "state": null,
+    "country": "NED",
+    "kind": "national",
+    "division": "D",
+    "rating": 56,
+    "primary": "#8b1e2d",
+    "secondary": "#f4f7f5"
+  },
+  {
+    "name": "Dutch D13 (NED)",
+    "state": null,
+    "country": "NED",
+    "kind": "national",
+    "division": "D",
+    "rating": 55,
+    "primary": "#1f6b48",
+    "secondary": "#f4f7f5"
+  },
+  {
+    "name": "Dutch D14 (NED)",
+    "state": null,
+    "country": "NED",
+    "kind": "national",
+    "division": "D",
+    "rating": 55,
+    "primary": "#6b3d87",
+    "secondary": "#f4f7f5"
+  },
+  {
+    "name": "Dutch D15 (NED)",
+    "state": null,
+    "country": "NED",
+    "kind": "national",
+    "division": "D",
+    "rating": 55,
+    "primary": "#a76917",
+    "secondary": "#f4f7f5"
+  },
+  {
+    "name": "Dutch D16 (NED)",
+    "state": null,
+    "country": "NED",
+    "kind": "national",
+    "division": "D",
+    "rating": 55,
+    "primary": "#2c596e",
+    "secondary": "#f4f7f5"
+  },
+  {
+    "name": "Dutch D17 (NED)",
+    "state": null,
+    "country": "NED",
+    "kind": "national",
+    "division": "D",
+    "rating": 54,
+    "primary": "#7a3b32",
+    "secondary": "#f4f7f5"
+  },
+  {
+    "name": "Dutch D18 (NED)",
+    "state": null,
+    "country": "NED",
+    "kind": "national",
+    "division": "D",
+    "rating": 54,
+    "primary": "#3d6b2f",
+    "secondary": "#f4f7f5"
+  },
+  {
+    "name": "Dutch D19 (NED)",
+    "state": null,
+    "country": "NED",
+    "kind": "national",
+    "division": "D",
+    "rating": 54,
+    "primary": "#5c527f",
+    "secondary": "#f4f7f5"
+  },
+  {
+    "name": "Dutch D20 (NED)",
+    "state": null,
+    "country": "NED",
+    "kind": "national",
+    "division": "D",
+    "rating": 54,
+    "primary": "#296773",
+    "secondary": "#f4f7f5"
+  },
+  {
+    "name": "Club Brugge (BEL)",
+    "state": null,
+    "country": "BEL",
+    "kind": "national",
+    "division": "A",
+    "rating": 77,
+    "primary": "#8b1e2d",
+    "secondary": "#f4f7f5"
+  },
+  {
+    "name": "Anderlecht (BEL)",
+    "state": null,
+    "country": "BEL",
+    "kind": "national",
+    "division": "A",
+    "rating": 77,
+    "primary": "#1f6b48",
+    "secondary": "#f4f7f5"
+  },
+  {
+    "name": "Genk (BEL)",
+    "state": null,
+    "country": "BEL",
+    "kind": "national",
+    "division": "A",
+    "rating": 77,
+    "primary": "#6b3d87",
+    "secondary": "#f4f7f5"
+  },
+  {
+    "name": "Gent (BEL)",
+    "state": null,
+    "country": "BEL",
+    "kind": "national",
+    "division": "A",
+    "rating": 77,
+    "primary": "#a76917",
+    "secondary": "#f4f7f5"
+  },
+  {
+    "name": "Royal Antwerp (BEL)",
+    "state": null,
+    "country": "BEL",
+    "kind": "national",
+    "division": "A",
+    "rating": 76,
+    "primary": "#2c596e",
+    "secondary": "#f4f7f5"
+  },
+  {
+    "name": "Standard Liège (BEL)",
+    "state": null,
+    "country": "BEL",
+    "kind": "national",
+    "division": "A",
+    "rating": 76,
+    "primary": "#7a3b32",
+    "secondary": "#f4f7f5"
+  },
+  {
+    "name": "Union Saint-Gilloise (BEL)",
+    "state": null,
+    "country": "BEL",
+    "kind": "national",
+    "division": "A",
+    "rating": 76,
+    "primary": "#3d6b2f",
+    "secondary": "#f4f7f5"
+  },
+  {
+    "name": "Charleroi (BEL)",
+    "state": null,
+    "country": "BEL",
+    "kind": "national",
+    "division": "A",
+    "rating": 76,
+    "primary": "#5c527f",
+    "secondary": "#f4f7f5"
+  },
+  {
+    "name": "Mechelen (BEL)",
+    "state": null,
+    "country": "BEL",
+    "kind": "national",
+    "division": "A",
+    "rating": 75,
+    "primary": "#296773",
+    "secondary": "#f4f7f5"
+  },
+  {
+    "name": "Westerlo (BEL)",
+    "state": null,
+    "country": "BEL",
+    "kind": "national",
+    "division": "A",
+    "rating": 75,
+    "primary": "#174a78",
+    "secondary": "#f4f7f5"
+  },
+  {
+    "name": "Cercle Brugge (BEL)",
+    "state": null,
+    "country": "BEL",
+    "kind": "national",
+    "division": "A",
+    "rating": 75,
+    "primary": "#8b1e2d",
+    "secondary": "#f4f7f5"
+  },
+  {
+    "name": "OH Leuven (BEL)",
+    "state": null,
+    "country": "BEL",
+    "kind": "national",
+    "division": "A",
+    "rating": 75,
+    "primary": "#1f6b48",
+    "secondary": "#f4f7f5"
+  },
+  {
+    "name": "Sint-Truiden (BEL)",
+    "state": null,
+    "country": "BEL",
+    "kind": "national",
+    "division": "A",
+    "rating": 74,
+    "primary": "#6b3d87",
+    "secondary": "#f4f7f5"
+  },
+  {
+    "name": "Kortrijk (BEL)",
+    "state": null,
+    "country": "BEL",
+    "kind": "national",
+    "division": "A",
+    "rating": 74,
+    "primary": "#a76917",
+    "secondary": "#f4f7f5"
+  },
+  {
+    "name": "Eupen (BEL)",
+    "state": null,
+    "country": "BEL",
+    "kind": "national",
+    "division": "A",
+    "rating": 74,
+    "primary": "#2c596e",
+    "secondary": "#f4f7f5"
+  },
+  {
+    "name": "Beerschot (BEL)",
+    "state": null,
+    "country": "BEL",
+    "kind": "national",
+    "division": "A",
+    "rating": 74,
+    "primary": "#7a3b32",
+    "secondary": "#f4f7f5"
+  },
+  {
+    "name": "Zulte Waregem (BEL)",
+    "state": null,
+    "country": "BEL",
+    "kind": "national",
+    "division": "A",
+    "rating": 73,
+    "primary": "#3d6b2f",
+    "secondary": "#f4f7f5"
+  },
+  {
+    "name": "Lommel (BEL)",
+    "state": null,
+    "country": "BEL",
+    "kind": "national",
+    "division": "A",
+    "rating": 73,
+    "primary": "#5c527f",
+    "secondary": "#f4f7f5"
+  },
+  {
+    "name": "RWDM (BEL)",
+    "state": null,
+    "country": "BEL",
+    "kind": "national",
+    "division": "A",
+    "rating": 73,
+    "primary": "#296773",
+    "secondary": "#f4f7f5"
+  },
+  {
+    "name": "Beveren (BEL)",
+    "state": null,
+    "country": "BEL",
+    "kind": "national",
+    "division": "A",
+    "rating": 73,
+    "primary": "#174a78",
+    "secondary": "#f4f7f5"
+  },
+  {
+    "name": "Belgian B01 (BEL)",
+    "state": null,
+    "country": "BEL",
+    "kind": "national",
+    "division": "B",
+    "rating": 70,
+    "primary": "#8b1e2d",
+    "secondary": "#f4f7f5"
+  },
+  {
+    "name": "Belgian B02 (BEL)",
+    "state": null,
+    "country": "BEL",
+    "kind": "national",
+    "division": "B",
+    "rating": 70,
+    "primary": "#1f6b48",
+    "secondary": "#f4f7f5"
+  },
+  {
+    "name": "Belgian B03 (BEL)",
+    "state": null,
+    "country": "BEL",
+    "kind": "national",
+    "division": "B",
+    "rating": 70,
+    "primary": "#6b3d87",
+    "secondary": "#f4f7f5"
+  },
+  {
+    "name": "Belgian B04 (BEL)",
+    "state": null,
+    "country": "BEL",
+    "kind": "national",
+    "division": "B",
+    "rating": 70,
+    "primary": "#a76917",
+    "secondary": "#f4f7f5"
+  },
+  {
+    "name": "Belgian B05 (BEL)",
+    "state": null,
+    "country": "BEL",
+    "kind": "national",
+    "division": "B",
+    "rating": 69,
+    "primary": "#2c596e",
+    "secondary": "#f4f7f5"
+  },
+  {
+    "name": "Belgian B06 (BEL)",
+    "state": null,
+    "country": "BEL",
+    "kind": "national",
+    "division": "B",
+    "rating": 69,
+    "primary": "#7a3b32",
+    "secondary": "#f4f7f5"
+  },
+  {
+    "name": "Belgian B07 (BEL)",
+    "state": null,
+    "country": "BEL",
+    "kind": "national",
+    "division": "B",
+    "rating": 69,
+    "primary": "#3d6b2f",
+    "secondary": "#f4f7f5"
+  },
+  {
+    "name": "Belgian B08 (BEL)",
+    "state": null,
+    "country": "BEL",
+    "kind": "national",
+    "division": "B",
+    "rating": 69,
+    "primary": "#5c527f",
+    "secondary": "#f4f7f5"
+  },
+  {
+    "name": "Belgian B09 (BEL)",
+    "state": null,
+    "country": "BEL",
+    "kind": "national",
+    "division": "B",
+    "rating": 68,
+    "primary": "#296773",
+    "secondary": "#f4f7f5"
+  },
+  {
+    "name": "Belgian B10 (BEL)",
+    "state": null,
+    "country": "BEL",
+    "kind": "national",
+    "division": "B",
+    "rating": 68,
+    "primary": "#174a78",
+    "secondary": "#f4f7f5"
+  },
+  {
+    "name": "Belgian B11 (BEL)",
+    "state": null,
+    "country": "BEL",
+    "kind": "national",
+    "division": "B",
+    "rating": 68,
+    "primary": "#8b1e2d",
+    "secondary": "#f4f7f5"
+  },
+  {
+    "name": "Belgian B12 (BEL)",
+    "state": null,
+    "country": "BEL",
+    "kind": "national",
+    "division": "B",
+    "rating": 68,
+    "primary": "#1f6b48",
+    "secondary": "#f4f7f5"
+  },
+  {
+    "name": "Belgian B13 (BEL)",
+    "state": null,
+    "country": "BEL",
+    "kind": "national",
+    "division": "B",
+    "rating": 67,
+    "primary": "#6b3d87",
+    "secondary": "#f4f7f5"
+  },
+  {
+    "name": "Belgian B14 (BEL)",
+    "state": null,
+    "country": "BEL",
+    "kind": "national",
+    "division": "B",
+    "rating": 67,
+    "primary": "#a76917",
+    "secondary": "#f4f7f5"
+  },
+  {
+    "name": "Belgian B15 (BEL)",
+    "state": null,
+    "country": "BEL",
+    "kind": "national",
+    "division": "B",
+    "rating": 67,
+    "primary": "#2c596e",
+    "secondary": "#f4f7f5"
+  },
+  {
+    "name": "Belgian B16 (BEL)",
+    "state": null,
+    "country": "BEL",
+    "kind": "national",
+    "division": "B",
+    "rating": 67,
+    "primary": "#7a3b32",
+    "secondary": "#f4f7f5"
+  },
+  {
+    "name": "Belgian B17 (BEL)",
+    "state": null,
+    "country": "BEL",
+    "kind": "national",
+    "division": "B",
+    "rating": 66,
+    "primary": "#3d6b2f",
+    "secondary": "#f4f7f5"
+  },
+  {
+    "name": "Belgian B18 (BEL)",
+    "state": null,
+    "country": "BEL",
+    "kind": "national",
+    "division": "B",
+    "rating": 66,
+    "primary": "#5c527f",
+    "secondary": "#f4f7f5"
+  },
+  {
+    "name": "Belgian B19 (BEL)",
+    "state": null,
+    "country": "BEL",
+    "kind": "national",
+    "division": "B",
+    "rating": 66,
+    "primary": "#296773",
+    "secondary": "#f4f7f5"
+  },
+  {
+    "name": "Belgian B20 (BEL)",
+    "state": null,
+    "country": "BEL",
+    "kind": "national",
+    "division": "B",
+    "rating": 66,
+    "primary": "#174a78",
+    "secondary": "#f4f7f5"
+  },
+  {
+    "name": "Belgian C01 (BEL)",
+    "state": null,
+    "country": "BEL",
+    "kind": "national",
+    "division": "C",
+    "rating": 63,
+    "primary": "#8b1e2d",
+    "secondary": "#f4f7f5"
+  },
+  {
+    "name": "Belgian C02 (BEL)",
+    "state": null,
+    "country": "BEL",
+    "kind": "national",
+    "division": "C",
+    "rating": 63,
+    "primary": "#1f6b48",
+    "secondary": "#f4f7f5"
+  },
+  {
+    "name": "Belgian C03 (BEL)",
+    "state": null,
+    "country": "BEL",
+    "kind": "national",
+    "division": "C",
+    "rating": 63,
+    "primary": "#6b3d87",
+    "secondary": "#f4f7f5"
+  },
+  {
+    "name": "Belgian C04 (BEL)",
+    "state": null,
+    "country": "BEL",
+    "kind": "national",
+    "division": "C",
+    "rating": 63,
+    "primary": "#a76917",
+    "secondary": "#f4f7f5"
+  },
+  {
+    "name": "Belgian C05 (BEL)",
+    "state": null,
+    "country": "BEL",
+    "kind": "national",
+    "division": "C",
+    "rating": 62,
+    "primary": "#2c596e",
+    "secondary": "#f4f7f5"
+  },
+  {
+    "name": "Belgian C06 (BEL)",
+    "state": null,
+    "country": "BEL",
+    "kind": "national",
+    "division": "C",
+    "rating": 62,
+    "primary": "#7a3b32",
+    "secondary": "#f4f7f5"
+  },
+  {
+    "name": "Belgian C07 (BEL)",
+    "state": null,
+    "country": "BEL",
+    "kind": "national",
+    "division": "C",
+    "rating": 62,
+    "primary": "#3d6b2f",
+    "secondary": "#f4f7f5"
+  },
+  {
+    "name": "Belgian C08 (BEL)",
+    "state": null,
+    "country": "BEL",
+    "kind": "national",
+    "division": "C",
+    "rating": 62,
+    "primary": "#5c527f",
+    "secondary": "#f4f7f5"
+  },
+  {
+    "name": "Belgian C09 (BEL)",
+    "state": null,
+    "country": "BEL",
+    "kind": "national",
+    "division": "C",
+    "rating": 61,
+    "primary": "#296773",
+    "secondary": "#f4f7f5"
+  },
+  {
+    "name": "Belgian C10 (BEL)",
+    "state": null,
+    "country": "BEL",
+    "kind": "national",
+    "division": "C",
+    "rating": 61,
+    "primary": "#174a78",
+    "secondary": "#f4f7f5"
+  },
+  {
+    "name": "Belgian C11 (BEL)",
+    "state": null,
+    "country": "BEL",
+    "kind": "national",
+    "division": "C",
+    "rating": 61,
+    "primary": "#8b1e2d",
+    "secondary": "#f4f7f5"
+  },
+  {
+    "name": "Belgian C12 (BEL)",
+    "state": null,
+    "country": "BEL",
+    "kind": "national",
+    "division": "C",
+    "rating": 61,
+    "primary": "#1f6b48",
+    "secondary": "#f4f7f5"
+  },
+  {
+    "name": "Belgian C13 (BEL)",
+    "state": null,
+    "country": "BEL",
+    "kind": "national",
+    "division": "C",
+    "rating": 60,
+    "primary": "#6b3d87",
+    "secondary": "#f4f7f5"
+  },
+  {
+    "name": "Belgian C14 (BEL)",
+    "state": null,
+    "country": "BEL",
+    "kind": "national",
+    "division": "C",
+    "rating": 60,
+    "primary": "#a76917",
+    "secondary": "#f4f7f5"
+  },
+  {
+    "name": "Belgian C15 (BEL)",
+    "state": null,
+    "country": "BEL",
+    "kind": "national",
+    "division": "C",
+    "rating": 60,
+    "primary": "#2c596e",
+    "secondary": "#f4f7f5"
+  },
+  {
+    "name": "Belgian C16 (BEL)",
+    "state": null,
+    "country": "BEL",
+    "kind": "national",
+    "division": "C",
+    "rating": 60,
+    "primary": "#7a3b32",
+    "secondary": "#f4f7f5"
+  },
+  {
+    "name": "Belgian C17 (BEL)",
+    "state": null,
+    "country": "BEL",
+    "kind": "national",
+    "division": "C",
+    "rating": 59,
+    "primary": "#3d6b2f",
+    "secondary": "#f4f7f5"
+  },
+  {
+    "name": "Belgian C18 (BEL)",
+    "state": null,
+    "country": "BEL",
+    "kind": "national",
+    "division": "C",
+    "rating": 59,
+    "primary": "#5c527f",
+    "secondary": "#f4f7f5"
+  },
+  {
+    "name": "Belgian C19 (BEL)",
+    "state": null,
+    "country": "BEL",
+    "kind": "national",
+    "division": "C",
+    "rating": 59,
+    "primary": "#296773",
+    "secondary": "#f4f7f5"
+  },
+  {
+    "name": "Belgian C20 (BEL)",
+    "state": null,
+    "country": "BEL",
+    "kind": "national",
+    "division": "C",
+    "rating": 59,
+    "primary": "#174a78",
+    "secondary": "#f4f7f5"
+  },
+  {
+    "name": "Belgian D01 (BEL)",
+    "state": null,
+    "country": "BEL",
+    "kind": "national",
+    "division": "D",
+    "rating": 56,
+    "primary": "#8b1e2d",
+    "secondary": "#f4f7f5"
+  },
+  {
+    "name": "Belgian D02 (BEL)",
+    "state": null,
+    "country": "BEL",
+    "kind": "national",
+    "division": "D",
+    "rating": 56,
+    "primary": "#1f6b48",
+    "secondary": "#f4f7f5"
+  },
+  {
+    "name": "Belgian D03 (BEL)",
+    "state": null,
+    "country": "BEL",
+    "kind": "national",
+    "division": "D",
+    "rating": 56,
+    "primary": "#6b3d87",
+    "secondary": "#f4f7f5"
+  },
+  {
+    "name": "Belgian D04 (BEL)",
+    "state": null,
+    "country": "BEL",
+    "kind": "national",
+    "division": "D",
+    "rating": 56,
+    "primary": "#a76917",
+    "secondary": "#f4f7f5"
+  },
+  {
+    "name": "Belgian D05 (BEL)",
+    "state": null,
+    "country": "BEL",
+    "kind": "national",
+    "division": "D",
+    "rating": 55,
+    "primary": "#2c596e",
+    "secondary": "#f4f7f5"
+  },
+  {
+    "name": "Belgian D06 (BEL)",
+    "state": null,
+    "country": "BEL",
+    "kind": "national",
+    "division": "D",
+    "rating": 55,
+    "primary": "#7a3b32",
+    "secondary": "#f4f7f5"
+  },
+  {
+    "name": "Belgian D07 (BEL)",
+    "state": null,
+    "country": "BEL",
+    "kind": "national",
+    "division": "D",
+    "rating": 55,
+    "primary": "#3d6b2f",
+    "secondary": "#f4f7f5"
+  },
+  {
+    "name": "Belgian D08 (BEL)",
+    "state": null,
+    "country": "BEL",
+    "kind": "national",
+    "division": "D",
+    "rating": 55,
+    "primary": "#5c527f",
+    "secondary": "#f4f7f5"
+  },
+  {
+    "name": "Belgian D09 (BEL)",
+    "state": null,
+    "country": "BEL",
+    "kind": "national",
+    "division": "D",
+    "rating": 54,
+    "primary": "#296773",
+    "secondary": "#f4f7f5"
+  },
+  {
+    "name": "Belgian D10 (BEL)",
+    "state": null,
+    "country": "BEL",
+    "kind": "national",
+    "division": "D",
+    "rating": 54,
+    "primary": "#174a78",
+    "secondary": "#f4f7f5"
+  },
+  {
+    "name": "Belgian D11 (BEL)",
+    "state": null,
+    "country": "BEL",
+    "kind": "national",
+    "division": "D",
+    "rating": 54,
+    "primary": "#8b1e2d",
+    "secondary": "#f4f7f5"
+  },
+  {
+    "name": "Belgian D12 (BEL)",
+    "state": null,
+    "country": "BEL",
+    "kind": "national",
+    "division": "D",
+    "rating": 54,
+    "primary": "#1f6b48",
+    "secondary": "#f4f7f5"
+  },
+  {
+    "name": "Belgian D13 (BEL)",
+    "state": null,
+    "country": "BEL",
+    "kind": "national",
+    "division": "D",
+    "rating": 53,
+    "primary": "#6b3d87",
+    "secondary": "#f4f7f5"
+  },
+  {
+    "name": "Belgian D14 (BEL)",
+    "state": null,
+    "country": "BEL",
+    "kind": "national",
+    "division": "D",
+    "rating": 53,
+    "primary": "#a76917",
+    "secondary": "#f4f7f5"
+  },
+  {
+    "name": "Belgian D15 (BEL)",
+    "state": null,
+    "country": "BEL",
+    "kind": "national",
+    "division": "D",
+    "rating": 53,
+    "primary": "#2c596e",
+    "secondary": "#f4f7f5"
+  },
+  {
+    "name": "Belgian D16 (BEL)",
+    "state": null,
+    "country": "BEL",
+    "kind": "national",
+    "division": "D",
+    "rating": 53,
+    "primary": "#7a3b32",
+    "secondary": "#f4f7f5"
+  },
+  {
+    "name": "Belgian D17 (BEL)",
+    "state": null,
+    "country": "BEL",
+    "kind": "national",
+    "division": "D",
+    "rating": 52,
+    "primary": "#3d6b2f",
+    "secondary": "#f4f7f5"
+  },
+  {
+    "name": "Belgian D18 (BEL)",
+    "state": null,
+    "country": "BEL",
+    "kind": "national",
+    "division": "D",
+    "rating": 52,
+    "primary": "#5c527f",
+    "secondary": "#f4f7f5"
+  },
+  {
+    "name": "Belgian D19 (BEL)",
+    "state": null,
+    "country": "BEL",
+    "kind": "national",
+    "division": "D",
+    "rating": 52,
+    "primary": "#296773",
+    "secondary": "#f4f7f5"
+  },
+  {
+    "name": "Belgian D20 (BEL)",
+    "state": null,
+    "country": "BEL",
+    "kind": "national",
+    "division": "D",
+    "rating": 52,
+    "primary": "#174a78",
+    "secondary": "#f4f7f5"
+  },
+  {
+    "name": "Galatasaray (TUR)",
+    "state": null,
+    "country": "TUR",
+    "kind": "national",
+    "division": "A",
+    "rating": 78,
+    "primary": "#1f6b48",
+    "secondary": "#f4f7f5"
+  },
+  {
+    "name": "Fenerbahçe (TUR)",
+    "state": null,
+    "country": "TUR",
+    "kind": "national",
+    "division": "A",
+    "rating": 78,
+    "primary": "#6b3d87",
+    "secondary": "#f4f7f5"
+  },
+  {
+    "name": "Beşiktaş (TUR)",
+    "state": null,
+    "country": "TUR",
+    "kind": "national",
+    "division": "A",
+    "rating": 78,
+    "primary": "#a76917",
+    "secondary": "#f4f7f5"
+  },
+  {
+    "name": "Trabzonspor (TUR)",
+    "state": null,
+    "country": "TUR",
+    "kind": "national",
+    "division": "A",
+    "rating": 78,
+    "primary": "#2c596e",
+    "secondary": "#f4f7f5"
+  },
+  {
+    "name": "Başakşehir (TUR)",
+    "state": null,
+    "country": "TUR",
+    "kind": "national",
+    "division": "A",
+    "rating": 77,
+    "primary": "#7a3b32",
+    "secondary": "#f4f7f5"
+  },
+  {
+    "name": "Sivasspor (TUR)",
+    "state": null,
+    "country": "TUR",
+    "kind": "national",
+    "division": "A",
+    "rating": 77,
+    "primary": "#3d6b2f",
+    "secondary": "#f4f7f5"
+  },
+  {
+    "name": "Kasımpaşa (TUR)",
+    "state": null,
+    "country": "TUR",
+    "kind": "national",
+    "division": "A",
+    "rating": 77,
+    "primary": "#5c527f",
+    "secondary": "#f4f7f5"
+  },
+  {
+    "name": "Alanyaspor (TUR)",
+    "state": null,
+    "country": "TUR",
+    "kind": "national",
+    "division": "A",
+    "rating": 77,
+    "primary": "#296773",
+    "secondary": "#f4f7f5"
+  },
+  {
+    "name": "Antalyaspor (TUR)",
+    "state": null,
+    "country": "TUR",
+    "kind": "national",
+    "division": "A",
+    "rating": 76,
+    "primary": "#174a78",
+    "secondary": "#f4f7f5"
+  },
+  {
+    "name": "Konyaspor (TUR)",
+    "state": null,
+    "country": "TUR",
+    "kind": "national",
+    "division": "A",
+    "rating": 76,
+    "primary": "#8b1e2d",
+    "secondary": "#f4f7f5"
+  },
+  {
+    "name": "Kayserispor (TUR)",
+    "state": null,
+    "country": "TUR",
+    "kind": "national",
+    "division": "A",
+    "rating": 76,
+    "primary": "#1f6b48",
+    "secondary": "#f4f7f5"
+  },
+  {
+    "name": "Samsunspor (TUR)",
+    "state": null,
+    "country": "TUR",
+    "kind": "national",
+    "division": "A",
+    "rating": 76,
+    "primary": "#6b3d87",
+    "secondary": "#f4f7f5"
+  },
+  {
+    "name": "Rizespor (TUR)",
+    "state": null,
+    "country": "TUR",
+    "kind": "national",
+    "division": "A",
+    "rating": 75,
+    "primary": "#a76917",
+    "secondary": "#f4f7f5"
+  },
+  {
+    "name": "Gaziantep FK (TUR)",
+    "state": null,
+    "country": "TUR",
+    "kind": "national",
+    "division": "A",
+    "rating": 75,
+    "primary": "#2c596e",
+    "secondary": "#f4f7f5"
+  },
+  {
+    "name": "Ankaragücü (TUR)",
+    "state": null,
+    "country": "TUR",
+    "kind": "national",
+    "division": "A",
+    "rating": 75,
+    "primary": "#7a3b32",
+    "secondary": "#f4f7f5"
+  },
+  {
+    "name": "Göztepe (TUR)",
+    "state": null,
+    "country": "TUR",
+    "kind": "national",
+    "division": "A",
+    "rating": 75,
+    "primary": "#3d6b2f",
+    "secondary": "#f4f7f5"
+  },
+  {
+    "name": "Bursaspor (TUR)",
+    "state": null,
+    "country": "TUR",
+    "kind": "national",
+    "division": "A",
+    "rating": 74,
+    "primary": "#5c527f",
+    "secondary": "#f4f7f5"
+  },
+  {
+    "name": "Gençlerbirliği (TUR)",
+    "state": null,
+    "country": "TUR",
+    "kind": "national",
+    "division": "A",
+    "rating": 74,
+    "primary": "#296773",
+    "secondary": "#f4f7f5"
+  },
+  {
+    "name": "Adana Demirspor (TUR)",
+    "state": null,
+    "country": "TUR",
+    "kind": "national",
+    "division": "A",
+    "rating": 74,
+    "primary": "#174a78",
+    "secondary": "#f4f7f5"
+  },
+  {
+    "name": "Karagümrük (TUR)",
+    "state": null,
+    "country": "TUR",
+    "kind": "national",
+    "division": "A",
+    "rating": 74,
+    "primary": "#8b1e2d",
+    "secondary": "#f4f7f5"
+  },
+  {
+    "name": "Turkish B01 (TUR)",
+    "state": null,
+    "country": "TUR",
+    "kind": "national",
+    "division": "B",
+    "rating": 71,
+    "primary": "#1f6b48",
+    "secondary": "#f4f7f5"
+  },
+  {
+    "name": "Turkish B02 (TUR)",
+    "state": null,
+    "country": "TUR",
+    "kind": "national",
+    "division": "B",
+    "rating": 71,
+    "primary": "#6b3d87",
+    "secondary": "#f4f7f5"
+  },
+  {
+    "name": "Turkish B03 (TUR)",
+    "state": null,
+    "country": "TUR",
+    "kind": "national",
+    "division": "B",
+    "rating": 71,
+    "primary": "#a76917",
+    "secondary": "#f4f7f5"
+  },
+  {
+    "name": "Turkish B04 (TUR)",
+    "state": null,
+    "country": "TUR",
+    "kind": "national",
+    "division": "B",
+    "rating": 71,
+    "primary": "#2c596e",
+    "secondary": "#f4f7f5"
+  },
+  {
+    "name": "Turkish B05 (TUR)",
+    "state": null,
+    "country": "TUR",
+    "kind": "national",
+    "division": "B",
+    "rating": 70,
+    "primary": "#7a3b32",
+    "secondary": "#f4f7f5"
+  },
+  {
+    "name": "Turkish B06 (TUR)",
+    "state": null,
+    "country": "TUR",
+    "kind": "national",
+    "division": "B",
+    "rating": 70,
+    "primary": "#3d6b2f",
+    "secondary": "#f4f7f5"
+  },
+  {
+    "name": "Turkish B07 (TUR)",
+    "state": null,
+    "country": "TUR",
+    "kind": "national",
+    "division": "B",
+    "rating": 70,
+    "primary": "#5c527f",
+    "secondary": "#f4f7f5"
+  },
+  {
+    "name": "Turkish B08 (TUR)",
+    "state": null,
+    "country": "TUR",
+    "kind": "national",
+    "division": "B",
+    "rating": 70,
+    "primary": "#296773",
+    "secondary": "#f4f7f5"
+  },
+  {
+    "name": "Turkish B09 (TUR)",
+    "state": null,
+    "country": "TUR",
+    "kind": "national",
+    "division": "B",
+    "rating": 69,
+    "primary": "#174a78",
+    "secondary": "#f4f7f5"
+  },
+  {
+    "name": "Turkish B10 (TUR)",
+    "state": null,
+    "country": "TUR",
+    "kind": "national",
+    "division": "B",
+    "rating": 69,
+    "primary": "#8b1e2d",
+    "secondary": "#f4f7f5"
+  },
+  {
+    "name": "Turkish B11 (TUR)",
+    "state": null,
+    "country": "TUR",
+    "kind": "national",
+    "division": "B",
+    "rating": 69,
+    "primary": "#1f6b48",
+    "secondary": "#f4f7f5"
+  },
+  {
+    "name": "Turkish B12 (TUR)",
+    "state": null,
+    "country": "TUR",
+    "kind": "national",
+    "division": "B",
+    "rating": 69,
+    "primary": "#6b3d87",
+    "secondary": "#f4f7f5"
+  },
+  {
+    "name": "Turkish B13 (TUR)",
+    "state": null,
+    "country": "TUR",
+    "kind": "national",
+    "division": "B",
+    "rating": 68,
+    "primary": "#a76917",
+    "secondary": "#f4f7f5"
+  },
+  {
+    "name": "Turkish B14 (TUR)",
+    "state": null,
+    "country": "TUR",
+    "kind": "national",
+    "division": "B",
+    "rating": 68,
+    "primary": "#2c596e",
+    "secondary": "#f4f7f5"
+  },
+  {
+    "name": "Turkish B15 (TUR)",
+    "state": null,
+    "country": "TUR",
+    "kind": "national",
+    "division": "B",
+    "rating": 68,
+    "primary": "#7a3b32",
+    "secondary": "#f4f7f5"
+  },
+  {
+    "name": "Turkish B16 (TUR)",
+    "state": null,
+    "country": "TUR",
+    "kind": "national",
+    "division": "B",
+    "rating": 68,
+    "primary": "#3d6b2f",
+    "secondary": "#f4f7f5"
+  },
+  {
+    "name": "Turkish B17 (TUR)",
+    "state": null,
+    "country": "TUR",
+    "kind": "national",
+    "division": "B",
+    "rating": 67,
+    "primary": "#5c527f",
+    "secondary": "#f4f7f5"
+  },
+  {
+    "name": "Turkish B18 (TUR)",
+    "state": null,
+    "country": "TUR",
+    "kind": "national",
+    "division": "B",
+    "rating": 67,
+    "primary": "#296773",
+    "secondary": "#f4f7f5"
+  },
+  {
+    "name": "Turkish B19 (TUR)",
+    "state": null,
+    "country": "TUR",
+    "kind": "national",
+    "division": "B",
+    "rating": 67,
+    "primary": "#174a78",
+    "secondary": "#f4f7f5"
+  },
+  {
+    "name": "Turkish B20 (TUR)",
+    "state": null,
+    "country": "TUR",
+    "kind": "national",
+    "division": "B",
+    "rating": 67,
+    "primary": "#8b1e2d",
+    "secondary": "#f4f7f5"
+  },
+  {
+    "name": "Turkish C01 (TUR)",
+    "state": null,
+    "country": "TUR",
+    "kind": "national",
+    "division": "C",
+    "rating": 64,
+    "primary": "#1f6b48",
+    "secondary": "#f4f7f5"
+  },
+  {
+    "name": "Turkish C02 (TUR)",
+    "state": null,
+    "country": "TUR",
+    "kind": "national",
+    "division": "C",
+    "rating": 64,
+    "primary": "#6b3d87",
+    "secondary": "#f4f7f5"
+  },
+  {
+    "name": "Turkish C03 (TUR)",
+    "state": null,
+    "country": "TUR",
+    "kind": "national",
+    "division": "C",
+    "rating": 64,
+    "primary": "#a76917",
+    "secondary": "#f4f7f5"
+  },
+  {
+    "name": "Turkish C04 (TUR)",
+    "state": null,
+    "country": "TUR",
+    "kind": "national",
+    "division": "C",
+    "rating": 64,
+    "primary": "#2c596e",
+    "secondary": "#f4f7f5"
+  },
+  {
+    "name": "Turkish C05 (TUR)",
+    "state": null,
+    "country": "TUR",
+    "kind": "national",
+    "division": "C",
+    "rating": 63,
+    "primary": "#7a3b32",
+    "secondary": "#f4f7f5"
+  },
+  {
+    "name": "Turkish C06 (TUR)",
+    "state": null,
+    "country": "TUR",
+    "kind": "national",
+    "division": "C",
+    "rating": 63,
+    "primary": "#3d6b2f",
+    "secondary": "#f4f7f5"
+  },
+  {
+    "name": "Turkish C07 (TUR)",
+    "state": null,
+    "country": "TUR",
+    "kind": "national",
+    "division": "C",
+    "rating": 63,
+    "primary": "#5c527f",
+    "secondary": "#f4f7f5"
+  },
+  {
+    "name": "Turkish C08 (TUR)",
+    "state": null,
+    "country": "TUR",
+    "kind": "national",
+    "division": "C",
+    "rating": 63,
+    "primary": "#296773",
+    "secondary": "#f4f7f5"
+  },
+  {
+    "name": "Turkish C09 (TUR)",
+    "state": null,
+    "country": "TUR",
+    "kind": "national",
+    "division": "C",
+    "rating": 62,
+    "primary": "#174a78",
+    "secondary": "#f4f7f5"
+  },
+  {
+    "name": "Turkish C10 (TUR)",
+    "state": null,
+    "country": "TUR",
+    "kind": "national",
+    "division": "C",
+    "rating": 62,
+    "primary": "#8b1e2d",
+    "secondary": "#f4f7f5"
+  },
+  {
+    "name": "Turkish C11 (TUR)",
+    "state": null,
+    "country": "TUR",
+    "kind": "national",
+    "division": "C",
+    "rating": 62,
+    "primary": "#1f6b48",
+    "secondary": "#f4f7f5"
+  },
+  {
+    "name": "Turkish C12 (TUR)",
+    "state": null,
+    "country": "TUR",
+    "kind": "national",
+    "division": "C",
+    "rating": 62,
+    "primary": "#6b3d87",
+    "secondary": "#f4f7f5"
+  },
+  {
+    "name": "Turkish C13 (TUR)",
+    "state": null,
+    "country": "TUR",
+    "kind": "national",
+    "division": "C",
+    "rating": 61,
+    "primary": "#a76917",
+    "secondary": "#f4f7f5"
+  },
+  {
+    "name": "Turkish C14 (TUR)",
+    "state": null,
+    "country": "TUR",
+    "kind": "national",
+    "division": "C",
+    "rating": 61,
+    "primary": "#2c596e",
+    "secondary": "#f4f7f5"
+  },
+  {
+    "name": "Turkish C15 (TUR)",
+    "state": null,
+    "country": "TUR",
+    "kind": "national",
+    "division": "C",
+    "rating": 61,
+    "primary": "#7a3b32",
+    "secondary": "#f4f7f5"
+  },
+  {
+    "name": "Turkish C16 (TUR)",
+    "state": null,
+    "country": "TUR",
+    "kind": "national",
+    "division": "C",
+    "rating": 61,
+    "primary": "#3d6b2f",
+    "secondary": "#f4f7f5"
+  },
+  {
+    "name": "Turkish C17 (TUR)",
+    "state": null,
+    "country": "TUR",
+    "kind": "national",
+    "division": "C",
+    "rating": 60,
+    "primary": "#5c527f",
+    "secondary": "#f4f7f5"
+  },
+  {
+    "name": "Turkish C18 (TUR)",
+    "state": null,
+    "country": "TUR",
+    "kind": "national",
+    "division": "C",
+    "rating": 60,
+    "primary": "#296773",
+    "secondary": "#f4f7f5"
+  },
+  {
+    "name": "Turkish C19 (TUR)",
+    "state": null,
+    "country": "TUR",
+    "kind": "national",
+    "division": "C",
+    "rating": 60,
+    "primary": "#174a78",
+    "secondary": "#f4f7f5"
+  },
+  {
+    "name": "Turkish C20 (TUR)",
+    "state": null,
+    "country": "TUR",
+    "kind": "national",
+    "division": "C",
+    "rating": 60,
+    "primary": "#8b1e2d",
+    "secondary": "#f4f7f5"
+  },
+  {
+    "name": "Turkish D01 (TUR)",
+    "state": null,
+    "country": "TUR",
+    "kind": "national",
+    "division": "D",
+    "rating": 57,
+    "primary": "#1f6b48",
+    "secondary": "#f4f7f5"
+  },
+  {
+    "name": "Turkish D02 (TUR)",
+    "state": null,
+    "country": "TUR",
+    "kind": "national",
+    "division": "D",
+    "rating": 57,
+    "primary": "#6b3d87",
+    "secondary": "#f4f7f5"
+  },
+  {
+    "name": "Turkish D03 (TUR)",
+    "state": null,
+    "country": "TUR",
+    "kind": "national",
+    "division": "D",
+    "rating": 57,
+    "primary": "#a76917",
+    "secondary": "#f4f7f5"
+  },
+  {
+    "name": "Turkish D04 (TUR)",
+    "state": null,
+    "country": "TUR",
+    "kind": "national",
+    "division": "D",
+    "rating": 57,
+    "primary": "#2c596e",
+    "secondary": "#f4f7f5"
+  },
+  {
+    "name": "Turkish D05 (TUR)",
+    "state": null,
+    "country": "TUR",
+    "kind": "national",
+    "division": "D",
+    "rating": 56,
+    "primary": "#7a3b32",
+    "secondary": "#f4f7f5"
+  },
+  {
+    "name": "Turkish D06 (TUR)",
+    "state": null,
+    "country": "TUR",
+    "kind": "national",
+    "division": "D",
+    "rating": 56,
+    "primary": "#3d6b2f",
+    "secondary": "#f4f7f5"
+  },
+  {
+    "name": "Turkish D07 (TUR)",
+    "state": null,
+    "country": "TUR",
+    "kind": "national",
+    "division": "D",
+    "rating": 56,
+    "primary": "#5c527f",
+    "secondary": "#f4f7f5"
+  },
+  {
+    "name": "Turkish D08 (TUR)",
+    "state": null,
+    "country": "TUR",
+    "kind": "national",
+    "division": "D",
+    "rating": 56,
+    "primary": "#296773",
+    "secondary": "#f4f7f5"
+  },
+  {
+    "name": "Turkish D09 (TUR)",
+    "state": null,
+    "country": "TUR",
+    "kind": "national",
+    "division": "D",
+    "rating": 55,
+    "primary": "#174a78",
+    "secondary": "#f4f7f5"
+  },
+  {
+    "name": "Turkish D10 (TUR)",
+    "state": null,
+    "country": "TUR",
+    "kind": "national",
+    "division": "D",
+    "rating": 55,
+    "primary": "#8b1e2d",
+    "secondary": "#f4f7f5"
+  },
+  {
+    "name": "Turkish D11 (TUR)",
+    "state": null,
+    "country": "TUR",
+    "kind": "national",
+    "division": "D",
+    "rating": 55,
+    "primary": "#1f6b48",
+    "secondary": "#f4f7f5"
+  },
+  {
+    "name": "Turkish D12 (TUR)",
+    "state": null,
+    "country": "TUR",
+    "kind": "national",
+    "division": "D",
+    "rating": 55,
+    "primary": "#6b3d87",
+    "secondary": "#f4f7f5"
+  },
+  {
+    "name": "Turkish D13 (TUR)",
+    "state": null,
+    "country": "TUR",
+    "kind": "national",
+    "division": "D",
+    "rating": 54,
+    "primary": "#a76917",
+    "secondary": "#f4f7f5"
+  },
+  {
+    "name": "Turkish D14 (TUR)",
+    "state": null,
+    "country": "TUR",
+    "kind": "national",
+    "division": "D",
+    "rating": 54,
+    "primary": "#2c596e",
+    "secondary": "#f4f7f5"
+  },
+  {
+    "name": "Turkish D15 (TUR)",
+    "state": null,
+    "country": "TUR",
+    "kind": "national",
+    "division": "D",
+    "rating": 54,
+    "primary": "#7a3b32",
+    "secondary": "#f4f7f5"
+  },
+  {
+    "name": "Turkish D16 (TUR)",
+    "state": null,
+    "country": "TUR",
+    "kind": "national",
+    "division": "D",
+    "rating": 54,
+    "primary": "#3d6b2f",
+    "secondary": "#f4f7f5"
+  },
+  {
+    "name": "Turkish D17 (TUR)",
+    "state": null,
+    "country": "TUR",
+    "kind": "national",
+    "division": "D",
+    "rating": 53,
+    "primary": "#5c527f",
+    "secondary": "#f4f7f5"
+  },
+  {
+    "name": "Turkish D18 (TUR)",
+    "state": null,
+    "country": "TUR",
+    "kind": "national",
+    "division": "D",
+    "rating": 53,
+    "primary": "#296773",
+    "secondary": "#f4f7f5"
+  },
+  {
+    "name": "Turkish D19 (TUR)",
+    "state": null,
+    "country": "TUR",
+    "kind": "national",
+    "division": "D",
+    "rating": 53,
+    "primary": "#174a78",
+    "secondary": "#f4f7f5"
+  },
+  {
+    "name": "Turkish D20 (TUR)",
+    "state": null,
+    "country": "TUR",
+    "kind": "national",
+    "division": "D",
+    "rating": 53,
+    "primary": "#8b1e2d",
+    "secondary": "#f4f7f5"
+  },
+  {
+    "name": "Celtic (SCO)",
+    "state": null,
+    "country": "SCO",
+    "kind": "national",
+    "division": "A",
+    "rating": 76,
+    "primary": "#6b3d87",
+    "secondary": "#f4f7f5"
+  },
+  {
+    "name": "Rangers (SCO)",
+    "state": null,
+    "country": "SCO",
+    "kind": "national",
+    "division": "A",
+    "rating": 76,
+    "primary": "#a76917",
+    "secondary": "#f4f7f5"
+  },
+  {
+    "name": "Aberdeen (SCO)",
+    "state": null,
+    "country": "SCO",
+    "kind": "national",
+    "division": "A",
+    "rating": 76,
+    "primary": "#2c596e",
+    "secondary": "#f4f7f5"
+  },
+  {
+    "name": "Hearts (SCO)",
+    "state": null,
+    "country": "SCO",
+    "kind": "national",
+    "division": "A",
+    "rating": 76,
+    "primary": "#7a3b32",
+    "secondary": "#f4f7f5"
+  },
+  {
+    "name": "Hibernian (SCO)",
+    "state": null,
+    "country": "SCO",
+    "kind": "national",
+    "division": "A",
+    "rating": 75,
+    "primary": "#3d6b2f",
+    "secondary": "#f4f7f5"
+  },
+  {
+    "name": "Dundee United (SCO)",
+    "state": null,
+    "country": "SCO",
+    "kind": "national",
+    "division": "A",
+    "rating": 75,
+    "primary": "#5c527f",
+    "secondary": "#f4f7f5"
+  },
+  {
+    "name": "Motherwell (SCO)",
+    "state": null,
+    "country": "SCO",
+    "kind": "national",
+    "division": "A",
+    "rating": 75,
+    "primary": "#296773",
+    "secondary": "#f4f7f5"
+  },
+  {
+    "name": "Kilmarnock (SCO)",
+    "state": null,
+    "country": "SCO",
+    "kind": "national",
+    "division": "A",
+    "rating": 75,
+    "primary": "#174a78",
+    "secondary": "#f4f7f5"
+  },
+  {
+    "name": "St Mirren (SCO)",
+    "state": null,
+    "country": "SCO",
+    "kind": "national",
+    "division": "A",
+    "rating": 74,
+    "primary": "#8b1e2d",
+    "secondary": "#f4f7f5"
+  },
+  {
+    "name": "Dundee FC (SCO)",
+    "state": null,
+    "country": "SCO",
+    "kind": "national",
+    "division": "A",
+    "rating": 74,
+    "primary": "#1f6b48",
+    "secondary": "#f4f7f5"
+  },
+  {
+    "name": "St Johnstone (SCO)",
+    "state": null,
+    "country": "SCO",
+    "kind": "national",
+    "division": "A",
+    "rating": 74,
+    "primary": "#6b3d87",
+    "secondary": "#f4f7f5"
+  },
+  {
+    "name": "Ross County (SCO)",
+    "state": null,
+    "country": "SCO",
+    "kind": "national",
+    "division": "A",
+    "rating": 74,
+    "primary": "#a76917",
+    "secondary": "#f4f7f5"
+  },
+  {
+    "name": "Livingston (SCO)",
+    "state": null,
+    "country": "SCO",
+    "kind": "national",
+    "division": "A",
+    "rating": 73,
+    "primary": "#2c596e",
+    "secondary": "#f4f7f5"
+  },
+  {
+    "name": "Falkirk (SCO)",
+    "state": null,
+    "country": "SCO",
+    "kind": "national",
+    "division": "A",
+    "rating": 73,
+    "primary": "#7a3b32",
+    "secondary": "#f4f7f5"
+  },
+  {
+    "name": "Partick Thistle (SCO)",
+    "state": null,
+    "country": "SCO",
+    "kind": "national",
+    "division": "A",
+    "rating": 73,
+    "primary": "#3d6b2f",
+    "secondary": "#f4f7f5"
+  },
+  {
+    "name": "Raith Rovers (SCO)",
+    "state": null,
+    "country": "SCO",
+    "kind": "national",
+    "division": "A",
+    "rating": 73,
+    "primary": "#5c527f",
+    "secondary": "#f4f7f5"
+  },
+  {
+    "name": "Queen's Park (SCO)",
+    "state": null,
+    "country": "SCO",
+    "kind": "national",
+    "division": "A",
+    "rating": 72,
+    "primary": "#296773",
+    "secondary": "#f4f7f5"
+  },
+  {
+    "name": "Dunfermline (SCO)",
+    "state": null,
+    "country": "SCO",
+    "kind": "national",
+    "division": "A",
+    "rating": 72,
+    "primary": "#174a78",
+    "secondary": "#f4f7f5"
+  },
+  {
+    "name": "Inverness CT (SCO)",
+    "state": null,
+    "country": "SCO",
+    "kind": "national",
+    "division": "A",
+    "rating": 72,
+    "primary": "#8b1e2d",
+    "secondary": "#f4f7f5"
+  },
+  {
+    "name": "Hamilton (SCO)",
+    "state": null,
+    "country": "SCO",
+    "kind": "national",
+    "division": "A",
+    "rating": 72,
+    "primary": "#1f6b48",
+    "secondary": "#f4f7f5"
+  },
+  {
+    "name": "Scottish B01 (SCO)",
+    "state": null,
+    "country": "SCO",
+    "kind": "national",
+    "division": "B",
+    "rating": 69,
+    "primary": "#6b3d87",
+    "secondary": "#f4f7f5"
+  },
+  {
+    "name": "Scottish B02 (SCO)",
+    "state": null,
+    "country": "SCO",
+    "kind": "national",
+    "division": "B",
+    "rating": 69,
+    "primary": "#a76917",
+    "secondary": "#f4f7f5"
+  },
+  {
+    "name": "Scottish B03 (SCO)",
+    "state": null,
+    "country": "SCO",
+    "kind": "national",
+    "division": "B",
+    "rating": 69,
+    "primary": "#2c596e",
+    "secondary": "#f4f7f5"
+  },
+  {
+    "name": "Scottish B04 (SCO)",
+    "state": null,
+    "country": "SCO",
+    "kind": "national",
+    "division": "B",
+    "rating": 69,
+    "primary": "#7a3b32",
+    "secondary": "#f4f7f5"
+  },
+  {
+    "name": "Scottish B05 (SCO)",
+    "state": null,
+    "country": "SCO",
+    "kind": "national",
+    "division": "B",
+    "rating": 68,
+    "primary": "#3d6b2f",
+    "secondary": "#f4f7f5"
+  },
+  {
+    "name": "Scottish B06 (SCO)",
+    "state": null,
+    "country": "SCO",
+    "kind": "national",
+    "division": "B",
+    "rating": 68,
+    "primary": "#5c527f",
+    "secondary": "#f4f7f5"
+  },
+  {
+    "name": "Scottish B07 (SCO)",
+    "state": null,
+    "country": "SCO",
+    "kind": "national",
+    "division": "B",
+    "rating": 68,
+    "primary": "#296773",
+    "secondary": "#f4f7f5"
+  },
+  {
+    "name": "Scottish B08 (SCO)",
+    "state": null,
+    "country": "SCO",
+    "kind": "national",
+    "division": "B",
+    "rating": 68,
+    "primary": "#174a78",
+    "secondary": "#f4f7f5"
+  },
+  {
+    "name": "Scottish B09 (SCO)",
+    "state": null,
+    "country": "SCO",
+    "kind": "national",
+    "division": "B",
+    "rating": 67,
+    "primary": "#8b1e2d",
+    "secondary": "#f4f7f5"
+  },
+  {
+    "name": "Scottish B10 (SCO)",
+    "state": null,
+    "country": "SCO",
+    "kind": "national",
+    "division": "B",
+    "rating": 67,
+    "primary": "#1f6b48",
+    "secondary": "#f4f7f5"
+  },
+  {
+    "name": "Scottish B11 (SCO)",
+    "state": null,
+    "country": "SCO",
+    "kind": "national",
+    "division": "B",
+    "rating": 67,
+    "primary": "#6b3d87",
+    "secondary": "#f4f7f5"
+  },
+  {
+    "name": "Scottish B12 (SCO)",
+    "state": null,
+    "country": "SCO",
+    "kind": "national",
+    "division": "B",
+    "rating": 67,
+    "primary": "#a76917",
+    "secondary": "#f4f7f5"
+  },
+  {
+    "name": "Scottish B13 (SCO)",
+    "state": null,
+    "country": "SCO",
+    "kind": "national",
+    "division": "B",
+    "rating": 66,
+    "primary": "#2c596e",
+    "secondary": "#f4f7f5"
+  },
+  {
+    "name": "Scottish B14 (SCO)",
+    "state": null,
+    "country": "SCO",
+    "kind": "national",
+    "division": "B",
+    "rating": 66,
+    "primary": "#7a3b32",
+    "secondary": "#f4f7f5"
+  },
+  {
+    "name": "Scottish B15 (SCO)",
+    "state": null,
+    "country": "SCO",
+    "kind": "national",
+    "division": "B",
+    "rating": 66,
+    "primary": "#3d6b2f",
+    "secondary": "#f4f7f5"
+  },
+  {
+    "name": "Scottish B16 (SCO)",
+    "state": null,
+    "country": "SCO",
+    "kind": "national",
+    "division": "B",
+    "rating": 66,
+    "primary": "#5c527f",
+    "secondary": "#f4f7f5"
+  },
+  {
+    "name": "Scottish B17 (SCO)",
+    "state": null,
+    "country": "SCO",
+    "kind": "national",
+    "division": "B",
+    "rating": 65,
+    "primary": "#296773",
+    "secondary": "#f4f7f5"
+  },
+  {
+    "name": "Scottish B18 (SCO)",
+    "state": null,
+    "country": "SCO",
+    "kind": "national",
+    "division": "B",
+    "rating": 65,
+    "primary": "#174a78",
+    "secondary": "#f4f7f5"
+  },
+  {
+    "name": "Scottish B19 (SCO)",
+    "state": null,
+    "country": "SCO",
+    "kind": "national",
+    "division": "B",
+    "rating": 65,
+    "primary": "#8b1e2d",
+    "secondary": "#f4f7f5"
+  },
+  {
+    "name": "Scottish B20 (SCO)",
+    "state": null,
+    "country": "SCO",
+    "kind": "national",
+    "division": "B",
+    "rating": 65,
+    "primary": "#1f6b48",
+    "secondary": "#f4f7f5"
+  },
+  {
+    "name": "Scottish C01 (SCO)",
+    "state": null,
+    "country": "SCO",
+    "kind": "national",
+    "division": "C",
+    "rating": 62,
+    "primary": "#6b3d87",
+    "secondary": "#f4f7f5"
+  },
+  {
+    "name": "Scottish C02 (SCO)",
+    "state": null,
+    "country": "SCO",
+    "kind": "national",
+    "division": "C",
+    "rating": 62,
+    "primary": "#a76917",
+    "secondary": "#f4f7f5"
+  },
+  {
+    "name": "Scottish C03 (SCO)",
+    "state": null,
+    "country": "SCO",
+    "kind": "national",
+    "division": "C",
+    "rating": 62,
+    "primary": "#2c596e",
+    "secondary": "#f4f7f5"
+  },
+  {
+    "name": "Scottish C04 (SCO)",
+    "state": null,
+    "country": "SCO",
+    "kind": "national",
+    "division": "C",
+    "rating": 62,
+    "primary": "#7a3b32",
+    "secondary": "#f4f7f5"
+  },
+  {
+    "name": "Scottish C05 (SCO)",
+    "state": null,
+    "country": "SCO",
+    "kind": "national",
+    "division": "C",
+    "rating": 61,
+    "primary": "#3d6b2f",
+    "secondary": "#f4f7f5"
+  },
+  {
+    "name": "Scottish C06 (SCO)",
+    "state": null,
+    "country": "SCO",
+    "kind": "national",
+    "division": "C",
+    "rating": 61,
+    "primary": "#5c527f",
+    "secondary": "#f4f7f5"
+  },
+  {
+    "name": "Scottish C07 (SCO)",
+    "state": null,
+    "country": "SCO",
+    "kind": "national",
+    "division": "C",
+    "rating": 61,
+    "primary": "#296773",
+    "secondary": "#f4f7f5"
+  },
+  {
+    "name": "Scottish C08 (SCO)",
+    "state": null,
+    "country": "SCO",
+    "kind": "national",
+    "division": "C",
+    "rating": 61,
+    "primary": "#174a78",
+    "secondary": "#f4f7f5"
+  },
+  {
+    "name": "Scottish C09 (SCO)",
+    "state": null,
+    "country": "SCO",
+    "kind": "national",
+    "division": "C",
+    "rating": 60,
+    "primary": "#8b1e2d",
+    "secondary": "#f4f7f5"
+  },
+  {
+    "name": "Scottish C10 (SCO)",
+    "state": null,
+    "country": "SCO",
+    "kind": "national",
+    "division": "C",
+    "rating": 60,
+    "primary": "#1f6b48",
+    "secondary": "#f4f7f5"
+  },
+  {
+    "name": "Scottish C11 (SCO)",
+    "state": null,
+    "country": "SCO",
+    "kind": "national",
+    "division": "C",
+    "rating": 60,
+    "primary": "#6b3d87",
+    "secondary": "#f4f7f5"
+  },
+  {
+    "name": "Scottish C12 (SCO)",
+    "state": null,
+    "country": "SCO",
+    "kind": "national",
+    "division": "C",
+    "rating": 60,
+    "primary": "#a76917",
+    "secondary": "#f4f7f5"
+  },
+  {
+    "name": "Scottish C13 (SCO)",
+    "state": null,
+    "country": "SCO",
+    "kind": "national",
+    "division": "C",
+    "rating": 59,
+    "primary": "#2c596e",
+    "secondary": "#f4f7f5"
+  },
+  {
+    "name": "Scottish C14 (SCO)",
+    "state": null,
+    "country": "SCO",
+    "kind": "national",
+    "division": "C",
+    "rating": 59,
+    "primary": "#7a3b32",
+    "secondary": "#f4f7f5"
+  },
+  {
+    "name": "Scottish C15 (SCO)",
+    "state": null,
+    "country": "SCO",
+    "kind": "national",
+    "division": "C",
+    "rating": 59,
+    "primary": "#3d6b2f",
+    "secondary": "#f4f7f5"
+  },
+  {
+    "name": "Scottish C16 (SCO)",
+    "state": null,
+    "country": "SCO",
+    "kind": "national",
+    "division": "C",
+    "rating": 59,
+    "primary": "#5c527f",
+    "secondary": "#f4f7f5"
+  },
+  {
+    "name": "Scottish C17 (SCO)",
+    "state": null,
+    "country": "SCO",
+    "kind": "national",
+    "division": "C",
+    "rating": 58,
+    "primary": "#296773",
+    "secondary": "#f4f7f5"
+  },
+  {
+    "name": "Scottish C18 (SCO)",
+    "state": null,
+    "country": "SCO",
+    "kind": "national",
+    "division": "C",
+    "rating": 58,
+    "primary": "#174a78",
+    "secondary": "#f4f7f5"
+  },
+  {
+    "name": "Scottish C19 (SCO)",
+    "state": null,
+    "country": "SCO",
+    "kind": "national",
+    "division": "C",
+    "rating": 58,
+    "primary": "#8b1e2d",
+    "secondary": "#f4f7f5"
+  },
+  {
+    "name": "Scottish C20 (SCO)",
+    "state": null,
+    "country": "SCO",
+    "kind": "national",
+    "division": "C",
+    "rating": 58,
+    "primary": "#1f6b48",
+    "secondary": "#f4f7f5"
+  },
+  {
+    "name": "Scottish D01 (SCO)",
+    "state": null,
+    "country": "SCO",
+    "kind": "national",
+    "division": "D",
+    "rating": 55,
+    "primary": "#6b3d87",
+    "secondary": "#f4f7f5"
+  },
+  {
+    "name": "Scottish D02 (SCO)",
+    "state": null,
+    "country": "SCO",
+    "kind": "national",
+    "division": "D",
+    "rating": 55,
+    "primary": "#a76917",
+    "secondary": "#f4f7f5"
+  },
+  {
+    "name": "Scottish D03 (SCO)",
+    "state": null,
+    "country": "SCO",
+    "kind": "national",
+    "division": "D",
+    "rating": 55,
+    "primary": "#2c596e",
+    "secondary": "#f4f7f5"
+  },
+  {
+    "name": "Scottish D04 (SCO)",
+    "state": null,
+    "country": "SCO",
+    "kind": "national",
+    "division": "D",
+    "rating": 55,
+    "primary": "#7a3b32",
+    "secondary": "#f4f7f5"
+  },
+  {
+    "name": "Scottish D05 (SCO)",
+    "state": null,
+    "country": "SCO",
+    "kind": "national",
+    "division": "D",
+    "rating": 54,
+    "primary": "#3d6b2f",
+    "secondary": "#f4f7f5"
+  },
+  {
+    "name": "Scottish D06 (SCO)",
+    "state": null,
+    "country": "SCO",
+    "kind": "national",
+    "division": "D",
+    "rating": 54,
+    "primary": "#5c527f",
+    "secondary": "#f4f7f5"
+  },
+  {
+    "name": "Scottish D07 (SCO)",
+    "state": null,
+    "country": "SCO",
+    "kind": "national",
+    "division": "D",
+    "rating": 54,
+    "primary": "#296773",
+    "secondary": "#f4f7f5"
+  },
+  {
+    "name": "Scottish D08 (SCO)",
+    "state": null,
+    "country": "SCO",
+    "kind": "national",
+    "division": "D",
+    "rating": 54,
+    "primary": "#174a78",
+    "secondary": "#f4f7f5"
+  },
+  {
+    "name": "Scottish D09 (SCO)",
+    "state": null,
+    "country": "SCO",
+    "kind": "national",
+    "division": "D",
+    "rating": 53,
+    "primary": "#8b1e2d",
+    "secondary": "#f4f7f5"
+  },
+  {
+    "name": "Scottish D10 (SCO)",
+    "state": null,
+    "country": "SCO",
+    "kind": "national",
+    "division": "D",
+    "rating": 53,
+    "primary": "#1f6b48",
+    "secondary": "#f4f7f5"
+  },
+  {
+    "name": "Scottish D11 (SCO)",
+    "state": null,
+    "country": "SCO",
+    "kind": "national",
+    "division": "D",
+    "rating": 53,
+    "primary": "#6b3d87",
+    "secondary": "#f4f7f5"
+  },
+  {
+    "name": "Scottish D12 (SCO)",
+    "state": null,
+    "country": "SCO",
+    "kind": "national",
+    "division": "D",
+    "rating": 53,
+    "primary": "#a76917",
+    "secondary": "#f4f7f5"
+  },
+  {
+    "name": "Scottish D13 (SCO)",
+    "state": null,
+    "country": "SCO",
+    "kind": "national",
+    "division": "D",
+    "rating": 52,
+    "primary": "#2c596e",
+    "secondary": "#f4f7f5"
+  },
+  {
+    "name": "Scottish D14 (SCO)",
+    "state": null,
+    "country": "SCO",
+    "kind": "national",
+    "division": "D",
+    "rating": 52,
+    "primary": "#7a3b32",
+    "secondary": "#f4f7f5"
+  },
+  {
+    "name": "Scottish D15 (SCO)",
+    "state": null,
+    "country": "SCO",
+    "kind": "national",
+    "division": "D",
+    "rating": 52,
+    "primary": "#3d6b2f",
+    "secondary": "#f4f7f5"
+  },
+  {
+    "name": "Scottish D16 (SCO)",
+    "state": null,
+    "country": "SCO",
+    "kind": "national",
+    "division": "D",
+    "rating": 52,
+    "primary": "#5c527f",
+    "secondary": "#f4f7f5"
+  },
+  {
+    "name": "Scottish D17 (SCO)",
+    "state": null,
+    "country": "SCO",
+    "kind": "national",
+    "division": "D",
+    "rating": 52,
+    "primary": "#296773",
+    "secondary": "#f4f7f5"
+  },
+  {
+    "name": "Scottish D18 (SCO)",
+    "state": null,
+    "country": "SCO",
+    "kind": "national",
+    "division": "D",
+    "rating": 52,
+    "primary": "#174a78",
+    "secondary": "#f4f7f5"
+  },
+  {
+    "name": "Scottish D19 (SCO)",
+    "state": null,
+    "country": "SCO",
+    "kind": "national",
+    "division": "D",
+    "rating": 52,
+    "primary": "#8b1e2d",
+    "secondary": "#f4f7f5"
+  },
+  {
+    "name": "Scottish D20 (SCO)",
+    "state": null,
+    "country": "SCO",
+    "kind": "national",
+    "division": "D",
+    "rating": 52,
+    "primary": "#1f6b48",
+    "secondary": "#f4f7f5"
+  },
+  {
+    "name": "América (MEX)",
+    "state": null,
+    "country": "MEX",
+    "kind": "national",
+    "division": "A",
+    "rating": 75,
+    "primary": "#a76917",
+    "secondary": "#f4f7f5"
+  },
+  {
+    "name": "Guadalajara (MEX)",
+    "state": null,
+    "country": "MEX",
+    "kind": "national",
+    "division": "A",
+    "rating": 75,
+    "primary": "#2c596e",
+    "secondary": "#f4f7f5"
+  },
+  {
+    "name": "Monterrey (MEX)",
+    "state": null,
+    "country": "MEX",
+    "kind": "national",
+    "division": "A",
+    "rating": 75,
+    "primary": "#7a3b32",
+    "secondary": "#f4f7f5"
+  },
+  {
+    "name": "Tigres UANL (MEX)",
+    "state": null,
+    "country": "MEX",
+    "kind": "national",
+    "division": "A",
+    "rating": 75,
+    "primary": "#3d6b2f",
+    "secondary": "#f4f7f5"
+  },
+  {
+    "name": "Cruz Azul (MEX)",
+    "state": null,
+    "country": "MEX",
+    "kind": "national",
+    "division": "A",
+    "rating": 74,
+    "primary": "#5c527f",
+    "secondary": "#f4f7f5"
+  },
+  {
+    "name": "Pumas UNAM (MEX)",
+    "state": null,
+    "country": "MEX",
+    "kind": "national",
+    "division": "A",
+    "rating": 74,
+    "primary": "#296773",
+    "secondary": "#f4f7f5"
+  },
+  {
+    "name": "Toluca (MEX)",
+    "state": null,
+    "country": "MEX",
+    "kind": "national",
+    "division": "A",
+    "rating": 74,
+    "primary": "#174a78",
+    "secondary": "#f4f7f5"
+  },
+  {
+    "name": "Pachuca (MEX)",
+    "state": null,
+    "country": "MEX",
+    "kind": "national",
+    "division": "A",
+    "rating": 74,
+    "primary": "#8b1e2d",
+    "secondary": "#f4f7f5"
+  },
+  {
+    "name": "León (MEX)",
+    "state": null,
+    "country": "MEX",
+    "kind": "national",
+    "division": "A",
+    "rating": 73,
+    "primary": "#1f6b48",
+    "secondary": "#f4f7f5"
+  },
+  {
+    "name": "Santos Laguna (MEX)",
+    "state": null,
+    "country": "MEX",
+    "kind": "national",
+    "division": "A",
+    "rating": 73,
+    "primary": "#6b3d87",
+    "secondary": "#f4f7f5"
+  },
+  {
+    "name": "Atlas (MEX)",
+    "state": null,
+    "country": "MEX",
+    "kind": "national",
+    "division": "A",
+    "rating": 73,
+    "primary": "#a76917",
+    "secondary": "#f4f7f5"
+  },
+  {
+    "name": "Necaxa (MEX)",
+    "state": null,
+    "country": "MEX",
+    "kind": "national",
+    "division": "A",
+    "rating": 73,
+    "primary": "#2c596e",
+    "secondary": "#f4f7f5"
+  },
+  {
+    "name": "Puebla (MEX)",
+    "state": null,
+    "country": "MEX",
+    "kind": "national",
+    "division": "A",
+    "rating": 72,
+    "primary": "#7a3b32",
+    "secondary": "#f4f7f5"
+  },
+  {
+    "name": "Querétaro (MEX)",
+    "state": null,
+    "country": "MEX",
+    "kind": "national",
+    "division": "A",
+    "rating": 72,
+    "primary": "#3d6b2f",
+    "secondary": "#f4f7f5"
+  },
+  {
+    "name": "Tijuana (MEX)",
+    "state": null,
+    "country": "MEX",
+    "kind": "national",
+    "division": "A",
+    "rating": 72,
+    "primary": "#5c527f",
+    "secondary": "#f4f7f5"
+  },
+  {
+    "name": "Juárez (MEX)",
+    "state": null,
+    "country": "MEX",
+    "kind": "national",
+    "division": "A",
+    "rating": 72,
+    "primary": "#296773",
+    "secondary": "#f4f7f5"
+  },
+  {
+    "name": "Atlético San Luis (MEX)",
+    "state": null,
+    "country": "MEX",
+    "kind": "national",
+    "division": "A",
+    "rating": 71,
+    "primary": "#174a78",
+    "secondary": "#f4f7f5"
+  },
+  {
+    "name": "Mazatlán (MEX)",
+    "state": null,
+    "country": "MEX",
+    "kind": "national",
+    "division": "A",
+    "rating": 71,
+    "primary": "#8b1e2d",
+    "secondary": "#f4f7f5"
+  },
+  {
+    "name": "Morelia (MEX)",
+    "state": null,
+    "country": "MEX",
+    "kind": "national",
+    "division": "A",
+    "rating": 71,
+    "primary": "#1f6b48",
+    "secondary": "#f4f7f5"
+  },
+  {
+    "name": "Atlante (MEX)",
+    "state": null,
+    "country": "MEX",
+    "kind": "national",
+    "division": "A",
+    "rating": 71,
+    "primary": "#6b3d87",
+    "secondary": "#f4f7f5"
+  },
+  {
+    "name": "Mexican B01 (MEX)",
+    "state": null,
+    "country": "MEX",
+    "kind": "national",
+    "division": "B",
+    "rating": 68,
+    "primary": "#a76917",
+    "secondary": "#f4f7f5"
+  },
+  {
+    "name": "Mexican B02 (MEX)",
+    "state": null,
+    "country": "MEX",
+    "kind": "national",
+    "division": "B",
+    "rating": 68,
+    "primary": "#2c596e",
+    "secondary": "#f4f7f5"
+  },
+  {
+    "name": "Mexican B03 (MEX)",
+    "state": null,
+    "country": "MEX",
+    "kind": "national",
+    "division": "B",
+    "rating": 68,
+    "primary": "#7a3b32",
+    "secondary": "#f4f7f5"
+  },
+  {
+    "name": "Mexican B04 (MEX)",
+    "state": null,
+    "country": "MEX",
+    "kind": "national",
+    "division": "B",
+    "rating": 68,
+    "primary": "#3d6b2f",
+    "secondary": "#f4f7f5"
+  },
+  {
+    "name": "Mexican B05 (MEX)",
+    "state": null,
+    "country": "MEX",
+    "kind": "national",
+    "division": "B",
+    "rating": 67,
+    "primary": "#5c527f",
+    "secondary": "#f4f7f5"
+  },
+  {
+    "name": "Mexican B06 (MEX)",
+    "state": null,
+    "country": "MEX",
+    "kind": "national",
+    "division": "B",
+    "rating": 67,
+    "primary": "#296773",
+    "secondary": "#f4f7f5"
+  },
+  {
+    "name": "Mexican B07 (MEX)",
+    "state": null,
+    "country": "MEX",
+    "kind": "national",
+    "division": "B",
+    "rating": 67,
+    "primary": "#174a78",
+    "secondary": "#f4f7f5"
+  },
+  {
+    "name": "Mexican B08 (MEX)",
+    "state": null,
+    "country": "MEX",
+    "kind": "national",
+    "division": "B",
+    "rating": 67,
+    "primary": "#8b1e2d",
+    "secondary": "#f4f7f5"
+  },
+  {
+    "name": "Mexican B09 (MEX)",
+    "state": null,
+    "country": "MEX",
+    "kind": "national",
+    "division": "B",
+    "rating": 66,
+    "primary": "#1f6b48",
+    "secondary": "#f4f7f5"
+  },
+  {
+    "name": "Mexican B10 (MEX)",
+    "state": null,
+    "country": "MEX",
+    "kind": "national",
+    "division": "B",
+    "rating": 66,
+    "primary": "#6b3d87",
+    "secondary": "#f4f7f5"
+  },
+  {
+    "name": "Mexican B11 (MEX)",
+    "state": null,
+    "country": "MEX",
+    "kind": "national",
+    "division": "B",
+    "rating": 66,
+    "primary": "#a76917",
+    "secondary": "#f4f7f5"
+  },
+  {
+    "name": "Mexican B12 (MEX)",
+    "state": null,
+    "country": "MEX",
+    "kind": "national",
+    "division": "B",
+    "rating": 66,
+    "primary": "#2c596e",
+    "secondary": "#f4f7f5"
+  },
+  {
+    "name": "Mexican B13 (MEX)",
+    "state": null,
+    "country": "MEX",
+    "kind": "national",
+    "division": "B",
+    "rating": 65,
+    "primary": "#7a3b32",
+    "secondary": "#f4f7f5"
+  },
+  {
+    "name": "Mexican B14 (MEX)",
+    "state": null,
+    "country": "MEX",
+    "kind": "national",
+    "division": "B",
+    "rating": 65,
+    "primary": "#3d6b2f",
+    "secondary": "#f4f7f5"
+  },
+  {
+    "name": "Mexican B15 (MEX)",
+    "state": null,
+    "country": "MEX",
+    "kind": "national",
+    "division": "B",
+    "rating": 65,
+    "primary": "#5c527f",
+    "secondary": "#f4f7f5"
+  },
+  {
+    "name": "Mexican B16 (MEX)",
+    "state": null,
+    "country": "MEX",
+    "kind": "national",
+    "division": "B",
+    "rating": 65,
+    "primary": "#296773",
+    "secondary": "#f4f7f5"
+  },
+  {
+    "name": "Mexican B17 (MEX)",
+    "state": null,
+    "country": "MEX",
+    "kind": "national",
+    "division": "B",
+    "rating": 64,
+    "primary": "#174a78",
+    "secondary": "#f4f7f5"
+  },
+  {
+    "name": "Mexican B18 (MEX)",
+    "state": null,
+    "country": "MEX",
+    "kind": "national",
+    "division": "B",
+    "rating": 64,
+    "primary": "#8b1e2d",
+    "secondary": "#f4f7f5"
+  },
+  {
+    "name": "Mexican B19 (MEX)",
+    "state": null,
+    "country": "MEX",
+    "kind": "national",
+    "division": "B",
+    "rating": 64,
+    "primary": "#1f6b48",
+    "secondary": "#f4f7f5"
+  },
+  {
+    "name": "Mexican B20 (MEX)",
+    "state": null,
+    "country": "MEX",
+    "kind": "national",
+    "division": "B",
+    "rating": 64,
+    "primary": "#6b3d87",
+    "secondary": "#f4f7f5"
+  },
+  {
+    "name": "Mexican C01 (MEX)",
+    "state": null,
+    "country": "MEX",
+    "kind": "national",
+    "division": "C",
+    "rating": 61,
+    "primary": "#a76917",
+    "secondary": "#f4f7f5"
+  },
+  {
+    "name": "Mexican C02 (MEX)",
+    "state": null,
+    "country": "MEX",
+    "kind": "national",
+    "division": "C",
+    "rating": 61,
+    "primary": "#2c596e",
+    "secondary": "#f4f7f5"
+  },
+  {
+    "name": "Mexican C03 (MEX)",
+    "state": null,
+    "country": "MEX",
+    "kind": "national",
+    "division": "C",
+    "rating": 61,
+    "primary": "#7a3b32",
+    "secondary": "#f4f7f5"
+  },
+  {
+    "name": "Mexican C04 (MEX)",
+    "state": null,
+    "country": "MEX",
+    "kind": "national",
+    "division": "C",
+    "rating": 61,
+    "primary": "#3d6b2f",
+    "secondary": "#f4f7f5"
+  },
+  {
+    "name": "Mexican C05 (MEX)",
+    "state": null,
+    "country": "MEX",
+    "kind": "national",
+    "division": "C",
+    "rating": 60,
+    "primary": "#5c527f",
+    "secondary": "#f4f7f5"
+  },
+  {
+    "name": "Mexican C06 (MEX)",
+    "state": null,
+    "country": "MEX",
+    "kind": "national",
+    "division": "C",
+    "rating": 60,
+    "primary": "#296773",
+    "secondary": "#f4f7f5"
+  },
+  {
+    "name": "Mexican C07 (MEX)",
+    "state": null,
+    "country": "MEX",
+    "kind": "national",
+    "division": "C",
+    "rating": 60,
+    "primary": "#174a78",
+    "secondary": "#f4f7f5"
+  },
+  {
+    "name": "Mexican C08 (MEX)",
+    "state": null,
+    "country": "MEX",
+    "kind": "national",
+    "division": "C",
+    "rating": 60,
+    "primary": "#8b1e2d",
+    "secondary": "#f4f7f5"
+  },
+  {
+    "name": "Mexican C09 (MEX)",
+    "state": null,
+    "country": "MEX",
+    "kind": "national",
+    "division": "C",
+    "rating": 59,
+    "primary": "#1f6b48",
+    "secondary": "#f4f7f5"
+  },
+  {
+    "name": "Mexican C10 (MEX)",
+    "state": null,
+    "country": "MEX",
+    "kind": "national",
+    "division": "C",
+    "rating": 59,
+    "primary": "#6b3d87",
+    "secondary": "#f4f7f5"
+  },
+  {
+    "name": "Mexican C11 (MEX)",
+    "state": null,
+    "country": "MEX",
+    "kind": "national",
+    "division": "C",
+    "rating": 59,
+    "primary": "#a76917",
+    "secondary": "#f4f7f5"
+  },
+  {
+    "name": "Mexican C12 (MEX)",
+    "state": null,
+    "country": "MEX",
+    "kind": "national",
+    "division": "C",
+    "rating": 59,
+    "primary": "#2c596e",
+    "secondary": "#f4f7f5"
+  },
+  {
+    "name": "Mexican C13 (MEX)",
+    "state": null,
+    "country": "MEX",
+    "kind": "national",
+    "division": "C",
+    "rating": 58,
+    "primary": "#7a3b32",
+    "secondary": "#f4f7f5"
+  },
+  {
+    "name": "Mexican C14 (MEX)",
+    "state": null,
+    "country": "MEX",
+    "kind": "national",
+    "division": "C",
+    "rating": 58,
+    "primary": "#3d6b2f",
+    "secondary": "#f4f7f5"
+  },
+  {
+    "name": "Mexican C15 (MEX)",
+    "state": null,
+    "country": "MEX",
+    "kind": "national",
+    "division": "C",
+    "rating": 58,
+    "primary": "#5c527f",
+    "secondary": "#f4f7f5"
+  },
+  {
+    "name": "Mexican C16 (MEX)",
+    "state": null,
+    "country": "MEX",
+    "kind": "national",
+    "division": "C",
+    "rating": 58,
+    "primary": "#296773",
+    "secondary": "#f4f7f5"
+  },
+  {
+    "name": "Mexican C17 (MEX)",
+    "state": null,
+    "country": "MEX",
+    "kind": "national",
+    "division": "C",
+    "rating": 57,
+    "primary": "#174a78",
+    "secondary": "#f4f7f5"
+  },
+  {
+    "name": "Mexican C18 (MEX)",
+    "state": null,
+    "country": "MEX",
+    "kind": "national",
+    "division": "C",
+    "rating": 57,
+    "primary": "#8b1e2d",
+    "secondary": "#f4f7f5"
+  },
+  {
+    "name": "Mexican C19 (MEX)",
+    "state": null,
+    "country": "MEX",
+    "kind": "national",
+    "division": "C",
+    "rating": 57,
+    "primary": "#1f6b48",
+    "secondary": "#f4f7f5"
+  },
+  {
+    "name": "Mexican C20 (MEX)",
+    "state": null,
+    "country": "MEX",
+    "kind": "national",
+    "division": "C",
+    "rating": 57,
+    "primary": "#6b3d87",
+    "secondary": "#f4f7f5"
+  },
+  {
+    "name": "Mexican D01 (MEX)",
+    "state": null,
+    "country": "MEX",
+    "kind": "national",
+    "division": "D",
+    "rating": 54,
+    "primary": "#a76917",
+    "secondary": "#f4f7f5"
+  },
+  {
+    "name": "Mexican D02 (MEX)",
+    "state": null,
+    "country": "MEX",
+    "kind": "national",
+    "division": "D",
+    "rating": 54,
+    "primary": "#2c596e",
+    "secondary": "#f4f7f5"
+  },
+  {
+    "name": "Mexican D03 (MEX)",
+    "state": null,
+    "country": "MEX",
+    "kind": "national",
+    "division": "D",
+    "rating": 54,
+    "primary": "#7a3b32",
+    "secondary": "#f4f7f5"
+  },
+  {
+    "name": "Mexican D04 (MEX)",
+    "state": null,
+    "country": "MEX",
+    "kind": "national",
+    "division": "D",
+    "rating": 54,
+    "primary": "#3d6b2f",
+    "secondary": "#f4f7f5"
+  },
+  {
+    "name": "Mexican D05 (MEX)",
+    "state": null,
+    "country": "MEX",
+    "kind": "national",
+    "division": "D",
+    "rating": 53,
+    "primary": "#5c527f",
+    "secondary": "#f4f7f5"
+  },
+  {
+    "name": "Mexican D06 (MEX)",
+    "state": null,
+    "country": "MEX",
+    "kind": "national",
+    "division": "D",
+    "rating": 53,
+    "primary": "#296773",
+    "secondary": "#f4f7f5"
+  },
+  {
+    "name": "Mexican D07 (MEX)",
+    "state": null,
+    "country": "MEX",
+    "kind": "national",
+    "division": "D",
+    "rating": 53,
+    "primary": "#174a78",
+    "secondary": "#f4f7f5"
+  },
+  {
+    "name": "Mexican D08 (MEX)",
+    "state": null,
+    "country": "MEX",
+    "kind": "national",
+    "division": "D",
+    "rating": 53,
+    "primary": "#8b1e2d",
+    "secondary": "#f4f7f5"
+  },
+  {
+    "name": "Mexican D09 (MEX)",
+    "state": null,
+    "country": "MEX",
+    "kind": "national",
+    "division": "D",
+    "rating": 52,
+    "primary": "#1f6b48",
+    "secondary": "#f4f7f5"
+  },
+  {
+    "name": "Mexican D10 (MEX)",
+    "state": null,
+    "country": "MEX",
+    "kind": "national",
+    "division": "D",
+    "rating": 52,
+    "primary": "#6b3d87",
+    "secondary": "#f4f7f5"
+  },
+  {
+    "name": "Mexican D11 (MEX)",
+    "state": null,
+    "country": "MEX",
+    "kind": "national",
+    "division": "D",
+    "rating": 52,
+    "primary": "#a76917",
+    "secondary": "#f4f7f5"
+  },
+  {
+    "name": "Mexican D12 (MEX)",
+    "state": null,
+    "country": "MEX",
+    "kind": "national",
+    "division": "D",
+    "rating": 52,
+    "primary": "#2c596e",
+    "secondary": "#f4f7f5"
+  },
+  {
+    "name": "Mexican D13 (MEX)",
+    "state": null,
+    "country": "MEX",
+    "kind": "national",
+    "division": "D",
+    "rating": 52,
+    "primary": "#7a3b32",
+    "secondary": "#f4f7f5"
+  },
+  {
+    "name": "Mexican D14 (MEX)",
+    "state": null,
+    "country": "MEX",
+    "kind": "national",
+    "division": "D",
+    "rating": 52,
+    "primary": "#3d6b2f",
+    "secondary": "#f4f7f5"
+  },
+  {
+    "name": "Mexican D15 (MEX)",
+    "state": null,
+    "country": "MEX",
+    "kind": "national",
+    "division": "D",
+    "rating": 52,
+    "primary": "#5c527f",
+    "secondary": "#f4f7f5"
+  },
+  {
+    "name": "Mexican D16 (MEX)",
+    "state": null,
+    "country": "MEX",
+    "kind": "national",
+    "division": "D",
+    "rating": 52,
+    "primary": "#296773",
+    "secondary": "#f4f7f5"
+  },
+  {
+    "name": "Mexican D17 (MEX)",
+    "state": null,
+    "country": "MEX",
+    "kind": "national",
+    "division": "D",
+    "rating": 52,
+    "primary": "#174a78",
+    "secondary": "#f4f7f5"
+  },
+  {
+    "name": "Mexican D18 (MEX)",
+    "state": null,
+    "country": "MEX",
+    "kind": "national",
+    "division": "D",
+    "rating": 52,
+    "primary": "#8b1e2d",
+    "secondary": "#f4f7f5"
+  },
+  {
+    "name": "Mexican D19 (MEX)",
+    "state": null,
+    "country": "MEX",
+    "kind": "national",
+    "division": "D",
+    "rating": 52,
+    "primary": "#1f6b48",
+    "secondary": "#f4f7f5"
+  },
+  {
+    "name": "Mexican D20 (MEX)",
+    "state": null,
+    "country": "MEX",
+    "kind": "national",
+    "division": "D",
+    "rating": 52,
+    "primary": "#6b3d87",
+    "secondary": "#f4f7f5"
+  },
+  {
+    "name": "Inter Miami (USA)",
+    "state": null,
+    "country": "USA",
+    "kind": "national",
+    "division": "A",
+    "rating": 75,
+    "primary": "#2c596e",
+    "secondary": "#f4f7f5"
+  },
+  {
+    "name": "LAFC (USA)",
+    "state": null,
+    "country": "USA",
+    "kind": "national",
+    "division": "A",
+    "rating": 75,
+    "primary": "#7a3b32",
+    "secondary": "#f4f7f5"
+  },
+  {
+    "name": "LA Galaxy (USA)",
+    "state": null,
+    "country": "USA",
+    "kind": "national",
+    "division": "A",
+    "rating": 75,
+    "primary": "#3d6b2f",
+    "secondary": "#f4f7f5"
+  },
+  {
+    "name": "Seattle Sounders (USA)",
+    "state": null,
+    "country": "USA",
+    "kind": "national",
+    "division": "A",
+    "rating": 75,
+    "primary": "#5c527f",
+    "secondary": "#f4f7f5"
+  },
+  {
+    "name": "Atlanta United (USA)",
+    "state": null,
+    "country": "USA",
+    "kind": "national",
+    "division": "A",
+    "rating": 74,
+    "primary": "#296773",
+    "secondary": "#f4f7f5"
+  },
+  {
+    "name": "New York City FC (USA)",
+    "state": null,
+    "country": "USA",
+    "kind": "national",
+    "division": "A",
+    "rating": 74,
+    "primary": "#174a78",
+    "secondary": "#f4f7f5"
+  },
+  {
+    "name": "New York Red Bulls (USA)",
+    "state": null,
+    "country": "USA",
+    "kind": "national",
+    "division": "A",
+    "rating": 74,
+    "primary": "#8b1e2d",
+    "secondary": "#f4f7f5"
+  },
+  {
+    "name": "Columbus Crew (USA)",
+    "state": null,
+    "country": "USA",
+    "kind": "national",
+    "division": "A",
+    "rating": 74,
+    "primary": "#1f6b48",
+    "secondary": "#f4f7f5"
+  },
+  {
+    "name": "Portland Timbers (USA)",
+    "state": null,
+    "country": "USA",
+    "kind": "national",
+    "division": "A",
+    "rating": 73,
+    "primary": "#6b3d87",
+    "secondary": "#f4f7f5"
+  },
+  {
+    "name": "Austin FC (USA)",
+    "state": null,
+    "country": "USA",
+    "kind": "national",
+    "division": "A",
+    "rating": 73,
+    "primary": "#a76917",
+    "secondary": "#f4f7f5"
+  },
+  {
+    "name": "FC Cincinnati (USA)",
+    "state": null,
+    "country": "USA",
+    "kind": "national",
+    "division": "A",
+    "rating": 73,
+    "primary": "#2c596e",
+    "secondary": "#f4f7f5"
+  },
+  {
+    "name": "Orlando City (USA)",
+    "state": null,
+    "country": "USA",
+    "kind": "national",
+    "division": "A",
+    "rating": 73,
+    "primary": "#7a3b32",
+    "secondary": "#f4f7f5"
+  },
+  {
+    "name": "Nashville SC (USA)",
+    "state": null,
+    "country": "USA",
+    "kind": "national",
+    "division": "A",
+    "rating": 72,
+    "primary": "#3d6b2f",
+    "secondary": "#f4f7f5"
+  },
+  {
+    "name": "Philadelphia Union (USA)",
+    "state": null,
+    "country": "USA",
+    "kind": "national",
+    "division": "A",
+    "rating": 72,
+    "primary": "#5c527f",
+    "secondary": "#f4f7f5"
+  },
+  {
+    "name": "Real Salt Lake (USA)",
+    "state": null,
+    "country": "USA",
+    "kind": "national",
+    "division": "A",
+    "rating": 72,
+    "primary": "#296773",
+    "secondary": "#f4f7f5"
+  },
+  {
+    "name": "Minnesota United (USA)",
+    "state": null,
+    "country": "USA",
+    "kind": "national",
+    "division": "A",
+    "rating": 72,
+    "primary": "#174a78",
+    "secondary": "#f4f7f5"
+  },
+  {
+    "name": "Charlotte FC (USA)",
+    "state": null,
+    "country": "USA",
+    "kind": "national",
+    "division": "A",
+    "rating": 71,
+    "primary": "#8b1e2d",
+    "secondary": "#f4f7f5"
+  },
+  {
+    "name": "Chicago Fire (USA)",
+    "state": null,
+    "country": "USA",
+    "kind": "national",
+    "division": "A",
+    "rating": 71,
+    "primary": "#1f6b48",
+    "secondary": "#f4f7f5"
+  },
+  {
+    "name": "FC Dallas (USA)",
+    "state": null,
+    "country": "USA",
+    "kind": "national",
+    "division": "A",
+    "rating": 71,
+    "primary": "#6b3d87",
+    "secondary": "#f4f7f5"
+  },
+  {
+    "name": "Sporting Kansas City (USA)",
+    "state": null,
+    "country": "USA",
+    "kind": "national",
+    "division": "A",
+    "rating": 71,
+    "primary": "#a76917",
+    "secondary": "#f4f7f5"
+  },
+  {
+    "name": "American B01 (USA)",
+    "state": null,
+    "country": "USA",
+    "kind": "national",
+    "division": "B",
+    "rating": 68,
+    "primary": "#2c596e",
+    "secondary": "#f4f7f5"
+  },
+  {
+    "name": "American B02 (USA)",
+    "state": null,
+    "country": "USA",
+    "kind": "national",
+    "division": "B",
+    "rating": 68,
+    "primary": "#7a3b32",
+    "secondary": "#f4f7f5"
+  },
+  {
+    "name": "American B03 (USA)",
+    "state": null,
+    "country": "USA",
+    "kind": "national",
+    "division": "B",
+    "rating": 68,
+    "primary": "#3d6b2f",
+    "secondary": "#f4f7f5"
+  },
+  {
+    "name": "American B04 (USA)",
+    "state": null,
+    "country": "USA",
+    "kind": "national",
+    "division": "B",
+    "rating": 68,
+    "primary": "#5c527f",
+    "secondary": "#f4f7f5"
+  },
+  {
+    "name": "American B05 (USA)",
+    "state": null,
+    "country": "USA",
+    "kind": "national",
+    "division": "B",
+    "rating": 67,
+    "primary": "#296773",
+    "secondary": "#f4f7f5"
+  },
+  {
+    "name": "American B06 (USA)",
+    "state": null,
+    "country": "USA",
+    "kind": "national",
+    "division": "B",
+    "rating": 67,
+    "primary": "#174a78",
+    "secondary": "#f4f7f5"
+  },
+  {
+    "name": "American B07 (USA)",
+    "state": null,
+    "country": "USA",
+    "kind": "national",
+    "division": "B",
+    "rating": 67,
+    "primary": "#8b1e2d",
+    "secondary": "#f4f7f5"
+  },
+  {
+    "name": "American B08 (USA)",
+    "state": null,
+    "country": "USA",
+    "kind": "national",
+    "division": "B",
+    "rating": 67,
+    "primary": "#1f6b48",
+    "secondary": "#f4f7f5"
+  },
+  {
+    "name": "American B09 (USA)",
+    "state": null,
+    "country": "USA",
+    "kind": "national",
+    "division": "B",
+    "rating": 66,
+    "primary": "#6b3d87",
+    "secondary": "#f4f7f5"
+  },
+  {
+    "name": "American B10 (USA)",
+    "state": null,
+    "country": "USA",
+    "kind": "national",
+    "division": "B",
+    "rating": 66,
+    "primary": "#a76917",
+    "secondary": "#f4f7f5"
+  },
+  {
+    "name": "American B11 (USA)",
+    "state": null,
+    "country": "USA",
+    "kind": "national",
+    "division": "B",
+    "rating": 66,
+    "primary": "#2c596e",
+    "secondary": "#f4f7f5"
+  },
+  {
+    "name": "American B12 (USA)",
+    "state": null,
+    "country": "USA",
+    "kind": "national",
+    "division": "B",
+    "rating": 66,
+    "primary": "#7a3b32",
+    "secondary": "#f4f7f5"
+  },
+  {
+    "name": "American B13 (USA)",
+    "state": null,
+    "country": "USA",
+    "kind": "national",
+    "division": "B",
+    "rating": 65,
+    "primary": "#3d6b2f",
+    "secondary": "#f4f7f5"
+  },
+  {
+    "name": "American B14 (USA)",
+    "state": null,
+    "country": "USA",
+    "kind": "national",
+    "division": "B",
+    "rating": 65,
+    "primary": "#5c527f",
+    "secondary": "#f4f7f5"
+  },
+  {
+    "name": "American B15 (USA)",
+    "state": null,
+    "country": "USA",
+    "kind": "national",
+    "division": "B",
+    "rating": 65,
+    "primary": "#296773",
+    "secondary": "#f4f7f5"
+  },
+  {
+    "name": "American B16 (USA)",
+    "state": null,
+    "country": "USA",
+    "kind": "national",
+    "division": "B",
+    "rating": 65,
+    "primary": "#174a78",
+    "secondary": "#f4f7f5"
+  },
+  {
+    "name": "American B17 (USA)",
+    "state": null,
+    "country": "USA",
+    "kind": "national",
+    "division": "B",
+    "rating": 64,
+    "primary": "#8b1e2d",
+    "secondary": "#f4f7f5"
+  },
+  {
+    "name": "American B18 (USA)",
+    "state": null,
+    "country": "USA",
+    "kind": "national",
+    "division": "B",
+    "rating": 64,
+    "primary": "#1f6b48",
+    "secondary": "#f4f7f5"
+  },
+  {
+    "name": "American B19 (USA)",
+    "state": null,
+    "country": "USA",
+    "kind": "national",
+    "division": "B",
+    "rating": 64,
+    "primary": "#6b3d87",
+    "secondary": "#f4f7f5"
+  },
+  {
+    "name": "American B20 (USA)",
+    "state": null,
+    "country": "USA",
+    "kind": "national",
+    "division": "B",
+    "rating": 64,
+    "primary": "#a76917",
+    "secondary": "#f4f7f5"
+  },
+  {
+    "name": "American C01 (USA)",
+    "state": null,
+    "country": "USA",
+    "kind": "national",
+    "division": "C",
+    "rating": 61,
+    "primary": "#2c596e",
+    "secondary": "#f4f7f5"
+  },
+  {
+    "name": "American C02 (USA)",
+    "state": null,
+    "country": "USA",
+    "kind": "national",
+    "division": "C",
+    "rating": 61,
+    "primary": "#7a3b32",
+    "secondary": "#f4f7f5"
+  },
+  {
+    "name": "American C03 (USA)",
+    "state": null,
+    "country": "USA",
+    "kind": "national",
+    "division": "C",
+    "rating": 61,
+    "primary": "#3d6b2f",
+    "secondary": "#f4f7f5"
+  },
+  {
+    "name": "American C04 (USA)",
+    "state": null,
+    "country": "USA",
+    "kind": "national",
+    "division": "C",
+    "rating": 61,
+    "primary": "#5c527f",
+    "secondary": "#f4f7f5"
+  },
+  {
+    "name": "American C05 (USA)",
+    "state": null,
+    "country": "USA",
+    "kind": "national",
+    "division": "C",
+    "rating": 60,
+    "primary": "#296773",
+    "secondary": "#f4f7f5"
+  },
+  {
+    "name": "American C06 (USA)",
+    "state": null,
+    "country": "USA",
+    "kind": "national",
+    "division": "C",
+    "rating": 60,
+    "primary": "#174a78",
+    "secondary": "#f4f7f5"
+  },
+  {
+    "name": "American C07 (USA)",
+    "state": null,
+    "country": "USA",
+    "kind": "national",
+    "division": "C",
+    "rating": 60,
+    "primary": "#8b1e2d",
+    "secondary": "#f4f7f5"
+  },
+  {
+    "name": "American C08 (USA)",
+    "state": null,
+    "country": "USA",
+    "kind": "national",
+    "division": "C",
+    "rating": 60,
+    "primary": "#1f6b48",
+    "secondary": "#f4f7f5"
+  },
+  {
+    "name": "American C09 (USA)",
+    "state": null,
+    "country": "USA",
+    "kind": "national",
+    "division": "C",
+    "rating": 59,
+    "primary": "#6b3d87",
+    "secondary": "#f4f7f5"
+  },
+  {
+    "name": "American C10 (USA)",
+    "state": null,
+    "country": "USA",
+    "kind": "national",
+    "division": "C",
+    "rating": 59,
+    "primary": "#a76917",
+    "secondary": "#f4f7f5"
+  },
+  {
+    "name": "American C11 (USA)",
+    "state": null,
+    "country": "USA",
+    "kind": "national",
+    "division": "C",
+    "rating": 59,
+    "primary": "#2c596e",
+    "secondary": "#f4f7f5"
+  },
+  {
+    "name": "American C12 (USA)",
+    "state": null,
+    "country": "USA",
+    "kind": "national",
+    "division": "C",
+    "rating": 59,
+    "primary": "#7a3b32",
+    "secondary": "#f4f7f5"
+  },
+  {
+    "name": "American C13 (USA)",
+    "state": null,
+    "country": "USA",
+    "kind": "national",
+    "division": "C",
+    "rating": 58,
+    "primary": "#3d6b2f",
+    "secondary": "#f4f7f5"
+  },
+  {
+    "name": "American C14 (USA)",
+    "state": null,
+    "country": "USA",
+    "kind": "national",
+    "division": "C",
+    "rating": 58,
+    "primary": "#5c527f",
+    "secondary": "#f4f7f5"
+  },
+  {
+    "name": "American C15 (USA)",
+    "state": null,
+    "country": "USA",
+    "kind": "national",
+    "division": "C",
+    "rating": 58,
+    "primary": "#296773",
+    "secondary": "#f4f7f5"
+  },
+  {
+    "name": "American C16 (USA)",
+    "state": null,
+    "country": "USA",
+    "kind": "national",
+    "division": "C",
+    "rating": 58,
+    "primary": "#174a78",
+    "secondary": "#f4f7f5"
+  },
+  {
+    "name": "American C17 (USA)",
+    "state": null,
+    "country": "USA",
+    "kind": "national",
+    "division": "C",
+    "rating": 57,
+    "primary": "#8b1e2d",
+    "secondary": "#f4f7f5"
+  },
+  {
+    "name": "American C18 (USA)",
+    "state": null,
+    "country": "USA",
+    "kind": "national",
+    "division": "C",
+    "rating": 57,
+    "primary": "#1f6b48",
+    "secondary": "#f4f7f5"
+  },
+  {
+    "name": "American C19 (USA)",
+    "state": null,
+    "country": "USA",
+    "kind": "national",
+    "division": "C",
+    "rating": 57,
+    "primary": "#6b3d87",
+    "secondary": "#f4f7f5"
+  },
+  {
+    "name": "American C20 (USA)",
+    "state": null,
+    "country": "USA",
+    "kind": "national",
+    "division": "C",
+    "rating": 57,
+    "primary": "#a76917",
+    "secondary": "#f4f7f5"
+  },
+  {
+    "name": "American D01 (USA)",
+    "state": null,
+    "country": "USA",
+    "kind": "national",
+    "division": "D",
+    "rating": 54,
+    "primary": "#2c596e",
+    "secondary": "#f4f7f5"
+  },
+  {
+    "name": "American D02 (USA)",
+    "state": null,
+    "country": "USA",
+    "kind": "national",
+    "division": "D",
+    "rating": 54,
+    "primary": "#7a3b32",
+    "secondary": "#f4f7f5"
+  },
+  {
+    "name": "American D03 (USA)",
+    "state": null,
+    "country": "USA",
+    "kind": "national",
+    "division": "D",
+    "rating": 54,
+    "primary": "#3d6b2f",
+    "secondary": "#f4f7f5"
+  },
+  {
+    "name": "American D04 (USA)",
+    "state": null,
+    "country": "USA",
+    "kind": "national",
+    "division": "D",
+    "rating": 54,
+    "primary": "#5c527f",
+    "secondary": "#f4f7f5"
+  },
+  {
+    "name": "American D05 (USA)",
+    "state": null,
+    "country": "USA",
+    "kind": "national",
+    "division": "D",
+    "rating": 53,
+    "primary": "#296773",
+    "secondary": "#f4f7f5"
+  },
+  {
+    "name": "American D06 (USA)",
+    "state": null,
+    "country": "USA",
+    "kind": "national",
+    "division": "D",
+    "rating": 53,
+    "primary": "#174a78",
+    "secondary": "#f4f7f5"
+  },
+  {
+    "name": "American D07 (USA)",
+    "state": null,
+    "country": "USA",
+    "kind": "national",
+    "division": "D",
+    "rating": 53,
+    "primary": "#8b1e2d",
+    "secondary": "#f4f7f5"
+  },
+  {
+    "name": "American D08 (USA)",
+    "state": null,
+    "country": "USA",
+    "kind": "national",
+    "division": "D",
+    "rating": 53,
+    "primary": "#1f6b48",
+    "secondary": "#f4f7f5"
+  },
+  {
+    "name": "American D09 (USA)",
+    "state": null,
+    "country": "USA",
+    "kind": "national",
+    "division": "D",
+    "rating": 52,
+    "primary": "#6b3d87",
+    "secondary": "#f4f7f5"
+  },
+  {
+    "name": "American D10 (USA)",
+    "state": null,
+    "country": "USA",
+    "kind": "national",
+    "division": "D",
+    "rating": 52,
+    "primary": "#a76917",
+    "secondary": "#f4f7f5"
+  },
+  {
+    "name": "American D11 (USA)",
+    "state": null,
+    "country": "USA",
+    "kind": "national",
+    "division": "D",
+    "rating": 52,
+    "primary": "#2c596e",
+    "secondary": "#f4f7f5"
+  },
+  {
+    "name": "American D12 (USA)",
+    "state": null,
+    "country": "USA",
+    "kind": "national",
+    "division": "D",
+    "rating": 52,
+    "primary": "#7a3b32",
+    "secondary": "#f4f7f5"
+  },
+  {
+    "name": "American D13 (USA)",
+    "state": null,
+    "country": "USA",
+    "kind": "national",
+    "division": "D",
+    "rating": 52,
+    "primary": "#3d6b2f",
+    "secondary": "#f4f7f5"
+  },
+  {
+    "name": "American D14 (USA)",
+    "state": null,
+    "country": "USA",
+    "kind": "national",
+    "division": "D",
+    "rating": 52,
+    "primary": "#5c527f",
+    "secondary": "#f4f7f5"
+  },
+  {
+    "name": "American D15 (USA)",
+    "state": null,
+    "country": "USA",
+    "kind": "national",
+    "division": "D",
+    "rating": 52,
+    "primary": "#296773",
+    "secondary": "#f4f7f5"
+  },
+  {
+    "name": "American D16 (USA)",
+    "state": null,
+    "country": "USA",
+    "kind": "national",
+    "division": "D",
+    "rating": 52,
+    "primary": "#174a78",
+    "secondary": "#f4f7f5"
+  },
+  {
+    "name": "American D17 (USA)",
+    "state": null,
+    "country": "USA",
+    "kind": "national",
+    "division": "D",
+    "rating": 52,
+    "primary": "#8b1e2d",
+    "secondary": "#f4f7f5"
+  },
+  {
+    "name": "American D18 (USA)",
+    "state": null,
+    "country": "USA",
+    "kind": "national",
+    "division": "D",
+    "rating": 52,
+    "primary": "#1f6b48",
+    "secondary": "#f4f7f5"
+  },
+  {
+    "name": "American D19 (USA)",
+    "state": null,
+    "country": "USA",
+    "kind": "national",
+    "division": "D",
+    "rating": 52,
+    "primary": "#6b3d87",
+    "secondary": "#f4f7f5"
+  },
+  {
+    "name": "American D20 (USA)",
+    "state": null,
+    "country": "USA",
+    "kind": "national",
+    "division": "D",
+    "rating": 52,
+    "primary": "#a76917",
+    "secondary": "#f4f7f5"
+  },
+  {
+    "name": "Urawa Red Diamonds (JPN)",
+    "state": null,
+    "country": "JPN",
+    "kind": "national",
+    "division": "A",
+    "rating": 74,
+    "primary": "#7a3b32",
+    "secondary": "#f4f7f5"
+  },
+  {
+    "name": "Kawasaki Frontale (JPN)",
+    "state": null,
+    "country": "JPN",
+    "kind": "national",
+    "division": "A",
+    "rating": 74,
+    "primary": "#3d6b2f",
+    "secondary": "#f4f7f5"
+  },
+  {
+    "name": "Yokohama F. Marinos (JPN)",
+    "state": null,
+    "country": "JPN",
+    "kind": "national",
+    "division": "A",
+    "rating": 74,
+    "primary": "#5c527f",
+    "secondary": "#f4f7f5"
+  },
+  {
+    "name": "Vissel Kobe (JPN)",
+    "state": null,
+    "country": "JPN",
+    "kind": "national",
+    "division": "A",
+    "rating": 74,
+    "primary": "#296773",
+    "secondary": "#f4f7f5"
+  },
+  {
+    "name": "Kashima Antlers (JPN)",
+    "state": null,
+    "country": "JPN",
+    "kind": "national",
+    "division": "A",
+    "rating": 73,
+    "primary": "#174a78",
+    "secondary": "#f4f7f5"
+  },
+  {
+    "name": "Sanfrecce Hiroshima (JPN)",
+    "state": null,
+    "country": "JPN",
+    "kind": "national",
+    "division": "A",
+    "rating": 73,
+    "primary": "#8b1e2d",
+    "secondary": "#f4f7f5"
+  },
+  {
+    "name": "FC Tokyo (JPN)",
+    "state": null,
+    "country": "JPN",
+    "kind": "national",
+    "division": "A",
+    "rating": 73,
+    "primary": "#1f6b48",
+    "secondary": "#f4f7f5"
+  },
+  {
+    "name": "Cerezo Osaka (JPN)",
+    "state": null,
+    "country": "JPN",
+    "kind": "national",
+    "division": "A",
+    "rating": 73,
+    "primary": "#6b3d87",
+    "secondary": "#f4f7f5"
+  },
+  {
+    "name": "Gamba Osaka (JPN)",
+    "state": null,
+    "country": "JPN",
+    "kind": "national",
+    "division": "A",
+    "rating": 72,
+    "primary": "#a76917",
+    "secondary": "#f4f7f5"
+  },
+  {
+    "name": "Nagoya Grampus (JPN)",
+    "state": null,
+    "country": "JPN",
+    "kind": "national",
+    "division": "A",
+    "rating": 72,
+    "primary": "#2c596e",
+    "secondary": "#f4f7f5"
+  },
+  {
+    "name": "Avispa Fukuoka (JPN)",
+    "state": null,
+    "country": "JPN",
+    "kind": "national",
+    "division": "A",
+    "rating": 72,
+    "primary": "#7a3b32",
+    "secondary": "#f4f7f5"
+  },
+  {
+    "name": "Consadole Sapporo (JPN)",
+    "state": null,
+    "country": "JPN",
+    "kind": "national",
+    "division": "A",
+    "rating": 72,
+    "primary": "#3d6b2f",
+    "secondary": "#f4f7f5"
+  },
+  {
+    "name": "Albirex Niigata (JPN)",
+    "state": null,
+    "country": "JPN",
+    "kind": "national",
+    "division": "A",
+    "rating": 71,
+    "primary": "#5c527f",
+    "secondary": "#f4f7f5"
+  },
+  {
+    "name": "Shonan Bellmare (JPN)",
+    "state": null,
+    "country": "JPN",
+    "kind": "national",
+    "division": "A",
+    "rating": 71,
+    "primary": "#296773",
+    "secondary": "#f4f7f5"
+  },
+  {
+    "name": "Kashiwa Reysol (JPN)",
+    "state": null,
+    "country": "JPN",
+    "kind": "national",
+    "division": "A",
+    "rating": 71,
+    "primary": "#174a78",
+    "secondary": "#f4f7f5"
+  },
+  {
+    "name": "Kyoto Sanga (JPN)",
+    "state": null,
+    "country": "JPN",
+    "kind": "national",
+    "division": "A",
+    "rating": 71,
+    "primary": "#8b1e2d",
+    "secondary": "#f4f7f5"
+  },
+  {
+    "name": "Tokyo Verdy (JPN)",
+    "state": null,
+    "country": "JPN",
+    "kind": "national",
+    "division": "A",
+    "rating": 70,
+    "primary": "#1f6b48",
+    "secondary": "#f4f7f5"
+  },
+  {
+    "name": "Júbilo Iwata (JPN)",
+    "state": null,
+    "country": "JPN",
+    "kind": "national",
+    "division": "A",
+    "rating": 70,
+    "primary": "#6b3d87",
+    "secondary": "#f4f7f5"
+  },
+  {
+    "name": "Machida Zelvia (JPN)",
+    "state": null,
+    "country": "JPN",
+    "kind": "national",
+    "division": "A",
+    "rating": 70,
+    "primary": "#a76917",
+    "secondary": "#f4f7f5"
+  },
+  {
+    "name": "Sagan Tosu (JPN)",
+    "state": null,
+    "country": "JPN",
+    "kind": "national",
+    "division": "A",
+    "rating": 70,
+    "primary": "#2c596e",
+    "secondary": "#f4f7f5"
+  },
+  {
+    "name": "Japanese B01 (JPN)",
+    "state": null,
+    "country": "JPN",
+    "kind": "national",
+    "division": "B",
+    "rating": 67,
+    "primary": "#7a3b32",
+    "secondary": "#f4f7f5"
+  },
+  {
+    "name": "Japanese B02 (JPN)",
+    "state": null,
+    "country": "JPN",
+    "kind": "national",
+    "division": "B",
+    "rating": 67,
+    "primary": "#3d6b2f",
+    "secondary": "#f4f7f5"
+  },
+  {
+    "name": "Japanese B03 (JPN)",
+    "state": null,
+    "country": "JPN",
+    "kind": "national",
+    "division": "B",
+    "rating": 67,
+    "primary": "#5c527f",
+    "secondary": "#f4f7f5"
+  },
+  {
+    "name": "Japanese B04 (JPN)",
+    "state": null,
+    "country": "JPN",
+    "kind": "national",
+    "division": "B",
+    "rating": 67,
+    "primary": "#296773",
+    "secondary": "#f4f7f5"
+  },
+  {
+    "name": "Japanese B05 (JPN)",
+    "state": null,
+    "country": "JPN",
+    "kind": "national",
+    "division": "B",
+    "rating": 66,
+    "primary": "#174a78",
+    "secondary": "#f4f7f5"
+  },
+  {
+    "name": "Japanese B06 (JPN)",
+    "state": null,
+    "country": "JPN",
+    "kind": "national",
+    "division": "B",
+    "rating": 66,
+    "primary": "#8b1e2d",
+    "secondary": "#f4f7f5"
+  },
+  {
+    "name": "Japanese B07 (JPN)",
+    "state": null,
+    "country": "JPN",
+    "kind": "national",
+    "division": "B",
+    "rating": 66,
+    "primary": "#1f6b48",
+    "secondary": "#f4f7f5"
+  },
+  {
+    "name": "Japanese B08 (JPN)",
+    "state": null,
+    "country": "JPN",
+    "kind": "national",
+    "division": "B",
+    "rating": 66,
+    "primary": "#6b3d87",
+    "secondary": "#f4f7f5"
+  },
+  {
+    "name": "Japanese B09 (JPN)",
+    "state": null,
+    "country": "JPN",
+    "kind": "national",
+    "division": "B",
+    "rating": 65,
+    "primary": "#a76917",
+    "secondary": "#f4f7f5"
+  },
+  {
+    "name": "Japanese B10 (JPN)",
+    "state": null,
+    "country": "JPN",
+    "kind": "national",
+    "division": "B",
+    "rating": 65,
+    "primary": "#2c596e",
+    "secondary": "#f4f7f5"
+  },
+  {
+    "name": "Japanese B11 (JPN)",
+    "state": null,
+    "country": "JPN",
+    "kind": "national",
+    "division": "B",
+    "rating": 65,
+    "primary": "#7a3b32",
+    "secondary": "#f4f7f5"
+  },
+  {
+    "name": "Japanese B12 (JPN)",
+    "state": null,
+    "country": "JPN",
+    "kind": "national",
+    "division": "B",
+    "rating": 65,
+    "primary": "#3d6b2f",
+    "secondary": "#f4f7f5"
+  },
+  {
+    "name": "Japanese B13 (JPN)",
+    "state": null,
+    "country": "JPN",
+    "kind": "national",
+    "division": "B",
+    "rating": 64,
+    "primary": "#5c527f",
+    "secondary": "#f4f7f5"
+  },
+  {
+    "name": "Japanese B14 (JPN)",
+    "state": null,
+    "country": "JPN",
+    "kind": "national",
+    "division": "B",
+    "rating": 64,
+    "primary": "#296773",
+    "secondary": "#f4f7f5"
+  },
+  {
+    "name": "Japanese B15 (JPN)",
+    "state": null,
+    "country": "JPN",
+    "kind": "national",
+    "division": "B",
+    "rating": 64,
+    "primary": "#174a78",
+    "secondary": "#f4f7f5"
+  },
+  {
+    "name": "Japanese B16 (JPN)",
+    "state": null,
+    "country": "JPN",
+    "kind": "national",
+    "division": "B",
+    "rating": 64,
+    "primary": "#8b1e2d",
+    "secondary": "#f4f7f5"
+  },
+  {
+    "name": "Japanese B17 (JPN)",
+    "state": null,
+    "country": "JPN",
+    "kind": "national",
+    "division": "B",
+    "rating": 63,
+    "primary": "#1f6b48",
+    "secondary": "#f4f7f5"
+  },
+  {
+    "name": "Japanese B18 (JPN)",
+    "state": null,
+    "country": "JPN",
+    "kind": "national",
+    "division": "B",
+    "rating": 63,
+    "primary": "#6b3d87",
+    "secondary": "#f4f7f5"
+  },
+  {
+    "name": "Japanese B19 (JPN)",
+    "state": null,
+    "country": "JPN",
+    "kind": "national",
+    "division": "B",
+    "rating": 63,
+    "primary": "#a76917",
+    "secondary": "#f4f7f5"
+  },
+  {
+    "name": "Japanese B20 (JPN)",
+    "state": null,
+    "country": "JPN",
+    "kind": "national",
+    "division": "B",
+    "rating": 63,
+    "primary": "#2c596e",
+    "secondary": "#f4f7f5"
+  },
+  {
+    "name": "Japanese C01 (JPN)",
+    "state": null,
+    "country": "JPN",
+    "kind": "national",
+    "division": "C",
+    "rating": 60,
+    "primary": "#7a3b32",
+    "secondary": "#f4f7f5"
+  },
+  {
+    "name": "Japanese C02 (JPN)",
+    "state": null,
+    "country": "JPN",
+    "kind": "national",
+    "division": "C",
+    "rating": 60,
+    "primary": "#3d6b2f",
+    "secondary": "#f4f7f5"
+  },
+  {
+    "name": "Japanese C03 (JPN)",
+    "state": null,
+    "country": "JPN",
+    "kind": "national",
+    "division": "C",
+    "rating": 60,
+    "primary": "#5c527f",
+    "secondary": "#f4f7f5"
+  },
+  {
+    "name": "Japanese C04 (JPN)",
+    "state": null,
+    "country": "JPN",
+    "kind": "national",
+    "division": "C",
+    "rating": 60,
+    "primary": "#296773",
+    "secondary": "#f4f7f5"
+  },
+  {
+    "name": "Japanese C05 (JPN)",
+    "state": null,
+    "country": "JPN",
+    "kind": "national",
+    "division": "C",
+    "rating": 59,
+    "primary": "#174a78",
+    "secondary": "#f4f7f5"
+  },
+  {
+    "name": "Japanese C06 (JPN)",
+    "state": null,
+    "country": "JPN",
+    "kind": "national",
+    "division": "C",
+    "rating": 59,
+    "primary": "#8b1e2d",
+    "secondary": "#f4f7f5"
+  },
+  {
+    "name": "Japanese C07 (JPN)",
+    "state": null,
+    "country": "JPN",
+    "kind": "national",
+    "division": "C",
+    "rating": 59,
+    "primary": "#1f6b48",
+    "secondary": "#f4f7f5"
+  },
+  {
+    "name": "Japanese C08 (JPN)",
+    "state": null,
+    "country": "JPN",
+    "kind": "national",
+    "division": "C",
+    "rating": 59,
+    "primary": "#6b3d87",
+    "secondary": "#f4f7f5"
+  },
+  {
+    "name": "Japanese C09 (JPN)",
+    "state": null,
+    "country": "JPN",
+    "kind": "national",
+    "division": "C",
+    "rating": 58,
+    "primary": "#a76917",
+    "secondary": "#f4f7f5"
+  },
+  {
+    "name": "Japanese C10 (JPN)",
+    "state": null,
+    "country": "JPN",
+    "kind": "national",
+    "division": "C",
+    "rating": 58,
+    "primary": "#2c596e",
+    "secondary": "#f4f7f5"
+  },
+  {
+    "name": "Japanese C11 (JPN)",
+    "state": null,
+    "country": "JPN",
+    "kind": "national",
+    "division": "C",
+    "rating": 58,
+    "primary": "#7a3b32",
+    "secondary": "#f4f7f5"
+  },
+  {
+    "name": "Japanese C12 (JPN)",
+    "state": null,
+    "country": "JPN",
+    "kind": "national",
+    "division": "C",
+    "rating": 58,
+    "primary": "#3d6b2f",
+    "secondary": "#f4f7f5"
+  },
+  {
+    "name": "Japanese C13 (JPN)",
+    "state": null,
+    "country": "JPN",
+    "kind": "national",
+    "division": "C",
+    "rating": 57,
+    "primary": "#5c527f",
+    "secondary": "#f4f7f5"
+  },
+  {
+    "name": "Japanese C14 (JPN)",
+    "state": null,
+    "country": "JPN",
+    "kind": "national",
+    "division": "C",
+    "rating": 57,
+    "primary": "#296773",
+    "secondary": "#f4f7f5"
+  },
+  {
+    "name": "Japanese C15 (JPN)",
+    "state": null,
+    "country": "JPN",
+    "kind": "national",
+    "division": "C",
+    "rating": 57,
+    "primary": "#174a78",
+    "secondary": "#f4f7f5"
+  },
+  {
+    "name": "Japanese C16 (JPN)",
+    "state": null,
+    "country": "JPN",
+    "kind": "national",
+    "division": "C",
+    "rating": 57,
+    "primary": "#8b1e2d",
+    "secondary": "#f4f7f5"
+  },
+  {
+    "name": "Japanese C17 (JPN)",
+    "state": null,
+    "country": "JPN",
+    "kind": "national",
+    "division": "C",
+    "rating": 56,
+    "primary": "#1f6b48",
+    "secondary": "#f4f7f5"
+  },
+  {
+    "name": "Japanese C18 (JPN)",
+    "state": null,
+    "country": "JPN",
+    "kind": "national",
+    "division": "C",
+    "rating": 56,
+    "primary": "#6b3d87",
+    "secondary": "#f4f7f5"
+  },
+  {
+    "name": "Japanese C19 (JPN)",
+    "state": null,
+    "country": "JPN",
+    "kind": "national",
+    "division": "C",
+    "rating": 56,
+    "primary": "#a76917",
+    "secondary": "#f4f7f5"
+  },
+  {
+    "name": "Japanese C20 (JPN)",
+    "state": null,
+    "country": "JPN",
+    "kind": "national",
+    "division": "C",
+    "rating": 56,
+    "primary": "#2c596e",
+    "secondary": "#f4f7f5"
+  },
+  {
+    "name": "Japanese D01 (JPN)",
+    "state": null,
+    "country": "JPN",
+    "kind": "national",
+    "division": "D",
+    "rating": 53,
+    "primary": "#7a3b32",
+    "secondary": "#f4f7f5"
+  },
+  {
+    "name": "Japanese D02 (JPN)",
+    "state": null,
+    "country": "JPN",
+    "kind": "national",
+    "division": "D",
+    "rating": 53,
+    "primary": "#3d6b2f",
+    "secondary": "#f4f7f5"
+  },
+  {
+    "name": "Japanese D03 (JPN)",
+    "state": null,
+    "country": "JPN",
+    "kind": "national",
+    "division": "D",
+    "rating": 53,
+    "primary": "#5c527f",
+    "secondary": "#f4f7f5"
+  },
+  {
+    "name": "Japanese D04 (JPN)",
+    "state": null,
+    "country": "JPN",
+    "kind": "national",
+    "division": "D",
+    "rating": 53,
+    "primary": "#296773",
+    "secondary": "#f4f7f5"
+  },
+  {
+    "name": "Japanese D05 (JPN)",
+    "state": null,
+    "country": "JPN",
+    "kind": "national",
+    "division": "D",
+    "rating": 52,
+    "primary": "#174a78",
+    "secondary": "#f4f7f5"
+  },
+  {
+    "name": "Japanese D06 (JPN)",
+    "state": null,
+    "country": "JPN",
+    "kind": "national",
+    "division": "D",
+    "rating": 52,
+    "primary": "#8b1e2d",
+    "secondary": "#f4f7f5"
+  },
+  {
+    "name": "Japanese D07 (JPN)",
+    "state": null,
+    "country": "JPN",
+    "kind": "national",
+    "division": "D",
+    "rating": 52,
+    "primary": "#1f6b48",
+    "secondary": "#f4f7f5"
+  },
+  {
+    "name": "Japanese D08 (JPN)",
+    "state": null,
+    "country": "JPN",
+    "kind": "national",
+    "division": "D",
+    "rating": 52,
+    "primary": "#6b3d87",
+    "secondary": "#f4f7f5"
+  },
+  {
+    "name": "Japanese D09 (JPN)",
+    "state": null,
+    "country": "JPN",
+    "kind": "national",
+    "division": "D",
+    "rating": 52,
+    "primary": "#a76917",
+    "secondary": "#f4f7f5"
+  },
+  {
+    "name": "Japanese D10 (JPN)",
+    "state": null,
+    "country": "JPN",
+    "kind": "national",
+    "division": "D",
+    "rating": 52,
+    "primary": "#2c596e",
+    "secondary": "#f4f7f5"
+  },
+  {
+    "name": "Japanese D11 (JPN)",
+    "state": null,
+    "country": "JPN",
+    "kind": "national",
+    "division": "D",
+    "rating": 52,
+    "primary": "#7a3b32",
+    "secondary": "#f4f7f5"
+  },
+  {
+    "name": "Japanese D12 (JPN)",
+    "state": null,
+    "country": "JPN",
+    "kind": "national",
+    "division": "D",
+    "rating": 52,
+    "primary": "#3d6b2f",
+    "secondary": "#f4f7f5"
+  },
+  {
+    "name": "Japanese D13 (JPN)",
+    "state": null,
+    "country": "JPN",
+    "kind": "national",
+    "division": "D",
+    "rating": 52,
+    "primary": "#5c527f",
+    "secondary": "#f4f7f5"
+  },
+  {
+    "name": "Japanese D14 (JPN)",
+    "state": null,
+    "country": "JPN",
+    "kind": "national",
+    "division": "D",
+    "rating": 52,
+    "primary": "#296773",
+    "secondary": "#f4f7f5"
+  },
+  {
+    "name": "Japanese D15 (JPN)",
+    "state": null,
+    "country": "JPN",
+    "kind": "national",
+    "division": "D",
+    "rating": 52,
+    "primary": "#174a78",
+    "secondary": "#f4f7f5"
+  },
+  {
+    "name": "Japanese D16 (JPN)",
+    "state": null,
+    "country": "JPN",
+    "kind": "national",
+    "division": "D",
+    "rating": 52,
+    "primary": "#8b1e2d",
+    "secondary": "#f4f7f5"
+  },
+  {
+    "name": "Japanese D17 (JPN)",
+    "state": null,
+    "country": "JPN",
+    "kind": "national",
+    "division": "D",
+    "rating": 52,
+    "primary": "#1f6b48",
+    "secondary": "#f4f7f5"
+  },
+  {
+    "name": "Japanese D18 (JPN)",
+    "state": null,
+    "country": "JPN",
+    "kind": "national",
+    "division": "D",
+    "rating": 52,
+    "primary": "#6b3d87",
+    "secondary": "#f4f7f5"
+  },
+  {
+    "name": "Japanese D19 (JPN)",
+    "state": null,
+    "country": "JPN",
+    "kind": "national",
+    "division": "D",
+    "rating": 52,
+    "primary": "#a76917",
+    "secondary": "#f4f7f5"
+  },
+  {
+    "name": "Japanese D20 (JPN)",
+    "state": null,
+    "country": "JPN",
+    "kind": "national",
+    "division": "D",
+    "rating": 52,
+    "primary": "#2c596e",
+    "secondary": "#f4f7f5"
+  },
+  {
+    "name": "Al Hilal (KSA)",
+    "state": null,
+    "country": "KSA",
+    "kind": "national",
+    "division": "A",
+    "rating": 77,
+    "primary": "#3d6b2f",
+    "secondary": "#f4f7f5"
+  },
+  {
+    "name": "Al Nassr (KSA)",
+    "state": null,
+    "country": "KSA",
+    "kind": "national",
+    "division": "A",
+    "rating": 77,
+    "primary": "#5c527f",
+    "secondary": "#f4f7f5"
+  },
+  {
+    "name": "Al Ittihad (KSA)",
+    "state": null,
+    "country": "KSA",
+    "kind": "national",
+    "division": "A",
+    "rating": 77,
+    "primary": "#296773",
+    "secondary": "#f4f7f5"
+  },
+  {
+    "name": "Al Ahli (KSA)",
+    "state": null,
+    "country": "KSA",
+    "kind": "national",
+    "division": "A",
+    "rating": 77,
+    "primary": "#174a78",
+    "secondary": "#f4f7f5"
+  },
+  {
+    "name": "Al Ettifaq (KSA)",
+    "state": null,
+    "country": "KSA",
+    "kind": "national",
+    "division": "A",
+    "rating": 76,
+    "primary": "#8b1e2d",
+    "secondary": "#f4f7f5"
+  },
+  {
+    "name": "Al Shabab (KSA)",
+    "state": null,
+    "country": "KSA",
+    "kind": "national",
+    "division": "A",
+    "rating": 76,
+    "primary": "#1f6b48",
+    "secondary": "#f4f7f5"
+  },
+  {
+    "name": "Al Taawoun (KSA)",
+    "state": null,
+    "country": "KSA",
+    "kind": "national",
+    "division": "A",
+    "rating": 76,
+    "primary": "#6b3d87",
+    "secondary": "#f4f7f5"
+  },
+  {
+    "name": "Al Fateh (KSA)",
+    "state": null,
+    "country": "KSA",
+    "kind": "national",
+    "division": "A",
+    "rating": 76,
+    "primary": "#a76917",
+    "secondary": "#f4f7f5"
+  },
+  {
+    "name": "Al Fayha (KSA)",
+    "state": null,
+    "country": "KSA",
+    "kind": "national",
+    "division": "A",
+    "rating": 75,
+    "primary": "#2c596e",
+    "secondary": "#f4f7f5"
+  },
+  {
+    "name": "Damac (KSA)",
+    "state": null,
+    "country": "KSA",
+    "kind": "national",
+    "division": "A",
+    "rating": 75,
+    "primary": "#7a3b32",
+    "secondary": "#f4f7f5"
+  },
+  {
+    "name": "Al Raed (KSA)",
+    "state": null,
+    "country": "KSA",
+    "kind": "national",
+    "division": "A",
+    "rating": 75,
+    "primary": "#3d6b2f",
+    "secondary": "#f4f7f5"
+  },
+  {
+    "name": "Al Khaleej (KSA)",
+    "state": null,
+    "country": "KSA",
+    "kind": "national",
+    "division": "A",
+    "rating": 75,
+    "primary": "#5c527f",
+    "secondary": "#f4f7f5"
+  },
+  {
+    "name": "Al Riyadh (KSA)",
+    "state": null,
+    "country": "KSA",
+    "kind": "national",
+    "division": "A",
+    "rating": 74,
+    "primary": "#296773",
+    "secondary": "#f4f7f5"
+  },
+  {
+    "name": "Al Wehda (KSA)",
+    "state": null,
+    "country": "KSA",
+    "kind": "national",
+    "division": "A",
+    "rating": 74,
+    "primary": "#174a78",
+    "secondary": "#f4f7f5"
+  },
+  {
+    "name": "Abha (KSA)",
+    "state": null,
+    "country": "KSA",
+    "kind": "national",
+    "division": "A",
+    "rating": 74,
+    "primary": "#8b1e2d",
+    "secondary": "#f4f7f5"
+  },
+  {
+    "name": "Al Hazem (KSA)",
+    "state": null,
+    "country": "KSA",
+    "kind": "national",
+    "division": "A",
+    "rating": 74,
+    "primary": "#1f6b48",
+    "secondary": "#f4f7f5"
+  },
+  {
+    "name": "Al Okhdood (KSA)",
+    "state": null,
+    "country": "KSA",
+    "kind": "national",
+    "division": "A",
+    "rating": 73,
+    "primary": "#6b3d87",
+    "secondary": "#f4f7f5"
+  },
+  {
+    "name": "Al Qadsiah (KSA)",
+    "state": null,
+    "country": "KSA",
+    "kind": "national",
+    "division": "A",
+    "rating": 73,
+    "primary": "#a76917",
+    "secondary": "#f4f7f5"
+  },
+  {
+    "name": "Al Tai (KSA)",
+    "state": null,
+    "country": "KSA",
+    "kind": "national",
+    "division": "A",
+    "rating": 73,
+    "primary": "#2c596e",
+    "secondary": "#f4f7f5"
+  },
+  {
+    "name": "Al Batin (KSA)",
+    "state": null,
+    "country": "KSA",
+    "kind": "national",
+    "division": "A",
+    "rating": 73,
+    "primary": "#7a3b32",
+    "secondary": "#f4f7f5"
+  },
+  {
+    "name": "Saudi B01 (KSA)",
+    "state": null,
+    "country": "KSA",
+    "kind": "national",
+    "division": "B",
+    "rating": 70,
+    "primary": "#3d6b2f",
+    "secondary": "#f4f7f5"
+  },
+  {
+    "name": "Saudi B02 (KSA)",
+    "state": null,
+    "country": "KSA",
+    "kind": "national",
+    "division": "B",
+    "rating": 70,
+    "primary": "#5c527f",
+    "secondary": "#f4f7f5"
+  },
+  {
+    "name": "Saudi B03 (KSA)",
+    "state": null,
+    "country": "KSA",
+    "kind": "national",
+    "division": "B",
+    "rating": 70,
+    "primary": "#296773",
+    "secondary": "#f4f7f5"
+  },
+  {
+    "name": "Saudi B04 (KSA)",
+    "state": null,
+    "country": "KSA",
+    "kind": "national",
+    "division": "B",
+    "rating": 70,
+    "primary": "#174a78",
+    "secondary": "#f4f7f5"
+  },
+  {
+    "name": "Saudi B05 (KSA)",
+    "state": null,
+    "country": "KSA",
+    "kind": "national",
+    "division": "B",
+    "rating": 69,
+    "primary": "#8b1e2d",
+    "secondary": "#f4f7f5"
+  },
+  {
+    "name": "Saudi B06 (KSA)",
+    "state": null,
+    "country": "KSA",
+    "kind": "national",
+    "division": "B",
+    "rating": 69,
+    "primary": "#1f6b48",
+    "secondary": "#f4f7f5"
+  },
+  {
+    "name": "Saudi B07 (KSA)",
+    "state": null,
+    "country": "KSA",
+    "kind": "national",
+    "division": "B",
+    "rating": 69,
+    "primary": "#6b3d87",
+    "secondary": "#f4f7f5"
+  },
+  {
+    "name": "Saudi B08 (KSA)",
+    "state": null,
+    "country": "KSA",
+    "kind": "national",
+    "division": "B",
+    "rating": 69,
+    "primary": "#a76917",
+    "secondary": "#f4f7f5"
+  },
+  {
+    "name": "Saudi B09 (KSA)",
+    "state": null,
+    "country": "KSA",
+    "kind": "national",
+    "division": "B",
+    "rating": 68,
+    "primary": "#2c596e",
+    "secondary": "#f4f7f5"
+  },
+  {
+    "name": "Saudi B10 (KSA)",
+    "state": null,
+    "country": "KSA",
+    "kind": "national",
+    "division": "B",
+    "rating": 68,
+    "primary": "#7a3b32",
+    "secondary": "#f4f7f5"
+  },
+  {
+    "name": "Saudi B11 (KSA)",
+    "state": null,
+    "country": "KSA",
+    "kind": "national",
+    "division": "B",
+    "rating": 68,
+    "primary": "#3d6b2f",
+    "secondary": "#f4f7f5"
+  },
+  {
+    "name": "Saudi B12 (KSA)",
+    "state": null,
+    "country": "KSA",
+    "kind": "national",
+    "division": "B",
+    "rating": 68,
+    "primary": "#5c527f",
+    "secondary": "#f4f7f5"
+  },
+  {
+    "name": "Saudi B13 (KSA)",
+    "state": null,
+    "country": "KSA",
+    "kind": "national",
+    "division": "B",
+    "rating": 67,
+    "primary": "#296773",
+    "secondary": "#f4f7f5"
+  },
+  {
+    "name": "Saudi B14 (KSA)",
+    "state": null,
+    "country": "KSA",
+    "kind": "national",
+    "division": "B",
+    "rating": 67,
+    "primary": "#174a78",
+    "secondary": "#f4f7f5"
+  },
+  {
+    "name": "Saudi B15 (KSA)",
+    "state": null,
+    "country": "KSA",
+    "kind": "national",
+    "division": "B",
+    "rating": 67,
+    "primary": "#8b1e2d",
+    "secondary": "#f4f7f5"
+  },
+  {
+    "name": "Saudi B16 (KSA)",
+    "state": null,
+    "country": "KSA",
+    "kind": "national",
+    "division": "B",
+    "rating": 67,
+    "primary": "#1f6b48",
+    "secondary": "#f4f7f5"
+  },
+  {
+    "name": "Saudi B17 (KSA)",
+    "state": null,
+    "country": "KSA",
+    "kind": "national",
+    "division": "B",
+    "rating": 66,
+    "primary": "#6b3d87",
+    "secondary": "#f4f7f5"
+  },
+  {
+    "name": "Saudi B18 (KSA)",
+    "state": null,
+    "country": "KSA",
+    "kind": "national",
+    "division": "B",
+    "rating": 66,
+    "primary": "#a76917",
+    "secondary": "#f4f7f5"
+  },
+  {
+    "name": "Saudi B19 (KSA)",
+    "state": null,
+    "country": "KSA",
+    "kind": "national",
+    "division": "B",
+    "rating": 66,
+    "primary": "#2c596e",
+    "secondary": "#f4f7f5"
+  },
+  {
+    "name": "Saudi B20 (KSA)",
+    "state": null,
+    "country": "KSA",
+    "kind": "national",
+    "division": "B",
+    "rating": 66,
+    "primary": "#7a3b32",
+    "secondary": "#f4f7f5"
+  },
+  {
+    "name": "Saudi C01 (KSA)",
+    "state": null,
+    "country": "KSA",
+    "kind": "national",
+    "division": "C",
+    "rating": 63,
+    "primary": "#3d6b2f",
+    "secondary": "#f4f7f5"
+  },
+  {
+    "name": "Saudi C02 (KSA)",
+    "state": null,
+    "country": "KSA",
+    "kind": "national",
+    "division": "C",
+    "rating": 63,
+    "primary": "#5c527f",
+    "secondary": "#f4f7f5"
+  },
+  {
+    "name": "Saudi C03 (KSA)",
+    "state": null,
+    "country": "KSA",
+    "kind": "national",
+    "division": "C",
+    "rating": 63,
+    "primary": "#296773",
+    "secondary": "#f4f7f5"
+  },
+  {
+    "name": "Saudi C04 (KSA)",
+    "state": null,
+    "country": "KSA",
+    "kind": "national",
+    "division": "C",
+    "rating": 63,
+    "primary": "#174a78",
+    "secondary": "#f4f7f5"
+  },
+  {
+    "name": "Saudi C05 (KSA)",
+    "state": null,
+    "country": "KSA",
+    "kind": "national",
+    "division": "C",
+    "rating": 62,
+    "primary": "#8b1e2d",
+    "secondary": "#f4f7f5"
+  },
+  {
+    "name": "Saudi C06 (KSA)",
+    "state": null,
+    "country": "KSA",
+    "kind": "national",
+    "division": "C",
+    "rating": 62,
+    "primary": "#1f6b48",
+    "secondary": "#f4f7f5"
+  },
+  {
+    "name": "Saudi C07 (KSA)",
+    "state": null,
+    "country": "KSA",
+    "kind": "national",
+    "division": "C",
+    "rating": 62,
+    "primary": "#6b3d87",
+    "secondary": "#f4f7f5"
+  },
+  {
+    "name": "Saudi C08 (KSA)",
+    "state": null,
+    "country": "KSA",
+    "kind": "national",
+    "division": "C",
+    "rating": 62,
+    "primary": "#a76917",
+    "secondary": "#f4f7f5"
+  },
+  {
+    "name": "Saudi C09 (KSA)",
+    "state": null,
+    "country": "KSA",
+    "kind": "national",
+    "division": "C",
+    "rating": 61,
+    "primary": "#2c596e",
+    "secondary": "#f4f7f5"
+  },
+  {
+    "name": "Saudi C10 (KSA)",
+    "state": null,
+    "country": "KSA",
+    "kind": "national",
+    "division": "C",
+    "rating": 61,
+    "primary": "#7a3b32",
+    "secondary": "#f4f7f5"
+  },
+  {
+    "name": "Saudi C11 (KSA)",
+    "state": null,
+    "country": "KSA",
+    "kind": "national",
+    "division": "C",
+    "rating": 61,
+    "primary": "#3d6b2f",
+    "secondary": "#f4f7f5"
+  },
+  {
+    "name": "Saudi C12 (KSA)",
+    "state": null,
+    "country": "KSA",
+    "kind": "national",
+    "division": "C",
+    "rating": 61,
+    "primary": "#5c527f",
+    "secondary": "#f4f7f5"
+  },
+  {
+    "name": "Saudi C13 (KSA)",
+    "state": null,
+    "country": "KSA",
+    "kind": "national",
+    "division": "C",
+    "rating": 60,
+    "primary": "#296773",
+    "secondary": "#f4f7f5"
+  },
+  {
+    "name": "Saudi C14 (KSA)",
+    "state": null,
+    "country": "KSA",
+    "kind": "national",
+    "division": "C",
+    "rating": 60,
+    "primary": "#174a78",
+    "secondary": "#f4f7f5"
+  },
+  {
+    "name": "Saudi C15 (KSA)",
+    "state": null,
+    "country": "KSA",
+    "kind": "national",
+    "division": "C",
+    "rating": 60,
+    "primary": "#8b1e2d",
+    "secondary": "#f4f7f5"
+  },
+  {
+    "name": "Saudi C16 (KSA)",
+    "state": null,
+    "country": "KSA",
+    "kind": "national",
+    "division": "C",
+    "rating": 60,
+    "primary": "#1f6b48",
+    "secondary": "#f4f7f5"
+  },
+  {
+    "name": "Saudi C17 (KSA)",
+    "state": null,
+    "country": "KSA",
+    "kind": "national",
+    "division": "C",
+    "rating": 59,
+    "primary": "#6b3d87",
+    "secondary": "#f4f7f5"
+  },
+  {
+    "name": "Saudi C18 (KSA)",
+    "state": null,
+    "country": "KSA",
+    "kind": "national",
+    "division": "C",
+    "rating": 59,
+    "primary": "#a76917",
+    "secondary": "#f4f7f5"
+  },
+  {
+    "name": "Saudi C19 (KSA)",
+    "state": null,
+    "country": "KSA",
+    "kind": "national",
+    "division": "C",
+    "rating": 59,
+    "primary": "#2c596e",
+    "secondary": "#f4f7f5"
+  },
+  {
+    "name": "Saudi C20 (KSA)",
+    "state": null,
+    "country": "KSA",
+    "kind": "national",
+    "division": "C",
+    "rating": 59,
+    "primary": "#7a3b32",
+    "secondary": "#f4f7f5"
+  },
+  {
+    "name": "Saudi D01 (KSA)",
+    "state": null,
+    "country": "KSA",
+    "kind": "national",
+    "division": "D",
+    "rating": 56,
+    "primary": "#3d6b2f",
+    "secondary": "#f4f7f5"
+  },
+  {
+    "name": "Saudi D02 (KSA)",
+    "state": null,
+    "country": "KSA",
+    "kind": "national",
+    "division": "D",
+    "rating": 56,
+    "primary": "#5c527f",
+    "secondary": "#f4f7f5"
+  },
+  {
+    "name": "Saudi D03 (KSA)",
+    "state": null,
+    "country": "KSA",
+    "kind": "national",
+    "division": "D",
+    "rating": 56,
+    "primary": "#296773",
+    "secondary": "#f4f7f5"
+  },
+  {
+    "name": "Saudi D04 (KSA)",
+    "state": null,
+    "country": "KSA",
+    "kind": "national",
+    "division": "D",
+    "rating": 56,
+    "primary": "#174a78",
+    "secondary": "#f4f7f5"
+  },
+  {
+    "name": "Saudi D05 (KSA)",
+    "state": null,
+    "country": "KSA",
+    "kind": "national",
+    "division": "D",
+    "rating": 55,
+    "primary": "#8b1e2d",
+    "secondary": "#f4f7f5"
+  },
+  {
+    "name": "Saudi D06 (KSA)",
+    "state": null,
+    "country": "KSA",
+    "kind": "national",
+    "division": "D",
+    "rating": 55,
+    "primary": "#1f6b48",
+    "secondary": "#f4f7f5"
+  },
+  {
+    "name": "Saudi D07 (KSA)",
+    "state": null,
+    "country": "KSA",
+    "kind": "national",
+    "division": "D",
+    "rating": 55,
+    "primary": "#6b3d87",
+    "secondary": "#f4f7f5"
+  },
+  {
+    "name": "Saudi D08 (KSA)",
+    "state": null,
+    "country": "KSA",
+    "kind": "national",
+    "division": "D",
+    "rating": 55,
+    "primary": "#a76917",
+    "secondary": "#f4f7f5"
+  },
+  {
+    "name": "Saudi D09 (KSA)",
+    "state": null,
+    "country": "KSA",
+    "kind": "national",
+    "division": "D",
+    "rating": 54,
+    "primary": "#2c596e",
+    "secondary": "#f4f7f5"
+  },
+  {
+    "name": "Saudi D10 (KSA)",
+    "state": null,
+    "country": "KSA",
+    "kind": "national",
+    "division": "D",
+    "rating": 54,
+    "primary": "#7a3b32",
+    "secondary": "#f4f7f5"
+  },
+  {
+    "name": "Saudi D11 (KSA)",
+    "state": null,
+    "country": "KSA",
+    "kind": "national",
+    "division": "D",
+    "rating": 54,
+    "primary": "#3d6b2f",
+    "secondary": "#f4f7f5"
+  },
+  {
+    "name": "Saudi D12 (KSA)",
+    "state": null,
+    "country": "KSA",
+    "kind": "national",
+    "division": "D",
+    "rating": 54,
+    "primary": "#5c527f",
+    "secondary": "#f4f7f5"
+  },
+  {
+    "name": "Saudi D13 (KSA)",
+    "state": null,
+    "country": "KSA",
+    "kind": "national",
+    "division": "D",
+    "rating": 53,
+    "primary": "#296773",
+    "secondary": "#f4f7f5"
+  },
+  {
+    "name": "Saudi D14 (KSA)",
+    "state": null,
+    "country": "KSA",
+    "kind": "national",
+    "division": "D",
+    "rating": 53,
+    "primary": "#174a78",
+    "secondary": "#f4f7f5"
+  },
+  {
+    "name": "Saudi D15 (KSA)",
+    "state": null,
+    "country": "KSA",
+    "kind": "national",
+    "division": "D",
+    "rating": 53,
+    "primary": "#8b1e2d",
+    "secondary": "#f4f7f5"
+  },
+  {
+    "name": "Saudi D16 (KSA)",
+    "state": null,
+    "country": "KSA",
+    "kind": "national",
+    "division": "D",
+    "rating": 53,
+    "primary": "#1f6b48",
+    "secondary": "#f4f7f5"
+  },
+  {
+    "name": "Saudi D17 (KSA)",
+    "state": null,
+    "country": "KSA",
+    "kind": "national",
+    "division": "D",
+    "rating": 52,
+    "primary": "#6b3d87",
+    "secondary": "#f4f7f5"
+  },
+  {
+    "name": "Saudi D18 (KSA)",
+    "state": null,
+    "country": "KSA",
+    "kind": "national",
+    "division": "D",
+    "rating": 52,
+    "primary": "#a76917",
+    "secondary": "#f4f7f5"
+  },
+  {
+    "name": "Saudi D19 (KSA)",
+    "state": null,
+    "country": "KSA",
+    "kind": "national",
+    "division": "D",
+    "rating": 52,
+    "primary": "#2c596e",
+    "secondary": "#f4f7f5"
+  },
+  {
+    "name": "Saudi D20 (KSA)",
+    "state": null,
+    "country": "KSA",
+    "kind": "national",
+    "division": "D",
+    "rating": 52,
+    "primary": "#7a3b32",
+    "secondary": "#f4f7f5"
+  },
+  {
+    "name": "Peñarol (URU)",
+    "state": null,
+    "country": "URU",
+    "kind": "national",
+    "division": "A",
+    "rating": 74,
+    "primary": "#5c527f",
+    "secondary": "#f4f7f5"
+  },
+  {
+    "name": "Nacional (URU)",
+    "state": null,
+    "country": "URU",
+    "kind": "national",
+    "division": "A",
+    "rating": 74,
+    "primary": "#296773",
+    "secondary": "#f4f7f5"
+  },
+  {
+    "name": "Defensor Sporting (URU)",
+    "state": null,
+    "country": "URU",
+    "kind": "national",
+    "division": "A",
+    "rating": 74,
+    "primary": "#174a78",
+    "secondary": "#f4f7f5"
+  },
+  {
+    "name": "Danubio (URU)",
+    "state": null,
+    "country": "URU",
+    "kind": "national",
+    "division": "A",
+    "rating": 74,
+    "primary": "#8b1e2d",
+    "secondary": "#f4f7f5"
+  },
+  {
+    "name": "Liverpool Montevideo (URU)",
+    "state": null,
+    "country": "URU",
+    "kind": "national",
+    "division": "A",
+    "rating": 73,
+    "primary": "#1f6b48",
+    "secondary": "#f4f7f5"
+  },
+  {
+    "name": "Boston River (URU)",
+    "state": null,
+    "country": "URU",
+    "kind": "national",
+    "division": "A",
+    "rating": 73,
+    "primary": "#6b3d87",
+    "secondary": "#f4f7f5"
+  },
+  {
+    "name": "Cerro Largo (URU)",
+    "state": null,
+    "country": "URU",
+    "kind": "national",
+    "division": "A",
+    "rating": 73,
+    "primary": "#a76917",
+    "secondary": "#f4f7f5"
+  },
+  {
+    "name": "Wanderers (URU)",
+    "state": null,
+    "country": "URU",
+    "kind": "national",
+    "division": "A",
+    "rating": 73,
+    "primary": "#2c596e",
+    "secondary": "#f4f7f5"
+  },
+  {
+    "name": "River Plate Montevideo (URU)",
+    "state": null,
+    "country": "URU",
+    "kind": "national",
+    "division": "A",
+    "rating": 72,
+    "primary": "#7a3b32",
+    "secondary": "#f4f7f5"
+  },
+  {
+    "name": "Racing Montevideo (URU)",
+    "state": null,
+    "country": "URU",
+    "kind": "national",
+    "division": "A",
+    "rating": 72,
+    "primary": "#3d6b2f",
+    "secondary": "#f4f7f5"
+  },
+  {
+    "name": "Cerro (URU)",
+    "state": null,
+    "country": "URU",
+    "kind": "national",
+    "division": "A",
+    "rating": 72,
+    "primary": "#5c527f",
+    "secondary": "#f4f7f5"
+  },
+  {
+    "name": "Fénix (URU)",
+    "state": null,
+    "country": "URU",
+    "kind": "national",
+    "division": "A",
+    "rating": 72,
+    "primary": "#296773",
+    "secondary": "#f4f7f5"
+  },
+  {
+    "name": "Plaza Colonia (URU)",
+    "state": null,
+    "country": "URU",
+    "kind": "national",
+    "division": "A",
+    "rating": 71,
+    "primary": "#174a78",
+    "secondary": "#f4f7f5"
+  },
+  {
+    "name": "Maldonado (URU)",
+    "state": null,
+    "country": "URU",
+    "kind": "national",
+    "division": "A",
+    "rating": 71,
+    "primary": "#8b1e2d",
+    "secondary": "#f4f7f5"
+  },
+  {
+    "name": "Progreso (URU)",
+    "state": null,
+    "country": "URU",
+    "kind": "national",
+    "division": "A",
+    "rating": 71,
+    "primary": "#1f6b48",
+    "secondary": "#f4f7f5"
+  },
+  {
+    "name": "Miramar Misiones (URU)",
+    "state": null,
+    "country": "URU",
+    "kind": "national",
+    "division": "A",
+    "rating": 71,
+    "primary": "#6b3d87",
+    "secondary": "#f4f7f5"
+  },
+  {
+    "name": "Rampla Juniors (URU)",
+    "state": null,
+    "country": "URU",
+    "kind": "national",
+    "division": "A",
+    "rating": 70,
+    "primary": "#a76917",
+    "secondary": "#f4f7f5"
+  },
+  {
+    "name": "Juventud (URU)",
+    "state": null,
+    "country": "URU",
+    "kind": "national",
+    "division": "A",
+    "rating": 70,
+    "primary": "#2c596e",
+    "secondary": "#f4f7f5"
+  },
+  {
+    "name": "Albion (URU)",
+    "state": null,
+    "country": "URU",
+    "kind": "national",
+    "division": "A",
+    "rating": 70,
+    "primary": "#7a3b32",
+    "secondary": "#f4f7f5"
+  },
+  {
+    "name": "Central Español (URU)",
+    "state": null,
+    "country": "URU",
+    "kind": "national",
+    "division": "A",
+    "rating": 70,
+    "primary": "#3d6b2f",
+    "secondary": "#f4f7f5"
+  },
+  {
+    "name": "Uruguayan B01 (URU)",
+    "state": null,
+    "country": "URU",
+    "kind": "national",
+    "division": "B",
+    "rating": 67,
+    "primary": "#5c527f",
+    "secondary": "#f4f7f5"
+  },
+  {
+    "name": "Uruguayan B02 (URU)",
+    "state": null,
+    "country": "URU",
+    "kind": "national",
+    "division": "B",
+    "rating": 67,
+    "primary": "#296773",
+    "secondary": "#f4f7f5"
+  },
+  {
+    "name": "Uruguayan B03 (URU)",
+    "state": null,
+    "country": "URU",
+    "kind": "national",
+    "division": "B",
+    "rating": 67,
+    "primary": "#174a78",
+    "secondary": "#f4f7f5"
+  },
+  {
+    "name": "Uruguayan B04 (URU)",
+    "state": null,
+    "country": "URU",
+    "kind": "national",
+    "division": "B",
+    "rating": 67,
+    "primary": "#8b1e2d",
+    "secondary": "#f4f7f5"
+  },
+  {
+    "name": "Uruguayan B05 (URU)",
+    "state": null,
+    "country": "URU",
+    "kind": "national",
+    "division": "B",
+    "rating": 66,
+    "primary": "#1f6b48",
+    "secondary": "#f4f7f5"
+  },
+  {
+    "name": "Uruguayan B06 (URU)",
+    "state": null,
+    "country": "URU",
+    "kind": "national",
+    "division": "B",
+    "rating": 66,
+    "primary": "#6b3d87",
+    "secondary": "#f4f7f5"
+  },
+  {
+    "name": "Uruguayan B07 (URU)",
+    "state": null,
+    "country": "URU",
+    "kind": "national",
+    "division": "B",
+    "rating": 66,
+    "primary": "#a76917",
+    "secondary": "#f4f7f5"
+  },
+  {
+    "name": "Uruguayan B08 (URU)",
+    "state": null,
+    "country": "URU",
+    "kind": "national",
+    "division": "B",
+    "rating": 66,
+    "primary": "#2c596e",
+    "secondary": "#f4f7f5"
+  },
+  {
+    "name": "Uruguayan B09 (URU)",
+    "state": null,
+    "country": "URU",
+    "kind": "national",
+    "division": "B",
+    "rating": 65,
+    "primary": "#7a3b32",
+    "secondary": "#f4f7f5"
+  },
+  {
+    "name": "Uruguayan B10 (URU)",
+    "state": null,
+    "country": "URU",
+    "kind": "national",
+    "division": "B",
+    "rating": 65,
+    "primary": "#3d6b2f",
+    "secondary": "#f4f7f5"
+  },
+  {
+    "name": "Uruguayan B11 (URU)",
+    "state": null,
+    "country": "URU",
+    "kind": "national",
+    "division": "B",
+    "rating": 65,
+    "primary": "#5c527f",
+    "secondary": "#f4f7f5"
+  },
+  {
+    "name": "Uruguayan B12 (URU)",
+    "state": null,
+    "country": "URU",
+    "kind": "national",
+    "division": "B",
+    "rating": 65,
+    "primary": "#296773",
+    "secondary": "#f4f7f5"
+  },
+  {
+    "name": "Uruguayan B13 (URU)",
+    "state": null,
+    "country": "URU",
+    "kind": "national",
+    "division": "B",
+    "rating": 64,
+    "primary": "#174a78",
+    "secondary": "#f4f7f5"
+  },
+  {
+    "name": "Uruguayan B14 (URU)",
+    "state": null,
+    "country": "URU",
+    "kind": "national",
+    "division": "B",
+    "rating": 64,
+    "primary": "#8b1e2d",
+    "secondary": "#f4f7f5"
+  },
+  {
+    "name": "Uruguayan B15 (URU)",
+    "state": null,
+    "country": "URU",
+    "kind": "national",
+    "division": "B",
+    "rating": 64,
+    "primary": "#1f6b48",
+    "secondary": "#f4f7f5"
+  },
+  {
+    "name": "Uruguayan B16 (URU)",
+    "state": null,
+    "country": "URU",
+    "kind": "national",
+    "division": "B",
+    "rating": 64,
+    "primary": "#6b3d87",
+    "secondary": "#f4f7f5"
+  },
+  {
+    "name": "Uruguayan B17 (URU)",
+    "state": null,
+    "country": "URU",
+    "kind": "national",
+    "division": "B",
+    "rating": 63,
+    "primary": "#a76917",
+    "secondary": "#f4f7f5"
+  },
+  {
+    "name": "Uruguayan B18 (URU)",
+    "state": null,
+    "country": "URU",
+    "kind": "national",
+    "division": "B",
+    "rating": 63,
+    "primary": "#2c596e",
+    "secondary": "#f4f7f5"
+  },
+  {
+    "name": "Uruguayan B19 (URU)",
+    "state": null,
+    "country": "URU",
+    "kind": "national",
+    "division": "B",
+    "rating": 63,
+    "primary": "#7a3b32",
+    "secondary": "#f4f7f5"
+  },
+  {
+    "name": "Uruguayan B20 (URU)",
+    "state": null,
+    "country": "URU",
+    "kind": "national",
+    "division": "B",
+    "rating": 63,
+    "primary": "#3d6b2f",
+    "secondary": "#f4f7f5"
+  },
+  {
+    "name": "Uruguayan C01 (URU)",
+    "state": null,
+    "country": "URU",
+    "kind": "national",
+    "division": "C",
+    "rating": 60,
+    "primary": "#5c527f",
+    "secondary": "#f4f7f5"
+  },
+  {
+    "name": "Uruguayan C02 (URU)",
+    "state": null,
+    "country": "URU",
+    "kind": "national",
+    "division": "C",
+    "rating": 60,
+    "primary": "#296773",
+    "secondary": "#f4f7f5"
+  },
+  {
+    "name": "Uruguayan C03 (URU)",
+    "state": null,
+    "country": "URU",
+    "kind": "national",
+    "division": "C",
+    "rating": 60,
+    "primary": "#174a78",
+    "secondary": "#f4f7f5"
+  },
+  {
+    "name": "Uruguayan C04 (URU)",
+    "state": null,
+    "country": "URU",
+    "kind": "national",
+    "division": "C",
+    "rating": 60,
+    "primary": "#8b1e2d",
+    "secondary": "#f4f7f5"
+  },
+  {
+    "name": "Uruguayan C05 (URU)",
+    "state": null,
+    "country": "URU",
+    "kind": "national",
+    "division": "C",
+    "rating": 59,
+    "primary": "#1f6b48",
+    "secondary": "#f4f7f5"
+  },
+  {
+    "name": "Uruguayan C06 (URU)",
+    "state": null,
+    "country": "URU",
+    "kind": "national",
+    "division": "C",
+    "rating": 59,
+    "primary": "#6b3d87",
+    "secondary": "#f4f7f5"
+  },
+  {
+    "name": "Uruguayan C07 (URU)",
+    "state": null,
+    "country": "URU",
+    "kind": "national",
+    "division": "C",
+    "rating": 59,
+    "primary": "#a76917",
+    "secondary": "#f4f7f5"
+  },
+  {
+    "name": "Uruguayan C08 (URU)",
+    "state": null,
+    "country": "URU",
+    "kind": "national",
+    "division": "C",
+    "rating": 59,
+    "primary": "#2c596e",
+    "secondary": "#f4f7f5"
+  },
+  {
+    "name": "Uruguayan C09 (URU)",
+    "state": null,
+    "country": "URU",
+    "kind": "national",
+    "division": "C",
+    "rating": 58,
+    "primary": "#7a3b32",
+    "secondary": "#f4f7f5"
+  },
+  {
+    "name": "Uruguayan C10 (URU)",
+    "state": null,
+    "country": "URU",
+    "kind": "national",
+    "division": "C",
+    "rating": 58,
+    "primary": "#3d6b2f",
+    "secondary": "#f4f7f5"
+  },
+  {
+    "name": "Uruguayan C11 (URU)",
+    "state": null,
+    "country": "URU",
+    "kind": "national",
+    "division": "C",
+    "rating": 58,
+    "primary": "#5c527f",
+    "secondary": "#f4f7f5"
+  },
+  {
+    "name": "Uruguayan C12 (URU)",
+    "state": null,
+    "country": "URU",
+    "kind": "national",
+    "division": "C",
+    "rating": 58,
+    "primary": "#296773",
+    "secondary": "#f4f7f5"
+  },
+  {
+    "name": "Uruguayan C13 (URU)",
+    "state": null,
+    "country": "URU",
+    "kind": "national",
+    "division": "C",
+    "rating": 57,
+    "primary": "#174a78",
+    "secondary": "#f4f7f5"
+  },
+  {
+    "name": "Uruguayan C14 (URU)",
+    "state": null,
+    "country": "URU",
+    "kind": "national",
+    "division": "C",
+    "rating": 57,
+    "primary": "#8b1e2d",
+    "secondary": "#f4f7f5"
+  },
+  {
+    "name": "Uruguayan C15 (URU)",
+    "state": null,
+    "country": "URU",
+    "kind": "national",
+    "division": "C",
+    "rating": 57,
+    "primary": "#1f6b48",
+    "secondary": "#f4f7f5"
+  },
+  {
+    "name": "Uruguayan C16 (URU)",
+    "state": null,
+    "country": "URU",
+    "kind": "national",
+    "division": "C",
+    "rating": 57,
+    "primary": "#6b3d87",
+    "secondary": "#f4f7f5"
+  },
+  {
+    "name": "Uruguayan C17 (URU)",
+    "state": null,
+    "country": "URU",
+    "kind": "national",
+    "division": "C",
+    "rating": 56,
+    "primary": "#a76917",
+    "secondary": "#f4f7f5"
+  },
+  {
+    "name": "Uruguayan C18 (URU)",
+    "state": null,
+    "country": "URU",
+    "kind": "national",
+    "division": "C",
+    "rating": 56,
+    "primary": "#2c596e",
+    "secondary": "#f4f7f5"
+  },
+  {
+    "name": "Uruguayan C19 (URU)",
+    "state": null,
+    "country": "URU",
+    "kind": "national",
+    "division": "C",
+    "rating": 56,
+    "primary": "#7a3b32",
+    "secondary": "#f4f7f5"
+  },
+  {
+    "name": "Uruguayan C20 (URU)",
+    "state": null,
+    "country": "URU",
+    "kind": "national",
+    "division": "C",
+    "rating": 56,
+    "primary": "#3d6b2f",
+    "secondary": "#f4f7f5"
+  },
+  {
+    "name": "Uruguayan D01 (URU)",
+    "state": null,
+    "country": "URU",
+    "kind": "national",
+    "division": "D",
+    "rating": 53,
+    "primary": "#5c527f",
+    "secondary": "#f4f7f5"
+  },
+  {
+    "name": "Uruguayan D02 (URU)",
+    "state": null,
+    "country": "URU",
+    "kind": "national",
+    "division": "D",
+    "rating": 53,
+    "primary": "#296773",
+    "secondary": "#f4f7f5"
+  },
+  {
+    "name": "Uruguayan D03 (URU)",
+    "state": null,
+    "country": "URU",
+    "kind": "national",
+    "division": "D",
+    "rating": 53,
+    "primary": "#174a78",
+    "secondary": "#f4f7f5"
+  },
+  {
+    "name": "Uruguayan D04 (URU)",
+    "state": null,
+    "country": "URU",
+    "kind": "national",
+    "division": "D",
+    "rating": 53,
+    "primary": "#8b1e2d",
+    "secondary": "#f4f7f5"
+  },
+  {
+    "name": "Uruguayan D05 (URU)",
+    "state": null,
+    "country": "URU",
+    "kind": "national",
+    "division": "D",
+    "rating": 52,
+    "primary": "#1f6b48",
+    "secondary": "#f4f7f5"
+  },
+  {
+    "name": "Uruguayan D06 (URU)",
+    "state": null,
+    "country": "URU",
+    "kind": "national",
+    "division": "D",
+    "rating": 52,
+    "primary": "#6b3d87",
+    "secondary": "#f4f7f5"
+  },
+  {
+    "name": "Uruguayan D07 (URU)",
+    "state": null,
+    "country": "URU",
+    "kind": "national",
+    "division": "D",
+    "rating": 52,
+    "primary": "#a76917",
+    "secondary": "#f4f7f5"
+  },
+  {
+    "name": "Uruguayan D08 (URU)",
+    "state": null,
+    "country": "URU",
+    "kind": "national",
+    "division": "D",
+    "rating": 52,
+    "primary": "#2c596e",
+    "secondary": "#f4f7f5"
+  },
+  {
+    "name": "Uruguayan D09 (URU)",
+    "state": null,
+    "country": "URU",
+    "kind": "national",
+    "division": "D",
+    "rating": 52,
+    "primary": "#7a3b32",
+    "secondary": "#f4f7f5"
+  },
+  {
+    "name": "Uruguayan D10 (URU)",
+    "state": null,
+    "country": "URU",
+    "kind": "national",
+    "division": "D",
+    "rating": 52,
+    "primary": "#3d6b2f",
+    "secondary": "#f4f7f5"
+  },
+  {
+    "name": "Uruguayan D11 (URU)",
+    "state": null,
+    "country": "URU",
+    "kind": "national",
+    "division": "D",
+    "rating": 52,
+    "primary": "#5c527f",
+    "secondary": "#f4f7f5"
+  },
+  {
+    "name": "Uruguayan D12 (URU)",
+    "state": null,
+    "country": "URU",
+    "kind": "national",
+    "division": "D",
+    "rating": 52,
+    "primary": "#296773",
+    "secondary": "#f4f7f5"
+  },
+  {
+    "name": "Uruguayan D13 (URU)",
+    "state": null,
+    "country": "URU",
+    "kind": "national",
+    "division": "D",
+    "rating": 52,
+    "primary": "#174a78",
+    "secondary": "#f4f7f5"
+  },
+  {
+    "name": "Uruguayan D14 (URU)",
+    "state": null,
+    "country": "URU",
+    "kind": "national",
+    "division": "D",
+    "rating": 52,
+    "primary": "#8b1e2d",
+    "secondary": "#f4f7f5"
+  },
+  {
+    "name": "Uruguayan D15 (URU)",
+    "state": null,
+    "country": "URU",
+    "kind": "national",
+    "division": "D",
+    "rating": 52,
+    "primary": "#1f6b48",
+    "secondary": "#f4f7f5"
+  },
+  {
+    "name": "Uruguayan D16 (URU)",
+    "state": null,
+    "country": "URU",
+    "kind": "national",
+    "division": "D",
+    "rating": 52,
+    "primary": "#6b3d87",
+    "secondary": "#f4f7f5"
+  },
+  {
+    "name": "Uruguayan D17 (URU)",
+    "state": null,
+    "country": "URU",
+    "kind": "national",
+    "division": "D",
+    "rating": 52,
+    "primary": "#a76917",
+    "secondary": "#f4f7f5"
+  },
+  {
+    "name": "Uruguayan D18 (URU)",
+    "state": null,
+    "country": "URU",
+    "kind": "national",
+    "division": "D",
+    "rating": 52,
+    "primary": "#2c596e",
+    "secondary": "#f4f7f5"
+  },
+  {
+    "name": "Uruguayan D19 (URU)",
+    "state": null,
+    "country": "URU",
+    "kind": "national",
+    "division": "D",
+    "rating": 52,
+    "primary": "#7a3b32",
+    "secondary": "#f4f7f5"
+  },
+  {
+    "name": "Uruguayan D20 (URU)",
+    "state": null,
+    "country": "URU",
+    "kind": "national",
+    "division": "D",
+    "rating": 52,
+    "primary": "#3d6b2f",
+    "secondary": "#f4f7f5"
+  },
+  {
+    "name": "Atlético Nacional (COL)",
+    "state": null,
+    "country": "COL",
+    "kind": "national",
+    "division": "A",
+    "rating": 74,
+    "primary": "#296773",
+    "secondary": "#f4f7f5"
+  },
+  {
+    "name": "Millonarios (COL)",
+    "state": null,
+    "country": "COL",
+    "kind": "national",
+    "division": "A",
+    "rating": 74,
+    "primary": "#174a78",
+    "secondary": "#f4f7f5"
+  },
+  {
+    "name": "América de Cali (COL)",
+    "state": null,
+    "country": "COL",
+    "kind": "national",
+    "division": "A",
+    "rating": 74,
+    "primary": "#8b1e2d",
+    "secondary": "#f4f7f5"
+  },
+  {
+    "name": "Junior (COL)",
+    "state": null,
+    "country": "COL",
+    "kind": "national",
+    "division": "A",
+    "rating": 74,
+    "primary": "#1f6b48",
+    "secondary": "#f4f7f5"
+  },
+  {
+    "name": "Independiente Medellín (COL)",
+    "state": null,
+    "country": "COL",
+    "kind": "national",
+    "division": "A",
+    "rating": 73,
+    "primary": "#6b3d87",
+    "secondary": "#f4f7f5"
+  },
+  {
+    "name": "Santa Fe (COL)",
+    "state": null,
+    "country": "COL",
+    "kind": "national",
+    "division": "A",
+    "rating": 73,
+    "primary": "#a76917",
+    "secondary": "#f4f7f5"
+  },
+  {
+    "name": "Deportivo Cali (COL)",
+    "state": null,
+    "country": "COL",
+    "kind": "national",
+    "division": "A",
+    "rating": 73,
+    "primary": "#2c596e",
+    "secondary": "#f4f7f5"
+  },
+  {
+    "name": "Once Caldas (COL)",
+    "state": null,
+    "country": "COL",
+    "kind": "national",
+    "division": "A",
+    "rating": 73,
+    "primary": "#7a3b32",
+    "secondary": "#f4f7f5"
+  },
+  {
+    "name": "Deportes Tolima (COL)",
+    "state": null,
+    "country": "COL",
+    "kind": "national",
+    "division": "A",
+    "rating": 72,
+    "primary": "#3d6b2f",
+    "secondary": "#f4f7f5"
+  },
+  {
+    "name": "Atlético Bucaramanga (COL)",
+    "state": null,
+    "country": "COL",
+    "kind": "national",
+    "division": "A",
+    "rating": 72,
+    "primary": "#5c527f",
+    "secondary": "#f4f7f5"
+  },
+  {
+    "name": "Pereira (COL)",
+    "state": null,
+    "country": "COL",
+    "kind": "national",
+    "division": "A",
+    "rating": 72,
+    "primary": "#296773",
+    "secondary": "#f4f7f5"
+  },
+  {
+    "name": "La Equidad (COL)",
+    "state": null,
+    "country": "COL",
+    "kind": "national",
+    "division": "A",
+    "rating": 72,
+    "primary": "#174a78",
+    "secondary": "#f4f7f5"
+  },
+  {
+    "name": "Envigado (COL)",
+    "state": null,
+    "country": "COL",
+    "kind": "national",
+    "division": "A",
+    "rating": 71,
+    "primary": "#8b1e2d",
+    "secondary": "#f4f7f5"
+  },
+  {
+    "name": "Águilas Doradas (COL)",
+    "state": null,
+    "country": "COL",
+    "kind": "national",
+    "division": "A",
+    "rating": 71,
+    "primary": "#1f6b48",
+    "secondary": "#f4f7f5"
+  },
+  {
+    "name": "Pasto (COL)",
+    "state": null,
+    "country": "COL",
+    "kind": "national",
+    "division": "A",
+    "rating": 71,
+    "primary": "#6b3d87",
+    "secondary": "#f4f7f5"
+  },
+  {
+    "name": "Boyacá Chicó (COL)",
+    "state": null,
+    "country": "COL",
+    "kind": "national",
+    "division": "A",
+    "rating": 71,
+    "primary": "#a76917",
+    "secondary": "#f4f7f5"
+  },
+  {
+    "name": "Alianza FC (COL)",
+    "state": null,
+    "country": "COL",
+    "kind": "national",
+    "division": "A",
+    "rating": 70,
+    "primary": "#2c596e",
+    "secondary": "#f4f7f5"
+  },
+  {
+    "name": "Fortaleza CEIF (COL)",
+    "state": null,
+    "country": "COL",
+    "kind": "national",
+    "division": "A",
+    "rating": 70,
+    "primary": "#7a3b32",
+    "secondary": "#f4f7f5"
+  },
+  {
+    "name": "Patriotas (COL)",
+    "state": null,
+    "country": "COL",
+    "kind": "national",
+    "division": "A",
+    "rating": 70,
+    "primary": "#3d6b2f",
+    "secondary": "#f4f7f5"
+  },
+  {
+    "name": "Jaguares (COL)",
+    "state": null,
+    "country": "COL",
+    "kind": "national",
+    "division": "A",
+    "rating": 70,
+    "primary": "#5c527f",
+    "secondary": "#f4f7f5"
+  },
+  {
+    "name": "Colombian B01 (COL)",
+    "state": null,
+    "country": "COL",
+    "kind": "national",
+    "division": "B",
+    "rating": 67,
+    "primary": "#296773",
+    "secondary": "#f4f7f5"
+  },
+  {
+    "name": "Colombian B02 (COL)",
+    "state": null,
+    "country": "COL",
+    "kind": "national",
+    "division": "B",
+    "rating": 67,
+    "primary": "#174a78",
+    "secondary": "#f4f7f5"
+  },
+  {
+    "name": "Colombian B03 (COL)",
+    "state": null,
+    "country": "COL",
+    "kind": "national",
+    "division": "B",
+    "rating": 67,
+    "primary": "#8b1e2d",
+    "secondary": "#f4f7f5"
+  },
+  {
+    "name": "Colombian B04 (COL)",
+    "state": null,
+    "country": "COL",
+    "kind": "national",
+    "division": "B",
+    "rating": 67,
+    "primary": "#1f6b48",
+    "secondary": "#f4f7f5"
+  },
+  {
+    "name": "Colombian B05 (COL)",
+    "state": null,
+    "country": "COL",
+    "kind": "national",
+    "division": "B",
+    "rating": 66,
+    "primary": "#6b3d87",
+    "secondary": "#f4f7f5"
+  },
+  {
+    "name": "Colombian B06 (COL)",
+    "state": null,
+    "country": "COL",
+    "kind": "national",
+    "division": "B",
+    "rating": 66,
+    "primary": "#a76917",
+    "secondary": "#f4f7f5"
+  },
+  {
+    "name": "Colombian B07 (COL)",
+    "state": null,
+    "country": "COL",
+    "kind": "national",
+    "division": "B",
+    "rating": 66,
+    "primary": "#2c596e",
+    "secondary": "#f4f7f5"
+  },
+  {
+    "name": "Colombian B08 (COL)",
+    "state": null,
+    "country": "COL",
+    "kind": "national",
+    "division": "B",
+    "rating": 66,
+    "primary": "#7a3b32",
+    "secondary": "#f4f7f5"
+  },
+  {
+    "name": "Colombian B09 (COL)",
+    "state": null,
+    "country": "COL",
+    "kind": "national",
+    "division": "B",
+    "rating": 65,
+    "primary": "#3d6b2f",
+    "secondary": "#f4f7f5"
+  },
+  {
+    "name": "Colombian B10 (COL)",
+    "state": null,
+    "country": "COL",
+    "kind": "national",
+    "division": "B",
+    "rating": 65,
+    "primary": "#5c527f",
+    "secondary": "#f4f7f5"
+  },
+  {
+    "name": "Colombian B11 (COL)",
+    "state": null,
+    "country": "COL",
+    "kind": "national",
+    "division": "B",
+    "rating": 65,
+    "primary": "#296773",
+    "secondary": "#f4f7f5"
+  },
+  {
+    "name": "Colombian B12 (COL)",
+    "state": null,
+    "country": "COL",
+    "kind": "national",
+    "division": "B",
+    "rating": 65,
+    "primary": "#174a78",
+    "secondary": "#f4f7f5"
+  },
+  {
+    "name": "Colombian B13 (COL)",
+    "state": null,
+    "country": "COL",
+    "kind": "national",
+    "division": "B",
+    "rating": 64,
+    "primary": "#8b1e2d",
+    "secondary": "#f4f7f5"
+  },
+  {
+    "name": "Colombian B14 (COL)",
+    "state": null,
+    "country": "COL",
+    "kind": "national",
+    "division": "B",
+    "rating": 64,
+    "primary": "#1f6b48",
+    "secondary": "#f4f7f5"
+  },
+  {
+    "name": "Colombian B15 (COL)",
+    "state": null,
+    "country": "COL",
+    "kind": "national",
+    "division": "B",
+    "rating": 64,
+    "primary": "#6b3d87",
+    "secondary": "#f4f7f5"
+  },
+  {
+    "name": "Colombian B16 (COL)",
+    "state": null,
+    "country": "COL",
+    "kind": "national",
+    "division": "B",
+    "rating": 64,
+    "primary": "#a76917",
+    "secondary": "#f4f7f5"
+  },
+  {
+    "name": "Colombian B17 (COL)",
+    "state": null,
+    "country": "COL",
+    "kind": "national",
+    "division": "B",
+    "rating": 63,
+    "primary": "#2c596e",
+    "secondary": "#f4f7f5"
+  },
+  {
+    "name": "Colombian B18 (COL)",
+    "state": null,
+    "country": "COL",
+    "kind": "national",
+    "division": "B",
+    "rating": 63,
+    "primary": "#7a3b32",
+    "secondary": "#f4f7f5"
+  },
+  {
+    "name": "Colombian B19 (COL)",
+    "state": null,
+    "country": "COL",
+    "kind": "national",
+    "division": "B",
+    "rating": 63,
+    "primary": "#3d6b2f",
+    "secondary": "#f4f7f5"
+  },
+  {
+    "name": "Colombian B20 (COL)",
+    "state": null,
+    "country": "COL",
+    "kind": "national",
+    "division": "B",
+    "rating": 63,
+    "primary": "#5c527f",
+    "secondary": "#f4f7f5"
+  },
+  {
+    "name": "Colombian C01 (COL)",
+    "state": null,
+    "country": "COL",
+    "kind": "national",
+    "division": "C",
+    "rating": 60,
+    "primary": "#296773",
+    "secondary": "#f4f7f5"
+  },
+  {
+    "name": "Colombian C02 (COL)",
+    "state": null,
+    "country": "COL",
+    "kind": "national",
+    "division": "C",
+    "rating": 60,
+    "primary": "#174a78",
+    "secondary": "#f4f7f5"
+  },
+  {
+    "name": "Colombian C03 (COL)",
+    "state": null,
+    "country": "COL",
+    "kind": "national",
+    "division": "C",
+    "rating": 60,
+    "primary": "#8b1e2d",
+    "secondary": "#f4f7f5"
+  },
+  {
+    "name": "Colombian C04 (COL)",
+    "state": null,
+    "country": "COL",
+    "kind": "national",
+    "division": "C",
+    "rating": 60,
+    "primary": "#1f6b48",
+    "secondary": "#f4f7f5"
+  },
+  {
+    "name": "Colombian C05 (COL)",
+    "state": null,
+    "country": "COL",
+    "kind": "national",
+    "division": "C",
+    "rating": 59,
+    "primary": "#6b3d87",
+    "secondary": "#f4f7f5"
+  },
+  {
+    "name": "Colombian C06 (COL)",
+    "state": null,
+    "country": "COL",
+    "kind": "national",
+    "division": "C",
+    "rating": 59,
+    "primary": "#a76917",
+    "secondary": "#f4f7f5"
+  },
+  {
+    "name": "Colombian C07 (COL)",
+    "state": null,
+    "country": "COL",
+    "kind": "national",
+    "division": "C",
+    "rating": 59,
+    "primary": "#2c596e",
+    "secondary": "#f4f7f5"
+  },
+  {
+    "name": "Colombian C08 (COL)",
+    "state": null,
+    "country": "COL",
+    "kind": "national",
+    "division": "C",
+    "rating": 59,
+    "primary": "#7a3b32",
+    "secondary": "#f4f7f5"
+  },
+  {
+    "name": "Colombian C09 (COL)",
+    "state": null,
+    "country": "COL",
+    "kind": "national",
+    "division": "C",
+    "rating": 58,
+    "primary": "#3d6b2f",
+    "secondary": "#f4f7f5"
+  },
+  {
+    "name": "Colombian C10 (COL)",
+    "state": null,
+    "country": "COL",
+    "kind": "national",
+    "division": "C",
+    "rating": 58,
+    "primary": "#5c527f",
+    "secondary": "#f4f7f5"
+  },
+  {
+    "name": "Colombian C11 (COL)",
+    "state": null,
+    "country": "COL",
+    "kind": "national",
+    "division": "C",
+    "rating": 58,
+    "primary": "#296773",
+    "secondary": "#f4f7f5"
+  },
+  {
+    "name": "Colombian C12 (COL)",
+    "state": null,
+    "country": "COL",
+    "kind": "national",
+    "division": "C",
+    "rating": 58,
+    "primary": "#174a78",
+    "secondary": "#f4f7f5"
+  },
+  {
+    "name": "Colombian C13 (COL)",
+    "state": null,
+    "country": "COL",
+    "kind": "national",
+    "division": "C",
+    "rating": 57,
+    "primary": "#8b1e2d",
+    "secondary": "#f4f7f5"
+  },
+  {
+    "name": "Colombian C14 (COL)",
+    "state": null,
+    "country": "COL",
+    "kind": "national",
+    "division": "C",
+    "rating": 57,
+    "primary": "#1f6b48",
+    "secondary": "#f4f7f5"
+  },
+  {
+    "name": "Colombian C15 (COL)",
+    "state": null,
+    "country": "COL",
+    "kind": "national",
+    "division": "C",
+    "rating": 57,
+    "primary": "#6b3d87",
+    "secondary": "#f4f7f5"
+  },
+  {
+    "name": "Colombian C16 (COL)",
+    "state": null,
+    "country": "COL",
+    "kind": "national",
+    "division": "C",
+    "rating": 57,
+    "primary": "#a76917",
+    "secondary": "#f4f7f5"
+  },
+  {
+    "name": "Colombian C17 (COL)",
+    "state": null,
+    "country": "COL",
+    "kind": "national",
+    "division": "C",
+    "rating": 56,
+    "primary": "#2c596e",
+    "secondary": "#f4f7f5"
+  },
+  {
+    "name": "Colombian C18 (COL)",
+    "state": null,
+    "country": "COL",
+    "kind": "national",
+    "division": "C",
+    "rating": 56,
+    "primary": "#7a3b32",
+    "secondary": "#f4f7f5"
+  },
+  {
+    "name": "Colombian C19 (COL)",
+    "state": null,
+    "country": "COL",
+    "kind": "national",
+    "division": "C",
+    "rating": 56,
+    "primary": "#3d6b2f",
+    "secondary": "#f4f7f5"
+  },
+  {
+    "name": "Colombian C20 (COL)",
+    "state": null,
+    "country": "COL",
+    "kind": "national",
+    "division": "C",
+    "rating": 56,
+    "primary": "#5c527f",
+    "secondary": "#f4f7f5"
+  },
+  {
+    "name": "Colombian D01 (COL)",
+    "state": null,
+    "country": "COL",
+    "kind": "national",
+    "division": "D",
+    "rating": 53,
+    "primary": "#296773",
+    "secondary": "#f4f7f5"
+  },
+  {
+    "name": "Colombian D02 (COL)",
+    "state": null,
+    "country": "COL",
+    "kind": "national",
+    "division": "D",
+    "rating": 53,
+    "primary": "#174a78",
+    "secondary": "#f4f7f5"
+  },
+  {
+    "name": "Colombian D03 (COL)",
+    "state": null,
+    "country": "COL",
+    "kind": "national",
+    "division": "D",
+    "rating": 53,
+    "primary": "#8b1e2d",
+    "secondary": "#f4f7f5"
+  },
+  {
+    "name": "Colombian D04 (COL)",
+    "state": null,
+    "country": "COL",
+    "kind": "national",
+    "division": "D",
+    "rating": 53,
+    "primary": "#1f6b48",
+    "secondary": "#f4f7f5"
+  },
+  {
+    "name": "Colombian D05 (COL)",
+    "state": null,
+    "country": "COL",
+    "kind": "national",
+    "division": "D",
+    "rating": 52,
+    "primary": "#6b3d87",
+    "secondary": "#f4f7f5"
+  },
+  {
+    "name": "Colombian D06 (COL)",
+    "state": null,
+    "country": "COL",
+    "kind": "national",
+    "division": "D",
+    "rating": 52,
+    "primary": "#a76917",
+    "secondary": "#f4f7f5"
+  },
+  {
+    "name": "Colombian D07 (COL)",
+    "state": null,
+    "country": "COL",
+    "kind": "national",
+    "division": "D",
+    "rating": 52,
+    "primary": "#2c596e",
+    "secondary": "#f4f7f5"
+  },
+  {
+    "name": "Colombian D08 (COL)",
+    "state": null,
+    "country": "COL",
+    "kind": "national",
+    "division": "D",
+    "rating": 52,
+    "primary": "#7a3b32",
+    "secondary": "#f4f7f5"
+  },
+  {
+    "name": "Colombian D09 (COL)",
+    "state": null,
+    "country": "COL",
+    "kind": "national",
+    "division": "D",
+    "rating": 52,
+    "primary": "#3d6b2f",
+    "secondary": "#f4f7f5"
+  },
+  {
+    "name": "Colombian D10 (COL)",
+    "state": null,
+    "country": "COL",
+    "kind": "national",
+    "division": "D",
+    "rating": 52,
+    "primary": "#5c527f",
+    "secondary": "#f4f7f5"
+  },
+  {
+    "name": "Colombian D11 (COL)",
+    "state": null,
+    "country": "COL",
+    "kind": "national",
+    "division": "D",
+    "rating": 52,
+    "primary": "#296773",
+    "secondary": "#f4f7f5"
+  },
+  {
+    "name": "Colombian D12 (COL)",
+    "state": null,
+    "country": "COL",
+    "kind": "national",
+    "division": "D",
+    "rating": 52,
+    "primary": "#174a78",
+    "secondary": "#f4f7f5"
+  },
+  {
+    "name": "Colombian D13 (COL)",
+    "state": null,
+    "country": "COL",
+    "kind": "national",
+    "division": "D",
+    "rating": 52,
+    "primary": "#8b1e2d",
+    "secondary": "#f4f7f5"
+  },
+  {
+    "name": "Colombian D14 (COL)",
+    "state": null,
+    "country": "COL",
+    "kind": "national",
+    "division": "D",
+    "rating": 52,
+    "primary": "#1f6b48",
+    "secondary": "#f4f7f5"
+  },
+  {
+    "name": "Colombian D15 (COL)",
+    "state": null,
+    "country": "COL",
+    "kind": "national",
+    "division": "D",
+    "rating": 52,
+    "primary": "#6b3d87",
+    "secondary": "#f4f7f5"
+  },
+  {
+    "name": "Colombian D16 (COL)",
+    "state": null,
+    "country": "COL",
+    "kind": "national",
+    "division": "D",
+    "rating": 52,
+    "primary": "#a76917",
+    "secondary": "#f4f7f5"
+  },
+  {
+    "name": "Colombian D17 (COL)",
+    "state": null,
+    "country": "COL",
+    "kind": "national",
+    "division": "D",
+    "rating": 52,
+    "primary": "#2c596e",
+    "secondary": "#f4f7f5"
+  },
+  {
+    "name": "Colombian D18 (COL)",
+    "state": null,
+    "country": "COL",
+    "kind": "national",
+    "division": "D",
+    "rating": 52,
+    "primary": "#7a3b32",
+    "secondary": "#f4f7f5"
+  },
+  {
+    "name": "Colombian D19 (COL)",
+    "state": null,
+    "country": "COL",
+    "kind": "national",
+    "division": "D",
+    "rating": 52,
+    "primary": "#3d6b2f",
+    "secondary": "#f4f7f5"
+  },
+  {
+    "name": "Colombian D20 (COL)",
+    "state": null,
+    "country": "COL",
+    "kind": "national",
+    "division": "D",
+    "rating": 52,
+    "primary": "#5c527f",
+    "secondary": "#f4f7f5"
   }
 ]

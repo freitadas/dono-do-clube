@@ -1315,3 +1315,18 @@ A v38 mantém, entre outros:
 
 ## v44 — Modo Carreira Jogador 2.0
 Reformulação ampla do modo jogador: personalidade e objetivo de carreira, número da camisa, plano de partida, objetivos sazonais, lesões e recuperação, sessões semanais de treino, especialidades/perks, disputa por posição, liderança/capitania, empresário em três níveis, sondagens e busca de Europa, empréstimos para a temporada seguinte, renegociação contratual, valor de mercado e cláusula, patrocínio pessoal, seguidores/fama, estrutura pessoal (personal/physio/nutrição/mídia), convocações para seleção, prêmios, histórico por temporada, linha do tempo, legado e aposentadoria.
+
+
+## v46 — Mais ligas e seleções
+- 18 países jogáveis no modo treinador.
+- Novos países: Países Baixos, Bélgica, Turquia, Escócia, México, Estados Unidos, Japão, Arábia Saudita, Uruguai e Colômbia.
+- Cada país possui quatro divisões no modelo de jogo e copa nacional.
+- Países europeus adicionados entram no ecossistema da Champions.
+- Uruguai e Colômbia entram no ecossistema sul-americano da Libertadores.
+- Nova aba SELEÇÃO no modo treinador.
+- Propostas de federações conforme reputação do técnico.
+- Técnico pode comandar clube e seleção simultaneamente.
+- Copa Internacional de Seleções e Copa do Mundo em ciclo do jogo.
+- Fase de grupos + quartas + semifinal + final.
+- Táticas, formações, convocação automática, confiança da federação, histórico e títulos.
+- Pênaltis interativos também nas partidas de seleção.

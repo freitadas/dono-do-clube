@@ -1,8 +1,8 @@
 {
   "name": "dono-do-clube",
-  "version": "45.0.0",
+  "version": "46.0.0",
   "private": true,
-  "description": "Dono do Clube v45 — Jornal 2.0 no Modo Carreira Treinador",
+  "description": "Dono do Clube v46 — 18 países jogáveis, novas ligas e carreira paralela com seleções",
   "main": "server.js",
   "scripts": {
     "start": "node server.js"

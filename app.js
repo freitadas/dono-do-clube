@@ -7,6 +7,7 @@ const state={
   finance:{wages:0,recent:[],transferBan:{active:false}},clubEvents:[],transferResults:[],
   trophies:[],incomingOffers:[],calendar:null,sponsorship:{active:null,offers:[]},marketProfile:null,
   mediaNews:[],pendingPress:null,saf:{active:false,offers:[],debtRisk:false},
+  nationalTeam:{job:null,offers:[]},
   careers:[],maxCareers:10,lineupDirty:false,
   boardMessages:[],boardExpectation:null,teamPerformance:null,rotationAdvice:null,realism:null,
   transferWindow:null,scoutLevel:1,
@@ -122,7 +123,9 @@ async function refreshPlayerCareer(){
 async function refreshAll(){
   const c=await api("/api/competitions");
   const d=await api("/api/dashboard");
+  const nt=await api("/api/national-team").catch(()=>({job:null,offers:[]}));
   Object.assign(state,d);
+  state.nationalTeam=nt;
   state.competitions=c;
   state.activeType="club";
   if(c?.career?.phase==="NATIONAL"){
@@ -2754,6 +2757,155 @@ function safProjectCard(){
   </div>`;
 }
 
+
+function nationalTacticLabel(v){
+  return ({BALANCED:"Equilibrado",POSSESSION:"Posse de bola",COUNTER:"Contra-ataque",HIGH_PRESS:"Pressão alta"})[v]||v;
+}
+function nationalStageLabel(v){
+  return ({GROUP:"Fase de grupos",QF:"Quartas de final",SF:"Semifinais",FINAL:"Final",FINISHED:"Encerrado",ELIMINATED:"Eliminado"})[v]||v;
+}
+function nationalTeamView(){
+  const nt=state.nationalTeam||{job:null,offers:[]};
+  if(!nt.job){
+    return `<section class="national-page">
+      <div class="national-hero no-job">
+        <div><div class="kicker">CARREIRA INTERNACIONAL</div><h1>Assuma uma seleção</h1>
+        <p>Seu desempenho como treinador de clubes abre portas para seleções. O cargo é paralelo ao clube: você continua comandando os dois.</p></div>
+        <div class="national-globe">🌍</div>
+      </div>
+      <div class="card">
+        <div class="section-title"><div><div class="kicker">PROPOSTAS DE FEDERAÇÕES</div><h2>Seleções interessadas</h2></div><span class="badge">${(nt.offers||[]).length}</span></div>
+        <div class="national-offers">
+          ${(nt.offers||[]).map(o=>`<article class="national-offer">
+            <div class="national-flag">${o.flag}</div>
+            <div><h3>${esc(o.name)}</h3><span>OVR ${o.rating} · ${esc(o.confed)}</span><p>Meta: <b>${esc(o.target)}</b></p></div>
+            <button class="primary accept-national" data-code="${o.code}">Aceitar cargo</button>
+          </article>`).join("")||`<div class="empty">Nenhuma seleção apresentou proposta neste momento. Aumente sua reputação como treinador.</div>`}
+        </div>
+      </div>
+    </section>`;
+  }
+
+  const j=nt.job;
+  const dataStatus=j.status||"active";
+  const canPlay=dataStatus==="active";
+  const currentFixtures=(nt.fixtures||[]).filter(f=>!f.played);
+  const userFixture=currentFixtures.find(f=>String(f.home)===String(j.nation_code)||String(f.away)===String(j.nation_code));
+  return `<section class="national-page">
+    <div class="national-hero">
+      <div class="national-flag huge">${j.flag}</div>
+      <div class="national-identity">
+        <div class="kicker">SELEÇÃO NACIONAL</div>
+        <h1>${esc(j.nationName)}</h1>
+        <p>${esc(j.competition)} · ${esc(nationalStageLabel(j.stage))}</p>
+      </div>
+      <div class="national-metrics">
+        <span><small>OVR</small><b>${j.rating}</b></span>
+        <span><small>CONFIANÇA</small><b>${j.confidence}%</b></span>
+        <span><small>TÍTULOS</small><b>${j.titles||0}</b></span>
+      </div>
+    </div>
+
+    ${canPlay?`<div class="card national-next-match">
+      <div><div class="kicker">PRÓXIMO COMPROMISSO</div>
+        <h2>${userFixture?`${userFixture.homeFlag} ${esc(userFixture.homeName)} × ${esc(userFixture.awayName)} ${userFixture.awayFlag}`:esc(nationalStageLabel(j.stage))}</h2>
+        <p class="muted">${j.stage==="GROUP"?`Rodada ${j.matchday}/3`:"Mata-mata em jogo único. Empate vai para os pênaltis."}</p>
+      </div>
+      <button id="playNationalTeam" class="primary">🌍 JOGAR PELA SELEÇÃO</button>
+    </div>`:`<div class="card">
+      <div class="kicker">COMPETIÇÃO ENCERRADA</div>
+      <h2>${j.championName?`Campeão: ${esc(j.championName)}`:"Sua participação terminou"}</h2>
+      <p class="muted">Na próxima temporada do clube, um novo calendário internacional será iniciado automaticamente se você continuar no cargo.</p>
+    </div>`}
+
+    <div class="national-columns">
+      <div class="card">
+        <div class="section-title"><div><div class="kicker">PLANO DE JOGO</div><h2>Tática da seleção</h2></div></div>
+        <form id="nationalTactics" class="stack">
+          <label>Formação<select name="formation">
+            ${["4-3-3","4-2-3-1","4-4-2","3-5-2"].map(x=>`<option value="${x}" ${j.formation===x?"selected":""}>${x}</option>`).join("")}
+          </select></label>
+          <label>Estilo<select name="tactic">
+            ${["BALANCED","POSSESSION","COUNTER","HIGH_PRESS"].map(x=>`<option value="${x}" ${j.tactic===x?"selected":""}>${nationalTacticLabel(x)}</option>`).join("")}
+          </select></label>
+          <button class="secondary">Salvar tática</button>
+        </form>
+      </div>
+      <div class="card">
+        <div class="section-title"><div><div class="kicker">GRUPO / FASE</div><h2>Situação na competição</h2></div></div>
+        ${(nt.table||[]).length?`<div class="national-table">
+          ${(nt.table||[]).map((e,i)=>`<div class="${String(e.clubId)===String(j.nation_code)?"user":""}">
+            <span>${i+1}º</span><b>${e.flag} ${esc(e.name)}</b><span>${Number(e.points||0)} pts</span><small>SG ${e.gd}</small>
+          </div>`).join("")}
+        </div>`:`<p class="muted">${esc(nationalStageLabel(j.stage))}</p>`}
+      </div>
+    </div>
+
+    <div class="card">
+      <div class="section-title"><div><div class="kicker">CONVOCAÇÃO</div><h2>23 jogadores</h2></div><span class="badge">Atualização automática</span></div>
+      <div class="national-squad">
+        ${(nt.squad||[]).map(p=>`<div class="national-player">
+          <span class="national-pos">${posName(p.position)}</span><div><b>${esc(p.name)}</b><small>${esc(p.club_name||"Sem clube")} · ${p.age} anos</small></div><strong>${p.rating}</strong>
+        </div>`).join("")||`<div class="empty">Convocação sendo preparada.</div>`}
+      </div>
+    </div>
+
+    ${(j.history||[]).length?`<div class="card">
+      <div class="section-title"><div><div class="kicker">ÚLTIMOS JOGOS</div><h2>Histórico internacional</h2></div></div>
+      <div class="national-history">${(j.history||[]).slice(0,8).map(m=>`<div>
+        <span>${m.homeFlag||""} ${esc(m.homeName)}</span><b>${m.homeGoals} × ${m.awayGoals}${m.penaltyShootout?` (${m.penaltyShootout.homePens}×${m.penaltyShootout.awayPens} p.)`:""}</b><span>${esc(m.awayName)} ${m.awayFlag||""}</span>
+      </div>`).join("")}</div>
+    </div>`:""}
+
+    <div class="card national-resign-card">
+      <div><div class="kicker">FEDERAÇÃO</div><b>Contrato com ${esc(j.nationName)}</b><p class="muted">Você pode deixar a seleção sem abandonar seu clube.</p></div>
+      <button id="resignNational" class="danger">Deixar seleção</button>
+    </div>
+  </section>`;
+}
+function bindNationalTeam(){
+  app.querySelectorAll(".accept-national").forEach(btn=>btn.onclick=async()=>{
+    const offer=(state.nationalTeam?.offers||[]).find(x=>x.code===btn.dataset.code);
+    if(!offer)return;
+    if(!confirm(`Aceitar o cargo de treinador de ${offer.name}?\\n\\nMeta: ${offer.target}\\nVocê continuará comandando seu clube normalmente.`))return;
+    btn.disabled=true;
+    try{
+      await api("/api/national-team/accept",{method:"POST",body:JSON.stringify({nationCode:offer.code})});
+      await refreshAll();state.view="national";render();
+    }catch(err){alert(err.message);btn.disabled=false}
+  });
+  const form=app.querySelector("#nationalTactics");
+  if(form)form.onsubmit=async e=>{
+    e.preventDefault();
+    const f=new FormData(form);
+    const btn=form.querySelector("button");btn.disabled=true;
+    try{
+      await api("/api/national-team/tactics",{method:"PUT",body:JSON.stringify({formation:f.get("formation"),tactic:f.get("tactic")})});
+      await refreshAll();render();
+    }catch(err){alert(err.message);btn.disabled=false}
+  };
+  const play=app.querySelector("#playNationalTeam");
+  if(play)play.onclick=async()=>{
+    const knockout=["QF","SF","FINAL"].includes(String(state.nationalTeam?.job?.stage));
+    const penaltyCorner=knockout?await choosePenaltyCorner("shooter"):null;
+    play.disabled=true;play.textContent="JOGANDO...";
+    try{
+      const d=await api("/api/national-team/play",{method:"POST",body:JSON.stringify({penaltyCorner})});
+      await refreshAll();render();
+      if(d.userMatch){
+        const m=d.userMatch,p=m.penaltyShootout;
+        alert(`${m.homeFlag||""} ${m.homeName} ${m.homeGoals} x ${m.awayGoals} ${m.awayName} ${m.awayFlag||""}${p?`\\nPênaltis: ${p.homePens} x ${p.awayPens}\\n${p.text||""}`:""}`);
+      }
+    }catch(err){alert(err.message);play.disabled=false;play.textContent="🌍 JOGAR PELA SELEÇÃO"}
+  };
+  const resign=app.querySelector("#resignNational");
+  if(resign)resign.onclick=async()=>{
+    if(!confirm("Deixar o comando da seleção? Seu cargo no clube não será afetado."))return;
+    resign.disabled=true;
+    try{await api("/api/national-team/resign",{method:"POST",body:"{}"});await refreshAll();render()}catch(err){alert(err.message);resign.disabled=false}
+  };
+}
+
 function clubView(){
   const c=state.club;
   return `<section class="custom-grid">
@@ -2853,6 +3005,7 @@ function render(){
     state.view==="news"?newsView():
     state.view==="board"?boardView():
     state.view==="realism"?realismView():
+    state.view==="national"?nationalTeamView():
     state.view==="friends"?friendsView():
     state.view==="league"?competitionsView():
     state.view==="club"?clubView():
@@ -2877,6 +3030,7 @@ function render(){
     <button data-view="realism" class="${state.view==="realism"?"on":""}">GESTÃO</button>
     <button data-view="market" class="${state.view==="market"?"on":""}">MERCADO</button>
     <button data-view="friends" class="${state.view==="friends"?"on":""}">AMIGOS</button>
+    <button data-view="national" class="${state.view==="national"?"on":""}">SELEÇÃO</button>
     <button data-view="league" class="${state.view==="league"?"on":""}">COMPETIÇÕES</button>
     <button data-view="club" class="${state.view==="club"?"on":""}">CLUBE</button>
     <button data-view="careers" class="${state.view==="careers"?"on":""}">CARREIRAS</button>
@@ -2898,6 +3052,7 @@ function render(){
   if(state.view==="realism")bindRealism();
   if(state.view==="news")bindNews();
   if(state.view==="market")bindMarket();
+  if(state.view==="national")bindNationalTeam();
   if(state.view==="friends")bindFriends();
   if(state.view==="league")bindCompetitions();
   if(state.view==="club")bindClub();

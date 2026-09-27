@@ -40,14 +40,15 @@ const V38_MIGRATION_KEY = "v38_realism_suite_manager_offers_20260920";
 const V41_MIGRATION_KEY = "v41_saf_interactions_goalkeeper_20260927";
 const V43_MIGRATION_KEY = "v43_realistic_sponsor_rotation_benefits_20260927";
 const V44_MIGRATION_KEY = "v44_player_career_2_0_20260927";
+const V46_MIGRATION_KEY = "v46_more_leagues_national_teams_20260927";
 const MAX_CAREERS_PER_USER = 10;
 const TRANSFER_BAN_THRESHOLD = -10000;
 const competitionLocks = new Set();
 const DIVS = ["A","B","C","D"];
 const VALID_STATES = new Set(Object.keys(STATE_DATA.names));
 const VALID_COUNTRIES = new Set(Object.keys(COUNTRY_DATA));
-const EUROPE_COUNTRIES = new Set(["ENG","ESP","ITA","GER","FRA","POR"]);
-const SOUTH_AMERICA_COUNTRIES = new Set(["BR","ARG"]);
+const EUROPE_COUNTRIES = new Set(["ENG","ESP","ITA","GER","FRA","POR","NED","BEL","TUR","SCO"]);
+const SOUTH_AMERICA_COUNTRIES = new Set(["BR","ARG","URU","COL"]);
 function confederationForCountry(code){
   if(EUROPE_COUNTRIES.has(code))return "UEFA";
   if(SOUTH_AMERICA_COUNTRIES.has(code))return "CONMEBOL";
@@ -1261,6 +1262,41 @@ async function applyV44Migration(){
   });
 }
 
+
+async function applyV46Migration(){
+  const done=await q(`SELECT 1 FROM app_meta WHERE key=$1`,[V46_MIGRATION_KEY]);
+  if(done.rowCount)return;
+  await tx(async c=>{
+    await c.query(`
+      CREATE TABLE IF NOT EXISTS manager_national_jobs(
+        club_id BIGINT PRIMARY KEY REFERENCES clubs(id) ON DELETE CASCADE,
+        nation_code TEXT NOT NULL,
+        season_no INTEGER NOT NULL DEFAULT 1,
+        competition_name TEXT NOT NULL,
+        stage TEXT NOT NULL DEFAULT 'GROUP',
+        matchday INTEGER NOT NULL DEFAULT 1,
+        confidence INTEGER NOT NULL DEFAULT 60,
+        tactic TEXT NOT NULL DEFAULT 'BALANCED',
+        formation TEXT NOT NULL DEFAULT '4-3-3',
+        titles INTEGER NOT NULL DEFAULT 0,
+        data JSONB NOT NULL DEFAULT '{}'::jsonb,
+        created_at TIMESTAMPTZ NOT NULL DEFAULT NOW(),
+        updated_at TIMESTAMPTZ NOT NULL DEFAULT NOW()
+      )
+    `);
+    await c.query(`CREATE INDEX IF NOT EXISTS idx_manager_national_jobs_nation ON manager_national_jobs(nation_code)`);
+    await c.query(`
+      UPDATE players p
+      SET nationality_code=c.country_code
+      FROM clubs c
+      WHERE p.club_id=c.id
+        AND (p.nationality_code IS NULL OR p.nationality_code='')
+        AND c.country_code IS NOT NULL
+    `);
+    await c.query(`INSERT INTO app_meta(key,value) VALUES($1,$2)`,[V46_MIGRATION_KEY,new Date().toISOString()]);
+  });
+}
+
 async function applyFelipeMode(client,clubId){
   const club=(await client.query(`SELECT id,name FROM clubs WHERE id=$1`,[clubId])).rows[0];
   if(!club||!isFelipeName(club.name))return false;
@@ -1367,11 +1403,11 @@ async function createRoster(client, club, force=false){
       await client.query(`
         INSERT INTO players(
           club_id,name,position,role,rating,pace,shooting,passing,defending,price,is_starter,age,
-          salary,contract_seasons,fitness,morale,injury_games,potential,form_rating,happiness,squad_status
+          salary,contract_seasons,fitness,morale,injury_games,potential,form_rating,happiness,squad_status,nationality_code
         )
-        VALUES($1,$2,$3,$4,$5,$6,$7,$8,$9,$10,$11,$12,$13,$14,$15,$16,$17,$18,$19,$20,$21)
+        VALUES($1,$2,$3,$4,$5,$6,$7,$8,$9,$10,$11,$12,$13,$14,$15,$16,$17,$18,$19,$20,$21,$22)
       `,[club.id,p.name,p.position,p.role,p.rating,p.pace,p.shooting,p.passing,p.defending,p.price,isStarter,p.age,
-         p.salary,p.contract_seasons,p.fitness,p.morale,p.injury_games,p.potential,p.form_rating,p.happiness,isStarter?"STARTER":"ROTATION"]);
+         p.salary,p.contract_seasons,p.fitness,p.morale,p.injury_games,p.potential,p.form_rating,p.happiness,isStarter?"STARTER":"ROTATION",club.country_code||"BR"]);
     }
   }
 }
@@ -5343,7 +5379,7 @@ function libertadoresQualificationInfo(career,ownerId=career?.owner_club_id){
     userViaCup,
     qualified:userViaLeague||userViaCup,
     reason:userViaCup
-      ?(userViaLeague?"Copa do Brasil + G4":"Campeão da Copa do Brasil")
+      ?(userViaLeague?"Copa do Brasil + G4":"Campeão da copa nacional")
       :(userViaLeague?"G4 da Série A":null)
   };
 }
@@ -5373,7 +5409,7 @@ async function makeLibertadores(career){
       FROM clubs
       WHERE is_ai=TRUE
         AND club_kind='national'
-        AND country_code IN ('BR','ARG')
+        AND country_code IN ('BR','ARG','URU','COL')
         AND NOT(id=ANY($1::bigint[]))
       ORDER BY base_rating DESC,RANDOM()
       LIMIT $2
@@ -5940,7 +5976,7 @@ async function simulateFullClubSeason(ownerId){
       const top4=sortEntries(career.data.divisions.A.entries).slice(0,4);
       const leagueQualified=career.user_division==="A"&&top4.some(e=>String(e.clubId)===String(ownerId));
 
-      if(country==="BR"){
+      if(SOUTH_AMERICA_COUNTRIES.has(country)){
         const qualification=libertadoresQualificationInfo(career,ownerId);
         if(!career.data.libertadores)await makeLibertadores(career);
         if(qualification.qualified){
@@ -6103,7 +6139,7 @@ async function playNational(ownerId){
     const tableA=sortEntries(career.data.divisions.A.entries);
     const userTop4A=career.user_division==="A"&&tableA.slice(0,4).some(e=>String(e.clubId)===String(ownerId));
 
-    if(country==="BR"){
+    if(SOUTH_AMERICA_COUNTRIES.has(country)){
       const qualification=libertadoresQualificationInfo(career,ownerId);
       await makeLibertadores(career);
       if(qualification.qualified){
@@ -6371,7 +6407,7 @@ async function repairCareer(ownerId){
       const top4=sortEntries(career.data.divisions.A.entries).slice(0,4);
       const leagueQualified=career.user_division==="A"&&top4.some(e=>String(e.clubId)===String(ownerId));
 
-      if(country==="BR"){
+      if(SOUTH_AMERICA_COUNTRIES.has(country)){
         const qualification=libertadoresQualificationInfo(career,ownerId);
         if(!career.data.libertadores){await makeLibertadores(career);changed=true}
         if(qualification.qualified)career.phase="LIBERTADORES";
@@ -7441,6 +7477,397 @@ app.put("/api/club/customize",auth,async(req,res,next)=>{
     });
     res.json(updated);
   }catch(e){if(e.code==="23505")return res.status(409).json({error:"Esse nome já está em uso."});next(e)}
+});
+
+
+const NATIONAL_TEAM_DATA={
+  BR:{name:"Brasil",flag:"🇧🇷",rating:86,confed:"CONMEBOL"},
+  ARG:{name:"Argentina",flag:"🇦🇷",rating:86,confed:"CONMEBOL"},
+  ENG:{name:"Inglaterra",flag:"🏴",rating:85,confed:"UEFA"},
+  ESP:{name:"Espanha",flag:"🇪🇸",rating:86,confed:"UEFA"},
+  ITA:{name:"Itália",flag:"🇮🇹",rating:84,confed:"UEFA"},
+  GER:{name:"Alemanha",flag:"🇩🇪",rating:84,confed:"UEFA"},
+  FRA:{name:"França",flag:"🇫🇷",rating:87,confed:"UEFA"},
+  POR:{name:"Portugal",flag:"🇵🇹",rating:85,confed:"UEFA"},
+  NED:{name:"Países Baixos",flag:"🇳🇱",rating:84,confed:"UEFA"},
+  BEL:{name:"Bélgica",flag:"🇧🇪",rating:82,confed:"UEFA"},
+  TUR:{name:"Turquia",flag:"🇹🇷",rating:78,confed:"UEFA"},
+  SCO:{name:"Escócia",flag:"🏴",rating:76,confed:"UEFA"},
+  MEX:{name:"México",flag:"🇲🇽",rating:79,confed:"CONCACAF"},
+  USA:{name:"Estados Unidos",flag:"🇺🇸",rating:79,confed:"CONCACAF"},
+  JPN:{name:"Japão",flag:"🇯🇵",rating:78,confed:"AFC"},
+  KSA:{name:"Arábia Saudita",flag:"🇸🇦",rating:75,confed:"AFC"},
+  URU:{name:"Uruguai",flag:"🇺🇾",rating:82,confed:"CONMEBOL"},
+  COL:{name:"Colômbia",flag:"🇨🇴",rating:81,confed:"CONMEBOL"}
+};
+const NATIONAL_TACTICS=new Set(["BALANCED","POSSESSION","COUNTER","HIGH_PRESS"]);
+const NATIONAL_FORMATIONS=new Set(["4-3-3","4-2-3-1","4-4-2","3-5-2"]);
+
+function nationalCompetitionName(seasonNo){
+  return Number(seasonNo)%4===0?"Copa do Mundo":"Copa Internacional de Seleções";
+}
+function nationalOfferTarget(rating){
+  if(rating>=85)return "Chegar à final";
+  if(rating>=81)return "Semifinal";
+  if(rating>=77)return "Quartas de final";
+  return "Competir e avançar da fase de grupos";
+}
+function nationalTeamOffers(club,career){
+  const rep=Number(club?.manager_reputation||50);
+  const maxRating=rep<42?78:rep<55?81:rep<68?84:99;
+  const minRating=Math.max(73,maxRating-10);
+  const season=Number(career?.season_no||1);
+  let pool=Object.entries(NATIONAL_TEAM_DATA)
+    .map(([code,n])=>({code,...n}))
+    .filter(n=>n.rating<=maxRating&&n.rating>=minRating);
+  if(pool.length<4)pool=Object.entries(NATIONAL_TEAM_DATA).map(([code,n])=>({code,...n})).filter(n=>n.rating<=maxRating);
+  return pool
+    .map(n=>({...n,score:sponsorHash(`national|${club?.id}|${season}|${n.code}`)}))
+    .sort((a,b)=>a.score-b.score)
+    .slice(0,4)
+    .map(n=>({...n,target:nationalOfferTarget(n.rating)}));
+}
+function nationalEntry(code,group){
+  return {...blankEntry(code),group};
+}
+function createNationalTournament(nationCode,seasonNo){
+  const all=Object.keys(NATIONAL_TEAM_DATA);
+  const others=all.filter(x=>x!==nationCode)
+    .map(code=>({code,score:sponsorHash(`nt-${seasonNo}-${nationCode}-${code}`)}))
+    .sort((a,b)=>a.score-b.score)
+    .slice(0,15)
+    .map(x=>x.code);
+  const teams=[nationCode,...others];
+  const groups="ABCD".split("");
+  const entries=teams.map((code,i)=>nationalEntry(code,groups[Math.floor(i/4)]));
+  const fixtures=[];
+  for(const g of groups){
+    const ids=entries.filter(e=>e.group===g).map(e=>e.clubId);
+    singleRR(ids).slice(0,3).forEach((games,ri)=>games.forEach(([home,away])=>{
+      fixtures.push({stage:"GROUP",group:g,matchday:ri+1,leg:1,home,away,played:false,hg:null,ag:null,pw:null,penHome:null,penAway:null});
+    }));
+  }
+  return {
+    competition:nationalCompetitionName(seasonNo),
+    status:"active",stage:"GROUP",matchday:1,champion:null,userEliminated:false,
+    entries,fixtures,history:[]
+  };
+}
+function addNationalKnockoutStage(data,stage,ids){
+  const teams=[...ids];
+  for(let i=0;i<teams.length;i+=2){
+    data.fixtures.push({stage,slot:i/2+1,leg:1,home:teams[i],away:teams[i+1],played:false,hg:null,ag:null,pw:null,penHome:null,penAway:null});
+  }
+  data.stage=stage;
+}
+function nationalPenaltyShootout(f,userCode,corner=null){
+  if(f.penHome!=null&&f.penAway!=null&&f.pw)return String(f.pw);
+  const selected=normalizedPenaltyCorner(corner);
+  const userInvolved=String(f.home)===String(userCode)||String(f.away)===String(userCode);
+  if(selected&&userInvolved){
+    const keeperCorner=PENALTY_CORNERS[rand(0,PENALTY_CORNERS.length-1)];
+    const scored=selected!==keeperCorner||Math.random()<.42;
+    const userHome=String(f.home)===String(userCode);
+    const userPens=scored?5:4,oppPens=scored?4:5;
+    f.penHome=userHome?userPens:oppPens;
+    f.penAway=userHome?oppPens:userPens;
+    f.pw=scored?userCode:(userHome?f.away:f.home);
+    f.userPenalty={
+      interactive:true,role:"shooter",chosenCorner:selected,aiCorner:keeperCorner,
+      success:scored,userWon:scored,
+      text:scored
+        ?`A cobrança no canto ${penaltyCornerLabel(selected)} entrou e decidiu a classificação.`
+        :`A cobrança no canto ${penaltyCornerLabel(selected)} foi defendida e a seleção acabou eliminada.`
+    };
+  }else{
+    let h=rand(3,5),a=rand(3,5);
+    if(h===a){if(Math.random()<.5)h++;else a++}
+    f.penHome=h;f.penAway=a;f.pw=h>a?f.home:f.away;
+  }
+  return String(f.pw);
+}
+function nationalTacticBoost(tactic,isHome){
+  if(tactic==="POSSESSION")return .7;
+  if(tactic==="COUNTER")return isHome?.3:1.0;
+  if(tactic==="HIGH_PRESS")return 1.1;
+  return .45;
+}
+function nationalTeamName(code){
+  return NATIONAL_TEAM_DATA[code]?.name||code;
+}
+function nationalTeamFlag(code){
+  return NATIONAL_TEAM_DATA[code]?.flag||"🏳️";
+}
+async function ensureNationalSquad(countryCode){
+  let count=Number((await q(`SELECT COUNT(*)::int count FROM players WHERE nationality_code=$1`,[countryCode])).rows[0]?.count||0);
+  if(count<30){
+    const clubs=(await q(`
+      SELECT id FROM clubs
+      WHERE is_ai=TRUE AND club_kind='national' AND country_code=$1
+      ORDER BY CASE national_seed_division WHEN 'A' THEN 1 WHEN 'B' THEN 2 ELSE 3 END,base_rating DESC
+      LIMIT 6
+    `,[countryCode])).rows;
+    for(const c of clubs)await ensureRoster(c.id);
+    await q(`
+      UPDATE players p SET nationality_code=c.country_code
+      FROM clubs c
+      WHERE p.club_id=c.id AND (p.nationality_code IS NULL OR p.nationality_code='') AND c.country_code=$1
+    `,[countryCode]);
+  }
+  const squad=[];
+  for(const [position,limit] of [["GK",3],["DEF",8],["MID",7],["ATT",5]]){
+    const rows=(await q(`
+      SELECT p.id,p.name,p.position,p.role,p.rating,p.age,p.form_rating,p.fitness,c.name club_name
+      FROM players p LEFT JOIN clubs c ON c.id=p.club_id
+      WHERE p.nationality_code=$1 AND p.position=$2
+      ORDER BY p.rating DESC,p.form_rating DESC,p.age ASC
+      LIMIT $3
+    `,[countryCode,position,limit])).rows;
+    squad.push(...rows);
+  }
+  return squad;
+}
+async function ensureNationalJobSeason(job,career){
+  if(!job)return null;
+  if(Number(job.season_no)===Number(career.season_no))return job;
+  const data=createNationalTournament(job.nation_code,career.season_no);
+  const row=(await q(`
+    UPDATE manager_national_jobs
+    SET season_no=$2,competition_name=$3,stage='GROUP',matchday=1,confidence=GREATEST(45,confidence),
+        data=$4::jsonb,updated_at=NOW()
+    WHERE club_id=$1 RETURNING *
+  `,[job.club_id,career.season_no,data.competition,JSON.stringify(data)])).rows[0];
+  return row;
+}
+async function nationalTeamSummary(club,career){
+  if(!club||!career)return {job:null,offers:[]};
+  let job=(await q(`SELECT * FROM manager_national_jobs WHERE club_id=$1`,[club.id])).rows[0]||null;
+  if(!job)return {job:null,offers:nationalTeamOffers(club,career)};
+  job=await ensureNationalJobSeason(job,career);
+  const data=typeof job.data==="string"?JSON.parse(job.data):job.data;
+  const squad=await ensureNationalSquad(job.nation_code);
+  const entries=(data.entries||[]).filter(e=>e.group&&(data.entries.find(x=>String(x.clubId)===String(job.nation_code))?.group===e.group))
+    .sort((a,b)=>b.points-a.points||((b.gf-b.ga)-(a.gf-a.ga))||b.gf-a.gf)
+    .map(e=>({...e,name:nationalTeamName(e.clubId),flag:nationalTeamFlag(e.clubId),gd:Number(e.gf||0)-Number(e.ga||0)}));
+  const fixtures=(data.fixtures||[]).filter(f=>f.stage===data.stage).map(f=>({
+    ...f,homeName:nationalTeamName(f.home),awayName:nationalTeamName(f.away),
+    homeFlag:nationalTeamFlag(f.home),awayFlag:nationalTeamFlag(f.away)
+  }));
+  return {
+    job:{
+      ...job,data:undefined,
+      nationName:nationalTeamName(job.nation_code),
+      flag:nationalTeamFlag(job.nation_code),
+      rating:NATIONAL_TEAM_DATA[job.nation_code]?.rating||75,
+      competition:data.competition,status:data.status,champion:data.champion,
+      championName:data.champion?nationalTeamName(data.champion):null,
+      history:data.history||[]
+    },
+    offers:[],
+    table:entries,fixtures,squad
+  };
+}
+function nationalKnockoutWinners(data,stage,userCode,penaltyCorner){
+  return data.fixtures.filter(f=>f.stage===stage&&f.played).sort((a,b)=>(a.slot||0)-(b.slot||0)).map(f=>{
+    if(f.hg>f.ag)return String(f.home);
+    if(f.ag>f.hg)return String(f.away);
+    return nationalPenaltyShootout(f,userCode,penaltyCorner);
+  });
+}
+async function playNationalTeamStep(club,career,penaltyCorner=null){
+  return tx(async client=>{
+    let job=(await client.query(`SELECT * FROM manager_national_jobs WHERE club_id=$1 FOR UPDATE`,[club.id])).rows[0];
+    if(!job)throw Object.assign(new Error("Você ainda não comanda uma seleção."),{status:404});
+    if(Number(job.season_no)!==Number(career.season_no)){
+      const nextData=createNationalTournament(job.nation_code,career.season_no);
+      job=(await client.query(`
+        UPDATE manager_national_jobs SET season_no=$2,competition_name=$3,stage='GROUP',matchday=1,
+          data=$4::jsonb,updated_at=NOW() WHERE club_id=$1 RETURNING *
+      `,[club.id,career.season_no,nextData.competition,JSON.stringify(nextData)])).rows[0];
+    }
+    const data=typeof job.data==="string"?JSON.parse(job.data):job.data;
+    if(data.status!=="active")throw Object.assign(new Error("A competição da seleção já terminou nesta temporada."),{status:400});
+    const userCode=job.nation_code;
+    let userMatch=null;
+
+    if(data.stage==="GROUP"){
+      const games=data.fixtures.filter(f=>f.stage==="GROUP"&&Number(f.matchday)===Number(data.matchday)&&!f.played);
+      for(const f of games){
+        const home=NATIONAL_TEAM_DATA[f.home],away=NATIONAL_TEAM_DATA[f.away];
+        const userGame=String(f.home)===String(userCode)||String(f.away)===String(userCode);
+        let hr=Number(home?.rating||74),ar=Number(away?.rating||74);
+        if(userGame){
+          const isHome=String(f.home)===String(userCode);
+          const boost=nationalTacticBoost(job.tactic,isHome)+(Number(club.manager_reputation||50)-50)*.018;
+          if(isHome)hr+=boost;else ar+=boost;
+        }
+        const sc=basicScore(hr,ar);
+        f.played=true;f.hg=sc.hg;f.ag=sc.ag;
+        applyResult(findEntry(data.entries,f.home),sc.hg,sc.ag);
+        applyResult(findEntry(data.entries,f.away),sc.ag,sc.hg);
+        if(userGame){
+          userMatch={home:f.home,away:f.away,homeName:nationalTeamName(f.home),awayName:nationalTeamName(f.away),
+            homeFlag:nationalTeamFlag(f.home),awayFlag:nationalTeamFlag(f.away),homeGoals:sc.hg,awayGoals:sc.ag,
+            stage:"Fase de grupos",competition:data.competition};
+        }
+      }
+      if(Number(data.matchday)>=3){
+        const qualified=[];
+        for(const g of "ABCD"){
+          qualified.push(...sortEntries(data.entries.filter(e=>e.group===g)).slice(0,2).map(e=>String(e.clubId)));
+        }
+        const userAlive=qualified.includes(String(userCode));
+        if(userAlive){
+          addNationalKnockoutStage(data,"QF",qualified);
+          job.stage="QF";job.matchday=1;
+        }else{
+          data.userEliminated=true;data.status="finished";
+          job.stage="ELIMINATED";
+        }
+      }else{
+        data.matchday=Number(data.matchday)+1;
+        job.matchday=data.matchday;
+      }
+    }else{
+      const stage=data.stage;
+      const games=data.fixtures.filter(f=>f.stage===stage&&!f.played);
+      for(const f of games){
+        const home=NATIONAL_TEAM_DATA[f.home],away=NATIONAL_TEAM_DATA[f.away];
+        const userGame=String(f.home)===String(userCode)||String(f.away)===String(userCode);
+        let hr=Number(home?.rating||74),ar=Number(away?.rating||74);
+        if(userGame){
+          const isHome=String(f.home)===String(userCode);
+          const boost=nationalTacticBoost(job.tactic,isHome)+(Number(club.manager_reputation||50)-50)*.018;
+          if(isHome)hr+=boost;else ar+=boost;
+        }
+        const sc=basicScore(hr,ar);
+        f.played=true;f.hg=sc.hg;f.ag=sc.ag;
+        if(sc.hg===sc.ag)nationalPenaltyShootout(f,userGame?userCode:null,userGame?penaltyCorner:null);
+        if(userGame){
+          userMatch={home:f.home,away:f.away,homeName:nationalTeamName(f.home),awayName:nationalTeamName(f.away),
+            homeFlag:nationalTeamFlag(f.home),awayFlag:nationalTeamFlag(f.away),homeGoals:sc.hg,awayGoals:sc.ag,
+            stage,competition:data.competition,
+            penaltyShootout:f.penHome!=null?{homePens:f.penHome,awayPens:f.penAway,winnerId:f.pw,...(f.userPenalty||{})}:null};
+        }
+      }
+      const winners=nationalKnockoutWinners(data,stage,userCode,penaltyCorner);
+      const userAlive=winners.includes(String(userCode));
+      if(stage==="FINAL"){
+        data.champion=winners[0]||null;data.status="finished";
+        if(String(data.champion)===String(userCode)){
+          job.titles=Number(job.titles||0)+1;
+          job.confidence=clamp(Number(job.confidence||60)+12,0,100);
+        }else job.confidence=clamp(Number(job.confidence||60)-6,0,100);
+        job.stage="FINISHED";
+      }else if(!userAlive){
+        data.userEliminated=true;data.status="finished";job.stage="ELIMINATED";
+        job.confidence=clamp(Number(job.confidence||60)-(stage==="QF"?5:2),0,100);
+      }else{
+        const next=stage==="QF"?"SF":"FINAL";
+        addNationalKnockoutStage(data,next,winners);
+        job.stage=next;
+      }
+    }
+
+    if(userMatch){
+      const userHome=String(userMatch.home)===String(userCode);
+      const ug=userHome?Number(userMatch.homeGoals):Number(userMatch.awayGoals);
+      const og=userHome?Number(userMatch.awayGoals):Number(userMatch.homeGoals);
+      const won=userMatch.penaltyShootout
+        ?String(userMatch.penaltyShootout.winnerId)===String(userCode)
+        :ug>og;
+      const draw=!userMatch.penaltyShootout&&ug===og;
+      job.confidence=clamp(Number(job.confidence||60)+(won?4:draw?1:-3),0,100);
+      data.history.unshift({...userMatch,result:won?"win":draw?"draw":"loss",date:new Date().toISOString()});
+      data.history=data.history.slice(0,30);
+      await client.query(`UPDATE clubs SET manager_reputation=GREATEST(0,LEAST(100,manager_reputation+$2)) WHERE id=$1`,
+        [club.id,won?1:(draw?0:-1)]);
+      await publishNews(client,club.id,career.season_no,"bastidores",
+        `${nationalTeamFlag(userCode)} ${nationalTeamName(userCode)} ${won?"vence":draw?"empata":"é derrotado"} sob comando do treinador de ${club.name}`,
+        `${userMatch.homeName} ${userMatch.homeGoals} x ${userMatch.awayGoals} ${userMatch.awayName}, pela ${data.competition}. A confiança na seleção está em ${job.confidence}%.`,
+        userMatch.stage==="FINAL"?3:1,"Futebol Internacional");
+    }
+
+    await client.query(`
+      UPDATE manager_national_jobs SET
+        stage=$2,matchday=$3,confidence=$4,titles=$5,data=$6::jsonb,updated_at=NOW()
+      WHERE club_id=$1
+    `,[club.id,job.stage,job.matchday,job.confidence,job.titles,JSON.stringify(data)]);
+
+    return {ok:true,userMatch,stage:job.stage,status:data.status,confidence:job.confidence,champion:data.champion};
+  });
+}
+
+app.get("/api/national-team",auth,async(req,res,next)=>{
+  try{
+    const club=await userClub(req.user.id);
+    if(!club)return res.json({job:null,offers:[]});
+    const career=await getCareer(club.id);
+    if(!career)return res.json({job:null,offers:[]});
+    res.json(await nationalTeamSummary(club,career));
+  }catch(e){next(e)}
+});
+app.post("/api/national-team/accept",auth,async(req,res,next)=>{
+  try{
+    const club=await userClub(req.user.id);
+    if(!club)return res.status(404).json({error:"Clube não encontrado."});
+    const career=await getCareer(club.id);
+    const code=String(req.body.nationCode||"").toUpperCase();
+    const offer=nationalTeamOffers(club,career).find(x=>x.code===code);
+    if(!offer)return res.status(400).json({error:"Essa seleção não está entre as propostas disponíveis."});
+    const data=createNationalTournament(code,career.season_no);
+    await q(`
+      INSERT INTO manager_national_jobs(club_id,nation_code,season_no,competition_name,stage,matchday,confidence,tactic,formation,titles,data)
+      VALUES($1,$2,$3,$4,'GROUP',1,60,'BALANCED','4-3-3',0,$5::jsonb)
+      ON CONFLICT(club_id) DO UPDATE SET
+        nation_code=EXCLUDED.nation_code,season_no=EXCLUDED.season_no,competition_name=EXCLUDED.competition_name,
+        stage='GROUP',matchday=1,confidence=60,tactic='BALANCED',formation='4-3-3',data=EXCLUDED.data,updated_at=NOW()
+    `,[club.id,code,career.season_no,data.competition,JSON.stringify(data)]);
+    await tx(async client=>{
+      await publishNews(client,club.id,career.season_no,"bastidores",
+        `${offer.flag} ${offer.name} anuncia o treinador de ${club.name}`,
+        `O técnico aceitou comandar ${offer.name} paralelamente ao trabalho no clube. A meta inicial da federação é: ${offer.target}.`,
+        2,"Futebol Internacional");
+    });
+    res.json({ok:true,nationCode:code,nationName:offer.name});
+  }catch(e){next(e)}
+});
+app.put("/api/national-team/tactics",auth,async(req,res,next)=>{
+  try{
+    const club=await userClub(req.user.id);
+    const tactic=String(req.body.tactic||"BALANCED");
+    const formation=String(req.body.formation||"4-3-3");
+    if(!NATIONAL_TACTICS.has(tactic))return res.status(400).json({error:"Tática de seleção inválida."});
+    if(!NATIONAL_FORMATIONS.has(formation))return res.status(400).json({error:"Formação de seleção inválida."});
+    const r=await q(`UPDATE manager_national_jobs SET tactic=$2,formation=$3,updated_at=NOW() WHERE club_id=$1 RETURNING *`,[club.id,tactic,formation]);
+    if(!r.rowCount)return res.status(404).json({error:"Você ainda não comanda uma seleção."});
+    res.json({ok:true,tactic,formation});
+  }catch(e){next(e)}
+});
+app.post("/api/national-team/play",auth,async(req,res,next)=>{
+  try{
+    const club=await userClub(req.user.id);
+    if(!club)return res.status(404).json({error:"Clube não encontrado."});
+    const career=await getCareer(club.id);
+    const result=await withCompetitionLock(`national:${club.id}`,()=>playNationalTeamStep(club,career,req.body?.penaltyCorner));
+    res.json(result);
+  }catch(e){next(e)}
+});
+app.post("/api/national-team/resign",auth,async(req,res,next)=>{
+  try{
+    const club=await userClub(req.user.id);
+    if(!club)return res.status(404).json({error:"Clube não encontrado."});
+    const job=(await q(`DELETE FROM manager_national_jobs WHERE club_id=$1 RETURNING nation_code`,[club.id])).rows[0];
+    if(!job)return res.status(404).json({error:"Você não comanda uma seleção."});
+    const career=await getCareer(club.id);
+    await tx(async client=>{
+      await publishNews(client,club.id,career?.season_no||1,"bastidores",
+        `Treinador deixa ${nationalTeamName(job.nation_code)}`,
+        `O treinador de ${club.name} encerrou seu ciclo à frente da seleção ${nationalTeamName(job.nation_code)}.`,
+        1,"Futebol Internacional");
+    });
+    res.json({ok:true});
+  }catch(e){next(e)}
 });
 
 app.get("/api/dashboard",auth,async(req,res,next)=>{
@@ -9082,6 +9509,7 @@ async function start(){
   await applyV41Migration();
   await applyV43Migration();
   await applyV44Migration();
+  await applyV46Migration();
   await seedRealMarketPlayers();
   await ensureMarket();
   
