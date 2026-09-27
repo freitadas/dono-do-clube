@@ -24,10 +24,7 @@ async function api(url,options={}){
     headers:{"Content-Type":"application/json",...(options.headers||{})},
     ...options
   });
-  const raw=await res.text();
-  let data={};
-  try { data=JSON.parse(raw); }
-  catch(e) { throw new Error("Resposta inválida do servidor: " + raw.slice(0,120)); }
+  const data=await res.json().catch(()=>({}));
   if(!res.ok)throw new Error(data.error||"Falha na requisição.");
   return data;
 }
@@ -3739,18 +3736,22 @@ function renderCareerCompleteTools(){
  <div class="kicker">CARREIRA COMPLETA</div>
  <h2>Gestão do Jogador</h2>
  <div class="career-actions">
- <button onclick="careerAction('events')">Eventos</button>
- <button onclick="careerAction('awards')">Prêmios</button>
- <button onclick="careerAction('national-team')">Seleção</button>
- <button onclick="careerAction('post-career')">Futuro</button>
+ <button onclick="playerCareerToolAction('events')">Eventos</button>
+ <button onclick="playerCareerToolAction('awards')">Prêmios</button>
+ <button onclick="playerCareerToolAction('national-team')">Seleção</button>
+ <button onclick="playerCareerToolAction('post-career')">Futuro</button>
  </div>
  <div id="careerActionResult"></div>
  </section>`;
 }
-async function careerAction(type){
- const r=await fetch('/api/player-career/'+type);
- const j=await r.json();
- document.querySelector("#careerActionResult").innerHTML="<pre>"+JSON.stringify(j,null,2)+"</pre>";
+async function playerCareerToolAction(type){
+ try{
+  const j=await api('/api/player-career/'+type);
+  const box=document.querySelector("#careerActionResult");
+  if(box)box.innerHTML="<pre>"+JSON.stringify(j,null,2)+"</pre>";
+ }catch(err){
+  alert(err.message);
+ }
 }
 
 
@@ -3767,14 +3768,4 @@ async function safeCareerJSON(response){
  const text = await response.text();
  try { return JSON.parse(text); }
  catch(e){ throw new Error('Servidor retornou resposta inválida'); }
-}
-
-
-// MY_CAREER_FETCH_GUARD_FIX
-async function parseCareerResponse(response){
- const text=await response.text();
- if(!text.trim().startsWith('{')){
-   throw new Error('Falha na carreira: resposta inválida da API');
- }
- return JSON.parse(text);
 }

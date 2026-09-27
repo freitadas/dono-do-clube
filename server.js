@@ -8437,31 +8437,3 @@ function sendCareerJSON(res, payload, status=200){
 function safeJSONError(error){
   return {success:false,error:String(error?.message || error)};
 }
-
-
-// FINAL_JSON_ERROR_MIDDLEWARE_FIX
-app.use((err, req, res, next)=>{
- console.error(err);
- res.status(500).json({ok:false,error:err.message||"Erro interno"});
-});
-
-
-// GLOBAL_API_JSON_GUARD_V2
-app.use((req,res,next)=>{
- res.jsonError=(status,msg)=>res.status(status).json({ok:false,error:msg});
- next();
-});
-
-app.use((err,req,res,next)=>{
- console.error(err);
- if(res.headersSent) return next(err);
- res.status(500).json({ok:false,error:String(err.message||err)});
-});
-
-
-// MY_CAREER_JSON_ISOLATION_FIX
-// Proteção específica para dados de carreira individual
-function careerJSON(res, payload, status=200){
-  return res.status(status).type('application/json').json(payload);
-}
-
