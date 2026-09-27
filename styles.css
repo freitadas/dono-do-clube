@@ -904,3 +904,40 @@ repeating-linear-gradient(0deg,#1e7d43 0,#1e7d43 56px,#237f47 56px,#237f47 112px
 @media(max-width:700px){
   .saf-board-actions,.manager-interaction-grid,.player-interaction-grid{grid-template-columns:1fr}
 }
+
+
+/* v42 — decisões por pênaltis interativas */
+.penalty-choice-modal{max-width:640px;text-align:center}
+.penalty-goal{display:grid;grid-template-columns:repeat(3,1fr);gap:10px;margin:22px 0 14px;padding:18px;border:2px solid rgba(255,255,255,.18);border-bottom-width:5px;border-radius:14px;background:linear-gradient(180deg,rgba(255,255,255,.035),rgba(0,0,0,.08))}
+.penalty-goal button{min-height:120px;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:10px;font-size:30px;border:1px solid rgba(255,255,255,.16);border-radius:12px}
+.penalty-goal button b{font-size:13px;letter-spacing:.08em}
+.penalty-result{display:flex;flex-direction:column;gap:5px;margin:14px 0;padding:14px;border-radius:12px;border:1px solid rgba(255,255,255,.14)}
+.penalty-result.win{background:rgba(45,190,105,.12)}
+.penalty-result.loss{background:rgba(210,65,65,.12)}
+.player-cup-card{margin-top:14px}
+@media(max-width:600px){.penalty-goal button{min-height:92px;font-size:24px}.penalty-goal{gap:6px;padding:10px}}
+
+
+/* v43 — Patrocínios realistas */
+.sponsor-card-v43 .active-sponsors-grid{gap:14px}
+.active-sponsor-v43{display:flex;flex-direction:column;gap:8px}
+.sponsor-benefit-box{display:grid;grid-template-columns:36px 1fr;gap:9px;align-items:start;padding:10px;border:1px solid rgba(255,255,255,.10);border-radius:11px;background:rgba(255,255,255,.025)}
+.sponsor-benefit-icon{font-size:22px}
+.sponsor-benefit-box div{display:flex;flex-direction:column;gap:3px}
+.sponsor-benefit-box small{line-height:1.35;opacity:.78}
+.sponsor-credit-state{padding:8px 10px;border-radius:9px;background:rgba(244,196,48,.10);font-size:12px}
+.sponsor-benefit-action{width:100%;margin-top:auto}
+.sponsor-offers-v43{display:grid;grid-template-columns:repeat(auto-fit,minmax(210px,1fr));gap:10px}
+.sponsor-offers-v43 .sponsor-offer{min-height:190px;align-items:flex-start;text-align:left}
+.offer-benefit{display:block;margin-top:5px;font-weight:800;font-size:12px}
+.sponsor-market-head small{display:block;margin-top:3px}
+@media(max-width:640px){.sponsor-offers-v43{grid-template-columns:1fr}}
+
+
+/* v44 — Modo Carreira Jogador 2.0 */
+.player-v44-page{display:grid;gap:14px}.player-v44-grid{display:grid;gap:14px}.player-v44-grid.two{grid-template-columns:repeat(2,minmax(0,1fr))}
+.v44-match-plan{margin:14px 0}.v44-plan-row{display:grid;grid-template-columns:1fr auto;gap:10px;align-items:center}.v44-plan-row select{min-height:44px}
+.objective-list{display:grid;gap:10px}.objective-row{display:grid;grid-template-columns:minmax(180px,1fr) minmax(140px,.8fr);gap:12px;align-items:center;padding:10px;border:1px solid rgba(255,255,255,.08);border-radius:10px}.objective-row div:first-child{display:flex;flex-direction:column}.objective-row.done{background:rgba(45,190,105,.09)}
+.v44-action-grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(150px,1fr));gap:8px}.v44-action-grid button{min-height:48px}.v44-perk-grid,.v44-lifestyle-grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(190px,1fr));gap:10px}.training-card.owned{border-color:rgba(46,204,113,.45);background:rgba(46,204,113,.07)}
+.v44-awards,.v44-history,.v44-timeline{display:grid;gap:8px}.v44-awards>div,.v44-history>div,.v44-timeline>div{display:grid;grid-template-columns:auto 1fr auto;gap:10px;align-items:center;padding:10px;border:1px solid rgba(255,255,255,.08);border-radius:9px}.v44-history>div{grid-template-columns:140px 1fr}.v44-history small{grid-column:1/-1}.v44-timeline span{font-size:10px;font-weight:800;letter-spacing:.08em;opacity:.65}.v44-timeline small{opacity:.65}.player-nav{overflow-x:auto}.player-nav button{white-space:nowrap}
+@media(max-width:800px){.player-v44-grid.two{grid-template-columns:1fr}.objective-row{grid-template-columns:1fr}.v44-awards>div,.v44-timeline>div{grid-template-columns:1fr}.v44-plan-row{grid-template-columns:1fr}}

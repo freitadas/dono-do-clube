@@ -1311,3 +1311,7 @@ A v38 mantém, entre outros:
 - Goleiro com atributos próprios: mergulho, segurança, reflexos e posicionamento.
 - Goleiro registra defesas, jogos sem sofrer gol e pênaltis defendidos e possui treino específico.
 - Mercado do jogador prioriza clubes europeus quando desempenho, overall ou reputação justificam interesse.
+
+
+## v44 — Modo Carreira Jogador 2.0
+Reformulação ampla do modo jogador: personalidade e objetivo de carreira, número da camisa, plano de partida, objetivos sazonais, lesões e recuperação, sessões semanais de treino, especialidades/perks, disputa por posição, liderança/capitania, empresário em três níveis, sondagens e busca de Europa, empréstimos para a temporada seguinte, renegociação contratual, valor de mercado e cláusula, patrocínio pessoal, seguidores/fama, estrutura pessoal (personal/physio/nutrição/mídia), convocações para seleção, prêmios, histórico por temporada, linha do tempo, legado e aposentadoria.

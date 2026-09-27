@@ -1,8 +1,8 @@
 {
   "name": "dono-do-clube",
-  "version": "41.0.0",
+  "version": "44.0.0",
   "private": true,
-  "description": "Dono do Clube v41: SAF mais realista, novas interações de treinador e carreira de jogador com goleiro especializado.",
+  "description": "Dono do Clube v44 — Modo Carreira Jogador 2.0 completamente reformulado",
   "main": "server.js",
   "scripts": {
     "start": "node server.js"

@@ -38,6 +38,8 @@ const V34_MIGRATION_KEY = "v34_copa_brasil_libertadores_qualification_20260919";
 const V35_MIGRATION_KEY = "v35_loan_purchase_option_contract_renewal_20260919";
 const V38_MIGRATION_KEY = "v38_realism_suite_manager_offers_20260920";
 const V41_MIGRATION_KEY = "v41_saf_interactions_goalkeeper_20260927";
+const V43_MIGRATION_KEY = "v43_realistic_sponsor_rotation_benefits_20260927";
+const V44_MIGRATION_KEY = "v44_player_career_2_0_20260927";
 const MAX_CAREERS_PER_USER = 10;
 const TRANSFER_BAN_THRESHOLD = -10000;
 const competitionLocks = new Set();
@@ -312,6 +314,10 @@ async function initDb(){
       signing_bonus INTEGER NOT NULL DEFAULT 0,
       months_total INTEGER NOT NULL DEFAULT 12,
       months_paid INTEGER NOT NULL DEFAULT 0,
+      benefit_key TEXT,
+      last_benefit_season INTEGER,
+      last_benefit_round INTEGER,
+      benefit_state JSONB NOT NULL DEFAULT '{}'::jsonb,
       status TEXT NOT NULL DEFAULT 'active',
       created_at TIMESTAMPTZ NOT NULL DEFAULT NOW()
     );
@@ -1212,6 +1218,49 @@ function domesticCupName(countryCode){
 function isFelipeName(name){
   return String(name||"").trim().toLocaleLowerCase("pt-BR")==="felipe";
 }
+async function applyV43Migration(){
+  const done=await q(`SELECT 1 FROM app_meta WHERE key=$1`,[V43_MIGRATION_KEY]);
+  if(done.rowCount)return;
+  await tx(async c=>{
+    await c.query(`ALTER TABLE sponsorship_contracts ADD COLUMN IF NOT EXISTS benefit_key TEXT`);
+    await c.query(`ALTER TABLE sponsorship_contracts ADD COLUMN IF NOT EXISTS last_benefit_season INTEGER`);
+    await c.query(`ALTER TABLE sponsorship_contracts ADD COLUMN IF NOT EXISTS last_benefit_round INTEGER`);
+    await c.query(`ALTER TABLE sponsorship_contracts ADD COLUMN IF NOT EXISTS benefit_state JSONB NOT NULL DEFAULT '{}'::jsonb`);
+    await c.query(`CREATE INDEX IF NOT EXISTS idx_sponsor_contract_benefit ON sponsorship_contracts(club_id,status,benefit_key)`);
+    await c.query(`INSERT INTO app_meta(key,value) VALUES($1,$2)`,[V43_MIGRATION_KEY,new Date().toISOString()]);
+  });
+}
+
+
+
+async function applyV44Migration(){
+  const done=await q(`SELECT 1 FROM app_meta WHERE key=$1`,[V44_MIGRATION_KEY]);
+  if(done.rowCount)return;
+  await tx(async c=>{
+    for(const sql of [
+      `ALTER TABLE player_careers ADD COLUMN IF NOT EXISTS personality TEXT NOT NULL DEFAULT 'PROFESSIONAL'`,
+      `ALTER TABLE player_careers ADD COLUMN IF NOT EXISTS career_goal TEXT NOT NULL DEFAULT 'LEGEND'`,
+      `ALTER TABLE player_careers ADD COLUMN IF NOT EXISTS shirt_number INTEGER NOT NULL DEFAULT 10`,
+      `ALTER TABLE player_careers ADD COLUMN IF NOT EXISTS contract_years INTEGER NOT NULL DEFAULT 3`,
+      `ALTER TABLE player_careers ADD COLUMN IF NOT EXISTS release_clause INTEGER NOT NULL DEFAULT 0`,
+      `ALTER TABLE player_careers ADD COLUMN IF NOT EXISTS agent_level INTEGER NOT NULL DEFAULT 1`,
+      `ALTER TABLE player_careers ADD COLUMN IF NOT EXISTS agent_relation INTEGER NOT NULL DEFAULT 55`,
+      `ALTER TABLE player_careers ADD COLUMN IF NOT EXISTS followers INTEGER NOT NULL DEFAULT 1000`,
+      `ALTER TABLE player_careers ADD COLUMN IF NOT EXISTS fame INTEGER NOT NULL DEFAULT 5`,
+      `ALTER TABLE player_careers ADD COLUMN IF NOT EXISTS national_caps INTEGER NOT NULL DEFAULT 0`,
+      `ALTER TABLE player_careers ADD COLUMN IF NOT EXISTS national_goals INTEGER NOT NULL DEFAULT 0`,
+      `ALTER TABLE player_careers ADD COLUMN IF NOT EXISTS injury_games INTEGER NOT NULL DEFAULT 0`,
+      `ALTER TABLE player_careers ADD COLUMN IF NOT EXISTS injury_type TEXT`,
+      `ALTER TABLE player_careers ADD COLUMN IF NOT EXISTS legacy_score INTEGER NOT NULL DEFAULT 0`,
+      `ALTER TABLE player_careers ADD COLUMN IF NOT EXISTS leadership INTEGER NOT NULL DEFAULT 40`,
+      `ALTER TABLE player_careers ADD COLUMN IF NOT EXISTS last_agent_action_round INTEGER NOT NULL DEFAULT 0`,
+      `ALTER TABLE player_careers ADD COLUMN IF NOT EXISTS last_training_round INTEGER NOT NULL DEFAULT 0`,
+      `ALTER TABLE player_careers ADD COLUMN IF NOT EXISTS retired BOOLEAN NOT NULL DEFAULT FALSE`
+    ]) await c.query(sql);
+    await c.query(`INSERT INTO app_meta(key,value) VALUES($1,$2)`,[V44_MIGRATION_KEY,new Date().toISOString()]);
+  });
+}
+
 async function applyFelipeMode(client,clubId){
   const club=(await client.query(`SELECT id,name FROM clubs WHERE id=$1`,[clubId])).rows[0];
   if(!club||!isFelipeName(club.name))return false;
@@ -1808,7 +1857,236 @@ async function playerCareerClubChoices(countryCode,division="D"){
     LIMIT 20
   `,[countryCode,division])).rows;
 }
-async function createPlayerSeasonData(countryCode,division,clubId,seasonNo){
+
+
+const PLAYER_V44_PERKS={
+  clinical:{label:"Finalizador clínico",cost:3,positions:["ATT","MID"],description:"Aumenta a chance de gol em boas atuações."},
+  playmaker:{label:"Maestro",cost:3,positions:["MID","ATT"],description:"Aumenta a chance de assistência e melhora atuações criativas."},
+  engine:{label:"Motor do time",cost:3,positions:["MID","DEF","ATT"],description:"Reduz o desgaste físico por partida."},
+  leader:{label:"Líder do elenco",cost:4,positions:["GK","DEF","MID","ATT"],description:"Acelera confiança do treinador e liderança."},
+  ironman:{label:"Corpo resistente",cost:4,positions:["GK","DEF","MID","ATT"],description:"Reduz o risco de lesões."},
+  speedster:{label:"Arrancada",cost:3,positions:["DEF","MID","ATT"],description:"Valoriza velocidade e transição ofensiva."},
+  penalty_reader:{label:"Leitor de pênaltis",cost:3,positions:["GK"],description:"Especialização de goleiro em decisões por pênaltis."},
+  sweeper:{label:"Goleiro-líbero",cost:3,positions:["GK"],description:"Melhora participação com os pés e atuações fora da área."}
+};
+const PLAYER_V44_LIFESTYLE={
+  personal_trainer:{label:"Personal trainer",cost:8000,description:"+0,15 de bônus-base nas partidas e treinos físicos melhores."},
+  physio:{label:"Fisioterapeuta particular",cost:7000,description:"Reduz o risco de lesão e acelera recuperação."},
+  nutrition:{label:"Plano de nutrição",cost:5000,description:"Reduz o desgaste por partida."},
+  media_team:{label:"Equipe de mídia",cost:6000,description:"Aumenta o crescimento de seguidores e fama."}
+};
+const PLAYER_PERSONAL_SPONSORS=[
+  {id:"apex",name:"Apex Boots",minFame:5,pay:900,bonusFollowers:500,label:"Chuteiras e imagem"},
+  {id:"pulse",name:"Pulse Nutrition",minFame:10,pay:1200,bonusFollowers:700,label:"Nutrição esportiva"},
+  {id:"nextplay",name:"NextPlay",minFame:18,pay:1700,bonusFollowers:1100,label:"Campanha digital"},
+  {id:"guardian",name:"Guardian Gloves",minFame:12,pay:1500,bonusFollowers:800,label:"Equipamento de goleiro",gkOnly:true},
+  {id:"vertex",name:"Vertex Sports",minFame:30,pay:2600,bonusFollowers:1800,label:"Contrato premium"}
+];
+function playerV44Timeline(data,type,text,season=null,round=null){
+  data.timeline=Array.isArray(data.timeline)?data.timeline:[];
+  data.timeline.unshift({type,text,season,round,date:new Date().toISOString()});
+  data.timeline=data.timeline.slice(0,80);
+}
+function playerSeasonObjectives(position,seasonNo=1){
+  const common=[{key:"appearances",label:"Disputar partidas",target:22,reward:2}];
+  if(position==="GK")return [...common,{key:"cleanSheets",label:"Jogos sem sofrer gol",target:8,reward:2},{key:"avgRating",label:"Nota média",target:7.0,reward:2}];
+  if(position==="ATT")return [...common,{key:"goals",label:"Marcar gols",target:12,reward:2},{key:"avgRating",label:"Nota média",target:7.0,reward:2}];
+  if(position==="MID")return [...common,{key:"assists",label:"Dar assistências",target:8,reward:2},{key:"avgRating",label:"Nota média",target:7.0,reward:2}];
+  return [...common,{key:"avgRating",label:"Nota média",target:7.0,reward:2},{key:"coachTrust",label:"Confiança do treinador",target:72,reward:2}];
+}
+function ensurePlayerV44Data(pc,data){
+  data=data&&typeof data==="object"?data:{};
+  if(!data.seasonStats)data.seasonStats={appearances:0,goals:0,assists:0,cleanSheets:0,ratingTotal:0,ratedMatches:0};
+  if(!Array.isArray(data.objectives)||!data.objectives.length)data.objectives=playerSeasonObjectives(pc?.position||"ATT",pc?.season_no||data.seasonNo||1);
+  if(!Array.isArray(data.perks))data.perks=[];
+  if(!data.lifestyle)data.lifestyle={};
+  if(!Array.isArray(data.timeline))data.timeline=[];
+  if(!Array.isArray(data.careerHistory))data.careerHistory=[];
+  if(!Array.isArray(data.awards))data.awards=[];
+  if(!Array.isArray(data.marketInterest))data.marketInterest=[];
+  if(!Array.isArray(data.loanOffers))data.loanOffers=[];
+  if(!data.matchPlan)data.matchPlan="BALANCED";
+  if(data.personalSponsor===undefined)data.personalSponsor=null;
+  if(data.acceptedLoan===undefined)data.acceptedLoan=null;
+  if(data.loanState===undefined)data.loanState=null;
+  return data;
+}
+function playerObjectiveValue(obj,pc,data){
+  const s=data.seasonStats||{};
+  if(obj.key==="appearances")return Number(s.appearances||0);
+  if(obj.key==="goals")return Number(s.goals||0);
+  if(obj.key==="assists")return Number(s.assists||0);
+  if(obj.key==="cleanSheets")return Number(s.cleanSheets||0);
+  if(obj.key==="avgRating")return Number(s.ratedMatches||0)?Number(s.ratingTotal||0)/Number(s.ratedMatches):0;
+  if(obj.key==="coachTrust")return Number(pc.coach_trust||0);
+  return 0;
+}
+function playerObjectivesStatus(pc,data){
+  return (data.objectives||[]).map(o=>{
+    const value=playerObjectiveValue(o,pc,data);
+    return {...o,value:Math.round(value*100)/100,completed:value>=Number(o.target)};
+  });
+}
+function playerMarketValueV44(pc){
+  const age=Number(pc.age||17),overall=Number(pc.overall||60),potential=Number(pc.potential_hidden||overall),fame=Number(pc.fame||0);
+  const ageFactor=age<=21?1.28:age<=25?1.15:age<=29?1:age<=32?.84:.65;
+  return Math.max(1500,Math.round(((overall*overall*135)+(potential*4200)+(fame*2200))*ageFactor/100)*100);
+}
+function playerPersonalSponsorOffers(pc){
+  const fame=Number(pc.fame||0),rep=Number(pc.reputation||0);
+  return PLAYER_PERSONAL_SPONSORS.filter(x=>fame>=x.minFame&&(!x.gkOnly||pc.position==="GK")).map(x=>({
+    ...x,pay:Math.round(x.pay*(1+rep/180)/50)*50
+  })).slice(-3);
+}
+function playerCareerMetaForNext(oldData){
+  return {
+    perks:[...(oldData?.perks||[])],
+    lifestyle:{...(oldData?.lifestyle||{})},
+    timeline:[...(oldData?.timeline||[])].slice(0,80),
+    careerHistory:[...(oldData?.careerHistory||[])],
+    awards:[...(oldData?.awards||[])],
+    loanState:oldData?.loanState||null
+  };
+}
+function playerPlanModifiers(plan){
+  return ({
+    BALANCED:{perf:0,goal:0,assist:0,fatigue:0,injury:0,rep:0},
+    ATTACKING:{perf:.05,goal:.08,assist:.02,fatigue:3,injury:.012,rep:0},
+    CREATIVE:{perf:.08,goal:0,assist:.08,fatigue:1,injury:.004,rep:0},
+    DISCIPLINED:{perf:.18,goal:-.02,assist:0,fatigue:-1,injury:-.008,rep:0},
+    SHOWCASE:{perf:.12,goal:.04,assist:.04,fatigue:3,injury:.015,rep:1}
+  })[plan]||{perf:0,goal:0,assist:0,fatigue:0,injury:0,rep:0};
+}
+function playerCompetitionStatus(pc,competitor){
+  const gap=Number(pc.overall||60)-Number(competitor?.rating||60);
+  return gap>=4?"FAVORITO":gap>=-2?"DISPUTA_ABERTA":"CORRENDO_ATRAS";
+}
+function finalizePlayerV44Season(pc,data){
+  ensurePlayerV44Data(pc,data);
+  const objectiveStatus=playerObjectivesStatus(pc,data);
+  let skillReward=0,repReward=0;
+  for(const o of objectiveStatus){if(o.completed){skillReward+=Number(o.reward||1);repReward+=2}}
+  pc.skill_points=Number(pc.skill_points||0)+skillReward;
+  pc.reputation=clamp(Number(pc.reputation||0)+repReward,0,100);
+  const s=data.seasonStats||{};
+  const avg=Number(s.ratedMatches||0)?Number(s.ratingTotal||0)/Number(s.ratedMatches):0;
+  const awards=[];
+  if(Number(pc.age)<=21&&avg>=7.25&&Number(s.appearances||0)>=18)awards.push("Revelação da temporada");
+  if(pc.position==="GK"&&Number(s.cleanSheets||0)>=10&&avg>=7.1)awards.push("Luva da temporada");
+  if(pc.position!=="GK"&&Number(s.goals||0)>=18)awards.push("Artilheiro da temporada");
+  if(avg>=7.55&&Number(s.appearances||0)>=20)awards.push("Seleção da temporada");
+  if(avg>=8.0&&Number(s.appearances||0)>=22)awards.push("Jogador da temporada");
+  for(const award of awards){
+    data.awards.unshift({season:Number(pc.season_no),award,date:new Date().toISOString()});
+    playerV44Timeline(data,"award",`Prêmio conquistado: ${award}.`,pc.season_no,38);
+  }
+  pc.reputation=clamp(Number(pc.reputation||0)+awards.length*3,0,100);
+  pc.fame=clamp(Number(pc.fame||0)+awards.length*4,0,100);
+  pc.followers=Number(pc.followers||0)+awards.length*3500;
+  const legacyGain=Math.round(Number(s.appearances||0)+Number(s.goals||0)*3+Number(s.assists||0)*2+Number(s.cleanSheets||0)*2+awards.length*18+objectiveStatus.filter(x=>x.completed).length*8);
+  pc.legacy_score=Number(pc.legacy_score||0)+legacyGain;
+  data.careerHistory.unshift({
+    season:Number(pc.season_no),clubId:Number(pc.club_id),countryCode:pc.country_code,division:pc.club_division,
+    appearances:Number(s.appearances||0),goals:Number(s.goals||0),assists:Number(s.assists||0),cleanSheets:Number(s.cleanSheets||0),
+    avgRating:Math.round(avg*100)/100,objectives:objectiveStatus.filter(x=>x.completed).length,totalObjectives:objectiveStatus.length,awards
+  });
+  data.careerHistory=data.careerHistory.slice(0,20);
+  data.personalSponsor=null;
+  return {skillReward,repReward,awards,legacyGain,objectiveStatus};
+}
+
+function createPlayerCareerCup(teamIds,clubId,countryCode="BR"){
+  const others=shuffle(teamIds.filter(id=>String(id)!==String(clubId))).slice(0,15);
+  const teams=shuffle([Number(clubId),...others]);
+  const fixtures=[];
+  for(let i=0;i<teams.length;i+=2){
+    fixtures.push({stage:"R16",slot:i/2+1,home:teams[i],away:teams[i+1],played:false,hg:null,ag:null,pw:null,penHome:null,penAway:null});
+  }
+  return {
+    name:countryCode==="BR"?"Copa Nacional do Jogador":"Copa Nacional",
+    stage:"R16",status:"active",champion:null,userEliminated:false,
+    stageRounds:{R16:4,QF:10,SF:18,FINAL:26},
+    fixtures
+  };
+}
+function addPlayerCareerCupStage(cup,stage,ids){
+  const teams=shuffle(ids);
+  for(let i=0;i<teams.length;i+=2){
+    cup.fixtures.push({stage,slot:i/2+1,home:teams[i],away:teams[i+1],played:false,hg:null,ag:null,pw:null,penHome:null,penAway:null});
+  }
+  cup.stage=stage;
+}
+function playerCareerCupNextStage(stage){
+  return ({R16:"QF",QF:"SF",SF:"FINAL"})[stage]||null;
+}
+async function simulatePlayerCareerCupRound(pc,data,round,clubMap,penaltyCorner){
+  const cup=data.cup;
+  if(!cup||cup.status!=="active")return null;
+  const due=Number(cup.stageRounds?.[cup.stage]||0);
+  if(due!==Number(round))return null;
+
+  const games=cup.fixtures.filter(f=>f.stage===cup.stage&&!f.played);
+  if(!games.length)return null;
+  const winners=[];
+  let userCupMatch=null;
+
+  for(const f of games){
+    const userGame=String(f.home)===String(pc.club_id)||String(f.away)===String(pc.club_id);
+    let hr=Number(clubMap.get(String(f.home))?.rating||64);
+    let ar=Number(clubMap.get(String(f.away))?.rating||64);
+    if(userGame){
+      const boost=(Number(pc.overall||60)-60)*.14+(Number(pc.coach_trust||55)-50)*.02;
+      if(String(f.home)===String(pc.club_id))hr+=boost; else ar+=boost;
+    }
+    const sc=basicScore(hr,ar);
+    f.played=true;f.hg=sc.hg;f.ag=sc.ag;
+
+    let winner;
+    if(sc.hg>sc.ag)winner=f.home;
+    else if(sc.ag>sc.hg)winner=f.away;
+    else if(userGame){
+      winner=interactivePenaltyShootout(
+        f,pc.club_id,penaltyCorner,
+        pc.position==="GK"?"keeper":"shooter",
+        pc
+      );
+    }else winner=penaltyShootout(f);
+    winners.push(Number(winner));
+
+    if(userGame){
+      const userHome=String(f.home)===String(pc.club_id);
+      const opponentId=userHome?f.away:f.home;
+      const userGoals=userHome?sc.hg:sc.ag;
+      const opponentGoals=userHome?sc.ag:sc.hg;
+      userCupMatch={
+        competition:cup.name,stage:cup.stage,
+        home:f.home,away:f.away,
+        homeName:clubMap.get(String(f.home))?.name||"Mandante",
+        awayName:clubMap.get(String(f.away))?.name||"Visitante",
+        homeGoals:sc.hg,awayGoals:sc.ag,
+        userGoals,opponentGoals,
+        opponentId,
+        penaltyShootout:f.userPenalty?{
+          ...f.userPenalty,homePens:f.penHome,awayPens:f.penAway,winnerId:f.pw,homeId:f.home,awayId:f.away
+        }:null
+      };
+    }
+  }
+
+  const userAlive=winners.some(id=>String(id)===String(pc.club_id));
+  if(!userAlive)cup.userEliminated=true;
+
+  if(cup.stage==="FINAL"){
+    cup.champion=winners[0]||null;
+    cup.status="finished";
+  }else{
+    const next=playerCareerCupNextStage(cup.stage);
+    addPlayerCareerCupStage(cup,next,winners);
+  }
+  return userCupMatch;
+}
+
+async function createPlayerSeasonData(countryCode,division,clubId,seasonNo,previousData=null,profile=null){
   let teams=(await q(`
     SELECT id,name,base_rating FROM clubs
     WHERE is_ai=TRUE AND club_kind='national' AND country_code=$1 AND national_seed_division=$2 AND id<>$3
@@ -1826,28 +2104,47 @@ async function createPlayerSeasonData(countryCode,division,clubId,seasonNo){
     teams.push(...fill);
   }
   if(teams.length!==20)throw new Error(`Não foi possível montar a liga de jogador em ${countryName(countryCode)}.`);
-  return {
+  const meta=playerCareerMetaForNext(previousData);
+  const next={
     seasonNo,
     leagueName:leagueName(countryCode,division),
     league:divisionObject(teams),
-    history:[],
-    payments:[],
-    transferOffers:[],
-    acceptedOffer:null,
-    nextDivision:division
+    cup:createPlayerCareerCup(teams,clubId,countryCode),
+    history:[],payments:[],transferOffers:[],acceptedOffer:null,acceptedLoan:null,marketInterest:[],loanOffers:[],
+    nextDivision:division,seasonStats:{appearances:0,goals:0,assists:0,cleanSheets:0,ratingTotal:0,ratedMatches:0},
+    objectives:playerSeasonObjectives(profile?.position||"ATT",seasonNo),matchPlan:"BALANCED",personalSponsor:null,
+    ...meta
   };
+  return next;
 }
 async function hydratePlayerCareer(pc){
   if(!pc)return null;
-  const data=typeof pc.data==="string"?JSON.parse(pc.data):pc.data;
+  const data=ensurePlayerV44Data(pc,typeof pc.data==="string"?JSON.parse(pc.data):pc.data);
   const ids=new Set([Number(pc.club_id)]);
   for(const e of data?.league?.entries||[])ids.add(Number(e.clubId));
   for(const f of data?.league?.fixtures||[]){ids.add(Number(f.home));ids.add(Number(f.away))}
   for(const o of data?.transferOffers||[])if(o.clubId)ids.add(Number(o.clubId));
+  for(const o of data?.marketInterest||[])if(o.clubId)ids.add(Number(o.clubId));
+  for(const o of data?.loanOffers||[])if(o.clubId)ids.add(Number(o.clubId));
+  for(const f of data?.cup?.fixtures||[]){ids.add(Number(f.home));ids.add(Number(f.away))}
+  if(data?.cup?.champion)ids.add(Number(data.cup.champion));
   const clubs=(await q(`SELECT id,name,base_rating,primary_color,secondary_color,country_code,national_seed_division FROM clubs WHERE id=ANY($1::bigint[])`,[[...ids]])).rows;
   const map=new Map(clubs.map(c=>[String(c.id),c]));
+  const competitor=(await q(`SELECT name,rating,age FROM players WHERE club_id=$1 AND position=$2 ORDER BY rating DESC LIMIT 1`,[pc.club_id,pc.position])).rows[0]||{
+    name:"Concorrente do elenco",rating:Number(map.get(String(pc.club_id))?.base_rating||62),age:24
+  };
+  const objectiveStatus=playerObjectivesStatus(pc,data);
+  const marketValue=playerMarketValueV44(pc);
+  const sponsorOffers=playerPersonalSponsorOffers(pc);
+  const isCaptain=Number(pc.leadership||0)>=75&&Number(pc.coach_trust||0)>=80&&Number(pc.age||17)>=21;
   const entries=sortEntries(data?.league?.entries||[]).map(e=>({...e,gd:e.gf-e.ga,club:map.get(String(e.clubId))}));
   const fixtures=(data?.league?.fixtures||[]).map(f=>({...f,homeClub:map.get(String(f.home)),awayClub:map.get(String(f.away))}));
+  const cup=data?.cup?{
+    ...data.cup,
+    fixtures:(data.cup.fixtures||[]).map(f=>({...f,homeClub:map.get(String(f.home)),awayClub:map.get(String(f.away))})),
+    championClub:data.cup.champion?map.get(String(data.cup.champion)):null,
+    nextRound:data.cup.status==="active"?Number(data.cup.stageRounds?.[data.cup.stage]||0):null
+  }:null;
   const interaction=(await q(`
     SELECT interaction_type,result_text,created_at
     FROM player_career_interactions
@@ -1869,14 +2166,29 @@ async function hydratePlayerCareer(pc){
       dominant_foot:pc.dominant_foot,play_style:pc.play_style,
       gk_diving:pc.gk_diving,gk_handling:pc.gk_handling,gk_reflexes:pc.gk_reflexes,gk_positioning:pc.gk_positioning,
       gk_saves:pc.gk_saves,gk_penalty_saves:pc.gk_penalty_saves,
-      salary:pc.salary,balance:pc.balance,manual_saved_at:pc.manual_saved_at
+      salary:pc.salary,balance:pc.balance,manual_saved_at:pc.manual_saved_at,
+      personality:pc.personality,career_goal:pc.career_goal,shirt_number:pc.shirt_number,
+      contract_years:pc.contract_years,release_clause:pc.release_clause,agent_level:pc.agent_level,agent_relation:pc.agent_relation,
+      followers:pc.followers,fame:pc.fame,national_caps:pc.national_caps,national_goals:pc.national_goals,
+      injury_games:pc.injury_games,injury_type:pc.injury_type,legacy_score:pc.legacy_score,leadership:pc.leadership,
+      retired:pc.retired,market_value:marketValue,is_captain:isCaptain
     },
     league:{entries,fixtures},
+    cup,
     history:data?.history||[],
     payments:data?.payments||[],
     transferOffers:(data?.transferOffers||[]).map(o=>({...o,club:map.get(String(o.clubId))})),
     acceptedOffer:data?.acceptedOffer||null,
     nextDivision:data?.nextDivision||pc.club_division,
+    objectives:objectiveStatus,matchPlan:data.matchPlan||"BALANCED",perks:data.perks||[],lifestyle:data.lifestyle||{},
+    timeline:data.timeline||[],careerHistory:data.careerHistory||[],awards:data.awards||[],
+    marketInterest:(data.marketInterest||[]).map(o=>({...o,club:map.get(String(o.clubId))})),
+    loanOffers:(data.loanOffers||[]).map(o=>({...o,club:map.get(String(o.clubId))})),acceptedLoan:data.acceptedLoan||null,loanState:data.loanState||null,
+    personalSponsor:data.personalSponsor||null,personalSponsorOffers:sponsorOffers,
+    competition:{competitor,status:playerCompetitionStatus(pc,competitor),gap:Number(pc.overall||0)-Number(competitor.rating||0)},
+    agent:{level:Number(pc.agent_level||1),relation:Number(pc.agent_relation||55),cooldown:Number(pc.last_agent_action_round||0)>0?Math.max(0,4-(Number(pc.current_round||1)-Number(pc.last_agent_action_round||0))):0},
+    nationalTeam:{caps:Number(pc.national_caps||0),goals:Number(pc.national_goals||0),eligible:Number(pc.overall||0)>=70||Number(pc.reputation||0)>=35},
+    contract:{years:Number(pc.contract_years||0),salary:Number(pc.salary||0),releaseClause:Number(pc.release_clause||0),marketValue},
     interaction:{used:Boolean(interaction),currentRound:Math.max(1,Number(pc.current_round||1)),last:interaction}
   };
 }
@@ -1949,13 +2261,13 @@ async function generatePlayerTransferOffers(pc,data){
   else data.nextDivision=pc.club_division;
   return data;
 }
-async function simulatePlayerCareerRound(userId,cachedClubMap=null){
+async function simulatePlayerCareerRound(userId,cachedClubMap=null,penaltyCorner=null){
   return tx(async client=>{
     const pc=(await client.query(`SELECT * FROM player_careers WHERE user_id=$1 AND is_active_career=TRUE FOR UPDATE`,[userId])).rows[0];
     if(!pc)throw Object.assign(new Error("Carreira de jogador não encontrada."),{status:404});
     if(pc.status!=="ACTIVE")throw Object.assign(new Error("A temporada terminou. Vá para a próxima temporada."),{status:400});
 
-    const data=typeof pc.data==="string"?JSON.parse(pc.data):pc.data;
+    const data=ensurePlayerV44Data(pc,typeof pc.data==="string"?JSON.parse(pc.data):pc.data);
     const round=Number(pc.current_round);
     const games=data.league.fixtures.filter(f=>Number(f.round)===round&&!f.played);
     const clubMap=cachedClubMap||await fastClubSnapshot();
@@ -1977,23 +2289,32 @@ async function simulatePlayerCareerRound(userId,cachedClubMap=null){
       const trust=clamp(Number(pc.coach_trust||55),0,100);
       const role=String(pc.squad_role||"ROTATION");
       const roleChance=role==="STARTER"?.94:role==="ROTATION"?.76:.48;
-      const selectionChance=clamp(roleChance+(trust-55)*.004+(Number(pc.overall)-60)*.006,.30,.98);
-      const selected=Math.random()<selectionChance;
+      const plan=playerPlanModifiers(data.matchPlan||"BALANCED");
+      const injured=Number(pc.injury_games||0)>0;
+      const selectionChance=clamp(roleChance+(trust-55)*.004+(Number(pc.overall)-60)*.006+(data.perks.includes("leader")?.025:0),.30,.98);
+      const selected=!injured&&Math.random()<selectionChance;
 
       if(!selected){
         const sc=fastScore(f.home,f.away,clubMap);
         f.played=true;f.hg=sc.hg;f.ag=sc.ag;
         applyResult(findEntry(data.league.entries,f.home),sc.hg,sc.ag);
         applyResult(findEntry(data.league.entries,f.away),sc.ag,sc.hg);
+        if(injured){
+          pc.injury_games=Math.max(0,Number(pc.injury_games)-1);
+          if(pc.injury_games===0){
+            playerV44Timeline(data,"recovery",`Você se recuperou de ${pc.injury_type||"lesão"}.`,pc.season_no,round);
+            pc.injury_type=null;
+          }
+        }
         const nextTrust=clamp(trust+(role==="RESERVE"?1:0),0,100);
         pc.coach_trust=nextTrust;
         pc.squad_role=nextTrust>=72?"STARTER":nextTrust>=48?"ROTATION":"RESERVE";
-        pc.fitness=clamp(Number(pc.fitness)+6,35,100);
-        pc.morale=clamp(Number(pc.morale)-1,35,100);
+        pc.fitness=clamp(Number(pc.fitness)+(injured?4:6),35,100);
+        pc.morale=clamp(Number(pc.morale)-(injured?0:1),35,100);
         playerMatch={
           round,home:f.home,away:f.away,homeName:home.name,awayName:away.name,
           homeGoals:sc.hg,awayGoals:sc.ag,performance:null,goals:0,assists:0,
-          played:false,selection:"BENCH",result:userHome?(sc.hg>sc.ag?"win":sc.hg===sc.ag?"draw":"loss"):(sc.ag>sc.hg?"win":sc.ag===sc.hg?"draw":"loss"),
+          played:false,selection:injured?"INJURED":"BENCH",result:userHome?(sc.hg>sc.ag?"win":sc.hg===sc.ag?"draw":"loss"):(sc.ag>sc.hg?"win":sc.ag===sc.hg?"draw":"loss"),
           date:new Date().toISOString()
         };
         data.history.unshift(playerMatch);
@@ -2034,13 +2355,16 @@ async function simulatePlayerCareerRound(userId,cachedClubMap=null){
         applyResult(findEntry(data.league.entries,f.home),sc.hg,sc.ag);
         applyResult(findEntry(data.league.entries,f.away),sc.ag,sc.hg);
       }else{
-        const basePerf=6.35+(Number(pc.overall)-60)*.035+(Number(pc.fitness)-70)*.012+(Math.random()*1.6-.8);
+        const lifestyleBonus=data.lifestyle?.personal_trainer?.15:0;
+        const basePerf=6.35+(Number(pc.overall)-60)*.035+(Number(pc.fitness)-70)*.012+plan.perf+lifestyleBonus+(Math.random()*1.6-.8);
         performance=clamp(Math.round(basePerf*10)/10,4.5,10);
         const attackWeight=pc.position==="ATT"?1:pc.position==="MID"?.65:.22;
         const assistWeight=pc.position==="MID"?1:pc.position==="ATT"?.65:.25;
-        if(Math.random()<clamp(.08+attackWeight*(Number(pc.overall)-50)/100+performance*.012,.03,.62))goals++;
+        const clinical=data.perks.includes("clinical")?.06:0;
+        if(Math.random()<clamp(.08+attackWeight*(Number(pc.overall)-50)/100+performance*.012+plan.goal+clinical,.03,.75))goals++;
         if(pc.position==="ATT"&&performance>8.2&&Math.random()<.22)goals++;
-        if(Math.random()<clamp(.07+assistWeight*(Number(pc.passing)-45)/110+performance*.01,.03,.52))assists++;
+        const maestro=data.perks.includes("playmaker")?.07:0;
+        if(Math.random()<clamp(.07+assistWeight*(Number(pc.passing)-45)/110+performance*.01+plan.assist+maestro,.03,.68))assists++;
 
         const boost=(Number(pc.overall)-60)*.12+(performance-6.5)*1.5;
         hr=Number(home.rating)+(userHome?boost:0);
@@ -2056,11 +2380,13 @@ async function simulatePlayerCareerRound(userId,cachedClubMap=null){
 
       const ug=userHome?f.hg:f.ag,og=userHome?f.ag:f.hg;
       const result=ug>og?"win":ug===og?"draw":"loss";
-      const newFitness=clamp(Number(pc.fitness)-rand(pc.position==="GK"?5:7,pc.position==="GK"?10:13),35,100);
+      const fatigueReduction=(data.perks.includes("engine")?2:0)+(data.lifestyle?.nutrition?2:0);
+      const newFitness=clamp(Number(pc.fitness)-Math.max(3,rand(pc.position==="GK"?5:7,pc.position==="GK"?10:13)+Number(plan.fatigue||0)-fatigueReduction),35,100);
       const newMorale=clamp(Number(pc.morale)+(result==="win"?4:result==="draw"?1:-3),35,100);
       const skillGain=performance>=8.5?2:performance>=7?1:0;
-      const repGain=performance>=8?2:performance>=6.5?1:0;
-      const trustDelta=performance>=8?5:performance>=7?3:performance>=6.2?1:-4;
+      const personalityRep=pc.personality==="CHARISMATIC"&&performance>=7?1:0;
+      const repGain=(performance>=8?2:performance>=6.5?1:0)+Number(plan.rep||0)+personalityRep;
+      const trustDelta=(performance>=8?5:performance>=7?3:performance>=6.2?1:-4)+(data.perks.includes("leader")?1:0)+(pc.personality==="PROFESSIONAL"?1:0);
       const nextTrust=clamp(Number(pc.coach_trust||55)+trustDelta,0,100);
       const nextRole=nextTrust>=72?"STARTER":nextTrust>=48?"ROTATION":"RESERVE";
       const previousApps=Number(pc.appearances||0);
@@ -2091,19 +2417,68 @@ async function simulatePlayerCareerRound(userId,cachedClubMap=null){
       pc.coach_trust=nextTrust;
       pc.squad_role=nextRole;
       pc.avg_rating=Math.round(nextAvg*100)/100;
+      const ss=data.seasonStats;
+      ss.appearances=Number(ss.appearances||0)+1;
+      ss.goals=Number(ss.goals||0)+goals;
+      ss.assists=Number(ss.assists||0)+assists;
+      if(pc.position==="GK"&&og===0)ss.cleanSheets=Number(ss.cleanSheets||0)+1;
+      ss.ratingTotal=Number(ss.ratingTotal||0)+performance;
+      ss.ratedMatches=Number(ss.ratedMatches||0)+1;
+      const followerMult=data.lifestyle?.media_team?1.35:1;
+      pc.followers=Number(pc.followers||0)+Math.round((150+Math.max(0,performance-6)*180+goals*450+assists*300)*followerMult);
+      pc.fame=clamp(Number(pc.fame||0)+(performance>=8?2:performance>=7?1:0),0,100);
+      pc.leadership=clamp(Number(pc.leadership||0)+(performance>=8.5?1:0),0,100);
+      const baseInjury=.012+Math.max(0,75-Number(pc.fitness||75))*.0014+Number(plan.injury||0)-(data.perks.includes("ironman")?.01:0)-(data.lifestyle?.physio?.008:0);
+      if(pc.injury_games<=0&&Math.random()<clamp(baseInjury,.003,.11)){
+        pc.injury_games=rand(1,4);
+        pc.injury_type=["Contusão muscular","Torção no tornozelo","Lesão na coxa","Desconforto no joelho"][rand(0,3)];
+        playerV44Timeline(data,"injury",`${pc.injury_type}: previsão de ${pc.injury_games} rodada(s) fora.`,pc.season_no,round);
+      }
+      if(round%6===0&&(Number(pc.overall)>=70||Number(pc.reputation)>=35)){
+        const callChance=clamp(.20+(Number(pc.overall)-68)*.025+Number(pc.reputation)*.004+Number(pc.agent_level||1)*.03,.15,.88);
+        if(Math.random()<callChance){
+          pc.national_caps=Number(pc.national_caps||0)+1;
+          const intlGoal=pc.position!=="GK"&&Math.random()<clamp(.06+(Number(pc.shooting||50)-50)*.004,.03,.35)?1:0;
+          pc.national_goals=Number(pc.national_goals||0)+intlGoal;
+          pc.reputation=clamp(Number(pc.reputation||0)+2,0,100);
+          pc.fame=clamp(Number(pc.fame||0)+2,0,100);
+          pc.followers=Number(pc.followers||0)+3500;
+          playerV44Timeline(data,"national",`Convocado para a seleção${intlGoal?" e marcou um gol":""}.`,pc.season_no,round);
+        }
+      }
+    }
+
+    const cupMatch=await simulatePlayerCareerCupRound(pc,data,round,clubMap,penaltyCorner);
+    if(cupMatch){
+      data.history.unshift({
+        round,home:cupMatch.home,away:cupMatch.away,homeName:cupMatch.homeName,awayName:cupMatch.awayName,
+        homeGoals:cupMatch.homeGoals,awayGoals:cupMatch.awayGoals,performance:null,goals:0,assists:0,
+        played:true,selection:"CUP",result:String(cupMatch.penaltyShootout?.winnerId||"")===String(pc.club_id)?"win":
+          (cupMatch.userGoals>cupMatch.opponentGoals?"win":"loss"),
+        penaltyShootout:cupMatch.penaltyShootout,date:new Date().toISOString()
+      });
+      data.history=data.history.slice(0,60);
     }
 
     let balance=Number(pc.balance);
     if(round%4===0){
       balance+=Number(pc.salary);
-      data.payments.unshift({round,amount:Number(pc.salary),season:pc.season_no,date:new Date().toISOString()});
-      data.payments=data.payments.slice(0,20);
+      data.payments.unshift({round,amount:Number(pc.salary),season:pc.season_no,type:"salary",date:new Date().toISOString()});
+      if(data.personalSponsor){
+        const sponsorPay=Number(data.personalSponsor.pay||0);
+        balance+=sponsorPay;
+        data.personalSponsor.totalEarned=Number(data.personalSponsor.totalEarned||0)+sponsorPay;
+        data.payments.unshift({round,amount:sponsorPay,season:pc.season_no,type:"personal_sponsor",label:data.personalSponsor.name,date:new Date().toISOString()});
+      }
+      data.payments=data.payments.slice(0,30);
     }
 
     let nextRound=round+1,status=pc.status;
     if(round>=38){
       status="END";
       nextRound=39;
+      const finalization=finalizePlayerV44Season(pc,data);
+      playerV44Timeline(data,"season",`Temporada encerrada: +${finalization.skillReward} ponto(s) de evolução por objetivos.`,pc.season_no,38);
       await generatePlayerTransferOffers({...pc,balance},data);
     }
 
@@ -2111,13 +2486,16 @@ async function simulatePlayerCareerRound(userId,cachedClubMap=null){
       UPDATE player_careers SET
         current_round=$2,status=$3,fitness=$4,morale=$5,appearances=$6,goals=$7,assists=$8,clean_sheets=$9,
         skill_points=$10,reputation=$11,balance=$12,data=$13::jsonb,updated_at=NOW(),
-        coach_trust=$14,squad_role=$15,avg_rating=$16,gk_saves=$17,gk_penalty_saves=$18
+        coach_trust=$14,squad_role=$15,avg_rating=$16,gk_saves=$17,gk_penalty_saves=$18,
+        injury_games=$19,injury_type=$20,followers=$21,fame=$22,national_caps=$23,national_goals=$24,
+        legacy_score=$25,leadership=$26
       WHERE id=$1
     `,[pc.id,nextRound,status,pc.fitness,pc.morale,pc.appearances,pc.goals,pc.assists,pc.clean_sheets,
        pc.skill_points,pc.reputation,balance,JSON.stringify(data),pc.coach_trust,pc.squad_role,pc.avg_rating,
-       pc.gk_saves,pc.gk_penalty_saves]);
+       pc.gk_saves,pc.gk_penalty_saves,pc.injury_games||0,pc.injury_type||null,pc.followers||0,pc.fame||0,
+       pc.national_caps||0,pc.national_goals||0,pc.legacy_score||0,pc.leadership||40]);
 
-    return {match:playerMatch,status,nextRound,skillPoints:pc.skill_points,balance};
+    return {match:playerMatch,cupMatch,status,nextRound,skillPoints:pc.skill_points,balance};
   });
 }
 async function trainPlayerCareer(userId,attribute){
@@ -2155,6 +2533,7 @@ async function acceptPlayerCareerOffer(userId,clubId){
     if(!offer)throw Object.assign(new Error("Proposta não encontrada."),{status:404});
     data.transferOffers=(data.transferOffers||[]).map(o=>({...o,status:String(o.clubId)===String(clubId)?"accepted":"rejected"}));
     data.acceptedOffer={...offer,status:"accepted"};
+    data.acceptedLoan=null;
     // A transferência é confirmada para a próxima temporada.
     // O clube/posição atual da temporada encerrada permanece intacto até o usuário avançar o calendário.
     await client.query(`UPDATE player_careers SET data=$2::jsonb,morale=LEAST(100,morale+8),updated_at=NOW() WHERE id=$1`,
@@ -2167,24 +2546,52 @@ async function nextPlayerCareerSeason(userId){
     const pc=(await client.query(`SELECT * FROM player_careers WHERE user_id=$1 AND is_active_career=TRUE FOR UPDATE`,[userId])).rows[0];
     if(!pc)throw Object.assign(new Error("Carreira de jogador não encontrada."),{status:404});
     if(pc.status!=="END")throw Object.assign(new Error("A temporada ainda não terminou."),{status:400});
-    const oldData=typeof pc.data==="string"?JSON.parse(pc.data):pc.data;
-    const accepted=oldData.acceptedOffer;
-    const nextCountry=accepted?.countryCode||pc.country_code;
-    const nextDiv=accepted?.division||oldData.nextDivision||pc.club_division;
-    const nextClubId=accepted?.clubId||pc.club_id;
+    if(pc.retired)throw Object.assign(new Error("Esta carreira já foi encerrada por aposentadoria."),{status:409});
+    const oldData=ensurePlayerV44Data(pc,typeof pc.data==="string"?JSON.parse(pc.data):pc.data);
     const nextSeason=Number(pc.season_no)+1;
-    const data=await createPlayerSeasonData(nextCountry,nextDiv,nextClubId,nextSeason);
+    const accepted=oldData.acceptedOffer;
+    const acceptedLoan=oldData.acceptedLoan;
+    const returnFromLoan=oldData.loanState&&Number(oldData.loanState.returnSeason||0)<=nextSeason;
+
+    let nextCountry=pc.country_code,nextDiv=oldData.nextDivision||pc.club_division,nextClubId=pc.club_id;
+    let nextLoanState=oldData.loanState||null;
+    let salary=Number(pc.salary||0),contractYears=Math.max(0,Number(pc.contract_years||1)-1);
+
+    if(accepted){
+      nextCountry=accepted.countryCode||pc.country_code;nextDiv=accepted.division||pc.club_division;nextClubId=accepted.clubId;
+      salary=Number(accepted.salary||salary);contractYears=4;nextLoanState=null;
+    }else if(acceptedLoan){
+      nextLoanState={parentClubId:Number(pc.club_id),parentCountry:pc.country_code,parentDivision:pc.club_division,returnSeason:nextSeason+1};
+      nextCountry=acceptedLoan.countryCode||pc.country_code;nextDiv=acceptedLoan.division||pc.club_division;nextClubId=acceptedLoan.clubId;
+      salary=Math.max(salary,Number(acceptedLoan.salary||salary));
+    }else if(returnFromLoan){
+      nextCountry=oldData.loanState.parentCountry;nextDiv=oldData.loanState.parentDivision;nextClubId=oldData.loanState.parentClubId;nextLoanState=null;
+    }
+
+    if(contractYears<=0&&!accepted){contractYears=1;salary=Math.round(salary*1.06/50)*50}
+    const data=await createPlayerSeasonData(nextCountry,nextDiv,nextClubId,nextSeason,oldData,{position:pc.position});
+    data.loanState=nextLoanState;
+    playerV44Timeline(data,"season",`Temporada ${nextSeason} iniciada em novo ciclo profissional.`,nextSeason,1);
+
+    let pace=Number(pc.pace),fitness=100;
+    const nextAge=Number(pc.age)+1;
+    if(nextAge>=32)pace=Math.max(35,pace-1);
+    if(nextAge>=35)fitness=96;
+    const marketValue=playerMarketValueV44({...pc,age:nextAge});
+    const releaseClause=Math.max(Number(pc.release_clause||0),Math.round(marketValue*1.7/100)*100);
 
     await client.query(`
       UPDATE player_careers SET
-        age=age+1,country_code=$2,club_id=$3,club_division=$4,season_no=$5,current_round=1,status='ACTIVE',
-        fitness=100,morale=78,data=$6::jsonb,updated_at=NOW()
+        age=$2,country_code=$3,club_id=$4,club_division=$5,season_no=$6,current_round=1,status='ACTIVE',
+        fitness=$7,morale=78,data=$8::jsonb,updated_at=NOW(),pace=$9,contract_years=$10,salary=$11,release_clause=$12,
+        last_agent_action_round=0,last_training_round=0,injury_games=0,injury_type=NULL
       WHERE id=$1
-    `,[pc.id,nextCountry,nextClubId,nextDiv,nextSeason,JSON.stringify(data)]);
+    `,[pc.id,nextAge,nextCountry,nextClubId,nextDiv,nextSeason,fitness,JSON.stringify(data),pace,contractYears,salary,releaseClause]);
 
     return (await client.query(`SELECT pc.*,c.name club_name,c.base_rating club_rating FROM player_careers pc JOIN clubs c ON c.id=pc.club_id WHERE pc.id=$1`,[pc.id])).rows[0];
   });
 }
+
 async function clubRating(clubId,client=pool){
   return (await client.query(`SELECT COALESCE(ROUND(AVG(rating)),64)::int rating FROM players WHERE club_id=$1 AND is_starter=TRUE`,[clubId])).rows[0].rating;
 }
@@ -3876,6 +4283,81 @@ function penaltyShootout(f,forcedWinner=null){
   return Number(f.pw);
 }
 
+const PENALTY_CORNERS=["left","center","right"];
+function normalizedPenaltyCorner(value){
+  const v=String(value||"").toLowerCase();
+  return PENALTY_CORNERS.includes(v)?v:null;
+}
+function penaltyCornerLabel(v){
+  return ({left:"esquerdo",center:"meio",right:"direito"})[v]||v;
+}
+function interactivePenaltyShootout(f,userClubId,corner,role="shooter",player=null){
+  if(f.penHome!=null&&f.penAway!=null&&f.pw)return Number(f.pw);
+  const chosen=normalizedPenaltyCorner(corner);
+  if(!chosen||![String(f.home),String(f.away)].includes(String(userClubId))){
+    return penaltyShootout(f);
+  }
+
+  const userHome=String(f.home)===String(userClubId);
+  const aiCorner=PENALTY_CORNERS[rand(0,PENALTY_CORNERS.length-1)];
+  let userWon=false,success=false;
+  let probability=0;
+
+  if(role==="keeper"){
+    const reflexes=Number(player?.gk_reflexes||player?.overall||65);
+    const positioning=Number(player?.gk_positioning||player?.overall||65);
+    probability=chosen===aiCorner
+      ?clamp(.58+(reflexes-60)*.006+(positioning-60)*.003,.42,.90)
+      :.07;
+    success=Math.random()<probability; // sucesso = defesa
+    userWon=success;
+  }else{
+    const shooting=Number(player?.shooting||player?.overall||70);
+    probability=chosen===aiCorner
+      ?clamp(.30+(shooting-60)*.006,.22,.58)
+      :clamp(.82+(shooting-60)*.003,.72,.96);
+    success=Math.random()<probability; // sucesso = gol
+    userWon=success;
+  }
+
+  let userPens=userWon?5:4;
+  let oppPens=userWon?4:5;
+  f.penHome=userHome?userPens:oppPens;
+  f.penAway=userHome?oppPens:userPens;
+  f.pw=userWon?Number(userClubId):Number(userHome?f.away:f.home);
+  f.userPenalty={
+    interactive:true,
+    role,
+    chosenCorner:chosen,
+    aiCorner,
+    success,
+    userWon,
+    probability:Math.round(probability*100),
+    text:role==="keeper"
+      ?(success?`Você mergulhou no canto ${penaltyCornerLabel(chosen)} e DEFENDEU o pênalti decisivo.`:`Você mergulhou no canto ${penaltyCornerLabel(chosen)}, mas a cobrança foi no canto ${penaltyCornerLabel(aiCorner)}.`)
+      :(success?`Você bateu no canto ${penaltyCornerLabel(chosen)} e MARCOU o pênalti decisivo.`:`Você bateu no canto ${penaltyCornerLabel(chosen)}, mas o goleiro foi no canto ${penaltyCornerLabel(aiCorner)} e defendeu.`)
+  };
+  return Number(f.pw);
+}
+function attachInteractivePenalty(userMatch,fixtures,userClubId){
+  if(!userMatch||!Array.isArray(fixtures))return userMatch;
+  const f=[...fixtures].reverse().find(x=>
+    x?.userPenalty?.interactive &&
+    (String(x.home)===String(userClubId)||String(x.away)===String(userClubId))
+  );
+  if(f){
+    userMatch.penaltyShootout={
+      ...f.userPenalty,
+      homePens:f.penHome,
+      awayPens:f.penAway,
+      winnerId:f.pw,
+      homeId:f.home,
+      awayId:f.away
+    };
+  }
+  return userMatch;
+}
+
 function normalizePenaltyScores(career){
   let changed=false;
   const comps=[
@@ -3896,7 +4378,7 @@ function normalizePenaltyScores(career){
   return changed;
 }
 
-function knockoutWinnerFromFixtures(fixtures){
+function knockoutWinnerFromFixtures(fixtures,ownerId=null,penaltyCorner=null){
   const fs=[...fixtures].filter(f=>f.played).sort((a,b)=>Number(a.leg||1)-Number(b.leg||1));
   if(!fs.length)return null;
 
@@ -3914,7 +4396,10 @@ function knockoutWinnerFromFixtures(fixtures){
   if(agg.get(b)>agg.get(a))return Number(b);
 
   const decisive=fs[fs.length-1];
-  return penaltyShootout(decisive);
+  const involvesUser=ownerId!=null&&(String(decisive.home)===String(ownerId)||String(decisive.away)===String(ownerId));
+  return involvesUser
+    ?interactivePenaltyShootout(decisive,ownerId,penaltyCorner,"shooter")
+    :penaltyShootout(decisive);
 }
 
 async function createCopaBrasil(ownerId){
@@ -4000,14 +4485,14 @@ function normalizeCopaFormat(career,copa){
   return copa;
 }
 
-function copaWinners(copa,stage){
+function copaWinners(copa,stage,ownerId=null,penaltyCorner=null){
   const stageFixtures=copa.fixtures.filter(f=>f.stage===stage);
   const ties=[...new Set(stageFixtures.map(f=>f.tie||`${stage}-${f.slot}`))];
   const out=[];
 
   for(const tie of ties){
     const fs=stageFixtures.filter(f=>(f.tie||`${stage}-${f.slot}`)===tie);
-    const winner=knockoutWinnerFromFixtures(fs);
+    const winner=knockoutWinnerFromFixtures(fs,ownerId,penaltyCorner);
     if(winner!=null)out.push(Number(winner));
   }
   return out;
@@ -4616,7 +5101,7 @@ async function finishCopaAtSeasonEnd(career,ownerId,clubMap){
   return copa;
 }
 
-async function playCopa(ownerId){
+async function playCopa(ownerId,penaltyCorner=null){
   const career=await getCareer(ownerId);
   if(!career)throw Object.assign(new Error("Carreira não encontrada."),{status:404});
   if((career.country_code||"BR")==="BR"&&career.data.state?.stage!=="FINISHED"){
@@ -4688,7 +5173,7 @@ async function playCopa(ownerId){
     };
   }
 
-  const winners=copaWinners(copa,stage);
+  const winners=copaWinners(copa,stage,ownerId,penaltyCorner);
   const userWon=winners.some(id=>String(id)===String(ownerId));
 
   if(stage==="FINAL"){
@@ -4729,7 +5214,7 @@ async function playCopa(ownerId){
   };
 }
 
-async function playState(ownerId){
+async function playState(ownerId,penaltyCorner=null){
   const career=await getCareer(ownerId);
   if(!ownerId) throw Object.assign(new Error("Clube da carreira não encontrado."),{status:400});
   if(!career||career.phase!=="STATE") throw Object.assign(new Error("O Estadual não está ativo."),{status:400});
@@ -4774,7 +5259,7 @@ async function playState(ownerId){
           await recordUserMatch(c,ownerId,String(f.home)===String(ownerId)?f.away:f.home,userMatch,sim.events,"state",userMatch.finance.performance);
         }else ({hg,ag}=basicScore(ratings.get(String(f.home))||60,ratings.get(String(f.away))||60));
         f.played=true;f.hg=hg;f.ag=ag;
-        const winner=hg>ag?f.home:ag>hg?f.away:penaltyShootout(f);
+        const winner=hg>ag?f.home:ag>hg?f.away:interactivePenaltyShootout(f,ownerId,penaltyCorner,"shooter");
         winners.push(winner);
       }
     });
@@ -4794,6 +5279,7 @@ async function playState(ownerId){
     }
   }
 
+  attachInteractivePenalty(userMatch,s.fixtures,ownerId);
   career.data.state=s;
   const stateCalendarLabel=s.stage==="GROUP"?`Estadual — rodada ${Math.max(1,Number(s.round)-1)}`:`Estadual — ${s.stage}`;
   await advanceCalendar(career,ownerId,5,stateCalendarLabel);
@@ -4911,7 +5397,7 @@ function createR16(lib){
   }
   lib.status="knockout";lib.stage="R16";lib.leg=1;
 }
-function koWinners(lib,stage){
+function koWinners(lib,stage,ownerId=null,penaltyCorner=null){
   const ties=[...new Set(lib.fixtures.filter(f=>f.stage===stage).map(f=>f.tie))],out=[];
   for(const tie of ties){
     const fs=lib.fixtures
@@ -4927,7 +5413,11 @@ function koWinners(lib,stage){
     let w;
     if(agg.get(a)>agg.get(b))w=Number(a);
     else if(agg.get(b)>agg.get(a))w=Number(b);
-    else w=penaltyShootout(fs[fs.length-1]);
+    else{
+      const decisive=fs[fs.length-1];
+      const involvesUser=ownerId!=null&&(String(decisive.home)===String(ownerId)||String(decisive.away)===String(ownerId));
+      w=involvesUser?interactivePenaltyShootout(decisive,ownerId,penaltyCorner,"shooter"):penaltyShootout(decisive);
+    }
     out.push(Number(w));
   }
   return out;
@@ -4943,7 +5433,7 @@ function addKoStage(lib,stage,ids){
     }
   }
 }
-async function simulateLibStep(career,allowUserDetail){
+async function simulateLibStep(career,allowUserDetail,penaltyCorner=null){
   const lib=career.data.libertadores;
   let userMatch=null,userAlive=true;
 
@@ -4985,7 +5475,7 @@ async function simulateLibStep(career,allowUserDetail){
 
     if(stage==="FINAL"){
       const f=games[0];
-const champ=f.hg>f.ag?f.home:f.ag>f.hg?f.away:penaltyShootout(f);
+const champ=f.hg>f.ag?f.home:f.ag>f.hg?f.away:interactivePenaltyShootout(f,career.owner_club_id,penaltyCorner,"shooter");
       lib.champion=champ;lib.status="finished";userAlive=false;
       if(String(champ)===String(career.owner_club_id)){
         await tx(async client=>{
@@ -4996,12 +5486,13 @@ const champ=f.hg>f.ag?f.home:f.ag>f.hg?f.away:penaltyShootout(f);
     }else if(leg===1){
       lib.leg=2;
     }else{
-      const winners=koWinners(lib,stage);
+      const winners=koWinners(lib,stage,career.owner_club_id,penaltyCorner);
       userAlive=winners.some(id=>String(id)===String(career.owner_club_id));
       const next=stage==="R16"?"QF":stage==="QF"?"SF":"FINAL";
       addKoStage(lib,next,winners);lib.stage=next;lib.leg=1;
     }
   }
+  attachInteractivePenalty(userMatch,lib.fixtures,career.owner_club_id);
   career.data.libertadores=lib;
   return {userMatch,userAlive,finished:lib.status==="finished"};
 }
@@ -5056,7 +5547,7 @@ function createChampionsPlayoff(ch){
   }
   ch.status="knockout";ch.stage="PLAYOFF";ch.leg=1;
 }
-async function simulateChampionsStep(career,allowUserDetail){
+async function simulateChampionsStep(career,allowUserDetail,penaltyCorner=null){
   const ch=career.data.championsLeague;
   let userMatch=null,userAlive=true;
   const ownerId=Number(career.owner_club_id);
@@ -5114,7 +5605,7 @@ async function simulateChampionsStep(career,allowUserDetail){
       const f=games[0];
       if(!f){ch.status="finished";userAlive=false}
       else{
-        const champ=f.hg>f.ag?f.home:f.ag>f.hg?f.away:penaltyShootout(f);
+        const champ=f.hg>f.ag?f.home:f.ag>f.hg?f.away:interactivePenaltyShootout(f,ownerId,penaltyCorner,"shooter");
         ch.champion=champ;ch.status="finished";userAlive=false;
         if(String(champ)===String(ownerId)){
           await tx(async client=>{
@@ -5126,7 +5617,7 @@ async function simulateChampionsStep(career,allowUserDetail){
     }else if(leg===1){
       ch.leg=2;
     }else{
-      const winners=koWinners(ch,stage);
+      const winners=koWinners(ch,stage,ownerId,penaltyCorner);
       let nextIds=winners;
       if(stage==="PLAYOFF")nextIds=[...(ch.directR16||[]),...winners];
       userAlive=nextIds.some(id=>String(id)===String(ownerId));
@@ -5136,6 +5627,7 @@ async function simulateChampionsStep(career,allowUserDetail){
     }
   }
 
+  attachInteractivePenalty(userMatch,ch.fixtures,ownerId);
   career.data.championsLeague=ch;
   return {userMatch,userAlive,finished:ch.status==="finished"};
 }
@@ -5233,7 +5725,7 @@ function addWorldStage(world,stage,ids){
   }
   world.stage=stage;
 }
-async function simulateClubWorldStep(career,allowUserDetail){
+async function simulateClubWorldStep(career,allowUserDetail,penaltyCorner=null){
   const world=career.data.clubWorldCup;
   const ownerId=Number(career.owner_club_id);
   let userMatch=null,userAlive=true;
@@ -5285,7 +5777,11 @@ async function simulateClubWorldStep(career,allowUserDetail){
           ({hg,ag}=basicScore(ratings.get(String(f.home))||78,ratings.get(String(f.away))||78));
         }
         f.played=true;f.hg=hg;f.ag=ag;
-        if(hg===ag)penaltyShootout(f);
+        if(hg===ag){
+          const involvesUser=String(f.home)===String(ownerId)||String(f.away)===String(ownerId);
+          if(allowUserDetail&&involvesUser)interactivePenaltyShootout(f,ownerId,penaltyCorner,"shooter");
+          else penaltyShootout(f);
+        }
       }
     });
 
@@ -5306,6 +5802,7 @@ async function simulateClubWorldStep(career,allowUserDetail){
     }
   }
 
+  attachInteractivePenalty(userMatch,world.fixtures,ownerId);
   career.data.clubWorldCup=world;
   return {userMatch,userAlive,finished:world.status==="finished"};
 }
@@ -5612,10 +6109,10 @@ async function playNational(ownerId){
     phase:career.phase
   };
 }
-async function playLib(ownerId){
+async function playLib(ownerId,penaltyCorner=null){
   const career=await getCareer(ownerId);
   if(!career||career.phase!=="LIBERTADORES") throw Object.assign(new Error("Você não está na Libertadores agora."),{status:400});
-  const r=await simulateLibStep(career,true);
+  const r=await simulateLibStep(career,true,penaltyCorner);
   if(r.finished){
     await maybeStartClubWorldCup(career);
   }else if(!r.userAlive){
@@ -5627,10 +6124,10 @@ async function playLib(ownerId){
   return {...r,phase:career.phase};
 }
 
-async function playChampions(ownerId){
+async function playChampions(ownerId,penaltyCorner=null){
   const career=await getCareer(ownerId);
   if(!career||career.phase!=="CHAMPIONS")throw Object.assign(new Error("Você não está na Champions League agora."),{status:400});
-  const r=await simulateChampionsStep(career,true);
+  const r=await simulateChampionsStep(career,true,penaltyCorner);
   if(r.finished){
     await maybeStartClubWorldCup(career);
   }else if(!r.userAlive){
@@ -5642,10 +6139,10 @@ async function playChampions(ownerId){
   return {...r,phase:career.phase};
 }
 
-async function playClubWorldCup(ownerId){
+async function playClubWorldCup(ownerId,penaltyCorner=null){
   const career=await getCareer(ownerId);
   if(!career||career.phase!=="CLUB_WORLD_CUP")throw Object.assign(new Error("Você não está no Super Mundial agora."),{status:400});
-  const r=await simulateClubWorldStep(career,true);
+  const r=await simulateClubWorldStep(career,true,penaltyCorner);
   if(r.finished){
     career.phase="END";
   }else if(!r.userAlive){
@@ -6082,77 +6579,141 @@ async function ensureTransferPool(ownerId){
   for(const id of shuffle(ids).slice(0,18))await ensureRoster(id);
 }
 const SPONSOR_CATALOG=[
-  {id:"betano",name:"Betano",category:"Casa de apostas",baseMonthly:3600,baseSigning:7000,months:12},
-  {id:"superbet",name:"Superbet",category:"Casa de apostas",baseMonthly:3400,baseSigning:7600,months:12},
-  {id:"betnacional",name:"Betnacional",category:"Casa de apostas",baseMonthly:3200,baseSigning:6800,months:12},
-  {id:"sportingbet",name:"Sportingbet",category:"Casa de apostas",baseMonthly:3000,baseSigning:7200,months:12},
+  {id:"betano",name:"Betano",category:"Casa de apostas",baseMonthly:3600,baseSigning:7000,months:10,benefitKey:"performance_bonus",benefitLabel:"Bônus por performance",benefitDescription:"Ativação baseada na posição do clube na liga, gerando prêmio variável."},
+  {id:"superbet",name:"Superbet",category:"Casa de apostas",baseMonthly:3400,baseSigning:7600,months:12,benefitKey:"performance_bonus",benefitLabel:"Bônus por performance",benefitDescription:"Premiação extra vinculada à campanha esportiva do clube."},
+  {id:"betnacional",name:"Betnacional",category:"Casa de apostas",baseMonthly:3200,baseSigning:6800,months:8,benefitKey:"fan_campaign",benefitLabel:"Campanha com a torcida",benefitDescription:"Ação promocional que aumenta torcida e moral do elenco."},
+  {id:"sportingbet",name:"Sportingbet",category:"Casa de apostas",baseMonthly:3000,baseSigning:7200,months:10,benefitKey:"performance_bonus",benefitLabel:"Bônus de resultado",benefitDescription:"Ativação financeira variável de acordo com desempenho."},
 
-  {id:"nike",name:"Nike",category:"Material esportivo",baseMonthly:3100,baseSigning:6200,months:12},
-  {id:"adidas",name:"Adidas",category:"Material esportivo",baseMonthly:3200,baseSigning:6400,months:12},
-  {id:"puma",name:"Puma",category:"Material esportivo",baseMonthly:2800,baseSigning:6100,months:12},
+  {id:"nike",name:"Nike",category:"Material esportivo",baseMonthly:3100,baseSigning:6200,months:18,benefitKey:"performance_lab",benefitLabel:"Centro de performance",benefitDescription:"Equipamentos e recuperação: melhora físico, forma e reduz lesões."},
+  {id:"adidas",name:"Adidas",category:"Material esportivo",baseMonthly:3200,baseSigning:6400,months:18,benefitKey:"loan_network",benefitLabel:"Rede de clubes parceiros",benefitDescription:"Facilita um empréstimo sem taxa mensal, com opção de compra."},
+  {id:"puma",name:"Puma",category:"Material esportivo",baseMonthly:2800,baseSigning:6100,months:16,benefitKey:"performance_lab",benefitLabel:"Pacote de alta performance",benefitDescription:"Recuperação física e suporte ao departamento médico."},
 
-  {id:"cocacola",name:"Coca-Cola",category:"Bebidas",baseMonthly:3000,baseSigning:7000,months:12},
-  {id:"mercadolivre",name:"Mercado Livre",category:"Tecnologia e varejo",baseMonthly:3300,baseSigning:7500,months:12},
-  {id:"amazon",name:"Amazon",category:"Tecnologia e varejo",baseMonthly:3400,baseSigning:7800,months:12},
-  {id:"ifood",name:"iFood",category:"Tecnologia e serviços",baseMonthly:2900,baseSigning:6800,months:12},
+  {id:"cocacola",name:"Coca-Cola",category:"Bebidas",baseMonthly:3000,baseSigning:7000,months:12,benefitKey:"fan_campaign",benefitLabel:"Ativação com torcedores",benefitDescription:"Evento promocional que aumenta torcida, moral e exposição."},
+  {id:"mercadolivre",name:"Mercado Livre",category:"Tecnologia e varejo",baseMonthly:3300,baseSigning:7500,months:14,benefitKey:"commerce_activation",benefitLabel:"Campanha comercial",benefitDescription:"Ação de vendas e e-commerce que gera receita extraordinária."},
+  {id:"amazon",name:"Amazon",category:"Tecnologia e varejo",baseMonthly:3400,baseSigning:7800,months:18,benefitKey:"technology_lab",benefitLabel:"Tecnologia de análise",benefitDescription:"Dados e análise de desempenho aumentam forma e entrosamento."},
+  {id:"ifood",name:"iFood",category:"Tecnologia e serviços",baseMonthly:2900,baseSigning:6800,months:12,benefitKey:"morale_activation",benefitLabel:"Programa de bem-estar",benefitDescription:"Ação interna melhora moral do elenco e aproxima a torcida."},
 
-  {id:"nubank",name:"Nubank",category:"Banco e finanças",baseMonthly:3100,baseSigning:7600,months:12},
-  {id:"itau",name:"Itaú",category:"Banco e finanças",baseMonthly:3300,baseSigning:8200,months:12},
-  {id:"santander",name:"Santander",category:"Banco e finanças",baseMonthly:3200,baseSigning:8000,months:12},
+  {id:"nubank",name:"Nubank",category:"Banco e finanças",baseMonthly:3100,baseSigning:7600,months:24,benefitKey:"credit_line",benefitLabel:"Linha de crédito",benefitDescription:"Capital de giro patrocinado, pago em 6 parcelas com custo financeiro."},
+  {id:"itau",name:"Itaú",category:"Banco e finanças",baseMonthly:3300,baseSigning:8200,months:24,benefitKey:"credit_line",benefitLabel:"Crédito para o clube",benefitDescription:"Libera capital de giro com pagamento mensal automático."},
+  {id:"santander",name:"Santander",category:"Banco e finanças",baseMonthly:3200,baseSigning:8000,months:20,benefitKey:"loan_network",benefitLabel:"Financiamento de empréstimo",benefitDescription:"Parceiro financia a chegada de um atleta por empréstimo sem taxa mensal."},
 
-  {id:"vivo",name:"Vivo",category:"Telecom",baseMonthly:3000,baseSigning:7000,months:12},
-  {id:"claro",name:"Claro",category:"Telecom",baseMonthly:3000,baseSigning:7100,months:12},
-  {id:"tim",name:"TIM",category:"Telecom",baseMonthly:2850,baseSigning:6900,months:12},
+  {id:"vivo",name:"Vivo",category:"Telecom",baseMonthly:3000,baseSigning:7000,months:16,benefitKey:"digital_fans",benefitLabel:"Plataforma de torcedores",benefitDescription:"Campanha digital aumenta a torcida e reduz pressão da mídia."},
+  {id:"claro",name:"Claro",category:"Telecom",baseMonthly:3000,baseSigning:7100,months:16,benefitKey:"digital_fans",benefitLabel:"Engajamento digital",benefitDescription:"Amplia alcance do clube e fortalece relação com torcedores."},
+  {id:"tim",name:"TIM",category:"Telecom",baseMonthly:2850,baseSigning:6900,months:14,benefitKey:"digital_fans",benefitLabel:"Conectividade da torcida",benefitDescription:"Ação digital aumenta fãs e melhora exposição pública."},
 
-  {id:"samsung",name:"Samsung",category:"Tecnologia",baseMonthly:3300,baseSigning:8100,months:12},
-  {id:"byd",name:"BYD",category:"Automotivo",baseMonthly:3400,baseSigning:8400,months:12},
-  {id:"shopee",name:"Shopee",category:"Varejo",baseMonthly:2900,baseSigning:7200,months:12}
+  {id:"samsung",name:"Samsung",category:"Tecnologia",baseMonthly:3300,baseSigning:8100,months:18,benefitKey:"technology_lab",benefitLabel:"Laboratório tecnológico",benefitDescription:"Tecnologia de desempenho melhora forma e entrosamento do elenco."},
+  {id:"byd",name:"BYD",category:"Automotivo",baseMonthly:3400,baseSigning:8400,months:18,benefitKey:"travel_logistics",benefitLabel:"Logística de viagens",benefitDescription:"Melhor transporte reduz desgaste e melhora o físico do elenco."},
+  {id:"shopee",name:"Shopee",category:"Varejo",baseMonthly:2900,baseSigning:7200,months:12,benefitKey:"commerce_activation",benefitLabel:"Loja oficial e campanha",benefitDescription:"Ativação comercial gera receita e novos torcedores."}
 ];
 
-function sponsorOffersForDivision(div){
-  const multipliers={
+const SPONSOR_BENEFIT_COOLDOWN_ROUNDS=8;
+
+function sponsorHash(value){
+  return crypto.createHash("sha256").update(String(value)).digest().readUInt32BE(0);
+}
+function sponsorCycleInfo(career){
+  const season=Number(career?.season_no||1);
+  const date=career?.data?.calendar?.date||null;
+  let month=1;
+  if(date){
+    const parsed=new Date(`${date}T12:00:00Z`);
+    if(!Number.isNaN(parsed.getTime()))month=parsed.getUTCMonth()+1;
+  }else{
+    month=Math.min(12,Math.max(1,Math.ceil(Number(career?.current_round||1)/3)));
+  }
+  const quarter=Math.min(4,Math.max(1,Math.ceil(month/3)));
+  return {
+    key:`S${season}-Q${quarter}`,
+    season,quarter,
+    label:`Temporada ${season} · janela ${quarter}/4`,
+    nextLabel:quarter<4?`janela ${quarter+1}/4 desta temporada`:`Temporada ${season+1}`
+  };
+}
+function sponsorDivisionMultiplier(div){
+  return ({
     D:{monthly:1.00,signing:1.00},
     C:{monthly:1.35,signing:1.35},
     B:{monthly:1.95,signing:1.90},
     A:{monthly:3.10,signing:3.00}
-  };
-  const m=multipliers[div]||multipliers.D;
-  return SPONSOR_CATALOG.map((x,i)=>({
-    id:x.id,
-    name:x.name,
-    category:x.category,
-    monthly:Math.round((x.baseMonthly*m.monthly)/100)*100,
-    signing:Math.round((x.baseSigning*m.signing)/100)*100,
-    months:x.months,
-    priority:i
-  })).sort((a,b)=>b.monthly-a.monthly||b.signing-a.signing);
+  })[div]||{monthly:1,signing:1};
 }
-
+function sponsorOfferFromCatalog(x,div,club){
+  const m=sponsorDivisionMultiplier(div);
+  const confidence=Number(club?.board_confidence||60);
+  const reputation=Number(club?.manager_reputation||50);
+  const fans=Number(club?.fans||0);
+  const appeal=clamp(.88+(confidence-50)*.002+(reputation-50)*.002+Math.min(.08,fans/250000),.82,1.18);
+  return {
+    id:x.id,name:x.name,category:x.category,
+    monthly:Math.max(500,Math.round((x.baseMonthly*m.monthly*appeal)/100)*100),
+    signing:Math.max(500,Math.round((x.baseSigning*m.signing*appeal)/100)*100),
+    months:x.months,
+    benefitKey:x.benefitKey,
+    benefitLabel:x.benefitLabel,
+    benefitDescription:x.benefitDescription
+  };
+}
+function sponsorBenefitAvailability(contract,career){
+  const season=Number(career?.season_no||1);
+  const round=Math.max(1,Number(career?.current_round||1));
+  const lastSeason=Number(contract.last_benefit_season||0);
+  const lastRound=Number(contract.last_benefit_round||0);
+  const available=lastSeason!==season||round-lastRound>=SPONSOR_BENEFIT_COOLDOWN_ROUNDS;
+  return {
+    available,
+    cooldownRemaining:available?0:Math.max(0,SPONSOR_BENEFIT_COOLDOWN_ROUNDS-(round-lastRound)),
+    season,round
+  };
+}
 async function sponsorshipSummary(clubId,career){
-  const activeRows=(await q(`
-    SELECT * FROM sponsorship_contracts
-    WHERE club_id=$1 AND status='active'
-    ORDER BY id ASC
-  `,[clubId])).rows;
-
+  const [activeRows,clubResult]=await Promise.all([
+    q(`SELECT * FROM sponsorship_contracts WHERE club_id=$1 AND status='active' ORDER BY id ASC`,[clubId]),
+    q(`SELECT id,board_confidence,manager_reputation,fans FROM clubs WHERE id=$1`,[clubId])
+  ]);
+  const club=clubResult.rows[0]||{};
   const catalogById=new Map(SPONSOR_CATALOG.map(x=>[x.id,x]));
-  const active=activeRows.map(x=>({
-    ...x,
-    category:catalogById.get(x.sponsor_key)?.category||"Patrocinador"
-  }));
+  const active=activeRows.rows.map(row=>{
+    const meta=catalogById.get(row.sponsor_key)||{};
+    const availability=sponsorBenefitAvailability(row,career);
+    const benefitState=typeof row.benefit_state==="string"?JSON.parse(row.benefit_state||"{}"):(row.benefit_state||{});
+    return {
+      ...row,
+      category:meta.category||"Patrocinador",
+      benefit_key:row.benefit_key||meta.benefitKey||null,
+      benefitLabel:meta.benefitLabel||"Benefício do patrocinador",
+      benefitDescription:meta.benefitDescription||"",
+      benefitAvailable:availability.available,
+      benefitCooldownRemaining:availability.cooldownRemaining,
+      benefitState
+    };
+  });
 
   const activeKeys=new Set(active.map(x=>x.sponsor_key));
   const slotsAvailable=Math.max(0,2-active.length);
-  const offers=slotsAvailable>0
-    ?sponsorOffersForDivision(career?.user_division||"D").filter(x=>!activeKeys.has(x.id))
-    :[];
+  const cycle=sponsorCycleInfo(career);
+  let offers=[];
+  if(slotsAvailable>0){
+    offers=SPONSOR_CATALOG
+      .filter(x=>!activeKeys.has(x.id))
+      .map(x=>({meta:x,score:sponsorHash(`${clubId}|${cycle.key}|${x.id}`)}))
+      .sort((a,b)=>a.score-b.score)
+      .slice(0,8)
+      .map(x=>sponsorOfferFromCatalog(x.meta,career?.user_division||"D",club))
+      .sort((a,b)=>b.monthly-a.monthly||b.signing-a.signing);
+  }
 
   return {
     active,
     activeCount:active.length,
     maxActive:2,
     slotsAvailable,
-    offers
+    offers,
+    rotation:{
+      key:cycle.key,
+      label:cycle.label,
+      nextLabel:cycle.nextLabel,
+      offerCount:offers.length
+    }
   };
 }
 
@@ -6183,12 +6744,23 @@ async function paySponsorMonth(client,clubId,month){
     const paid=Number(c.months_paid||0)+1;
     const isFinished=paid>=Number(c.months_total||12);
 
+    let benefitState=typeof c.benefit_state==="string"?JSON.parse(c.benefit_state||"{}"):(c.benefit_state||{});
+    let creditPayment=0;
+    if(Number(benefitState.creditRemaining||0)>0){
+      creditPayment=Math.min(Number(benefitState.creditInstallment||0),Number(benefitState.creditRemaining||0));
+      if(creditPayment>0){
+        await addFinance(client,clubId,-creditPayment,"sponsor_credit_payment",`Parcela da linha de crédito — ${c.sponsor_name} — ${month}`);
+        benefitState.creditRemaining=Math.max(0,Number(benefitState.creditRemaining)-creditPayment);
+        benefitState.creditMonthsRemaining=Math.max(0,Number(benefitState.creditMonthsRemaining||1)-1);
+      }
+    }
+
     await client.query(
-      `UPDATE sponsorship_contracts SET months_paid=$2,status=$3 WHERE id=$1`,
-      [c.id,paid,isFinished?"completed":"active"]
+      `UPDATE sponsorship_contracts SET months_paid=$2,status=$3,benefit_state=$4::jsonb WHERE id=$1`,
+      [c.id,paid,isFinished?"completed":"active",JSON.stringify(benefitState)]
     );
 
-    paidContracts.push({name:c.sponsor_name,amount,finished:isFinished});
+    paidContracts.push({name:c.sponsor_name,amount,finished:isFinished,creditPayment});
 
     if(isFinished){
       finished.push(c.sponsor_name);
@@ -6367,6 +6939,9 @@ app.post("/api/player-careers",auth,async(req,res,next)=>{
     const weightKg=clamp(Number(req.body.weightKg||75),50,110);
     const dominantFoot=String(req.body.dominantFoot||"RIGHT").toUpperCase();
     const playStyle=String(req.body.playStyle||"BALANCED").toUpperCase();
+    const personality=String(req.body.personality||"PROFESSIONAL").toUpperCase();
+    const careerGoal=String(req.body.careerGoal||"LEGEND").toUpperCase();
+    const shirtNumber=clamp(Number(req.body.shirtNumber||10),1,99);
 
     if(playerName.length<3||playerName.length>32)return res.status(400).json({error:"Nome do jogador deve ter 3 a 32 caracteres."});
     if(careerLabel.length>40)return res.status(400).json({error:"Nome da carreira deve ter no máximo 40 caracteres."});
@@ -6375,6 +6950,8 @@ app.post("/api/player-careers",auth,async(req,res,next)=>{
     if(!["GK","DEF","MID","ATT"].includes(position))return res.status(400).json({error:"Posição inválida."});
     if(!["LEFT","RIGHT"].includes(dominantFoot))return res.status(400).json({error:"Pé dominante inválido."});
     if(!["BALANCED","SPEED","FINISHER","PLAYMAKER","DEFENSIVE","SWEEPER_KEEPER","SHOT_STOPPER"].includes(playStyle))return res.status(400).json({error:"Estilo de jogo inválido."});
+    if(!["PROFESSIONAL","AMBITIOUS","LOYAL","CHARISMATIC","REBEL"].includes(personality))return res.status(400).json({error:"Personalidade inválida."});
+    if(!["LEGEND","EUROPE","NATIONAL_TEAM","ONE_CLUB","MONEY"].includes(careerGoal))return res.status(400).json({error:"Objetivo de carreira inválido."});
 
     const created=await tx(async client=>{
       const count=await totalCareerCount(req.user.id,client);
@@ -6390,7 +6967,7 @@ app.post("/api/player-careers",auth,async(req,res,next)=>{
 
       const attrs=playerCareerBaseAttributes(position);
       const label=careerLabel||`Jogador ${slot}`;
-      const data=await createPlayerSeasonData(country,"D",club.id,1);
+      const data=await createPlayerSeasonData(country,"D",club.id,1,null,{position});
 
       await client.query(`UPDATE clubs SET is_active_career=FALSE WHERE user_id=$1`,[req.user.id]);
       await client.query(`UPDATE player_careers SET is_active_career=FALSE WHERE user_id=$1`,[req.user.id]);
@@ -6402,12 +6979,14 @@ app.post("/api/player-careers",auth,async(req,res,next)=>{
           position,role,age,club_id,club_division,season_no,current_round,status,
           overall,pace,shooting,passing,defending,fitness,morale,skill_points,reputation,salary,balance,data,
           potential_hidden,coach_trust,squad_role,avg_rating,height_cm,weight_kg,dominant_foot,play_style,
-          gk_diving,gk_handling,gk_reflexes,gk_positioning
+          gk_diving,gk_handling,gk_reflexes,gk_positioning,
+          personality,career_goal,shirt_number,contract_years,release_clause,agent_level,agent_relation,followers,fame,leadership
         )
         VALUES(
           $1,$2,$3,TRUE,$4,$5,$6,$7,$8,17,$9,'D',1,1,'ACTIVE',
           $10,$11,$12,$13,$14,100,75,0,10,$15,0,$16::jsonb,
-          $17,55,'ROTATION',0,$18,$19,$20,$21,$22,$23,$24,$25
+          $17,55,'ROTATION',0,$18,$19,$20,$21,$22,$23,$24,$25,
+          $26,$27,$28,3,$29,1,55,1000,5,40
         )
         RETURNING *
       `,[
@@ -6415,7 +6994,8 @@ app.post("/api/player-careers",auth,async(req,res,next)=>{
         attrs.overall,attrs.pace,attrs.shooting,attrs.passing,attrs.defending,
         Math.max(500,Math.round((attrs.overall*14+club.base_rating*5)/50)*50),
         JSON.stringify(data),potentialHidden,heightCm,weightKg,dominantFoot,playStyle,
-        attrs.gk_diving,attrs.gk_handling,attrs.gk_reflexes,attrs.gk_positioning
+        attrs.gk_diving,attrs.gk_handling,attrs.gk_reflexes,attrs.gk_positioning,
+        personality,careerGoal,shirtNumber,Math.round(playerMarketValueV44({...attrs,age:17,potential_hidden:potentialHidden,fame:5})*1.8)
       ])).rows[0];
 
       return row;
@@ -6437,7 +7017,7 @@ app.get("/api/player-career",auth,async(req,res,next)=>{
 app.post("/api/player-career/interaction",auth,async(req,res,next)=>{
   try{
     const type=String(req.body.type||"");
-    const allowed=new Set(["coach_talk","agent_push","recovery","media"]);
+    const allowed=new Set(["coach_talk","agent_push","recovery","media","teammates","charity","family","social"]);
     if(!allowed.has(type))return res.status(400).json({error:"Interação inválida."});
 
     const result=await tx(async client=>{
@@ -6461,9 +7041,21 @@ app.post("/api/player-career/interaction",auth,async(req,res,next)=>{
       }else if(type==="recovery"){
         await client.query(`UPDATE player_careers SET fitness=LEAST(100,fitness+10),morale=LEAST(100,morale+1) WHERE id=$1`,[pc.id]);
         text="Sessão extra de recuperação: físico +10.";
+      }else if(type==="media"){
+        await client.query(`UPDATE player_careers SET reputation=LEAST(100,reputation+2),fame=LEAST(100,fame+2),followers=followers+1200,morale=GREATEST(35,morale-1) WHERE id=$1`,[pc.id]);
+        text="Entrevista à mídia: reputação +2, fama +2 e +1.200 seguidores.";
+      }else if(type==="teammates"){
+        await client.query(`UPDATE player_careers SET morale=LEAST(100,morale+5),leadership=LEAST(100,leadership+3),coach_trust=LEAST(100,coach_trust+1) WHERE id=$1`,[pc.id]);
+        text="Convívio com o elenco: moral +5, liderança +3 e confiança +1.";
+      }else if(type==="charity"){
+        await client.query(`UPDATE player_careers SET reputation=LEAST(100,reputation+3),fame=LEAST(100,fame+2),followers=followers+1800 WHERE id=$1`,[pc.id]);
+        text="Evento beneficente: reputação +3, fama +2 e +1.800 seguidores.";
+      }else if(type==="family"){
+        await client.query(`UPDATE player_careers SET morale=LEAST(100,morale+7),fitness=LEAST(100,fitness+3) WHERE id=$1`,[pc.id]);
+        text="Tempo com a família: moral +7 e físico +3.";
       }else{
-        await client.query(`UPDATE player_careers SET reputation=LEAST(100,reputation+2),morale=GREATEST(35,morale-1) WHERE id=$1`,[pc.id]);
-        text="Entrevista à mídia: reputação +2, com pequena pressão emocional.";
+        await client.query(`UPDATE player_careers SET followers=followers+2500,fame=LEAST(100,fame+3),coach_trust=GREATEST(0,coach_trust-1) WHERE id=$1`,[pc.id]);
+        text="Postagem nas redes: +2.500 seguidores e fama +3, com pequeno risco de desgaste interno.";
       }
 
       await client.query(`
@@ -6476,9 +7068,160 @@ app.post("/api/player-career/interaction",auth,async(req,res,next)=>{
   }catch(e){next(e)}
 });
 
+
+app.post("/api/player-career/match-plan",auth,async(req,res,next)=>{
+  try{
+    const plan=String(req.body.plan||"BALANCED").toUpperCase();
+    if(!["BALANCED","ATTACKING","CREATIVE","DISCIPLINED","SHOWCASE"].includes(plan))return res.status(400).json({error:"Plano de partida inválido."});
+    const pc=await activePlayerCareer(req.user.id);if(!pc)return res.status(404).json({error:"Carreira não encontrada."});
+    const data=ensurePlayerV44Data(pc,typeof pc.data==="string"?JSON.parse(pc.data):pc.data);data.matchPlan=plan;
+    await q(`UPDATE player_careers SET data=$2::jsonb,updated_at=NOW() WHERE id=$1`,[pc.id,JSON.stringify(data)]);
+    res.json({ok:true,plan});
+  }catch(e){next(e)}
+});
+
+app.post("/api/player-career/training-session",auth,async(req,res,next)=>{
+  try{
+    const type=String(req.body.type||"");
+    const allowed=new Set(["technical","finishing","speed","defending","tactical","recovery","gk_reaction"]);
+    if(!allowed.has(type))return res.status(400).json({error:"Sessão de treino inválida."});
+    const result=await tx(async client=>{
+      const pc=(await client.query(`SELECT * FROM player_careers WHERE user_id=$1 AND is_active_career=TRUE FOR UPDATE`,[req.user.id])).rows[0];
+      if(!pc)throw Object.assign(new Error("Carreira não encontrada."),{status:404});
+      if(pc.status!=="ACTIVE")throw Object.assign(new Error("Treino disponível durante a temporada."),{status:400});
+      const round=Math.max(1,Number(pc.current_round||1));
+      if(Number(pc.last_training_round||0)===round)throw Object.assign(new Error("Você já fez a sessão principal desta rodada."),{status:409});
+      if(Number(pc.injury_games||0)>0&&type!=="recovery")throw Object.assign(new Error("Você está lesionado. Faça recuperação até voltar a treinar normalmente."),{status:409});
+      if(type==="gk_reaction"&&pc.position!=="GK")throw Object.assign(new Error("Treino exclusivo para goleiros."),{status:400});
+      const data=ensurePlayerV44Data(pc,typeof pc.data==="string"?JSON.parse(pc.data):pc.data);
+      let text="",fitness=Number(pc.fitness||100),morale=Number(pc.morale||75),trust=Number(pc.coach_trust||55),injuryGames=Number(pc.injury_games||0),injuryType=pc.injury_type;
+      let pace=Number(pc.pace),shooting=Number(pc.shooting),passing=Number(pc.passing),defending=Number(pc.defending),gd=Number(pc.gk_diving),gr=Number(pc.gk_reflexes);
+      if(type==="technical"){passing=Math.min(99,passing+1);fitness-=5;text="Treino técnico: passe +1."}
+      if(type==="finishing"){shooting=Math.min(99,shooting+1);fitness-=6;text="Treino de finalização: chute +1."}
+      if(type==="speed"){pace=Math.min(99,pace+1);fitness-=8;text="Treino de velocidade: velocidade +1."}
+      if(type==="defending"){defending=Math.min(99,defending+1);fitness-=6;text="Treino defensivo: defesa +1."}
+      if(type==="tactical"){trust=Math.min(100,trust+4);morale=Math.min(100,morale+2);fitness-=3;text="Treino tático: confiança +4 e moral +2."}
+      if(type==="gk_reaction"){gd=Math.min(99,gd+1);gr=Math.min(99,gr+1);fitness-=6;text="Treino de goleiro: mergulho +1 e reflexos +1."}
+      if(type==="recovery"){fitness=Math.min(100,fitness+18);injuryGames=Math.max(0,injuryGames-1);if(injuryGames===0)injuryType=null;text="Recuperação: físico +18 e recuperação de lesão acelerada."}
+      fitness=clamp(fitness,35,100);
+      const overall=Math.min(Number(pc.potential_hidden||99),recomputePlayerOverall({...pc,pace,shooting,passing,defending,gk_diving:gd,gk_reflexes:gr}));
+      if(type!=="recovery"&&Math.random()<.018-(data.lifestyle?.physio?.008:0)){injuryGames=1;injuryType="Sobrecarga de treino";text+=" Você sofreu uma sobrecarga e perderá 1 rodada."}
+      playerV44Timeline(data,"training",text,pc.season_no,round);
+      await client.query(`UPDATE player_careers SET pace=$2,shooting=$3,passing=$4,defending=$5,gk_diving=$6,gk_reflexes=$7,overall=$8,fitness=$9,morale=$10,coach_trust=$11,injury_games=$12,injury_type=$13,last_training_round=$14,data=$15::jsonb,updated_at=NOW() WHERE id=$1`,
+        [pc.id,pace,shooting,passing,defending,gd,gr,overall,fitness,morale,trust,injuryGames,injuryType,round,JSON.stringify(data)]);
+      return {ok:true,text};
+    });
+    res.json(result);
+  }catch(e){next(e)}
+});
+
+app.post("/api/player-career/perks/:key/unlock",auth,async(req,res,next)=>{
+  try{
+    const key=String(req.params.key||"");const perk=PLAYER_V44_PERKS[key];
+    if(!perk)return res.status(404).json({error:"Especialidade não encontrada."});
+    const result=await tx(async client=>{
+      const pc=(await client.query(`SELECT * FROM player_careers WHERE user_id=$1 AND is_active_career=TRUE FOR UPDATE`,[req.user.id])).rows[0];
+      if(!pc)throw Object.assign(new Error("Carreira não encontrada."),{status:404});
+      if(!perk.positions.includes(pc.position))throw Object.assign(new Error("Esta especialidade não combina com sua posição."),{status:400});
+      const data=ensurePlayerV44Data(pc,typeof pc.data==="string"?JSON.parse(pc.data):pc.data);
+      if(data.perks.includes(key))throw Object.assign(new Error("Especialidade já desbloqueada."),{status:409});
+      if(Number(pc.skill_points)<perk.cost)throw Object.assign(new Error(`São necessários ${perk.cost} pontos de evolução.`),{status:400});
+      data.perks.push(key);playerV44Timeline(data,"perk",`Especialidade desbloqueada: ${perk.label}.`,pc.season_no,pc.current_round);
+      await client.query(`UPDATE player_careers SET skill_points=skill_points-$2,data=$3::jsonb,leadership=LEAST(100,leadership+$4),updated_at=NOW() WHERE id=$1`,[pc.id,perk.cost,JSON.stringify(data),key==="leader"?8:0]);
+      return {ok:true,key,label:perk.label};
+    });res.json(result);
+  }catch(e){next(e)}
+});
+
+app.post("/api/player-career/agent-action",auth,async(req,res,next)=>{
+  try{
+    const type=String(req.body.type||"");
+    const allowed=new Set(["seek_transfer","seek_europe","seek_loan","renegotiate","upgrade_agent"]);
+    if(!allowed.has(type))return res.status(400).json({error:"Ação do agente inválida."});
+    const result=await tx(async client=>{
+      const pc=(await client.query(`SELECT * FROM player_careers WHERE user_id=$1 AND is_active_career=TRUE FOR UPDATE`,[req.user.id])).rows[0];
+      if(!pc)throw Object.assign(new Error("Carreira não encontrada."),{status:404});
+      const data=ensurePlayerV44Data(pc,typeof pc.data==="string"?JSON.parse(pc.data):pc.data);
+      const round=Math.max(1,Number(pc.current_round||1));
+      if(type!=="upgrade_agent"&&Number(pc.last_agent_action_round||0)>0&&round-Number(pc.last_agent_action_round||0)<4)throw Object.assign(new Error("Seu agente ainda está trabalhando na ação anterior. Aguarde 4 rodadas entre movimentações."),{status:409});
+      if(type==="upgrade_agent"){
+        const level=Number(pc.agent_level||1);if(level>=3)throw Object.assign(new Error("Você já possui um agente de nível máximo."),{status:409});
+        const cost=level===1?5000:12000;if(Number(pc.balance)<cost)throw Object.assign(new Error(`Você precisa de ${cost.toLocaleString("pt-BR")} moedas no saldo pessoal.`),{status:400});
+        await client.query(`UPDATE player_careers SET balance=balance-$2,agent_level=agent_level+1,agent_relation=LEAST(100,agent_relation+8) WHERE id=$1`,[pc.id,cost]);
+        return {ok:true,text:`Você contratou uma representação de nível ${level+1}.`};
+      }
+      let text="";
+      if(type==="renegotiate"){
+        const leverage=Number(pc.overall)+Number(pc.reputation)*.25+Number(pc.agent_level)*3;
+        if(leverage<70){await client.query(`UPDATE player_careers SET agent_relation=GREATEST(0,agent_relation-2),last_agent_action_round=$2 WHERE id=$1`,[pc.id,round]);return {ok:true,text:"O clube recusou renegociar neste momento. Melhore seu desempenho e reputação."}}
+        const raise=1.08+Number(pc.agent_level)*.035;const salary=Math.round(Number(pc.salary)*raise/50)*50;const clause=Math.round(playerMarketValueV44(pc)*1.9/100)*100;
+        await client.query(`UPDATE player_careers SET salary=$2,contract_years=GREATEST(contract_years,3),release_clause=$3,agent_relation=LEAST(100,agent_relation+4),last_agent_action_round=$4 WHERE id=$1`,[pc.id,salary,clause,round]);
+        text=`Renovação acertada: salário ${salary.toLocaleString("pt-BR")}/mês e contrato de pelo menos 3 anos.`;
+      }else{
+        let countries=type==="seek_europe"?["ENG","ESP","ITA","GER","FRA","POR"]:[pc.country_code,"ENG","ESP","ITA","GER","FRA","POR","ARG","BR"];
+        countries=[...new Set(countries)];
+        const div=Number(pc.overall)>=74?"A":Number(pc.overall)>=67?(["A","B"].includes(pc.club_division)?pc.club_division:"B"):pc.club_division;
+        const clubs=(await client.query(`SELECT id,name,base_rating,country_code,national_seed_division FROM clubs WHERE is_ai=TRUE AND club_kind='national' AND country_code=ANY($1::text[]) AND national_seed_division=$2 AND id<>$3 ORDER BY RANDOM() LIMIT 8`,[countries,div,pc.club_id])).rows;
+        const count=Math.min(type==="seek_loan"?2:3,clubs.length);const selected=clubs.slice(0,count).map(c=>({clubId:Number(c.id),clubName:c.name,countryCode:c.country_code,division:c.national_seed_division,salary:Math.round(Number(pc.salary)*(1.03+Number(pc.agent_level)*.03)/50)*50,status:"pending"}));
+        if(type==="seek_loan"){data.loanOffers=selected;text=selected.length?"Seu agente encontrou clubes interessados em empréstimo para a próxima temporada.":"Nenhum clube apresentou projeto de empréstimo agora."}
+        else{data.marketInterest=selected;text=selected.length?"Seu agente colocou seu nome no mercado e surgiram novas sondagens.":"Não surgiram sondagens relevantes nesta janela."}
+        await client.query(`UPDATE player_careers SET data=$2::jsonb,reputation=LEAST(100,reputation+$3),agent_relation=LEAST(100,agent_relation+2),last_agent_action_round=$4 WHERE id=$1`,[pc.id,JSON.stringify(data),type==="seek_europe"?2:1,round]);
+      }
+      return {ok:true,text};
+    });res.json(result);
+  }catch(e){next(e)}
+});
+
+app.post("/api/player-career/loan-offers/:clubId/accept",auth,async(req,res,next)=>{
+  try{
+    const result=await tx(async client=>{
+      const pc=(await client.query(`SELECT * FROM player_careers WHERE user_id=$1 AND is_active_career=TRUE FOR UPDATE`,[req.user.id])).rows[0];if(!pc)throw Object.assign(new Error("Carreira não encontrada."),{status:404});
+      const data=ensurePlayerV44Data(pc,typeof pc.data==="string"?JSON.parse(pc.data):pc.data);const offer=(data.loanOffers||[]).find(x=>String(x.clubId)===String(req.params.clubId)&&x.status==="pending");
+      if(!offer)throw Object.assign(new Error("Proposta de empréstimo não encontrada."),{status:404});
+      data.loanOffers=data.loanOffers.map(x=>({...x,status:String(x.clubId)===String(offer.clubId)?"accepted":"rejected"}));data.acceptedLoan={...offer,status:"accepted"};data.acceptedOffer=null;
+      await client.query(`UPDATE player_careers SET data=$2::jsonb,morale=LEAST(100,morale+3) WHERE id=$1`,[pc.id,JSON.stringify(data)]);
+      return {ok:true,text:`Empréstimo para ${offer.clubName} acertado para a próxima temporada.`};
+    });res.json(result);
+  }catch(e){next(e)}
+});
+
+app.post("/api/player-career/personal-sponsor/:key/sign",auth,async(req,res,next)=>{
+  try{
+    const result=await tx(async client=>{
+      const pc=(await client.query(`SELECT * FROM player_careers WHERE user_id=$1 AND is_active_career=TRUE FOR UPDATE`,[req.user.id])).rows[0];if(!pc)throw Object.assign(new Error("Carreira não encontrada."),{status:404});
+      const data=ensurePlayerV44Data(pc,typeof pc.data==="string"?JSON.parse(pc.data):pc.data);if(data.personalSponsor)throw Object.assign(new Error("Você já possui um patrocinador pessoal nesta temporada."),{status:409});
+      const offer=playerPersonalSponsorOffers(pc).find(x=>x.id===String(req.params.key));if(!offer)throw Object.assign(new Error("Proposta de patrocínio pessoal indisponível."),{status:404});
+      data.personalSponsor={id:offer.id,name:offer.name,label:offer.label,pay:offer.pay,totalEarned:0,signedSeason:Number(pc.season_no)};playerV44Timeline(data,"sponsor",`Patrocínio pessoal assinado com ${offer.name}.`,pc.season_no,pc.current_round);
+      await client.query(`UPDATE player_careers SET data=$2::jsonb,followers=followers+$3,fame=LEAST(100,fame+2) WHERE id=$1`,[pc.id,JSON.stringify(data),offer.bonusFollowers]);
+      return {ok:true,text:`${offer.name} assinou com você por ${offer.pay.toLocaleString("pt-BR")} moedas a cada ciclo salarial.`};
+    });res.json(result);
+  }catch(e){next(e)}
+});
+
+app.post("/api/player-career/lifestyle/:key/buy",auth,async(req,res,next)=>{
+  try{
+    const key=String(req.params.key||"");const item=PLAYER_V44_LIFESTYLE[key];if(!item)return res.status(404).json({error:"Melhoria pessoal não encontrada."});
+    const result=await tx(async client=>{
+      const pc=(await client.query(`SELECT * FROM player_careers WHERE user_id=$1 AND is_active_career=TRUE FOR UPDATE`,[req.user.id])).rows[0];if(!pc)throw Object.assign(new Error("Carreira não encontrada."),{status:404});
+      const data=ensurePlayerV44Data(pc,typeof pc.data==="string"?JSON.parse(pc.data):pc.data);if(data.lifestyle[key])throw Object.assign(new Error("Você já possui esta melhoria."),{status:409});if(Number(pc.balance)<item.cost)throw Object.assign(new Error("Saldo pessoal insuficiente."),{status:400});
+      data.lifestyle[key]=true;playerV44Timeline(data,"lifestyle",`Investimento pessoal: ${item.label}.`,pc.season_no,pc.current_round);
+      await client.query(`UPDATE player_careers SET balance=balance-$2,data=$3::jsonb WHERE id=$1`,[pc.id,item.cost,JSON.stringify(data)]);return {ok:true,text:`${item.label} contratado.`};
+    });res.json(result);
+  }catch(e){next(e)}
+});
+
+app.post("/api/player-career/retire",auth,async(req,res,next)=>{
+  try{
+    const pc=await activePlayerCareer(req.user.id);if(!pc)return res.status(404).json({error:"Carreira não encontrada."});
+    if(Number(pc.age)<34&&Number(pc.season_no)<15)return res.status(400).json({error:"A aposentadoria fica disponível a partir dos 34 anos ou após 15 temporadas."});
+    const data=ensurePlayerV44Data(pc,typeof pc.data==="string"?JSON.parse(pc.data):pc.data);playerV44Timeline(data,"retirement",`Você encerrou a carreira aos ${pc.age} anos com legado ${pc.legacy_score}.`,pc.season_no,pc.current_round);
+    await q(`UPDATE player_careers SET retired=TRUE,status='RETIRED',data=$2::jsonb,updated_at=NOW() WHERE id=$1`,[pc.id,JSON.stringify(data)]);res.json({ok:true});
+  }catch(e){next(e)}
+});
+
 app.post("/api/player-career/play",auth,async(req,res,next)=>{
   try{
-    res.json(await withCompetitionLock(`player:${req.user.id}`,()=>simulatePlayerCareerRound(req.user.id)));
+    res.json(await withCompetitionLock(`player:${req.user.id}`,()=>simulatePlayerCareerRound(req.user.id,null,req.body?.penaltyCorner)));
   }catch(e){next(e)}
 });
 app.post("/api/player-career/simulate-season",auth,async(req,res,next)=>{
@@ -6731,7 +7474,8 @@ app.post("/api/sponsorships/sign",auth,async(req,res,next)=>{
     if(!career)return res.status(400).json({error:"Carreira não encontrada."});
 
     const sponsorId=String(req.body.sponsorId||"");
-    const offer=sponsorOffersForDivision(career.user_division).find(x=>x.id===sponsorId);
+    const market=await sponsorshipSummary(c.id,career);
+    const offer=(market.offers||[]).find(x=>x.id===sponsorId);
     if(!offer)return res.status(400).json({error:"Proposta de patrocínio inválida para sua divisão."});
 
     const result=await tx(async client=>{
@@ -6755,10 +7499,10 @@ app.post("/api/sponsorships/sign",auth,async(req,res,next)=>{
       await client.query(`
         INSERT INTO sponsorship_contracts(
           club_id,sponsor_key,sponsor_name,division_signed,
-          monthly_amount,signing_bonus,months_total,months_paid,status
+          monthly_amount,signing_bonus,months_total,months_paid,benefit_key,status
         )
-        VALUES($1,$2,$3,$4,$5,$6,$7,0,'active')
-      `,[c.id,offer.id,offer.name,career.user_division,offer.monthly,offer.signing,offer.months]);
+        VALUES($1,$2,$3,$4,$5,$6,$7,0,$8,'active')
+      `,[c.id,offer.id,offer.name,career.user_division,offer.monthly,offer.signing,offer.months,offer.benefitKey]);
 
       if(offer.signing>0){
         await addFinance(
@@ -6787,13 +7531,144 @@ app.post("/api/sponsorships/sign",auth,async(req,res,next)=>{
         monthly:offer.monthly,
         signing:offer.signing,
         activeCount:active.length+1,
-        maxActive:2
+        maxActive:2,
+        benefitLabel:offer.benefitLabel,
+        benefitDescription:offer.benefitDescription
       };
     });
 
     res.json(result);
   }catch(e){next(e)}
 });
+
+app.post("/api/sponsorships/:id/activate-benefit",auth,async(req,res,next)=>{
+  try{
+    const club=await userClub(req.user.id);
+    if(!club)return res.status(404).json({error:"Clube não encontrado."});
+    const career=await getCareer(club.id);
+    if(!career)return res.status(400).json({error:"Carreira não encontrada."});
+    const contractId=String(req.params.id);
+
+    const result=await tx(async client=>{
+      const contract=(await client.query(`
+        SELECT * FROM sponsorship_contracts
+        WHERE id=$1 AND club_id=$2 AND status='active'
+        FOR UPDATE
+      `,[contractId,club.id])).rows[0];
+      if(!contract)throw Object.assign(new Error("Patrocínio ativo não encontrado."),{status:404});
+
+      const meta=SPONSOR_CATALOG.find(x=>x.id===contract.sponsor_key);
+      if(!meta)throw Object.assign(new Error("Benefício deste patrocinador não está disponível."),{status:400});
+      const availability=sponsorBenefitAvailability(contract,career);
+      if(!availability.available){
+        throw Object.assign(new Error(`O benefício volta a ficar disponível em ${availability.cooldownRemaining} rodada(s).`),{status:409});
+      }
+
+      let state=typeof contract.benefit_state==="string"?JSON.parse(contract.benefit_state||"{}"):(contract.benefit_state||{});
+      let text="";
+      let extra={};
+
+      if(meta.benefitKey==="technology_lab"){
+        await client.query(`UPDATE clubs SET chemistry=LEAST(100,chemistry+4) WHERE id=$1`,[club.id]);
+        await client.query(`UPDATE players SET form_rating=LEAST(100,form_rating+3),morale=LEAST(100,morale+2) WHERE club_id=$1`,[club.id]);
+        text=`${meta.name} instalou tecnologia de análise de desempenho: +4 entrosamento, +3 forma e +2 moral no elenco.`;
+      }else if(meta.benefitKey==="performance_lab"){
+        await client.query(`
+          UPDATE players SET
+            fitness=LEAST(100,fitness+8),
+            form_rating=LEAST(100,form_rating+2),
+            injury_games=GREATEST(0,injury_games-1)
+          WHERE club_id=$1
+        `,[club.id]);
+        text=`${meta.name} ativou o centro de performance: +8 físico, +2 forma e redução de 1 jogo de lesão.`;
+      }else if(meta.benefitKey==="credit_line"){
+        if(Number(state.creditRemaining||0)>0){
+          throw Object.assign(new Error("Ainda existe saldo devedor da linha de crédito anterior."),{status:409});
+        }
+        const base=({D:12000,C:20000,B:35000,A:60000})[career.user_division]||12000;
+        const debt=Math.round(base*1.06);
+        const installment=Math.ceil(debt/6);
+        await addFinance(client,club.id,base,"sponsor_credit",`Linha de crédito patrocinada — ${meta.name}`);
+        state={...state,creditPrincipal:base,creditRemaining:debt,creditInstallment:installment,creditMonthsRemaining:6};
+        text=`${meta.name} liberou ${base.toLocaleString("pt-BR")} moedas de capital de giro. A dívida de ${debt.toLocaleString("pt-BR")} será descontada em até 6 pagamentos mensais.`;
+        extra={credit:base,debt,installment};
+      }else if(meta.benefitKey==="loan_network"){
+        const range=({D:[55,66],C:[58,70],B:[61,75],A:[65,81]})[career.user_division]||[55,66];
+        const candidate=(await client.query(`
+          SELECT p.*,c.name parent_name
+          FROM players p
+          JOIN clubs c ON c.id=p.club_id
+          WHERE c.is_ai=TRUE
+            AND p.is_starter=FALSE
+            AND p.rating BETWEEN $1 AND $2
+            AND p.age<=29
+            AND NOT EXISTS(SELECT 1 FROM player_loans l WHERE l.player_id=p.id AND l.status='active')
+          ORDER BY ABS(p.rating-$2),RANDOM()
+          LIMIT 1
+          FOR UPDATE OF p
+        `,[range[0],range[1]])).rows[0];
+        if(!candidate)throw Object.assign(new Error("A rede parceira não encontrou atleta disponível nesta janela. Tente novamente mais tarde."),{status:409});
+        const option=Math.max(1000,Math.round(fairMarketValue(candidate)*.90/100)*100);
+        await client.query(`
+          INSERT INTO player_loans(
+            player_id,parent_club_id,borrowing_club_id,start_season_no,
+            months_total,months_elapsed,monthly_fee,purchase_option_price,status
+          ) VALUES($1,$2,$3,$4,6,0,0,$5,'active')
+        `,[candidate.id,candidate.club_id,club.id,career.season_no,option]);
+        await client.query(`UPDATE players SET club_id=$2,is_starter=FALSE,fitness=100,morale=78 WHERE id=$1`,[candidate.id,club.id]);
+        text=`${meta.name} viabilizou o empréstimo de ${candidate.name} (OVR ${candidate.rating}) por 6 meses, sem taxa mensal, com opção de compra de ${option.toLocaleString("pt-BR")} moedas.`;
+        extra={playerId:candidate.id,playerName:candidate.name,rating:candidate.rating,purchaseOption:option};
+      }else if(meta.benefitKey==="digital_fans"){
+        await client.query(`UPDATE clubs SET fans=fans+1200,media_pressure=GREATEST(0,media_pressure-2) WHERE id=$1`,[club.id]);
+        text=`${meta.name} lançou uma campanha digital: +1.200 torcedores e -2 de pressão da mídia.`;
+      }else if(meta.benefitKey==="travel_logistics"){
+        await client.query(`UPDATE players SET fitness=LEAST(100,fitness+7) WHERE club_id=$1`,[club.id]);
+        await client.query(`UPDATE clubs SET chemistry=LEAST(100,chemistry+2) WHERE id=$1`,[club.id]);
+        text=`${meta.name} melhorou a logística de viagens: +7 físico no elenco e +2 entrosamento.`;
+      }else if(meta.benefitKey==="morale_activation"){
+        await client.query(`UPDATE players SET morale=LEAST(100,morale+5) WHERE club_id=$1`,[club.id]);
+        await client.query(`UPDATE clubs SET fans=fans+600 WHERE id=$1`,[club.id]);
+        text=`${meta.name} promoveu uma ação de bem-estar: +5 moral no elenco e +600 torcedores.`;
+      }else if(meta.benefitKey==="fan_campaign"){
+        await client.query(`UPDATE players SET morale=LEAST(100,morale+3) WHERE club_id=$1`,[club.id]);
+        await client.query(`UPDATE clubs SET fans=fans+900 WHERE id=$1`,[club.id]);
+        text=`${meta.name} ativou uma campanha com torcedores: +900 fãs e +3 moral no elenco.`;
+      }else if(meta.benefitKey==="commerce_activation"){
+        const income=({D:3500,C:5000,B:7500,A:11000})[career.user_division]||3500;
+        await addFinance(client,club.id,income,"sponsor_activation",`Campanha comercial — ${meta.name}`);
+        await client.query(`UPDATE clubs SET fans=fans+450 WHERE id=$1`,[club.id]);
+        text=`${meta.name} ativou uma campanha comercial: +${income.toLocaleString("pt-BR")} moedas e +450 torcedores.`;
+        extra={income};
+      }else if(meta.benefitKey==="performance_bonus"){
+        const entries=sortEntries(career.data?.divisions?.[career.user_division]?.entries||[]);
+        const pos=Math.max(1,entries.findIndex(e=>String(e.clubId)===String(club.id))+1);
+        const base=({D:2200,C:3200,B:4800,A:7200})[career.user_division]||2200;
+        const bonus=Math.round((base+Math.max(0,20-pos)*180)/100)*100;
+        await addFinance(client,club.id,bonus,"sponsor_performance",`Bônus esportivo — ${meta.name}`);
+        text=`${meta.name} pagou bônus de performance de ${bonus.toLocaleString("pt-BR")} moedas pela campanha atual (${pos}º lugar).`;
+        extra={bonus,position:pos};
+      }else{
+        throw Object.assign(new Error("Benefício não implementado."),{status:400});
+      }
+
+      await client.query(`
+        UPDATE sponsorship_contracts
+        SET benefit_key=$2,last_benefit_season=$3,last_benefit_round=$4,benefit_state=$5::jsonb
+        WHERE id=$1
+      `,[contract.id,meta.benefitKey,career.season_no,Math.max(1,Number(career.current_round||1)),JSON.stringify(state)]);
+      await client.query(`
+        INSERT INTO club_events(club_id,event_type,title,description)
+        VALUES($1,'sponsor',$2,$3)
+      `,[club.id,`Benefício de ${meta.name}`,text]);
+      await publishNews(client,club.id,career.season_no,"negocios",`${meta.name} ativa benefício no ${club.name}`,text,1,"Diário do Futebol");
+
+      return {ok:true,text,benefitKey:meta.benefitKey,benefitLabel:meta.benefitLabel,...extra};
+    });
+
+    res.json(result);
+  }catch(e){next(e)}
+});
+
 app.post("/api/press-conferences/:id/respond",auth,async(req,res,next)=>{
   try{
     const c=await userClub(req.user.id);
@@ -7039,14 +7914,14 @@ app.get("/api/competitions",auth,async(req,res,next)=>{
 app.post("/api/copa/play-next",auth,async(req,res,next)=>{
   try{
     const c=await userClub(req.user.id);
-    res.json(await withCompetitionLock(c.id,async()=>{await repairCareer(c.id);const r=await playCopa(c.id);await mediaAfterCompetitionAction(c.id,"copa",r);return r}));
+    res.json(await withCompetitionLock(c.id,async()=>{await repairCareer(c.id);const r=await playCopa(c.id,req.body?.penaltyCorner);await mediaAfterCompetitionAction(c.id,"copa",r);return r}));
   }catch(e){next(e)}
 });
 
 app.post("/api/state/play-next",auth,async(req,res,next)=>{
   try{
     const c=await userClub(req.user.id);
-    res.json(await withCompetitionLock(c.id,async()=>{await repairCareer(c.id);const r=await playState(c.id);await mediaAfterCompetitionAction(c.id,"state",r);return r}));
+    res.json(await withCompetitionLock(c.id,async()=>{await repairCareer(c.id);const r=await playState(c.id,req.body?.penaltyCorner);await mediaAfterCompetitionAction(c.id,"state",r);return r}));
   }catch(e){next(e)}
 });
 app.post("/api/national/play-round",auth,async(req,res,next)=>{
@@ -7058,20 +7933,20 @@ app.post("/api/national/play-round",auth,async(req,res,next)=>{
 app.post("/api/libertadores/play-next",auth,async(req,res,next)=>{
   try{
     const c=await userClub(req.user.id);
-    res.json(await withCompetitionLock(c.id,async()=>{await repairCareer(c.id);const r=await playLib(c.id);await mediaAfterCompetitionAction(c.id,"lib",r);return r}));
+    res.json(await withCompetitionLock(c.id,async()=>{await repairCareer(c.id);const r=await playLib(c.id,req.body?.penaltyCorner);await mediaAfterCompetitionAction(c.id,"lib",r);return r}));
   }catch(e){next(e)}
 });
 app.post("/api/champions/play-next",auth,async(req,res,next)=>{
   try{
     const c=await userClub(req.user.id);
-    res.json(await withCompetitionLock(c.id,async()=>{await repairCareer(c.id);const r=await playChampions(c.id);await mediaAfterCompetitionAction(c.id,"champions",r);return r}));
+    res.json(await withCompetitionLock(c.id,async()=>{await repairCareer(c.id);const r=await playChampions(c.id,req.body?.penaltyCorner);await mediaAfterCompetitionAction(c.id,"champions",r);return r}));
   }catch(e){next(e)}
 });
 
 app.post("/api/club-world-cup/play-next",auth,async(req,res,next)=>{
   try{
     const c=await userClub(req.user.id);
-    res.json(await withCompetitionLock(c.id,async()=>{await repairCareer(c.id);const r=await playClubWorldCup(c.id);await mediaAfterCompetitionAction(c.id,"world",r);return r}));
+    res.json(await withCompetitionLock(c.id,async()=>{await repairCareer(c.id);const r=await playClubWorldCup(c.id,req.body?.penaltyCorner);await mediaAfterCompetitionAction(c.id,"world",r);return r}));
   }catch(e){next(e)}
 });
 app.post("/api/career/simulate-season",auth,async(req,res,next)=>{
@@ -8177,6 +9052,8 @@ async function start(){
   await applyV35Migration();
   await applyV38Migration();
   await applyV41Migration();
+  await applyV43Migration();
+  await applyV44Migration();
   await seedRealMarketPlayers();
   await ensureMarket();
   
