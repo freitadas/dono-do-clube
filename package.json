@@ -1,8 +1,8 @@
 {
   "name": "dono-do-clube",
-  "version": "48.0.0",
+  "version": "50.0.0",
   "private": true,
-  "description": "Dono do Clube v48 — Copa Sul-Americana para 5º a 10º da Série A do Brasil",
+  "description": "Dono do Clube v50 — Champions, Europa League e Conference League no treinador e jogador",
   "main": "server.js",
   "scripts": {
     "start": "node server.js"

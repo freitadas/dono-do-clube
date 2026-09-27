@@ -82,6 +82,8 @@ function phaseName(p){
   if(p==="LIBERTADORES")return "Libertadores";
   if(p==="SUDAMERICANA")return "Copa Sul-Americana";
   if(p==="CHAMPIONS")return "Champions League";
+  if(p==="EUROPA")return "Europa League";
+  if(p==="CONFERENCE")return "Conference League";
   if(p==="CLUB_WORLD_CUP")return "Super Mundial";
   if(p==="END")return "Temporada encerrada";
   return p;
@@ -252,7 +254,7 @@ function renderCreateClub(){
             <option value="SHOT_STOPPER">Pegador de chutes</option>
           </select></label>
         <label>Clube inicial da 4ª divisão<select id="playerClub" name="clubId" required><option>Carregando clubes...</option></select></label>
-        <div class="player-career-note">Você começa aos 17 anos. Agora há agente, contrato, disputa por vaga, objetivos, lesões, seleção, prêmios, patrocínio pessoal, especialidades, vida fora de campo e decisões de carreira.</div>
+        <div class="player-career-note">Você começa aos 17 anos. Há 30 países de liga, mercado internacional, agente, contratos, lesões, prêmios e uma carreira de seleção jogável quando você for convocado.</div>
         <button class="primary">Criar carreira de jogador</button>
         ${hasCareers?`<button type="button" id="cancelNewCareer" class="secondary">Voltar para minhas carreiras</button>`:""}
         <div id="playerCareerMsg"></div>
@@ -678,6 +680,16 @@ function rotationContext(){
     const stage=state.competitions?.sudamericana?.stage;
     if(["QF","SF","FINAL"].includes(stage))return {key:"decisive",label:"Jogo decisivo da Sul-Americana",maxChanges:2};
     return {key:"normal",label:"Copa Sul-Americana",maxChanges:3};
+  }
+  if(car.phase==="EUROPA"){
+    const stage=state.competitions?.europaLeague?.stage;
+    if(["QF","SF","FINAL"].includes(stage))return {key:"decisive",label:"Jogo decisivo da Europa League",maxChanges:2};
+    return {key:"normal",label:"Europa League",maxChanges:3};
+  }
+  if(car.phase==="CONFERENCE"){
+    const stage=state.competitions?.conferenceLeague?.stage;
+    if(["QF","SF","FINAL"].includes(stage))return {key:"decisive",label:"Jogo decisivo da Conference League",maxChanges:2};
+    return {key:"normal",label:"Conference League",maxChanges:3};
   }
   if(car.phase==="CHAMPIONS"){
     const stage=state.competitions?.championsLeague?.stage;
@@ -1387,6 +1399,8 @@ function homeView(){
   if(car.phase==="LIBERTADORES")action=`<button id="careerAction" data-action="lib" class="primary">🏆 JOGAR PRÓXIMA FASE DA LIBERTADORES</button>`;
   if(car.phase==="SUDAMERICANA")action=`<button id="careerAction" data-action="sula" class="primary">🌎 JOGAR PRÓXIMA FASE DA SUL-AMERICANA</button>`;
   if(car.phase==="CHAMPIONS")action=`<button id="careerAction" data-action="champions" class="primary">⭐ JOGAR PRÓXIMA FASE DA CHAMPIONS</button>`;
+  if(car.phase==="EUROPA")action=`<button id="careerAction" data-action="europa" class="primary">🟠 JOGAR PRÓXIMA FASE DA EUROPA LEAGUE</button>`;
+  if(car.phase==="CONFERENCE")action=`<button id="careerAction" data-action="conference" class="primary">🟢 JOGAR PRÓXIMA FASE DA CONFERENCE LEAGUE</button>`;
   if(car.phase==="CLUB_WORLD_CUP")action=`<button id="careerAction" data-action="world" class="primary">🌍 JOGAR PRÓXIMA FASE DO SUPER MUNDIAL</button>`;
   if(car.phase==="END")action=`<button id="careerAction" data-action="next" class="primary">📅 IR PARA A PRÓXIMA TEMPORADA</button>`;
   const tired=state.players.filter(p=>p.is_starter&&Number(p.fitness||100)<55).length;
@@ -1922,6 +1936,62 @@ function championsView(){
   return `<div class="section-title"><div><div class="kicker">${ch.stage==="FINAL"?"FINAL · JOGO ÚNICO":"MATA-MATA · IDA E VOLTA"}</div><h2>Champions League — ${esc(({PLAYOFF:"Playoff",R16:"Oitavas",QF:"Quartas",SF:"Semifinais",FINAL:"Final"})[ch.stage]||ch.stage)}</h2></div>${button}</div>
     ${championsKnockoutList(ch)}`;
 }
+
+function uefaSecondaryRows(comp){
+  if(!comp)return [];
+  return [...(comp.entries||[])].sort((x,y)=>Number(y.points)-Number(x.points)||(Number(y.gd)-Number(x.gd))||Number(y.gf)-Number(x.gf));
+}
+function uefaSecondaryView(comp,config){
+  if(!comp){
+    return `<div class="empty"><h2>${config.icon} ${esc(config.name)}</h2><p>${esc(config.emptyText)}</p></div>`;
+  }
+  const rows=uefaSecondaryRows(comp);
+  const button=state.competitions.career.phase===config.phase
+    ?`<button id="${config.buttonId}" class="primary">Jogar próxima fase</button>`:"";
+
+  if(comp.status==="finished"){
+    return `<div class="champion-card ${config.cssClass}">
+      <div class="kicker">CAMPEÃO DA ${esc(config.shortName.toUpperCase())}</div>
+      <h2>${config.icon} ${esc(comp.championClub?.name||"Campeão")}</h2>
+    </div>${championsKnockoutList(comp)}`;
+  }
+
+  if(comp.stage==="LEAGUE"){
+    return `<div class="section-title"><div>
+      <div class="kicker">36 CLUBES · FASE DE LIGA</div>
+      <h2>${config.icon} ${esc(config.name)}</h2>
+      <span class="muted">${comp.leagueMatches||config.matches} jogos por clube · top 8 direto às oitavas · 9º ao 24º no playoff</span>
+    </div>${button}</div>
+    <div class="table-wrap champions-table"><table>
+      <thead><tr><th>#</th><th>Clube</th><th>PTS</th><th>J</th><th>V</th><th>E</th><th>D</th><th>SG</th></tr></thead>
+      <tbody>${rows.map((e,i)=>`<tr class="clickable ${i<8?"qualified":i<24?"playoff-zone":"eliminated-zone"} ${String(e.clubId)===String(state.club.id)?"me":""}" data-club="${e.clubId}">
+        <td>${i+1}</td><td>${esc(e.club?.name||"")}</td><td><b>${e.points}</b></td>
+        <td>${e.wins+e.draws+e.losses}</td><td>${e.wins}</td><td>${e.draws}</td><td>${e.losses}</td>
+        <td>${e.gd>0?"+":""}${e.gd}</td>
+      </tr>`).join("")}</tbody>
+    </table></div>`;
+  }
+
+  return `<div class="section-title"><div>
+    <div class="kicker">${comp.stage==="FINAL"?"FINAL · JOGO ÚNICO":"MATA-MATA · IDA E VOLTA"}</div>
+    <h2>${esc(config.shortName)} — ${esc(({PLAYOFF:"Playoff",R16:"Oitavas",QF:"Quartas",SF:"Semifinais",FINAL:"Final"})[comp.stage]||comp.stage)}</h2>
+  </div>${button}</div>${championsKnockoutList(comp)}`;
+}
+function europaLeagueView(){
+  return uefaSecondaryView(state.competitions.europaLeague,{
+    name:"UEFA Europa League",shortName:"Europa League",phase:"EUROPA",buttonId:"playEuropa",
+    icon:"🟠",matches:8,cssClass:"europa-champion",
+    emptyText:"Nas ligas europeias do jogo, 5º e 6º lugares vão para a Europa League. O campeão da copa nacional também pode conquistar esta vaga."
+  });
+}
+function conferenceLeagueView(){
+  return uefaSecondaryView(state.competitions.conferenceLeague,{
+    name:"UEFA Conference League",shortName:"Conference League",phase:"CONFERENCE",buttonId:"playConference",
+    icon:"🟢",matches:6,cssClass:"conference-champion",
+    emptyText:"Nas ligas europeias do jogo, 7º e 8º lugares vão para a Conference League quando não obtêm vaga superior."
+  });
+}
+
 function worldGroupCard(group){
   const world=state.competitions.clubWorldCup;
   const rows=world.entries.filter(e=>e.group===group).sort((a,b)=>b.points-a.points||(b.gd-a.gd)||b.gf-a.gf);
@@ -2013,14 +2083,17 @@ function competitionsView(){
   const car=state.competitions.career;
   const country=car.country_code||state.club.country_code||"BR";
   const isBR=country==="BR";
-  const isEurope=["ENG","ESP","ITA","GER","FRA","POR"].includes(country);
-  const allowed=["STATE","COPA","A","B","C","D","LIB","SULA","CHAMPIONS","WORLD"];
+  const isEurope=["ENG","ESP","ITA","GER","FRA","POR","NED","BEL","TUR","SCO","AUT","SUI","DEN","NOR","SWE","POL","CZE","CRO","GRE"].includes(country);
+  const isSouthAmerica=["BR","ARG","URU","COL","CHI","ECU","PER"].includes(country);
+  const allowed=["STATE","COPA","A","B","C","D","LIB","SULA","CHAMPIONS","EUROPA","CONFERENCE","WORLD"];
 
   if(!allowed.includes(state.competitionTab))state.competitionTab=car.user_division;
   if(!isBR&&state.competitionTab==="STATE")state.competitionTab=car.user_division;
-  if(!isBR&&state.competitionTab==="LIB")state.competitionTab=car.user_division;
+  if(!isSouthAmerica&&state.competitionTab==="LIB")state.competitionTab=car.user_division;
   if(!isBR&&state.competitionTab==="SULA")state.competitionTab=car.user_division;
   if(!isEurope&&state.competitionTab==="CHAMPIONS")state.competitionTab=car.user_division;
+  if(!isEurope&&state.competitionTab==="EUROPA")state.competitionTab=car.user_division;
+  if(!isEurope&&state.competitionTab==="CONFERENCE")state.competitionTab=car.user_division;
 
   const content=
     state.competitionTab==="STATE"?stateView():
@@ -2028,6 +2101,8 @@ function competitionsView(){
     state.competitionTab==="LIB"?libertadoresView():
     state.competitionTab==="SULA"?sudamericanaView():
     state.competitionTab==="CHAMPIONS"?championsView():
+    state.competitionTab==="EUROPA"?europaLeagueView():
+    state.competitionTab==="CONFERENCE"?conferenceLeagueView():
     state.competitionTab==="WORLD"?clubWorldCupView():
     divisionView(state.competitionTab);
 
@@ -2036,8 +2111,9 @@ function competitionsView(){
       ${isBR?`<button data-comp="STATE" class="${state.competitionTab==="STATE"?"on":""}">ESTADUAL</button>`:""}
       <button data-comp="COPA" class="${state.competitionTab==="COPA"?"on":""}">${esc(state.competitions.copaBrasil?.name||"COPA NACIONAL")}</button>
       ${["A","B","C","D"].map(d=>`<button data-comp="${d}" class="${state.competitionTab===d?"on":""}">${esc(leagueLabel(d,country))}</button>`).join("")}
-      ${isBR?`<button data-comp="LIB" class="${state.competitionTab==="LIB"?"on":""}">LIBERTADORES</button><button data-comp="SULA" class="${state.competitionTab==="SULA"?"on":""}">SUL-AMERICANA</button>`:""}
-      ${isEurope?`<button data-comp="CHAMPIONS" class="${state.competitionTab==="CHAMPIONS"?"on":""}">CHAMPIONS</button>`:""}
+      ${isSouthAmerica?`<button data-comp="LIB" class="${state.competitionTab==="LIB"?"on":""}">LIBERTADORES</button>`:""}
+      ${isBR?`<button data-comp="SULA" class="${state.competitionTab==="SULA"?"on":""}">SUL-AMERICANA</button>`:""}
+      ${isEurope?`<button data-comp="CHAMPIONS" class="${state.competitionTab==="CHAMPIONS"?"on":""}">CHAMPIONS</button><button data-comp="EUROPA" class="${state.competitionTab==="EUROPA"?"on":""}">EUROPA</button><button data-comp="CONFERENCE" class="${state.competitionTab==="CONFERENCE"?"on":""}">CONFERENCE</button>`:""}
       <button data-comp="WORLD" class="${state.competitionTab==="WORLD"?"on":""}">MUNDIAL</button>
     </div>
     ${content}
@@ -2104,8 +2180,44 @@ function playerJourneyView(){
   return `<section class="player-v44-page">
     <div class="player-v44-grid two">
       <div class="card"><div class="kicker">DISPUTA POR POSIÇÃO</div><h2>${esc(c.competitor?.name||"Concorrente")}</h2><div class="real-grid"><div><small>Seu OVR</small><b>${pc.overall}</b></div><div><small>Concorrente</small><b>${c.competitor?.rating??"—"}</b></div><div><small>Situação</small><b>${esc((c.status||"").replaceAll("_"," "))}</b></div><div><small>Liderança</small><b>${pc.leadership}</b></div></div>${pc.is_captain?`<div class="msg ok">© Você é capitão do elenco.</div>`:""}</div>
-      <div class="card"><div class="kicker">SELEÇÃO NACIONAL</div><h2>${esc(countryName(pc.nationality_code))}</h2><div class="real-grid"><div><small>Jogos</small><b>${d.nationalTeam?.caps||0}</b></div><div><small>Gols</small><b>${d.nationalTeam?.goals||0}</b></div><div><small>Elegível</small><b>${d.nationalTeam?.eligible?"Sim":"Ainda não"}</b></div><div><small>Fama</small><b>${pc.fame}</b></div></div></div>
+      <div class="card player-national-card">
+        <div class="kicker">SELEÇÃO NACIONAL</div>
+        <h2>${d.nationalTeam?.flag||"🏳️"} ${esc(d.nationalTeam?.nationName||countryName(pc.nationality_code))}</h2>
+        <div class="real-grid">
+          <div><small>Jogos</small><b>${d.nationalTeam?.caps||0}</b></div>
+          <div><small>Gols</small><b>${d.nationalTeam?.goals||0}</b></div>
+          <div><small>OVR seleção</small><b>${d.nationalTeam?.rating||"—"}</b></div>
+          <div><small>Fama</small><b>${pc.fame}</b></div>
+        </div>
+        ${!d.nationalTeam?.eligible
+          ?`<p class="muted">${esc(d.nationalTeam?.reason||"Continue evoluindo para ser convocado.")}</p>`
+          :!d.nationalTeam?.calledUp
+            ?`<div class="msg ok">Você recebeu uma convocação.</div><button id="playerNationalJoin" class="primary">🌍 ACEITAR CONVOCAÇÃO</button>`
+            :d.nationalTeam?.status==="active"
+              ?`<div class="player-national-next">
+                  <small>${esc(d.nationalTeam.competition||"Competição internacional")} · ${esc(nationalStageLabel(d.nationalTeam.stage))}</small>
+                  <b>${d.nationalTeam.nextMatch?`${d.nationalTeam.nextMatch.homeFlag} ${esc(d.nationalTeam.nextMatch.homeName)} × ${esc(d.nationalTeam.nextMatch.awayName)} ${d.nationalTeam.nextMatch.awayFlag}`:"Próximo jogo internacional"}</b>
+                </div>
+                <button id="playerNationalPlay" class="primary">🌍 JOGAR PELA SELEÇÃO</button>`
+              :`<div class="msg">${d.nationalTeam?.championName?`Campeão: ${esc(d.nationalTeam.championName)}`:"Campanha internacional encerrada nesta temporada."}</div>`}
+      </div>
     </div>
+    ${(d.nationalTeam?.history||[]).length?`<section class="card">
+      <div class="section-title"><div><div class="kicker">CARREIRA INTERNACIONAL</div><h2>Jogos pela seleção</h2></div><span class="badge">${d.nationalTeam.history.length}</span></div>
+      <div class="national-history">${d.nationalTeam.history.slice(0,10).map(m=>`<div>
+        <span>${m.homeFlag||""} ${esc(m.homeName)}</span>
+        <b>${m.homeGoals} × ${m.awayGoals}${m.penaltyShootout?` (${m.penaltyShootout.homePens}×${m.penaltyShootout.awayPens} p.)`:""}</b>
+        <span>${esc(m.awayName)} ${m.awayFlag||""}</span>
+        <small>Nota ${Number(m.performance||0).toFixed(1)}${pc.position==="GK"?` · ${m.saves||0} defesas`:` · ${m.goals||0} G · ${m.assists||0} A`}</small>
+      </div>`).join("")}</div>
+    </section>`:""}
+    ${(d.uefaClubHistory||[]).length?`<section class="card">
+      <div class="section-title"><div><div class="kicker">EUROPA</div><h2>Jogos continentais por clubes</h2></div><span class="badge">${d.uefaClubHistory.length}</span></div>
+      <div class="national-history">${d.uefaClubHistory.slice(0,10).map(m=>`<div>
+        <span>${esc(m.homeName)}</span><b>${m.homeGoals} × ${m.awayGoals}${m.penaltyShootout?` (${m.penaltyShootout.homePens}×${m.penaltyShootout.awayPens} p.)`:""}</b><span>${esc(m.awayName)}</span>
+        <small>${esc(m.competition)}${m.performance?` · nota ${Number(m.performance).toFixed(1)}`:""}</small>
+      </div>`).join("")}</div>
+    </section>`:""}
     <section class="card"><div class="section-title"><div><div class="kicker">PRÊMIOS</div><h2>Conquistas individuais</h2></div><span class="badge blue">${awards.length}</span></div>${awards.length?`<div class="v44-awards">${awards.map(a=>`<div>🏆 <b>${esc(a.award)}</b><span>Temporada ${a.season}</span></div>`).join("")}</div>`:`<div class="empty">Seus prêmios aparecerão aqui conforme a carreira evoluir.</div>`}</section>
     <section class="card"><div class="kicker">HISTÓRICO DA CARREIRA</div><h2>Temporadas</h2>${hist.length?`<div class="v44-history">${hist.map(h=>`<div><b>Temporada ${h.season}</b><span>${h.appearances} J · ${h.goals} G · ${h.assists} A · nota ${Number(h.avgRating||0).toFixed(2)}</span><small>${(h.awards||[]).map(esc).join(" · ")||`${h.objectives}/${h.totalObjectives} objetivos`}</small></div>`).join("")}</div>`:`<div class="empty">A primeira temporada ainda está em andamento.</div>`}</section>
     <section class="card"><div class="kicker">LINHA DO TEMPO</div><h2>Momentos importantes</h2><div class="v44-timeline">${timeline.slice(0,20).map(x=>`<div><span>${esc(String(x.type||"evento").toUpperCase())}</span><b>${esc(x.text)}</b><small>T${x.season||pc.season_no} · R${x.round||"—"}</small></div>`).join("")||`<div class="empty">Sem eventos importantes ainda.</div>`}</div></section>
@@ -2260,6 +2372,22 @@ function playerSeasonView(){
       <b>${f.played?`${f.hg} × ${f.ag}${f.penHome!=null?` (${f.penHome}×${f.penAway} p.)`:""}`:"×"}</b>
       <span class="right">${esc(f.awayClub?.name||"")}</span>
     </div>`).join("")||`<div class="empty">Sem jogos pendentes.</div>`}</div>`:""}
+    ${d.uefaClubCompetition?`<div class="player-uefa-card">
+      <div class="section-title">
+        <div><div class="kicker">COMPETIÇÃO EUROPEIA</div><h3>${esc(d.uefaClubCompetition.name)}</h3></div>
+        <span class="badge">${d.uefaClubCompetition.status==="active"?esc(nationalStageLabel(d.uefaClubCompetition.stage)):d.uefaClubCompetition.status==="finished"?"Encerrada":"Eliminado"}</span>
+      </div>
+      ${d.uefaClubCompetition.stage==="LEAGUE"?`<div class="table-wrap"><table class="mini-table">
+        <thead><tr><th>#</th><th>Clube</th><th>PTS</th><th>J</th><th>SG</th></tr></thead>
+        <tbody>${(d.uefaClubCompetition.entries||[]).slice(0,24).map((e,i)=>`<tr class="${String(e.clubId)===String(pc.club_id)?"user-row":""}">
+          <td>${i+1}</td><td>${esc(e.club?.name||"Clube")}</td><td>${e.points}</td><td>${e.wins+e.draws+e.losses}</td><td>${e.gd>0?"+":""}${e.gd}</td>
+        </tr>`).join("")}</tbody>
+      </table></div>`:`<div class="fixtures">${(d.uefaClubCompetition.fixtures||[]).filter(f=>f.stage===d.uefaClubCompetition.stage).map(f=>`<div class="match">
+        <span>${esc(f.homeClub?.name||"")}</span><b>${f.played?`${f.hg} × ${f.ag}${f.penHome!=null?` (${f.penHome}×${f.penAway} p.)`:""}`:"×"}</b><span class="right">${esc(f.awayClub?.name||"")}</span>
+      </div>`).join("")||`<div class="empty">Sem confronto pendente.</div>`}</div>`}
+      ${d.uefaClubCompetition.nextRound?`<p class="muted">Próxima etapa europeia na rodada ${d.uefaClubCompetition.nextRound} do calendário da carreira.</p>`:""}
+      ${d.uefaClubCompetition.championClub?`<div class="msg ok">🏆 Campeão: ${esc(d.uefaClubCompetition.championClub.name)}</div>`:""}
+    </div>`:""}
     <h3>Seus últimos jogos</h3>
     ${(d.history||[]).slice(0,10).map(m=>`<div class="match"><span>${esc(m.homeName)}</span><b>${m.homeGoals} × ${m.awayGoals}</b><span class="right">${esc(m.awayName)}<br><small>Nota ${m.performance}</small></span></div>`).join("")||`<div class="empty">Nenhum jogo disputado.</div>`}
   </section>`;
@@ -2277,14 +2405,42 @@ function playerTrainingView(){
 }
 
 function bindPlayerCareer(){
+  const nationalJoin=app.querySelector("#playerNationalJoin");
+  if(nationalJoin)nationalJoin.onclick=async()=>{
+    nationalJoin.disabled=true;nationalJoin.textContent="ACEITANDO...";
+    try{
+      const d=await api("/api/player-career/national-team/join",{method:"POST",body:"{}"});
+      await refreshPlayerCareer();renderPlayerCareer();
+      alert(`Convocação aceita: ${d.nationName}.\\nCompetição: ${d.competition}`);
+    }catch(err){alert(err.message);nationalJoin.disabled=false;nationalJoin.textContent="🌍 ACEITAR CONVOCAÇÃO"}
+  };
+
+  const nationalPlay=app.querySelector("#playerNationalPlay");
+  if(nationalPlay)nationalPlay.onclick=async()=>{
+    const nt=state.playerData?.nationalTeam;
+    const pcNt=state.playerData?.career;
+    const knockout=["QF","SF","FINAL"].includes(String(nt?.stage));
+    const penaltyCorner=knockout?await choosePenaltyCorner(pcNt?.position==="GK"?"keeper":"shooter"):null;
+    nationalPlay.disabled=true;nationalPlay.textContent="JOGANDO...";
+    try{
+      const d=await api("/api/player-career/national-team/play",{method:"POST",body:JSON.stringify({penaltyCorner})});
+      await refreshPlayerCareer();renderPlayerCareer();
+      const m=d.match;
+      if(m)alert(`${m.homeFlag||""} ${m.homeName} ${m.homeGoals} x ${m.awayGoals} ${m.awayName} ${m.awayFlag||""}\\nSua nota: ${Number(m.performance||0).toFixed(1)}${pcNt?.position==="GK"?` · Defesas: ${m.saves||0}`:` · Gols: ${m.goals||0} · Assistências: ${m.assists||0}`}${m.penaltyShootout?`\\nPênaltis: ${m.penaltyShootout.homePens} x ${m.penaltyShootout.awayPens}\\n${m.penaltyShootout.text||""}`:""}`);
+    }catch(err){alert(err.message);nationalPlay.disabled=false;nationalPlay.textContent="🌍 JOGAR PELA SELEÇÃO"}
+  };
+
   const play=app.querySelector("#playerPlayNext");
   if(play)play.onclick=async()=>{
     play.disabled=true;play.textContent="JOGANDO...";
     try{
       const pcBefore=state.playerData?.career;
       const cupBefore=state.playerData?.cup;
+      const europeBefore=state.playerData?.uefaClubCompetition;
       const cupDue=Boolean(cupBefore&&cupBefore.status==="active"&&!cupBefore.userEliminated&&Number(cupBefore.nextRound)===Number(pcBefore?.current_round));
-      const penaltyCorner=cupDue
+      const europeDue=Boolean(europeBefore&&europeBefore.status==="active"&&Number(europeBefore.nextRound)===Number(pcBefore?.current_round));
+      const europeKnockout=europeDue&&europeBefore?.stage!=="LEAGUE";
+      const penaltyCorner=(cupDue||europeKnockout)
         ?await choosePenaltyCorner(pcBefore?.position==="GK"?"keeper":"shooter")
         :null;
       const r=await api("/api/player-career/play",{method:"POST",body:JSON.stringify({penaltyCorner})});
@@ -2301,6 +2457,15 @@ function bindPlayerCareer(){
       if(r.cupMatch){
         const p=r.cupMatch.penaltyShootout;
         alert(`${r.cupMatch.competition} — ${r.cupMatch.stage}\n${r.cupMatch.homeName} ${r.cupMatch.homeGoals} x ${r.cupMatch.awayGoals} ${r.cupMatch.awayName}${p?`\n${penaltyResultText(p)}`:""}`);
+      }
+      if(r.europeMatch){
+        const p=r.europeMatch.penaltyShootout;
+        const detail=r.europeMatch.played
+          ?(pcBefore?.position==="GK"
+            ?`\nSua nota: ${r.europeMatch.performance} · Defesas: ${r.europeMatch.saves||0}`
+            :`\nSua nota: ${r.europeMatch.performance} · Gols: ${r.europeMatch.goals||0} · Assistências: ${r.europeMatch.assists||0}`)
+          :"\nVocê não entrou em campo.";
+        alert(`${r.europeMatch.competition} — ${r.europeMatch.stage}\n${r.europeMatch.homeName} ${r.europeMatch.homeGoals} x ${r.europeMatch.awayGoals} ${r.europeMatch.awayName}${detail}${p?`\nPênaltis: ${p.homePens} x ${p.awayPens}\n${p.text||""}`:""}`);
       }
     }catch(err){alert(err.message);play.disabled=false}
   };
@@ -3228,6 +3393,8 @@ function coachActionCanReachPenalties(action){
   if(action==="lib")return c.libertadores?.stage&&c.libertadores.stage!=="GROUP";
   if(action==="sula")return c.sudamericana?.stage&&c.sudamericana.stage!=="GROUP";
   if(action==="champions")return c.championsLeague?.stage&&c.championsLeague.stage!=="LEAGUE";
+  if(action==="europa")return c.europaLeague?.stage&&c.europaLeague.stage!=="LEAGUE";
+  if(action==="conference")return c.conferenceLeague?.stage&&c.conferenceLeague.stage!=="LEAGUE";
   return false;
 }
 function penaltyResultText(p){
@@ -3287,6 +3454,8 @@ async function careerAction(action){
     lib:"/api/libertadores/play-next",
     sula:"/api/sudamericana/play-next",
     champions:"/api/champions/play-next",
+    europa:"/api/europa-league/play-next",
+    conference:"/api/conference-league/play-next",
     world:"/api/club-world-cup/play-next",
     next:"/api/career/next-season"
   };
@@ -4006,6 +4175,8 @@ function bindCompetitions(){
   const pl=app.querySelector("#playLib");if(pl)pl.onclick=async()=>{pl.disabled=true;await careerAction("lib")};
   const psu=app.querySelector("#playSula");if(psu)psu.onclick=async()=>{psu.disabled=true;await careerAction("sula")};
   const pcg=app.querySelector("#playChampions");if(pcg)pcg.onclick=async()=>{pcg.disabled=true;await careerAction("champions")};
+  const peu=app.querySelector("#playEuropa");if(peu)peu.onclick=async()=>{peu.disabled=true;await careerAction("europa")};
+  const pcf=app.querySelector("#playConference");if(pcf)pcf.onclick=async()=>{pcf.disabled=true;await careerAction("conference")};
   const pw=app.querySelector("#playWorld");if(pw)pw.onclick=async()=>{pw.disabled=true;await careerAction("world")};
 }
 

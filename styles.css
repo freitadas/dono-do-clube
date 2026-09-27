@@ -1105,3 +1105,19 @@ repeating-linear-gradient(0deg,#1e7d43 0,#1e7d43 56px,#237f47 56px,#237f47 112px
 .sula-champion{
   background:linear-gradient(135deg,rgba(206,132,32,.16),rgba(30,94,56,.10));
 }
+
+
+/* v49 — seleção jogável no Modo Carreira Jogador */
+.player-national-card{display:flex;flex-direction:column;gap:10px}
+.player-national-next{display:grid;gap:4px;padding:11px;border:1px solid var(--line);border-radius:10px;background:rgba(40,100,70,.08)}
+.player-national-next small{color:var(--muted);font-size:9px}
+.player-national-next b{font-size:14px}
+.player-national-card .primary{width:100%}
+
+
+/* v50 — UEFA: Champions + Europa League + Conference League */
+.europa-champion{background:linear-gradient(135deg,rgba(226,112,24,.17),rgba(44,48,43,.1))}
+.conference-champion{background:linear-gradient(135deg,rgba(38,163,87,.16),rgba(28,47,39,.1))}
+.player-uefa-card{margin-top:18px;padding:14px;border:1px solid var(--line);border-radius:13px;background:rgba(44,75,105,.07)}
+.player-uefa-card .mini-table{width:100%}
+.player-uefa-card .user-row{background:rgba(52,139,91,.14)}

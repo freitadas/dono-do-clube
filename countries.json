@@ -214,5 +214,149 @@
       "C": "Liga Nacional C",
       "D": "Liga Nacional D"
     }
+  },
+  "AUT": {
+    "name": "Áustria",
+    "flag": "🇦🇹",
+    "regional": false,
+    "cup": "ÖFB Cup",
+    "divisions": {
+      "A": "Bundesliga Austríaca",
+      "B": "2. Liga",
+      "C": "Regionalliga",
+      "D": "Landesliga"
+    }
+  },
+  "SUI": {
+    "name": "Suíça",
+    "flag": "🇨🇭",
+    "regional": false,
+    "cup": "Swiss Cup",
+    "divisions": {
+      "A": "Super League",
+      "B": "Challenge League",
+      "C": "Promotion League",
+      "D": "1. Liga"
+    }
+  },
+  "DEN": {
+    "name": "Dinamarca",
+    "flag": "🇩🇰",
+    "regional": false,
+    "cup": "DBU Pokalen",
+    "divisions": {
+      "A": "Superliga",
+      "B": "1st Division",
+      "C": "2nd Division",
+      "D": "3rd Division"
+    }
+  },
+  "NOR": {
+    "name": "Noruega",
+    "flag": "🇳🇴",
+    "regional": false,
+    "cup": "NM Cup",
+    "divisions": {
+      "A": "Eliteserien",
+      "B": "OBOS-ligaen",
+      "C": "2. divisjon",
+      "D": "3. divisjon"
+    }
+  },
+  "SWE": {
+    "name": "Suécia",
+    "flag": "🇸🇪",
+    "regional": false,
+    "cup": "Svenska Cupen",
+    "divisions": {
+      "A": "Allsvenskan",
+      "B": "Superettan",
+      "C": "Ettan",
+      "D": "Division 2"
+    }
+  },
+  "POL": {
+    "name": "Polônia",
+    "flag": "🇵🇱",
+    "regional": false,
+    "cup": "Puchar Polski",
+    "divisions": {
+      "A": "Ekstraklasa",
+      "B": "I Liga",
+      "C": "II Liga",
+      "D": "III Liga"
+    }
+  },
+  "CZE": {
+    "name": "Tchéquia",
+    "flag": "🇨🇿",
+    "regional": false,
+    "cup": "Czech Cup",
+    "divisions": {
+      "A": "Czech First League",
+      "B": "National Football League",
+      "C": "ČFL / MSFL",
+      "D": "Divize"
+    }
+  },
+  "CRO": {
+    "name": "Croácia",
+    "flag": "🇭🇷",
+    "regional": false,
+    "cup": "Croatian Cup",
+    "divisions": {
+      "A": "HNL",
+      "B": "Prva NL",
+      "C": "Druga NL",
+      "D": "Treća NL"
+    }
+  },
+  "GRE": {
+    "name": "Grécia",
+    "flag": "🇬🇷",
+    "regional": false,
+    "cup": "Greek Cup",
+    "divisions": {
+      "A": "Super League Greece",
+      "B": "Super League 2",
+      "C": "Gamma Ethniki",
+      "D": "Regional League"
+    }
+  },
+  "CHI": {
+    "name": "Chile",
+    "flag": "🇨🇱",
+    "regional": false,
+    "cup": "Copa Chile",
+    "divisions": {
+      "A": "Primera División",
+      "B": "Primera B",
+      "C": "Segunda División",
+      "D": "Tercera A"
+    }
+  },
+  "ECU": {
+    "name": "Equador",
+    "flag": "🇪🇨",
+    "regional": false,
+    "cup": "Copa Ecuador",
+    "divisions": {
+      "A": "LigaPro Serie A",
+      "B": "LigaPro Serie B",
+      "C": "Segunda Categoría",
+      "D": "Ascenso Nacional"
+    }
+  },
+  "PER": {
+    "name": "Peru",
+    "flag": "🇵🇪",
+    "regional": false,
+    "cup": "Copa Bicentenario",
+    "divisions": {
+      "A": "Liga 1",
+      "B": "Liga 2",
+      "C": "Liga 3",
+      "D": "Copa Perú"
+    }
   }
 }
