@@ -1486,3 +1486,30 @@ repeating-linear-gradient(0deg,#1e7d43 0,#1e7d43 56px,#237f47 56px,#237f47 112px
   color:var(--muted);
   line-height:1.45;
 }
+
+
+/* v56 — propostas internacionais de todos os países */
+.manager-offer.international-offer{
+  border-color:rgba(70,164,126,.34);
+  background:linear-gradient(135deg,rgba(39,120,84,.08),rgba(255,255,255,.02));
+}
+.manager-world-badge{
+  display:inline-flex;
+  width:max-content;
+  padding:3px 6px;
+  border-radius:999px;
+  font-size:7px;
+  font-weight:950;
+  letter-spacing:.07em;
+  background:rgba(201,151,48,.14);
+  border:1px solid rgba(201,151,48,.36);
+  color:#e8c06b;
+}
+
+
+/* v57 — correção de integridade da Libertadores */
+.group-card .muted{
+  text-align:center;
+  padding:18px 8px;
+  color:var(--muted);
+}

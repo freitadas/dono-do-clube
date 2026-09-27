@@ -1193,9 +1193,11 @@ function managerOfferCountryLine(o){
   const league=leagueLabel(o.national_seed_division||"D",o.country_code);
   return `${flag} ${name} · ${league}`;
 }
+
 function managerOffersCard(compact=false){
   const offers=state.realism?.managerOffers||[];
   const europeanCount=offers.filter(o=>EUROPE_MANAGER_COUNTRIES.has(o.country_code)).length;
+  const internationalCount=offers.filter(o=>String(o.country_code)!==String(state.club?.country_code)).length;
 
   return `<section class="card manager-offers-card ${compact?"compact":""}">
     <div class="section-title">
@@ -1204,14 +1206,15 @@ function managerOffersCard(compact=false){
     </div>
 
     <div class="manager-performance-note">
-      <b>🌍 Clubes europeus acompanham seu trabalho</b>
-      <span>As propostas surgem automaticamente por bom desempenho. Quanto melhor sua sequência, campanha e reputação, maior pode ser o nível do clube interessado.</span>
+      <b>🌍 Clubes de outros países acompanham seu trabalho</b>
+      <span>As propostas surgem automaticamente por bom desempenho. Você pode receber interesse da Europa, América do Sul, América do Norte e Ásia, sempre de clubes compatíveis com seu nível.</span>
     </div>
 
     ${offers.length?`
-      <p class="muted">Você pode manter até três propostas pendentes. As ofertas europeias aparecem naturalmente quando seu trabalho chama atenção.</p>
+      <p class="muted">Você pode manter até três propostas pendentes. As ofertas internacionais aparecem naturalmente quando sua campanha e sua sequência chamam atenção.</p>
       <div class="manager-offer-summary">
         <span>Propostas <b>${offers.length}</b></span>
+        <span>Internacionais <b>${internationalCount}</b></span>
         <span>Europeias <b>${europeanCount}</b></span>
         <span>Reputação <b>${state.realism?.managerReputation??50}</b></span>
       </div>
@@ -1219,10 +1222,11 @@ function managerOffersCard(compact=false){
         ${offers.map(o=>{
           const europe=EUROPE_MANAGER_COUNTRIES.has(o.country_code);
           const international=String(o.country_code)!==String(state.club?.country_code);
-          return `<article class="manager-offer ${europe?"european-offer":""}">
+          return `<article class="manager-offer ${europe?"european-offer":international?"international-offer":""}">
             <div class="manager-offer-main">
               <div class="manager-offer-tags">
                 ${europe?`<span class="manager-europe-badge">EUROPA</span>`:""}
+                ${international&&!europe?`<span class="manager-world-badge">EXTERIOR</span>`:""}
                 ${international?`<span class="manager-international-badge">INTERNACIONAL</span>`:""}
               </div>
               <b>${esc(o.club_name)}</b>
@@ -1239,7 +1243,7 @@ function managerOffersCard(compact=false){
       </div>
     `:`<div class="manager-offers-empty">
       <b>Nenhuma proposta pendente.</b>
-      <span>Continue conseguindo bons resultados. Clubes europeus poderão procurar você automaticamente quando seu desempenho justificar o interesse.</span>
+      <span>Continue conseguindo bons resultados. Clubes do seu país e de outros países poderão procurar você automaticamente quando seu desempenho justificar o interesse.</span>
     </div>`}
   </section>`;
 }
@@ -1801,9 +1805,9 @@ function groupCard(group,competition=null){
     .sort((a,b)=>b.points-a.points||(b.gd-a.gd)||b.gf-a.gf);
   return `<div class="group-card"><h3>Grupo ${group}</h3>
     <table class="mini-table"><thead><tr><th>#</th><th>Clube</th><th>PTS</th><th>J</th><th>SG</th></tr></thead>
-    <tbody>${rows.map((e,i)=>`<tr class="${i<2?"qualified":""} clickable" data-club="${e.clubId}">
-      <td>${i+1}</td><td>${esc(e.club.name)}</td><td>${e.points}</td><td>${e.wins+e.draws+e.losses}</td><td>${e.gd>0?"+":""}${e.gd}</td>
-    </tr>`).join("")}</tbody></table>
+    <tbody>${rows.length?rows.map((e,i)=>`<tr class="${i<2?"qualified":""} clickable" data-club="${e.clubId}">
+      <td>${i+1}</td><td>${esc(e.club?.name||"Clube")}</td><td>${e.points}</td><td>${e.wins+e.draws+e.losses}</td><td>${e.gd>0?"+":""}${e.gd}</td>
+    </tr>`).join(""):`<tr><td colspan="5" class="muted">Grupo sem participantes — recarregue a competição.</td></tr>`}</tbody></table>
   </div>`;
 }
 
@@ -1869,7 +1873,7 @@ function libertadoresView(){
   const qualificationBanner=qualificationReason?`<div class="libertadores-qualified-banner">✅ Seu clube se classificou: <b>${esc(qualificationReason)}</b>.</div>`:"";
   if(lib.status==="finished")return `${qualificationBanner}<div class="champion-card"><div class="kicker">CAMPEÃO DA LIBERTADORES</div><h2>🏆 ${esc(lib.championClub?.name||"Campeão")}</h2></div>${knockoutList(lib)}`;
   const button=state.competitions.career.phase==="LIBERTADORES"?`<button id="playLib" class="primary">Jogar próxima fase</button>`:"";
-  if(lib.stage==="GROUP")return `${qualificationBanner}<div class="section-title"><div><div class="kicker">32 CLUBES · 8 GRUPOS</div><h2>Libertadores — fase de grupos</h2><span class="muted">6 jogos por clube · 2 classificados por grupo</span></div>${button}</div>
+  if(lib.stage==="GROUP")return `${qualificationBanner}<div class="section-title"><div><div class="kicker">${lib.entries?.length||0}/32 CLUBES · 8 GRUPOS</div><h2>Libertadores — fase de grupos</h2><span class="muted">6 jogos por clube · 2 classificados por grupo</span></div>${button}</div>
     <div class="groups-grid">${"ABCDEFGH".split("").map(groupCard).join("")}</div>`;
   return `${qualificationBanner}<div class="section-title"><div><div class="kicker">MATA-MATA</div><h2>${({R16:"Oitavas",QF:"Quartas",SF:"Semifinais",FINAL:"Final"})[lib.stage]}</h2></div>${button}</div>${knockoutList(lib)}`;
 }

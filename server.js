@@ -4378,6 +4378,43 @@ async function managerEuropeanCandidates(client,clubId,career,current,performanc
   return rows;
 }
 
+async function managerInternationalCandidates(client,clubId,career,current,performance,{limit=60}={}){
+  const access=managerOfferAccessProfile(current,performance);
+  const allCountries=Object.keys(COUNTRY_DATA).filter(code=>String(code)!==String(current.country_code));
+
+  const rows=(await client.query(`
+    SELECT c.*
+    FROM clubs c
+    WHERE c.is_ai=TRUE
+      AND c.club_kind='national'
+      AND c.country_code=ANY($1::text[])
+      AND c.id<>$2
+      AND c.base_rating BETWEEN $3 AND $4
+      AND c.national_seed_division=ANY($5::text[])
+    ORDER BY
+      CASE
+        WHEN c.country_code=ANY($6::text[]) THEN 0
+        WHEN c.country_code IN ('ARG','URU','COL','CHI','ECU','PER','MEX','USA') THEN 1
+        WHEN c.country_code IN ('JPN','KSA') THEN 2
+        ELSE 3
+      END,
+      ABS(c.base_rating-$7),
+      RANDOM()
+    LIMIT $8
+  `,[
+    allCountries,
+    clubId,
+    Math.max(54,Number(current.team_rating||current.base_rating||64)-8),
+    access.maxRating,
+    access.divisions,
+    [...EUROPE_COUNTRIES],
+    Math.min(access.maxRating,Number(current.team_rating||current.base_rating||64)+5),
+    limit
+  ])).rows;
+
+  return rows;
+}
+
 async function managerDomesticCandidates(client,clubId,career,current,performance,{limit=20}={}){
   const access=managerOfferAccessProfile(current,performance);
   return (await client.query(`
@@ -4479,23 +4516,35 @@ async function maybeGenerateManagerJobOffer(
   if(pendingRows.length>=access.maxPending)return [];
 
   const pendingIds=new Set(pendingRows.map(r=>String(r.offering_club_id)));
-  const european=await managerEuropeanCandidates(client,clubId,career,current,performance,{limit:50});
+  const european=await managerEuropeanCandidates(client,clubId,career,current,performance,{limit:40});
+  const international=await managerInternationalCandidates(client,clubId,career,current,performance,{limit:70});
   const domestic=await managerDomesticCandidates(client,clubId,career,current,performance,{limit:25});
 
-  const europeChance=
-    Number(performance?.score||0)>=82?.82:
-    Number(performance?.score||0)>=74?.72:
-    Number(performance?.score||0)>=66?.62:.52;
+  const foreignPool=international.filter(c=>String(c.country_code)!==String(current.country_code));
+  const nonEuropeanForeign=foreignPool.filter(c=>!EUROPE_COUNTRIES.has(c.country_code));
 
-  const preferEurope=
-    european.length>0 &&
-    (
-      !EUROPE_COUNTRIES.has(current.country_code)
-        ?Math.random()<europeChance
-        :Math.random()<Math.max(.45,europeChance-.12)
-    );
+  const score=Number(performance?.score||0);
+  const internationalChance=
+    score>=82?.86:
+    score>=74?.76:
+    score>=66?.66:.54;
 
-  const candidatePool=preferEurope?european:[...domestic,...european];
+  const wantsInternational=foreignPool.length>0&&Math.random()<internationalChance;
+
+  let candidatePool;
+  if(wantsInternational){
+    // Europa continua forte, mas propostas de América do Sul, América do Norte e Ásia
+    // também entram no mercado de treinadores.
+    const preferNonEurope=
+      nonEuropeanForeign.length>0 &&
+      Math.random()<(score>=78?.38:.46);
+
+    candidatePool=preferNonEurope
+      ?[...nonEuropeanForeign,...european,...domestic]
+      :[...european,...nonEuropeanForeign,...domestic];
+  }else{
+    candidatePool=[...domestic,...foreignPool];
+  }
 
   const eligible=candidatePool.filter(c=>{
     if(pendingIds.has(String(c.id)))return false;
@@ -6433,44 +6482,66 @@ function libertadoresQualificationInfo(career,ownerId=career?.owner_club_id){
 
 async function makeLibertadores(career){
   const qualification=libertadoresQualificationInfo(career);
-  const national=qualification.nationalQualifiers;
+  const national=[...new Set((qualification.nationalQualifiers||[]).map(Number).filter(Boolean))];
 
-  // Mantém 32 clubes. Se o campeão da Copa do Brasil estiver fora do G4,
-  // ele entra como uma vaga adicional brasileira e reduz em uma a quantidade de convidados estrangeiros.
-  const foreignCount=Math.max(0,32-national.length);
-  const foreign=(await q(`
+  // O jogo não possui mais seeds do tipo "continental". A Libertadores
+  // passa a ser montada diretamente com clubes das primeiras divisões
+  // sul-americanas, garantindo SEMPRE 32 participantes válidos.
+  const needed=Math.max(0,32-national.length);
+  const pool=(await q(`
     SELECT id
     FROM clubs
-    WHERE is_ai=TRUE AND club_kind='continental'
-    ORDER BY RANDOM()
-    LIMIT $1
-  `,[foreignCount])).rows.map(r=>Number(r.id));
+    WHERE is_ai=TRUE
+      AND club_kind='national'
+      AND national_seed_division='A'
+      AND country_code IN ('BR','ARG','URU','COL','CHI','ECU','PER')
+      AND NOT(id=ANY($1::bigint[]))
+    ORDER BY
+      CASE country_code
+        WHEN 'ARG' THEN 1
+        WHEN 'BR' THEN 2
+        WHEN 'URU' THEN 3
+        WHEN 'COL' THEN 4
+        WHEN 'CHI' THEN 5
+        WHEN 'ECU' THEN 6
+        WHEN 'PER' THEN 7
+        ELSE 8
+      END,
+      RANDOM()
+    LIMIT $2
+  `,[national,needed])).rows.map(r=>Number(r.id));
 
-  let teams=[...national,...foreign];
+  let teams=[...national,...pool];
 
-  // Fallback de segurança para sempre fechar 32 participantes.
+  // Fallback amplo, sem depender de club_kind específico, para evitar
+  // torneio incompleto caso algum seed futuro mude de classificação.
   if(teams.length<32){
     const missing=32-teams.length;
     const extras=(await q(`
       SELECT id
       FROM clubs
       WHERE is_ai=TRUE
-        AND club_kind='national'
         AND country_code IN ('BR','ARG','URU','COL','CHI','ECU','PER')
         AND NOT(id=ANY($1::bigint[]))
       ORDER BY base_rating DESC,RANDOM()
       LIMIT $2
-    `,[teams.map(Number),missing])).rows.map(r=>Number(r.id));
-    teams=[...teams,...extras];
+    `,[teams,missing])).rows.map(r=>Number(r.id));
+    teams.push(...extras);
   }
 
-  teams=shuffle(teams.slice(0,32));
+  teams=[...new Set(teams.map(Number).filter(Boolean))].slice(0,32);
+  if(teams.length!==32){
+    throw new Error(`Libertadores ficou com ${teams.length}/32 clubes. Não foi possível montar a competição completa.`);
+  }
+
+  teams=shuffle(teams);
   const groups="ABCDEFGH".split("");
   const entries=teams.map((clubId,i)=>({...blankEntry(clubId),group:groups[Math.floor(i/4)]}));
   const fixtures=[];
 
   for(const g of groups){
     const ids=entries.filter(e=>e.group===g).map(e=>e.clubId);
+    if(ids.length!==4)throw new Error(`Grupo ${g} da Libertadores ficou com ${ids.length}/4 clubes.`);
     const rounds=doubleRR(ids).slice(0,6);
     rounds.forEach((games,ri)=>games.forEach(([home,away])=>
       fixtures.push({
@@ -6478,6 +6549,10 @@ async function makeLibertadores(career){
         home,away,played:false,hg:null,ag:null,pw:null
       })
     ));
+  }
+
+  if(entries.length!==32||fixtures.filter(f=>f.stage==="GROUP").length!==96){
+    throw new Error("Falha de integridade ao criar a fase de grupos da Libertadores.");
   }
 
   career.data.libertadores={
@@ -8057,10 +8132,204 @@ async function withCompetitionLock(ownerId,fn){
   try{return await fn()}finally{competitionLocks.delete(key)}
 }
 
+function libertadoresIntegrity(lib){
+  if(!lib)return {valid:false,reason:"missing"};
+  const groups="ABCDEFGH".split("");
+  const entries=Array.isArray(lib.entries)?lib.entries:[];
+  const fixtures=Array.isArray(lib.fixtures)?lib.fixtures:[];
+  const uniqueIds=new Set(entries.map(e=>String(e.clubId)));
+
+  const counts={};
+  const fixtureCounts={};
+  for(const g of groups){
+    counts[g]=entries.filter(e=>e.group===g).length;
+    fixtureCounts[g]=fixtures.filter(f=>f.stage==="GROUP"&&f.group===g).length;
+  }
+
+  const valid=
+    entries.length===32 &&
+    uniqueIds.size===32 &&
+    groups.every(g=>counts[g]===4) &&
+    groups.every(g=>fixtureCounts[g]===12);
+
+  return {valid,counts,fixtureCounts,entries:entries.length,unique:uniqueIds.size};
+}
+
+async function repairLibertadoresGroups(career){
+  const lib=career?.data?.libertadores;
+  if(!lib||lib.stage!=="GROUP")return false;
+
+  const integrity=libertadoresIntegrity(lib);
+  if(integrity.valid)return false;
+
+  const groups="ABCDEFGH".split("");
+  if(!Array.isArray(lib.entries))lib.entries=[];
+  if(!Array.isArray(lib.fixtures))lib.fixtures=[];
+
+  // Preserva tudo o que já existe no save, principalmente o grupo do usuário
+  // e os resultados já disputados.
+  const seen=new Set();
+  lib.entries=lib.entries.filter(e=>{
+    if(!e||!e.clubId||!groups.includes(e.group))return false;
+    const key=String(e.clubId);
+    if(seen.has(key))return false;
+    seen.add(key);
+    return true;
+  });
+
+  const existingIds=lib.entries.map(e=>Number(e.clubId));
+  const missing=32-existingIds.length;
+
+  if(missing>0){
+    const candidates=(await q(`
+      SELECT id
+      FROM clubs
+      WHERE is_ai=TRUE
+        AND country_code IN ('BR','ARG','URU','COL','CHI','ECU','PER')
+        AND club_kind='national'
+        AND national_seed_division='A'
+        AND NOT(id=ANY($1::bigint[]))
+      ORDER BY
+        CASE country_code
+          WHEN 'ARG' THEN 1
+          WHEN 'BR' THEN 2
+          WHEN 'URU' THEN 3
+          WHEN 'COL' THEN 4
+          WHEN 'CHI' THEN 5
+          WHEN 'ECU' THEN 6
+          WHEN 'PER' THEN 7
+          ELSE 8
+        END,
+        RANDOM()
+      LIMIT $2
+    `,[existingIds,missing])).rows.map(r=>Number(r.id));
+
+    let additions=[...candidates];
+
+    if(additions.length<missing){
+      const still=missing-additions.length;
+      const excluded=[...existingIds,...additions];
+      const extra=(await q(`
+        SELECT id
+        FROM clubs
+        WHERE is_ai=TRUE
+          AND country_code IN ('BR','ARG','URU','COL','CHI','ECU','PER')
+          AND NOT(id=ANY($1::bigint[]))
+        ORDER BY base_rating DESC,RANDOM()
+        LIMIT $2
+      `,[excluded,still])).rows.map(r=>Number(r.id));
+      additions.push(...extra);
+    }
+
+    additions=[...new Set(additions.map(Number).filter(Boolean))];
+
+    // Preenche primeiro os grupos vazios/incompletos, sem mexer nos
+    // participantes já gravados.
+    let ai=0;
+    for(const g of groups){
+      let count=lib.entries.filter(e=>e.group===g).length;
+      while(count<4&&ai<additions.length){
+        lib.entries.push({...blankEntry(additions[ai++]),group:g});
+        count++;
+      }
+    }
+  }
+
+  const afterEntries=libertadoresIntegrity({...lib,fixtures:[]});
+  if(lib.entries.length!==32||new Set(lib.entries.map(e=>String(e.clubId))).size!==32){
+    throw new Error(`Não foi possível reparar a Libertadores: ${lib.entries.length}/32 participantes.`);
+  }
+
+  const completedRounds=Math.min(
+    6,
+    Math.max(
+      0,
+      Number(lib.matchday||1)-1,
+      ...lib.fixtures.filter(f=>f.stage==="GROUP"&&f.played).map(f=>Number(f.matchday||0))
+    )
+  );
+
+  const rebuiltGroups=[];
+
+  for(const g of groups){
+    const ids=lib.entries.filter(e=>e.group===g).map(e=>Number(e.clubId));
+    if(ids.length!==4)throw new Error(`Não foi possível reparar o Grupo ${g} da Libertadores.`);
+
+    const current=lib.fixtures.filter(f=>f.stage==="GROUP"&&f.group===g);
+    const currentValid=
+      current.length===12 &&
+      current.every(f=>ids.includes(Number(f.home))&&ids.includes(Number(f.away)));
+
+    if(currentValid)continue;
+
+    const hadPlayed=current.some(f=>f.played);
+
+    // O defeito observado deixa os outros grupos sem jogos. Para esses grupos
+    // reconstruímos a tabela normalmente. Se houver um grupo parcialmente
+    // corrompido com partidas, mantemos as estatísticas existentes e só
+    // reconstruímos seus jogos futuros.
+    lib.fixtures=lib.fixtures.filter(f=>!(f.stage==="GROUP"&&f.group===g));
+
+    if(!hadPlayed){
+      for(const e of lib.entries.filter(e=>e.group===g)){
+        e.points=0;e.wins=0;e.draws=0;e.losses=0;e.gf=0;e.ga=0;
+      }
+    }
+
+    const rounds=doubleRR(ids).slice(0,6);
+    rounds.forEach((games,ri)=>games.forEach(([home,away])=>{
+      lib.fixtures.push({
+        stage:"GROUP",group:g,matchday:ri+1,leg:1,
+        home,away,played:false,hg:null,ag:null,pw:null
+      });
+    }));
+    rebuiltGroups.push(g);
+  }
+
+  // Grupos adicionados no meio de uma fase de grupos precisam alcançar a
+  // mesma rodada dos grupos já existentes para a classificação ficar coerente.
+  if(rebuiltGroups.length&&completedRounds>0){
+    const pending=lib.fixtures.filter(
+      f=>f.stage==="GROUP" &&
+        rebuiltGroups.includes(f.group) &&
+        Number(f.matchday)<=completedRounds &&
+        !f.played
+    );
+    const ratings=await ratingsMap([...new Set(pending.flatMap(f=>[f.home,f.away]))]);
+
+    for(const f of pending){
+      const score=basicScore(
+        ratings.get(String(f.home))||72,
+        ratings.get(String(f.away))||72
+      );
+      f.played=true;
+      f.hg=score.hg;
+      f.ag=score.ag;
+      applyResult(findEntry(lib.entries,f.home),f.hg,f.ag);
+      applyResult(findEntry(lib.entries,f.away),f.ag,f.hg);
+    }
+  }
+
+  lib.entries.sort((a,b)=>a.group.localeCompare(b.group));
+  career.data.libertadores=lib;
+
+  const finalIntegrity=libertadoresIntegrity(lib);
+  if(!finalIntegrity.valid){
+    throw new Error(
+      `Reparo da Libertadores incompleto: ${finalIntegrity.entries}/32 clubes; `+
+      `grupos ${JSON.stringify(finalIntegrity.counts)}.`
+    );
+  }
+
+  return true;
+}
+
+
 async function repairCareer(ownerId){
   let career=await getCareer(ownerId);
   if(!career||!career.data)return career;
   let changed=false;
+  if(await repairLibertadoresGroups(career))changed=true;
   if(!career.data.calendar){career.data.calendar=initialCalendar(career.season_no);changed=true}
   if(!career.data.copaBrasil){career.data.copaBrasil=await createCopaBrasil(ownerId);changed=true}
   const beforeCopaCount=career.data.copaBrasil?.fixtures?.length||0;

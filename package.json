@@ -1,8 +1,8 @@
 {
   "name": "dono-do-clube",
-  "version": "55.0.0",
+  "version": "57.0.0",
   "private": true,
-  "description": "Dono do Clube v55 — propostas europeias automáticas por bom desempenho",
+  "description": "Dono do Clube v57 — correção automática da fase de grupos da Libertadores",
   "main": "server.js",
   "scripts": {
     "start": "node server.js"

@@ -1386,3 +1386,22 @@ Reformulação ampla do modo jogador: personalidade e objetivo de carreira, núm
 - A reputação influencia o nível dos clubes que podem fazer proposta, mas não gera oferta sozinha.
 - Quanto melhor o desempenho, maior a chance de interesse europeu.
 - Até 3 propostas podem permanecer pendentes.
+
+
+## v56 — Propostas internacionais
+- O mercado de treinadores não fica mais concentrado apenas em clubes europeus.
+- Bons desempenhos podem gerar propostas do próprio país e de outros países jogáveis.
+- Entram no mercado clubes da Europa, América do Sul, América do Norte e Ásia.
+- A chance de proposta internacional aumenta conforme o desempenho melhora.
+- A reputação continua limitando o nível máximo do clube interessado.
+- Não existe botão de busca manual: todas as propostas continuam surgindo automaticamente pelo desempenho.
+
+
+## v57 — Correção da Libertadores
+- Corrigida a origem do bug que podia criar apenas o Grupo A.
+- A Libertadores agora é montada diretamente com 32 clubes válidos das primeiras divisões sul-americanas.
+- Não depende mais de seeds `continental`, que não existem no arquivo atual de clubes.
+- A fase de grupos é validada: 32 clubes, 8 grupos de 4 e 96 partidas.
+- Saves já bugados são reparados automaticamente ao carregar a carreira.
+- O grupo e os resultados já disputados pelo usuário são preservados.
+- Os grupos ausentes são preenchidos e simulados até a mesma rodada já alcançada.
