@@ -941,3 +941,56 @@ repeating-linear-gradient(0deg,#1e7d43 0,#1e7d43 56px,#237f47 56px,#237f47 112px
 .v44-action-grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(150px,1fr));gap:8px}.v44-action-grid button{min-height:48px}.v44-perk-grid,.v44-lifestyle-grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(190px,1fr));gap:10px}.training-card.owned{border-color:rgba(46,204,113,.45);background:rgba(46,204,113,.07)}
 .v44-awards,.v44-history,.v44-timeline{display:grid;gap:8px}.v44-awards>div,.v44-history>div,.v44-timeline>div{display:grid;grid-template-columns:auto 1fr auto;gap:10px;align-items:center;padding:10px;border:1px solid rgba(255,255,255,.08);border-radius:9px}.v44-history>div{grid-template-columns:140px 1fr}.v44-history small{grid-column:1/-1}.v44-timeline span{font-size:10px;font-weight:800;letter-spacing:.08em;opacity:.65}.v44-timeline small{opacity:.65}.player-nav{overflow-x:auto}.player-nav button{white-space:nowrap}
 @media(max-width:800px){.player-v44-grid.two{grid-template-columns:1fr}.objective-row{grid-template-columns:1fr}.v44-awards>div,.v44-timeline>div{grid-template-columns:1fr}.v44-plan-row{grid-template-columns:1fr}}
+
+
+/* v45 — Jornal 2.0 / Modo Carreira Treinador */
+.newspaper-v45{gap:16px}
+.newspaper-masthead-v45{padding:18px 22px 16px}
+.journal-edition-row{display:flex;justify-content:space-between;gap:12px;font-size:9px;font-weight:900;letter-spacing:.1em;text-transform:uppercase;color:#6d624d}
+.journal-ticker{display:grid;grid-template-columns:auto 1fr;align-items:center;overflow:hidden;border:1px solid #b9ad93;border-radius:12px;background:#eee7d8;color:#19241c}
+.journal-ticker>b{padding:11px 13px;background:#8d2424;color:#fff;font-size:9px;letter-spacing:.08em}
+.journal-ticker-track{display:flex;gap:26px;overflow:hidden;padding:9px 12px;white-space:nowrap;font-size:11px;font-weight:750}
+.journal-toolbar{display:flex;justify-content:space-between;gap:10px;align-items:center;flex-wrap:wrap}
+.journal-filters{display:flex;gap:6px;flex-wrap:wrap}
+.journal-filter{border:1px solid var(--line);background:var(--panel);padding:8px 11px;border-radius:999px;font-size:10px;font-weight:900}
+.journal-filter.on{background:#efe6d4;color:#17251c;border-color:#d3c6a8}
+.journal-tools{display:flex;gap:6px;align-items:center;flex-wrap:wrap}
+.journal-tools input,.journal-tools select{min-height:36px;border-radius:9px}
+.journal-tools input{width:210px}
+.journal-scoreboard{display:grid;grid-template-columns:repeat(5,minmax(0,1fr));gap:8px}
+.journal-scoreboard>div{display:grid;gap:3px;padding:12px;border:1px solid var(--line);border-radius:12px;background:var(--panel)}
+.journal-scoreboard small{font-size:8px;letter-spacing:.07em;color:var(--muted)}
+.journal-scoreboard b{font-size:18px}
+.journal-scoreboard span{font-size:9px;color:var(--muted)}
+.journal-form{display:flex;gap:4px;align-items:center}
+.journal-form i{display:grid;place-items:center;width:22px;height:22px;border-radius:6px;font-size:9px;font-style:normal;color:#fff}
+.journal-form i.v{background:#277b47}.journal-form i.e{background:#8d7a37}.journal-form i.d{background:#9b3b3b}
+.journal-breaking-action{display:flex;justify-content:space-between;align-items:center;gap:12px;padding:13px 15px;border:1px solid #9b3d3d;border-radius:12px;background:rgba(151,43,43,.12)}
+.journal-breaking-action>div{display:grid;gap:3px}.journal-breaking-action span{font-size:9px;font-weight:950;color:#ff9b9b}.journal-breaking-action small{color:var(--muted)}
+.journal-lead-grid{display:grid;grid-template-columns:minmax(0,1.65fr) minmax(260px,.75fr);gap:12px}
+.journal-lead{position:relative;background:#f2eee3;color:#18241c;border:1px solid #c8c0ad;border-radius:15px;padding:24px}
+.journal-lead.importance-3{border:2px solid #8f6d27}.journal-lead.importance-2{border-color:#7e8c67}
+.journal-lead-label{position:absolute;right:14px;top:14px;padding:5px 8px;border-radius:999px;background:#7c2222;color:#fff;font-size:8px;font-weight:950;letter-spacing:.08em}
+.journal-lead h2{font-family:Georgia,serif;font-size:31px;line-height:1.04;margin:9px 0 11px;max-width:88%}
+.journal-lead p{font-family:Georgia,serif;color:#465247;font-size:15px;line-height:1.55}
+.journal-secondary{display:grid;align-content:start;gap:9px}
+.journal-section-label{font-size:9px;font-weight:950;letter-spacing:.1em;color:var(--muted);padding-bottom:7px;border-bottom:1px solid var(--line)}
+.journal-story-compact,.journal-story{background:#eee8dc;color:#17251d;border:1px solid #c8c0ad;border-radius:12px;padding:13px}
+.journal-story-compact h3,.journal-story h3{font-family:Georgia,serif;line-height:1.13;margin:7px 0}.journal-story-compact h3{font-size:17px}.journal-story h3{font-size:19px}
+.journal-story p{color:#465247;line-height:1.46}
+.journal-story-meta{display:flex;justify-content:space-between;gap:8px;font-size:8px;color:#756d5e;text-transform:uppercase;font-weight:850}
+.journal-read{margin-top:8px}
+.journal-story .journal-read,.journal-story-compact .journal-read{border:0;background:transparent;color:#263d2e;padding:0;font-size:9px;text-decoration:underline}
+.journal-layout{display:grid;grid-template-columns:minmax(0,1.7fr) minmax(270px,.65fr);gap:14px;align-items:start}
+.journal-story-grid{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:10px}
+.journal-sidebar{display:grid;gap:10px;position:sticky;top:78px}
+.journal-side-card{border:1px solid var(--line);background:var(--panel);border-radius:12px;padding:12px}
+.journal-brief-list{display:grid;gap:6px;margin-top:8px}.journal-brief-item{display:grid;grid-template-columns:28px 1fr;gap:7px;text-align:left;border:0;background:transparent;padding:7px;border-radius:8px;width:100%}.journal-brief-item:hover{background:rgba(255,255,255,.04)}
+.journal-brief-item>span{font-size:18px}.journal-brief-item div{display:grid;gap:2px}.journal-brief-item small{font-size:8px;color:var(--muted)}
+.journal-brief-empty{padding:11px 0;color:var(--muted);font-size:10px}
+.journal-rivals{display:grid;gap:7px;margin-top:8px}.journal-rival-row{display:grid;grid-template-columns:28px 1fr auto;gap:6px;align-items:center;padding:7px 0;border-bottom:1px solid var(--line)}.journal-rival-row:last-child{border-bottom:0}.journal-rival-row span{font-size:9px;color:var(--muted)}.journal-rival-row small{font-size:8px;color:var(--muted)}
+.journal-panorama{display:grid;gap:7px;margin-top:8px}.journal-panorama span{display:flex;justify-content:space-between;gap:8px;font-size:10px;padding-bottom:6px;border-bottom:1px solid var(--line)}.journal-panorama span:last-child{border-bottom:0}
+.journal-disclaimer{margin-top:0}
+.journal-article-modal{max-width:720px}.journal-article-paper{background:#f3eee2;color:#18241c;border-radius:12px;padding:24px}.journal-article-paper h2{font-family:Georgia,serif;font-size:31px;line-height:1.08;margin:8px 0 14px}.journal-article-paper p{font-family:Georgia,serif;font-size:16px;line-height:1.65;color:#3f4b42}.journal-article-importance{display:inline-block;padding:5px 8px;background:#17281d;color:#fff;border-radius:999px;font-size:8px;font-weight:950;letter-spacing:.08em}.journal-article-footer{display:flex;justify-content:space-between;gap:10px;margin-top:22px;padding-top:10px;border-top:1px solid #c8c0ad;font-size:9px;color:#746d5e}
+@media(max-width:900px){.journal-scoreboard{grid-template-columns:repeat(2,1fr)}.journal-lead-grid,.journal-layout{grid-template-columns:1fr}.journal-sidebar{position:static}.journal-story-grid{grid-template-columns:1fr}}
+@media(max-width:600px){.journal-toolbar,.journal-breaking-action{align-items:stretch;flex-direction:column}.journal-tools{display:grid;grid-template-columns:1fr 1fr}.journal-tools input{width:auto;grid-column:1/-1}.journal-scoreboard{grid-template-columns:1fr 1fr}.journal-lead{padding:18px}.journal-lead h2{font-size:25px;max-width:100%}.journal-story-meta{display:grid}.journal-edition-row{font-size:8px}}

@@ -1,8 +1,8 @@
 {
   "name": "dono-do-clube",
-  "version": "44.0.0",
+  "version": "45.0.0",
   "private": true,
-  "description": "Dono do Clube v44 — Modo Carreira Jogador 2.0 completamente reformulado",
+  "description": "Dono do Clube v45 — Jornal 2.0 no Modo Carreira Treinador",
   "main": "server.js",
   "scripts": {
     "start": "node server.js"

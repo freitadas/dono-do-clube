@@ -4678,6 +4678,33 @@ function forceDebtRelegationTransition(data,ownerId,currentDiv){
   if(user){user.points=-999;user.gf=0;user.ga=999;user.wins=0;user.draws=0;user.losses=Math.max(38,Number(user.losses||0));}
   return cloned;
 }
+
+async function publishStandingsPulse(client,ownerId,career,round){
+  if(!career||career.phase!=="NATIONAL")return;
+  const r=Number(round||career.current_round||1);
+  if(!(r===1||r%5===0||r>=35))return;
+
+  const div=career.user_division||"D";
+  const table=sortEntries(career.data?.divisions?.[div]?.entries||[]);
+  const idx=table.findIndex(e=>String(e.clubId)===String(ownerId));
+  if(idx<0)return;
+
+  const user=table[idx];
+  const leader=table[0];
+  const ids=[String(ownerId),String(leader?.clubId||ownerId)];
+  const clubs=(await client.query(`SELECT id,name FROM clubs WHERE id=ANY($1::bigint[])`,[ids])).rows;
+  const names=new Map(clubs.map(c=>[String(c.id),c.name]));
+  const userName=names.get(String(ownerId))||"Seu clube";
+  const leaderName=names.get(String(leader?.clubId))||"Líder";
+  const gap=Math.max(0,Number(leader?.points||0)-Number(user?.points||0));
+  const headline=`Rodada ${r}: ${userName} aparece em ${idx+1}º na classificação`;
+  const body=idx===0
+    ?`${userName} lidera ${leagueName(career.country_code||"BR",div)} com ${Number(user.points||0)} ponto(s). A campanha coloca o clube no centro da cobertura esportiva.`
+    :`${userName} ocupa a ${idx+1}ª posição com ${Number(user.points||0)} ponto(s). ${leaderName} lidera com ${Number(leader?.points||0)}; a diferença atual é de ${gap} ponto(s).`;
+
+  await publishNewsOnce(client,ownerId,career.season_no,"classificacao",headline,body,r>=35?3:2,"Central da Liga");
+}
+
 async function mediaAfterCompetitionAction(ownerId,action,result){
   if(!result?.userMatch)return result;
   const career=await getCareer(ownerId);
@@ -4808,6 +4835,7 @@ async function mediaAfterCompetitionAction(ownerId,action,result){
 
     // O jornal não cobre apenas o time do usuário: inclui resultados de outros clubes.
     await publishOtherClubNews(client,ownerId,career,action,result);
+    if(action==="national")await publishStandingsPulse(client,ownerId,career,result?.round);
 
     // Uma sequência forte passa a atrair propostas pelos principais jogadores.
     await generateIncomingOffers(client,ownerId,{force:false,performanceAware:true});

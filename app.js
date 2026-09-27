@@ -15,6 +15,7 @@ const state={
   playerStarterClubs:[],
   playerExpansion:{agent:true,media:true,sponsorship:true,awards:true,nationalTeam:true,legacy:true},
   europeOffersExpansion:true,
+  newsFilter:"all",newsSearch:"",newsSort:"latest",
   view:"home",authMode:"login",competitionTab:"STATE",roundByDiv:{A:1,B:1,C:1,D:1}
 };
 
@@ -2394,52 +2395,263 @@ function careersView(){
     ${!canCreate?`<div class="msg">Você atingiu o limite de ${state.maxCareers||10} carreiras. Apague uma carreira para criar outra.</div>`:""}
   </section>`;
 }
+
+function newsGroup(category){
+  const c=String(category||"");
+  if(["negocios"].includes(c))return "market";
+  if(["outros_clubes","goleada_outros"].includes(c))return "rivals";
+  if(["coletiva","bastidores","saf","institucional","temporada"].includes(c))return "management";
+  if(["partida","goleada","eliminacao","titulo","classificacao"].includes(c))return "club";
+  return "club";
+}
+function newsGroupLabel(group){
+  return ({all:"Todas",club:"Seu clube",market:"Mercado",rivals:"Rivais",management:"Bastidores"})[group]||"Todas";
+}
+function newsImportanceLabel(value){
+  const n=Number(value||1);
+  return n>=3?"URGENTE":n===2?"DESTAQUE":"NOTÍCIA";
+}
+function newsIcon(category){
+  return ({
+    partida:"⚽",goleada:"🔥",goleada_outros:"🔥",outros_clubes:"🌍",
+    eliminacao:"🚨",coletiva:"🎙️",titulo:"🏆",classificacao:"📊",
+    negocios:"💼",saf:"🏢",bastidores:"👀",temporada:"📅",institucional:"📰"
+  })[category]||"📰";
+}
+function newsCareerSnapshot(){
+  const car=state.competitions?.career;
+  const div=car?.user_division||"D";
+  const table=state.competitions?.divisions?.[div]?.entries||[];
+  const pos=Math.max(1,table.findIndex(e=>String(e.clubId)===String(state.club?.id))+1);
+  const userRow=table.find(e=>String(e.clubId)===String(state.club?.id));
+  const leader=table[0];
+  const recent=(state.matches||[]).slice(0,5);
+  const form=recent.map(m=>{
+    const ug=Number(m.user_goals??m.userGoals??0),og=Number(m.opponent_goals??m.opponentGoals??0);
+    return ug>og?"V":ug===og?"E":"D";
+  });
+  const scorer=[...(state.players||[])].sort((a,b)=>Number(b.goals||0)-Number(a.goals||0)||Number(b.assists||0)-Number(a.assists||0))[0];
+  return {
+    div,position:pos,points:Number(userRow?.points||0),
+    leaderName:leader?.club?.name||"—",leaderPoints:Number(leader?.points||0),
+    form,scorer,
+    board:Number(state.boardExpectation?.confidence??state.club?.board_confidence??0),
+    media:Number(state.boardExpectation?.mediaPressure??state.club?.media_pressure??0)
+  };
+}
+function filteredJournalNews(){
+  const filter=state.newsFilter||"all";
+  const search=String(state.newsSearch||"").trim().toLowerCase();
+  let items=[...(state.mediaNews||[])];
+  if(filter!=="all")items=items.filter(n=>newsGroup(n.category)===filter);
+  if(search){
+    items=items.filter(n=>`${n.headline||""} ${n.body||""} ${n.source_name||""}`.toLowerCase().includes(search));
+  }
+  if((state.newsSort||"latest")==="importance"){
+    items.sort((a,b)=>Number(b.importance||1)-Number(a.importance||1)||new Date(b.created_at)-new Date(a.created_at));
+  }else{
+    items.sort((a,b)=>new Date(b.created_at)-new Date(a.created_at));
+  }
+  return items;
+}
+function journalMarketBrief(){
+  const playerOffers=state.incomingOffers||[];
+  const managerOffers=state.realism?.managerOffers||[];
+  const sponsorOffers=state.sponsorship?.offers||[];
+  if(!playerOffers.length&&!managerOffers.length&&!sponsorOffers.length){
+    return `<div class="journal-brief-empty">Nenhuma movimentação urgente no mercado.</div>`;
+  }
+  return `<div class="journal-brief-list">
+    ${playerOffers.slice(0,3).map(o=>`<button class="journal-brief-item" data-journal-link="market">
+      <span>💰</span><div><b>${esc(o.buying_club_name)} quer ${esc(o.player_name)}</b><small>Oferta de ${Number(o.amount||0).toLocaleString("pt-BR")} moedas</small></div>
+    </button>`).join("")}
+    ${managerOffers.slice(0,2).map(o=>`<button class="journal-brief-item" data-journal-link="realism">
+      <span>👔</span><div><b>${esc(o.club_name)} procura seu treinador</b><small>Salário: ${Number(o.salary||0).toLocaleString("pt-BR")}/mês</small></div>
+    </button>`).join("")}
+    ${sponsorOffers.slice(0,2).map(o=>`<button class="journal-brief-item" data-journal-link="club">
+      <span>🤝</span><div><b>${esc(o.name)} abriu proposta</b><small>${Number(o.monthly||0).toLocaleString("pt-BR")}/mês · ${esc(o.benefitLabel||"benefício")}</small></div>
+    </button>`).join("")}
+  </div>`;
+}
+function journalRivalWatch(){
+  const car=state.competitions?.career;
+  const div=car?.user_division||"D";
+  const table=state.competitions?.divisions?.[div]?.entries||[];
+  const rivals=table.filter(e=>String(e.clubId)!==String(state.club?.id)).slice(0,4);
+  return rivals.length?`<div class="journal-rivals">
+    ${rivals.map((e,i)=>`<div class="journal-rival-row">
+      <span>${i+1}º</span><b>${esc(e.club?.name||"Clube")}</b><small>${Number(e.points||0)} pts · SG ${Number(e.gd ?? ((e.gf||0)-(e.ga||0)))}</small>
+    </div>`).join("")}
+  </div>`:`<div class="journal-brief-empty">Classificação indisponível.</div>`;
+}
+function journalArticleCard(n,compact=false){
+  return `<article class="${compact?"journal-story-compact":"journal-story"} importance-${Number(n.importance||1)}" data-news-id="${n.id}">
+    <div class="journal-story-meta">
+      <span>${newsIcon(n.category)} ${esc(mediaCategoryLabel(n.category))}</span>
+      <span>${esc(n.source_name||"Jornal do Clube")} · ${formatNewsDate(n.created_at)}</span>
+    </div>
+    <h3>${esc(n.headline)}</h3>
+    ${compact?"":`<p>${esc(n.body)}</p>`}
+    <button class="journal-read" data-open-news="${n.id}">Ler matéria</button>
+  </article>`;
+}
 function newsView(){
-  const news=state.mediaNews||[];
-  const otherCats=new Set(["outros_clubes","goleada_outros"]);
-  const clubNews=news.filter(n=>!otherCats.has(n.category));
-  const otherNews=news.filter(n=>otherCats.has(n.category));
-  const featured=clubNews[0]||news[0];
+  const all=state.mediaNews||[];
+  const filtered=filteredJournalNews();
+  const snap=newsCareerSnapshot();
+  const featured=filtered.find(n=>Number(n.importance||1)>=2)||filtered[0]||null;
+  const secondary=filtered.filter(n=>!featured||String(n.id)!==String(featured.id)).slice(0,2);
+  const rest=filtered.filter(n=>!featured||String(n.id)!==String(featured.id)).slice(2);
+  const ticker=all.slice(0,5);
+  const currentDate=state.calendar?.date
+    ?new Date(`${state.calendar.date}T12:00:00Z`).toLocaleDateString("pt-BR")
+    :"Temporada em andamento";
 
-  return `<section class="newspaper">
-    <div class="newspaper-masthead">
-      <div class="kicker">EDIÇÃO DA CARREIRA</div>
+  return `<section class="newspaper newspaper-v45">
+    <div class="newspaper-masthead newspaper-masthead-v45">
+      <div class="journal-edition-row">
+        <span>EDIÇÃO DA CARREIRA</span>
+        <span>${esc(currentDate)}</span>
+      </div>
       <h1>O Dono do Clube</h1>
-      <p>${esc(state.club?.name||"Clube")} · Temporada ${state.competitions?.career?.season_no||1}</p>
+      <p>${esc(state.club?.name||"Clube")} · Temporada ${state.competitions?.career?.season_no||1} · ${esc(leagueLabel(snap.div,state.club?.country_code||"BR"))}</p>
     </div>
 
-    ${featured?`<article class="news-featured importance-${featured.importance||1}">
-      <div class="news-meta"><span>${esc(featured.source_name)}</span><span>${formatNewsDate(featured.created_at)}</span></div>
-      <span class="news-category">${esc(mediaCategoryLabel(featured.category))}</span>
-      <h2>${esc(featured.headline)}</h2>
-      <p>${esc(featured.body)}</p>
-    </article>`:`<div class="empty">As notícias da carreira aparecerão aqui após partidas e decisões importantes.</div>`}
+    ${ticker.length?`<div class="journal-ticker">
+      <b>ÚLTIMA HORA</b>
+      <div class="journal-ticker-track">${ticker.map(n=>`<span>${newsIcon(n.category)} ${esc(n.headline)}</span>`).join("")}</div>
+    </div>`:""}
 
-    <div class="newspaper-section-head">
-      <div><div class="kicker">SEU CLUBE</div><h2>Últimas notícias</h2></div>
-    </div>
-    <div class="news-grid">
-      ${clubNews.filter(n=>!featured||String(n.id)!==String(featured.id)).map(n=>`<article class="news-card importance-${n.importance||1}">
-        <div class="news-meta"><span>${esc(n.source_name)}</span><span>${formatNewsDate(n.created_at)}</span></div>
-        <span class="news-category">${esc(mediaCategoryLabel(n.category))}</span>
-        <h3>${esc(n.headline)}</h3>
-        <p>${esc(n.body)}</p>
-      </article>`).join("")||`<div class="empty">Ainda não há outras notícias do seu clube.</div>`}
+    <div class="journal-toolbar">
+      <div class="journal-filters">
+        ${["all","club","market","rivals","management"].map(f=>`<button class="journal-filter ${state.newsFilter===f?"on":""}" data-news-filter="${f}">${newsGroupLabel(f)}</button>`).join("")}
+      </div>
+      <div class="journal-tools">
+        <input id="journalSearch" placeholder="Buscar no jornal..." value="${esc(state.newsSearch||"")}">
+        <select id="journalSort">
+          <option value="latest" ${state.newsSort==="latest"?"selected":""}>Mais recentes</option>
+          <option value="importance" ${state.newsSort==="importance"?"selected":""}>Mais importantes</option>
+        </select>
+        <button id="journalRefresh" class="secondary">Atualizar</button>
+      </div>
     </div>
 
-    <div class="newspaper-section-head other-clubs-head">
-      <div><div class="kicker">GIRO DO FUTEBOL</div><h2>Notícias de outros clubes</h2></div>
-      <span class="badge">${otherNews.length}</span>
+    <div class="journal-scoreboard">
+      <div><small>POSIÇÃO</small><b>${snap.position}º</b><span>${snap.points} pts</span></div>
+      <div><small>FORMA</small><b class="journal-form">${snap.form.length?snap.form.map(x=>`<i class="${x.toLowerCase()}">${x}</i>`).join(""):"—"}</b><span>últimos jogos</span></div>
+      <div><small>DIRETORIA</small><b>${snap.board}%</b><span>confiança</span></div>
+      <div><small>IMPRENSA</small><b>${snap.media}%</b><span>pressão</span></div>
+      <div><small>ARTILHEIRO</small><b>${esc(snap.scorer?.name||"—")}</b><span>${Number(snap.scorer?.goals||0)} gols</span></div>
     </div>
-    <div class="news-grid other-clubs-news">
-      ${otherNews.length?otherNews.map(n=>`<article class="news-card other-club-news importance-${n.importance||1}">
-        <div class="news-meta"><span>${esc(n.source_name)}</span><span>${formatNewsDate(n.created_at)}</span></div>
-        <span class="news-category">${esc(mediaCategoryLabel(n.category))}</span>
-        <h3>${esc(n.headline)}</h3>
-        <p>${esc(n.body)}</p>
-      </article>`).join(""):`<div class="empty">As notícias dos rivais aparecerão conforme a temporada avança.</div>`}
+
+    ${state.pendingPress?`<div class="journal-breaking-action">
+      <div><span>🎙️ COLETIVA PENDENTE</span><b>${esc(state.pendingPress.title||"A imprensa espera sua resposta")}</b><small>${esc(state.pendingPress.question||"")}</small></div>
+      <button id="journalPress" class="primary">Responder agora</button>
+    </div>`:""}
+
+    ${featured?`<div class="journal-lead-grid">
+      <article class="journal-lead importance-${featured.importance||1}">
+        <div class="journal-lead-label">${newsImportanceLabel(featured.importance)}</div>
+        <div class="news-meta"><span>${esc(featured.source_name||"Jornal do Clube")}</span><span>${formatNewsDate(featured.created_at)}</span></div>
+        <span class="news-category">${newsIcon(featured.category)} ${esc(mediaCategoryLabel(featured.category))}</span>
+        <h2>${esc(featured.headline)}</h2>
+        <p>${esc(featured.body)}</p>
+        <button class="journal-read primary" data-open-news="${featured.id}">Abrir matéria</button>
+      </article>
+      <aside class="journal-secondary">
+        <div class="journal-section-label">EM DESTAQUE</div>
+        ${secondary.length?secondary.map(n=>journalArticleCard(n,true)).join(""):`<div class="journal-brief-empty">Sem outras manchetes neste filtro.</div>`}
+      </aside>
+    </div>`:`<div class="empty">Nenhuma notícia corresponde aos filtros atuais.</div>`}
+
+    <div class="journal-layout">
+      <main class="journal-main">
+        <div class="newspaper-section-head">
+          <div><div class="kicker">${esc(newsGroupLabel(state.newsFilter||"all").toUpperCase())}</div><h2>Últimas matérias</h2></div>
+          <span class="badge">${filtered.length}</span>
+        </div>
+        <div class="journal-story-grid">
+          ${rest.length?rest.map(n=>journalArticleCard(n,false)).join(""):
+            (filtered.length>3?"":`<div class="empty">Ainda não há mais matérias nesta seção.</div>`)}
+        </div>
+      </main>
+
+      <aside class="journal-sidebar">
+        <section class="journal-side-card">
+          <div class="journal-section-label">MERCADO & BASTIDORES</div>
+          ${journalMarketBrief()}
+        </section>
+        <section class="journal-side-card">
+          <div class="journal-section-label">DE OLHO NOS RIVAIS</div>
+          ${journalRivalWatch()}
+        </section>
+        <section class="journal-side-card">
+          <div class="journal-section-label">PANORAMA</div>
+          <div class="journal-panorama">
+            <span>Líder <b>${esc(snap.leaderName)}</b></span>
+            <span>Pontos do líder <b>${snap.leaderPoints}</b></span>
+            <span>Sua posição <b>${snap.position}º</b></span>
+            <span>Notícias na edição <b>${all.length}</b></span>
+          </div>
+        </section>
+      </aside>
     </div>
+
+    <p class="sponsor-disclaimer journal-disclaimer">As notícias desta aba fazem parte da simulação da carreira e são geradas a partir dos acontecimentos do jogo.</p>
   </section>`;
+}
+
+function openJournalArticle(id){
+  const n=(state.mediaNews||[]).find(x=>String(x.id)===String(id));
+  if(!n)return;
+  const bg=document.createElement("div");
+  bg.className="modal-bg journal-article-modal-bg";
+  bg.innerHTML=`<div class="modal journal-article-modal">
+    <div class="modal-head">
+      <div><div class="kicker">${newsIcon(n.category)} ${esc(mediaCategoryLabel(n.category))}</div><small>${esc(n.source_name||"Jornal do Clube")} · ${formatNewsDate(n.created_at)}</small></div>
+      <button class="secondary close-modal">Fechar</button>
+    </div>
+    <div class="journal-article-paper">
+      <span class="journal-article-importance">${newsImportanceLabel(n.importance)}</span>
+      <h2>${esc(n.headline)}</h2>
+      <p>${esc(n.body)}</p>
+      <div class="journal-article-footer">
+        <span>Temporada ${n.season_no||state.competitions?.career?.season_no||1}</span>
+        <span>${esc(state.club?.name||"Clube")}</span>
+      </div>
+    </div>
+  </div>`;
+  document.body.appendChild(bg);
+  bg.querySelector(".close-modal").onclick=()=>bg.remove();
+  bg.onclick=e=>{if(e.target===bg)bg.remove()};
+}
+function bindNews(){
+  app.querySelectorAll("[data-news-filter]").forEach(btn=>btn.onclick=()=>{
+    state.newsFilter=btn.dataset.newsFilter;
+    render();
+  });
+  const search=app.querySelector("#journalSearch");
+  if(search){
+    search.oninput=e=>{
+      state.newsSearch=e.target.value;
+      clearTimeout(window.__journalSearchTimer);
+      window.__journalSearchTimer=setTimeout(()=>render(),220);
+    };
+  }
+  const sort=app.querySelector("#journalSort");
+  if(sort)sort.onchange=e=>{state.newsSort=e.target.value;render()};
+  const refresh=app.querySelector("#journalRefresh");
+  if(refresh)refresh.onclick=async()=>{
+    refresh.disabled=true;refresh.textContent="ATUALIZANDO...";
+    try{await refreshAll();render()}catch(err){alert(err.message);refresh.disabled=false;refresh.textContent="Atualizar"}
+  };
+  app.querySelectorAll("[data-open-news]").forEach(btn=>btn.onclick=()=>openJournalArticle(btn.dataset.openNews));
+  app.querySelectorAll("[data-journal-link]").forEach(btn=>btn.onclick=()=>{
+    state.view=btn.dataset.journalLink;
+    render();
+  });
+  const press=app.querySelector("#journalPress");
+  if(press)press.onclick=()=>maybeShowPressConference();
 }
 
 function boardStatusLabel(status){
@@ -2684,6 +2896,7 @@ function render(){
   if(state.view==="starters")bindStarters();
   if(state.view==="squad")bindSquad();
   if(state.view==="realism")bindRealism();
+  if(state.view==="news")bindNews();
   if(state.view==="market")bindMarket();
   if(state.view==="friends")bindFriends();
   if(state.view==="league")bindCompetitions();
