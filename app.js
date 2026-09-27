@@ -80,6 +80,7 @@ function phaseName(p){
   if(p==="STATE")return "Estadual";
   if(p==="NATIONAL")return state.activeType==="player"?"Liga nacional":(state.competitions?.career?leagueLabel(state.competitions.career.user_division):"Liga nacional");
   if(p==="LIBERTADORES")return "Libertadores";
+  if(p==="SUDAMERICANA")return "Copa Sul-Americana";
   if(p==="CHAMPIONS")return "Champions League";
   if(p==="CLUB_WORLD_CUP")return "Super Mundial";
   if(p==="END")return "Temporada encerrada";
@@ -672,6 +673,11 @@ function rotationContext(){
     const stage=state.competitions?.libertadores?.stage;
     if(["QF","SF","FINAL"].includes(stage))return {key:"decisive",label:"Jogo decisivo continental",maxChanges:2};
     return {key:"normal",label:"Libertadores",maxChanges:3};
+  }
+  if(car.phase==="SUDAMERICANA"){
+    const stage=state.competitions?.sudamericana?.stage;
+    if(["QF","SF","FINAL"].includes(stage))return {key:"decisive",label:"Jogo decisivo da Sul-Americana",maxChanges:2};
+    return {key:"normal",label:"Copa Sul-Americana",maxChanges:3};
   }
   if(car.phase==="CHAMPIONS"){
     const stage=state.competitions?.championsLeague?.stage;
@@ -1379,6 +1385,7 @@ function homeView(){
   if(car.phase==="STATE")action=`<button id="careerAction" data-action="state" class="primary">🏟️ JOGAR PRÓXIMA FASE DO ESTADUAL</button>`;
   if(car.phase==="NATIONAL")action=`<button id="careerAction" data-action="national" class="primary">⚽ JOGAR RODADA ${car.current_round}/38</button>`;
   if(car.phase==="LIBERTADORES")action=`<button id="careerAction" data-action="lib" class="primary">🏆 JOGAR PRÓXIMA FASE DA LIBERTADORES</button>`;
+  if(car.phase==="SUDAMERICANA")action=`<button id="careerAction" data-action="sula" class="primary">🌎 JOGAR PRÓXIMA FASE DA SUL-AMERICANA</button>`;
   if(car.phase==="CHAMPIONS")action=`<button id="careerAction" data-action="champions" class="primary">⭐ JOGAR PRÓXIMA FASE DA CHAMPIONS</button>`;
   if(car.phase==="CLUB_WORLD_CUP")action=`<button id="careerAction" data-action="world" class="primary">🌍 JOGAR PRÓXIMA FASE DO SUPER MUNDIAL</button>`;
   if(car.phase==="END")action=`<button id="careerAction" data-action="next" class="primary">📅 IR PARA A PRÓXIMA TEMPORADA</button>`;
@@ -1733,8 +1740,9 @@ function stateView(){
   </div>`).join("")}</div>`;
 }
 
-function groupCard(group){
-  const rows=state.competitions.libertadores.entries.filter(e=>e.group===group)
+function groupCard(group,competition=null){
+  const source=competition||state.competitions.libertadores;
+  const rows=(source?.entries||[]).filter(e=>e.group===group)
     .sort((a,b)=>b.points-a.points||(b.gd-a.gd)||b.gf-a.gf);
   return `<div class="group-card"><h3>Grupo ${group}</h3>
     <table class="mini-table"><thead><tr><th>#</th><th>Clube</th><th>PTS</th><th>J</th><th>SG</th></tr></thead>
@@ -1810,6 +1818,59 @@ function libertadoresView(){
     <div class="groups-grid">${"ABCDEFGH".split("").map(groupCard).join("")}</div>`;
   return `${qualificationBanner}<div class="section-title"><div><div class="kicker">MATA-MATA</div><h2>${({R16:"Oitavas",QF:"Quartas",SF:"Semifinais",FINAL:"Final"})[lib.stage]}</h2></div>${button}</div>${knockoutList(lib)}`;
 }
+
+function sudamericanaView(){
+  const sula=state.competitions.sudamericana;
+  const car=state.competitions.career;
+  if(!sula){
+    return `<div class="empty">
+      <h2>🌎 Copa Sul-Americana</h2>
+      <p>Na Série A do Brasil, os clubes que terminarem do <b>5º ao 10º lugar</b> se classificam para a Sul-Americana.</p>
+      <p class="muted">Se um clube nessa faixa também conseguir vaga de Libertadores pela Copa do Brasil, a Libertadores tem prioridade.</p>
+    </div>`;
+  }
+
+  const qualificationReason=sula.qualification?.userReason;
+  const qualificationBanner=qualificationReason
+    ?`<div class="sula-qualified-banner">✅ Seu clube se classificou para a Sul-Americana: <b>${esc(qualificationReason)}</b>.</div>`
+    :"";
+  const button=car.phase==="SUDAMERICANA"
+    ?`<button id="playSula" class="primary">Jogar próxima fase</button>`
+    :"";
+
+  if(sula.status==="finished"){
+    return `${qualificationBanner}
+      <div class="champion-card sula-champion">
+        <div class="kicker">CAMPEÃO DA COPA SUL-AMERICANA</div>
+        <h2>🌎🏆 ${esc(sula.championClub?.name||"Campeão")}</h2>
+      </div>
+      ${knockoutList(sula)}`;
+  }
+
+  if(sula.stage==="GROUP"){
+    return `${qualificationBanner}
+      <div class="section-title">
+        <div>
+          <div class="kicker">32 CLUBES · 8 GRUPOS</div>
+          <h2>Copa Sul-Americana — fase de grupos</h2>
+          <span class="muted">6 jogos por clube · 2 classificados por grupo · nível médio abaixo da Libertadores</span>
+        </div>
+        ${button}
+      </div>
+      <div class="groups-grid">${"ABCDEFGH".split("").map(g=>groupCard(g,sula)).join("")}</div>`;
+  }
+
+  return `${qualificationBanner}
+    <div class="section-title">
+      <div>
+        <div class="kicker">MATA-MATA · IDA E VOLTA</div>
+        <h2>Sul-Americana — ${esc(({R16:"Oitavas",QF:"Quartas",SF:"Semifinais",FINAL:"Final"})[sula.stage]||sula.stage)}</h2>
+      </div>
+      ${button}
+    </div>
+    ${knockoutList(sula)}`;
+}
+
 
 function championsTableRows(){
   const ch=state.competitions.championsLeague;
@@ -1953,17 +2014,19 @@ function competitionsView(){
   const country=car.country_code||state.club.country_code||"BR";
   const isBR=country==="BR";
   const isEurope=["ENG","ESP","ITA","GER","FRA","POR"].includes(country);
-  const allowed=["STATE","COPA","A","B","C","D","LIB","CHAMPIONS","WORLD"];
+  const allowed=["STATE","COPA","A","B","C","D","LIB","SULA","CHAMPIONS","WORLD"];
 
   if(!allowed.includes(state.competitionTab))state.competitionTab=car.user_division;
   if(!isBR&&state.competitionTab==="STATE")state.competitionTab=car.user_division;
   if(!isBR&&state.competitionTab==="LIB")state.competitionTab=car.user_division;
+  if(!isBR&&state.competitionTab==="SULA")state.competitionTab=car.user_division;
   if(!isEurope&&state.competitionTab==="CHAMPIONS")state.competitionTab=car.user_division;
 
   const content=
     state.competitionTab==="STATE"?stateView():
     state.competitionTab==="COPA"?copaView():
     state.competitionTab==="LIB"?libertadoresView():
+    state.competitionTab==="SULA"?sudamericanaView():
     state.competitionTab==="CHAMPIONS"?championsView():
     state.competitionTab==="WORLD"?clubWorldCupView():
     divisionView(state.competitionTab);
@@ -1973,7 +2036,7 @@ function competitionsView(){
       ${isBR?`<button data-comp="STATE" class="${state.competitionTab==="STATE"?"on":""}">ESTADUAL</button>`:""}
       <button data-comp="COPA" class="${state.competitionTab==="COPA"?"on":""}">${esc(state.competitions.copaBrasil?.name||"COPA NACIONAL")}</button>
       ${["A","B","C","D"].map(d=>`<button data-comp="${d}" class="${state.competitionTab===d?"on":""}">${esc(leagueLabel(d,country))}</button>`).join("")}
-      ${isBR?`<button data-comp="LIB" class="${state.competitionTab==="LIB"?"on":""}">LIBERTADORES</button>`:""}
+      ${isBR?`<button data-comp="LIB" class="${state.competitionTab==="LIB"?"on":""}">LIBERTADORES</button><button data-comp="SULA" class="${state.competitionTab==="SULA"?"on":""}">SUL-AMERICANA</button>`:""}
       ${isEurope?`<button data-comp="CHAMPIONS" class="${state.competitionTab==="CHAMPIONS"?"on":""}">CHAMPIONS</button>`:""}
       <button data-comp="WORLD" class="${state.competitionTab==="WORLD"?"on":""}">MUNDIAL</button>
     </div>
@@ -3163,6 +3226,7 @@ function coachActionCanReachPenalties(action){
   if(action==="world")return c.clubWorldCup?.stage&&c.clubWorldCup.stage!=="GROUP";
   if(action==="state")return c.state?.stage&&c.state.stage!=="GROUP";
   if(action==="lib")return c.libertadores?.stage&&c.libertadores.stage!=="GROUP";
+  if(action==="sula")return c.sudamericana?.stage&&c.sudamericana.stage!=="GROUP";
   if(action==="champions")return c.championsLeague?.stage&&c.championsLeague.stage!=="LEAGUE";
   return false;
 }
@@ -3221,6 +3285,7 @@ async function careerAction(action){
     national:"/api/national/play-round",
     copa:"/api/copa/play-next",
     lib:"/api/libertadores/play-next",
+    sula:"/api/sudamericana/play-next",
     champions:"/api/champions/play-next",
     world:"/api/club-world-cup/play-next",
     next:"/api/career/next-season"
@@ -3939,6 +4004,7 @@ function bindCompetitions(){
   const ps=app.querySelector("#playState");if(ps)ps.onclick=async()=>{ps.disabled=true;await careerAction("state")};
   const pc=app.querySelector("#playCopa");if(pc)pc.onclick=async()=>{pc.disabled=true;await careerAction("copa")};
   const pl=app.querySelector("#playLib");if(pl)pl.onclick=async()=>{pl.disabled=true;await careerAction("lib")};
+  const psu=app.querySelector("#playSula");if(psu)psu.onclick=async()=>{psu.disabled=true;await careerAction("sula")};
   const pcg=app.querySelector("#playChampions");if(pcg)pcg.onclick=async()=>{pcg.disabled=true;await careerAction("champions")};
   const pw=app.querySelector("#playWorld");if(pw)pw.onclick=async()=>{pw.disabled=true;await careerAction("world")};
 }

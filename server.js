@@ -1533,6 +1533,7 @@ function nextOpponentId(career,ownerId){
   if(career.phase==="STATE")return find(career.data?.state?.fixtures,x=>x.stage===career.data?.state?.stage);
   if(career.phase==="NATIONAL")return find(career.data?.divisions?.[career.user_division]?.fixtures,x=>Number(x.round)===Number(career.current_round));
   if(career.phase==="LIBERTADORES")return find(career.data?.libertadores?.fixtures,x=>x.stage===career.data?.libertadores?.stage);
+  if(career.phase==="SUDAMERICANA")return find(career.data?.sudamericana?.fixtures,x=>x.stage===career.data?.sudamericana?.stage);
   if(career.phase==="CHAMPIONS")return find(career.data?.championsLeague?.fixtures,x=>x.stage===career.data?.championsLeague?.stage);
   if(career.phase==="CLUB_WORLD_CUP")return find(career.data?.clubWorldCup?.fixtures,x=>x.stage===career.data?.clubWorldCup?.stage);
   return null;
@@ -3145,6 +3146,7 @@ function financeRates(context){
   if(key==="C")return {sponsor:3000,gate:2600};
   if(key==="D")return {sponsor:2400,gate:2100};
   if(key==="LIB")return {sponsor:6200,gate:5600};
+  if(key==="SULA")return {sponsor:4800,gate:4300};
   if(key==="CUP")return {sponsor:4400,gate:4000};
   return {sponsor:1900,gate:1500};
 }
@@ -3323,6 +3325,8 @@ function mediaFixturePool(career,action,result,ownerId){
     fs=(career.data?.state?.fixtures||[]).filter(f=>f.played).slice(-10);
   }else if(action==="lib"){
     fs=(career.data?.libertadores?.fixtures||[]).filter(f=>f.played).slice(-12);
+  }else if(action==="sula"){
+    fs=(career.data?.sudamericana?.fixtures||[]).filter(f=>f.played).slice(-12);
   }else if(action==="champions"){
     fs=(career.data?.championsLeague?.fixtures||[]).filter(f=>f.played).slice(-16);
   }else if(action==="world"){
@@ -4400,6 +4404,7 @@ function normalizePenaltyScores(career){
     career?.data?.state,
     career?.data?.copaBrasil,
     career?.data?.libertadores,
+    career?.data?.sudamericana,
     career?.data?.championsLeague,
     career?.data?.clubWorldCup
   ];
@@ -4778,6 +4783,11 @@ async function mediaAfterCompetitionAction(ownerId,action,result){
     eliminated=Boolean(result.finished?String(lib?.champion||"")!==String(ownerId):result.userAlive===false);
     important=eliminated||result.finished||["SF","FINAL"].includes(lib?.stage);
     majorPressGame=Boolean(result.finished||lib?.stage==="FINAL");
+  }else if(action==="sula"){
+    const sula=career.data?.sudamericana;
+    eliminated=Boolean(result.finished?String(sula?.champion||"")!==String(ownerId):result.userAlive===false);
+    important=eliminated||result.finished||["SF","FINAL"].includes(sula?.stage);
+    majorPressGame=Boolean(result.finished||sula?.stage==="FINAL");
   }else if(action==="champions"){
     const ch=career.data?.championsLeague;
     eliminated=Boolean(result.finished?String(ch?.champion||"")!==String(ownerId):result.userAlive===false);
@@ -5565,6 +5575,294 @@ async function autoFinishLib(career){
 }
 
 
+function sudamericanaQualificationInfo(career,ownerId=career?.owner_club_id){
+  const country=career?.country_code||"BR";
+  const tableA=sortEntries(career?.data?.divisions?.A?.entries||[]);
+  const leagueSlots=tableA.slice(4,10).map(e=>Number(e.clubId));
+  const lib=libertadoresQualificationInfo(career,ownerId);
+
+  const userInRange=
+    country==="BR" &&
+    career?.user_division==="A" &&
+    leagueSlots.some(id=>String(id)===String(ownerId));
+
+  // Se o clube também ganhou vaga de Libertadores pela Copa, a Libertadores tem prioridade.
+  const qualified=userInRange&&!lib.qualified;
+
+  return {
+    leagueSlots,
+    qualified,
+    userPosition:tableA.findIndex(e=>String(e.clubId)===String(ownerId))+1,
+    reason:qualified?"5º ao 10º lugar da Série A":null
+  };
+}
+
+async function makeSudamericana(career){
+  const qualification=sudamericanaQualificationInfo(career);
+  const libInfo=libertadoresQualificationInfo(career);
+  const libIds=new Set((libInfo.nationalQualifiers||[]).map(String));
+
+  // Clubes brasileiros do 5º ao 10º, removendo eventual clube que tenha
+  // ido para a Libertadores pelo título da copa.
+  const brazilian=qualification.leagueSlots.filter(id=>!libIds.has(String(id)));
+
+  const needed=Math.max(0,32-brazilian.length);
+  const selected=(await q(`
+    SELECT id
+    FROM clubs
+    WHERE is_ai=TRUE
+      AND NOT(id=ANY($1::bigint[]))
+      AND (
+        (club_kind='national'
+          AND country_code IN ('BR','ARG','URU','COL')
+          AND national_seed_division='A')
+        OR
+        (club_kind='continental'
+          AND country_code IN ('AR','UY','CO','EC','PY','CL','BO','PE'))
+      )
+    ORDER BY
+      CASE
+        WHEN base_rating BETWEEN 66 AND 77 THEN 0
+        WHEN base_rating < 66 THEN 1
+        ELSE 2
+      END,
+      base_rating ASC,
+      RANDOM()
+    LIMIT $2
+  `,[brazilian.map(Number),needed])).rows.map(r=>Number(r.id));
+
+  let teams=[...brazilian,...selected];
+
+  if(teams.length<32){
+    const extra=(await q(`
+      SELECT id FROM clubs
+      WHERE is_ai=TRUE
+        AND confederation_code='CONMEBOL'
+        AND NOT(id=ANY($1::bigint[]))
+      ORDER BY base_rating ASC,RANDOM()
+      LIMIT $2
+    `,[teams.map(Number),32-teams.length])).rows.map(r=>Number(r.id));
+    teams.push(...extra);
+  }
+
+  teams=shuffle([...new Set(teams)].slice(0,32));
+  if(teams.length!==32)throw new Error(`Sul-Americana ficou com ${teams.length} clubes.`);
+
+  const groups="ABCDEFGH".split("");
+  const entries=teams.map((clubId,i)=>({...blankEntry(clubId),group:groups[Math.floor(i/4)]}));
+  const fixtures=[];
+
+  for(const g of groups){
+    const ids=entries.filter(e=>e.group===g).map(e=>e.clubId);
+    const rounds=doubleRR(ids).slice(0,6);
+    rounds.forEach((games,ri)=>games.forEach(([home,away])=>{
+      fixtures.push({
+        stage:"GROUP",group:g,matchday:ri+1,leg:1,
+        home,away,played:false,hg:null,ag:null,pw:null
+      });
+    }));
+  }
+
+  career.data.sudamericana={
+    name:"Copa Sul-Americana",
+    status:"group",
+    stage:"GROUP",
+    matchday:1,
+    leg:1,
+    champion:null,
+    entries,
+    fixtures,
+    qualification:{
+      leagueSlots:qualification.leagueSlots,
+      userQualified:qualification.qualified,
+      userReason:qualification.reason,
+      userPosition:qualification.userPosition
+    }
+  };
+}
+
+async function simulateSulaStep(career,allowUserDetail,penaltyCorner=null){
+  const sula=career.data.sudamericana;
+  let userMatch=null,userAlive=true;
+
+  if(sula.stage==="GROUP"){
+    const games=sula.fixtures.filter(f=>f.stage==="GROUP"&&f.matchday===sula.matchday&&!f.played);
+    const ratings=await ratingsMap([...new Set(games.flatMap(f=>[f.home,f.away]))]);
+
+    await tx(async c=>{
+      for(const f of games){
+        let hg,ag;
+        const isUser=String(f.home)===String(career.owner_club_id)||String(f.away)===String(career.owner_club_id);
+
+        if(allowUserDetail&&isUser){
+          const sim=await fullMatch(c,f.home,f.away,career.owner_club_id);
+          hg=sim.hg;ag=sim.ag;
+          userMatch=sim.userMatch;
+          userMatch.matchType="Copa Sul-Americana";
+          userMatch.reward=0;
+          userMatch.finance=await settleMatchFinances(
+            c,career.owner_club_id,"SULA",
+            String(f.home)===String(career.owner_club_id),
+            userMatch.result,userMatch.attendance,userMatch.ticketPrice
+          );
+          await recordUserMatch(
+            c,career.owner_club_id,
+            String(f.home)===String(career.owner_club_id)?f.away:f.home,
+            userMatch,sim.events,"sudamericana",userMatch.finance.performance
+          );
+        }else{
+          ({hg,ag}=basicScore(ratings.get(String(f.home))||68,ratings.get(String(f.away))||68));
+        }
+
+        f.played=true;f.hg=hg;f.ag=ag;
+        applyResult(findEntry(sula.entries,f.home),hg,ag);
+        applyResult(findEntry(sula.entries,f.away),ag,hg);
+      }
+    });
+
+    if(sula.matchday>=6){
+      createR16(sula);
+      const ue=sula.entries.find(e=>String(e.clubId)===String(career.owner_club_id));
+      userAlive=!!ue&&groupTable(sula,ue.group).slice(0,2).some(e=>String(e.clubId)===String(career.owner_club_id));
+    }else{
+      sula.matchday++;
+    }
+  }else{
+    const stage=sula.stage;
+    const leg=stage==="FINAL"?1:sula.leg;
+    const games=sula.fixtures.filter(f=>f.stage===stage&&f.leg===leg&&!f.played);
+    const ratings=await ratingsMap([...new Set(games.flatMap(f=>[f.home,f.away]))]);
+
+    await tx(async c=>{
+      for(const f of games){
+        let hg,ag;
+        const isUser=String(f.home)===String(career.owner_club_id)||String(f.away)===String(career.owner_club_id);
+
+        if(allowUserDetail&&isUser){
+          const sim=await fullMatch(c,f.home,f.away,career.owner_club_id);
+          hg=sim.hg;ag=sim.ag;
+          userMatch=sim.userMatch;
+          userMatch.matchType="Copa Sul-Americana";
+          userMatch.reward=0;
+          userMatch.finance=await settleMatchFinances(
+            c,career.owner_club_id,"SULA",
+            String(f.home)===String(career.owner_club_id),
+            userMatch.result,userMatch.attendance,userMatch.ticketPrice
+          );
+          await recordUserMatch(
+            c,career.owner_club_id,
+            String(f.home)===String(career.owner_club_id)?f.away:f.home,
+            userMatch,sim.events,"sudamericana",userMatch.finance.performance
+          );
+        }else{
+          ({hg,ag}=basicScore(ratings.get(String(f.home))||68,ratings.get(String(f.away))||68));
+        }
+
+        f.played=true;f.hg=hg;f.ag=ag;
+      }
+    });
+
+    if(stage==="FINAL"){
+      const f=games[0];
+      const champ=f.hg>f.ag?f.home:f.ag>f.hg?f.away:
+        interactivePenaltyShootout(f,career.owner_club_id,penaltyCorner,"shooter");
+      sula.champion=champ;
+      sula.status="finished";
+      userAlive=false;
+
+      if(String(champ)===String(career.owner_club_id)){
+        await tx(async client=>{
+          await addFinance(client,career.owner_club_id,9000,"prize","Premiação pelo título da Copa Sul-Americana");
+          await recordTrophy(client,career.owner_club_id,career.season_no,"SUDAMERICANA","Campeão da Copa Sul-Americana");
+        });
+      }
+    }else if(leg===1){
+      sula.leg=2;
+    }else{
+      const winners=koWinners(sula,stage,career.owner_club_id,penaltyCorner);
+      userAlive=winners.some(id=>String(id)===String(career.owner_club_id));
+      const next=stage==="R16"?"QF":stage==="QF"?"SF":"FINAL";
+      addKoStage(sula,next,winners);
+      sula.stage=next;
+      sula.leg=1;
+    }
+  }
+
+  attachInteractivePenalty(userMatch,sula.fixtures,career.owner_club_id);
+  career.data.sudamericana=sula;
+  return {userMatch,userAlive,finished:sula.status==="finished"};
+}
+
+async function autoFinishSula(career){
+  for(let i=0;i<20&&career.data.sudamericana?.status!=="finished";i++){
+    await simulateSulaStep(career,false);
+  }
+}
+
+function advanceFastSulaGroup(sula,ownerId,clubMap,userMatches,includeUser=true){
+  while(sula.stage==="GROUP"&&sula.matchday<=6){
+    const games=sula.fixtures.filter(f=>f.stage==="GROUP"&&Number(f.matchday)===Number(sula.matchday)&&!f.played);
+    games.forEach(f=>{
+      const list=includeUser?userMatches:[];
+      playFastFixture(f,sula.entries,clubMap,ownerId,"Copa Sul-Americana",list);
+    });
+    if(sula.matchday>=6){
+      createR16(sula);
+      break;
+    }
+    sula.matchday++;
+  }
+}
+
+function advanceFastSulaKnockout(sula,ownerId,clubMap,userMatches,includeUser=true){
+  while(sula.status!=="finished"&&sula.stage!=="GROUP"){
+    const stage=sula.stage;
+    const leg=stage==="FINAL"?1:Number(sula.leg||1);
+    const games=sula.fixtures.filter(f=>f.stage===stage&&Number(f.leg)===leg&&!f.played);
+
+    games.forEach(f=>{
+      const list=includeUser?userMatches:[];
+      playFastFixture(f,null,clubMap,ownerId,"Copa Sul-Americana",list);
+    });
+
+    if(stage==="FINAL"){
+      const f=games[0]||sula.fixtures.find(x=>x.stage==="FINAL");
+      if(!f){sula.status="finished";break}
+      sula.champion=f.hg>f.ag?f.home:f.ag>f.hg?f.away:penaltyShootout(f);
+      sula.status="finished";
+      break;
+    }
+
+    if(leg===1){
+      sula.leg=2;
+    }else{
+      const winners=koWinners(sula,stage);
+      const next=stage==="R16"?"QF":stage==="QF"?"SF":"FINAL";
+      addKoStage(sula,next,winners);
+      sula.stage=next;
+      sula.leg=1;
+    }
+  }
+}
+
+async function finishFastSudamericana(career,ownerId,clubMap,userMatches,includeUser=true){
+  const sula=career.data.sudamericana;
+  if(!sula)return;
+  if(sula.stage==="GROUP")advanceFastSulaGroup(sula,ownerId,clubMap,userMatches,includeUser);
+  if(sula.status!=="finished")advanceFastSulaKnockout(sula,ownerId,clubMap,userMatches,includeUser);
+  career.data.sudamericana=sula;
+
+  if(String(sula.champion||"")===String(ownerId)){
+    await tx(async client=>{
+      const fresh=await recordTrophy(client,ownerId,career.season_no,"SUDAMERICANA","Campeão da Copa Sul-Americana");
+      if(fresh)await addFinance(client,ownerId,9000,"prize","Premiação pelo título da Copa Sul-Americana");
+    });
+  }
+
+  if(includeUser||career.phase==="SUDAMERICANA")career.phase="END";
+}
+
+
 async function makeChampionsLeague(career,includeOwner=false){
   const ownerId=Number(career.owner_club_id);
   const needed=includeOwner?35:36;
@@ -5913,6 +6211,7 @@ async function settleFastSeasonSummary(ownerId,career,userMatches){
   for(const m of userMatches){
     let context=career.user_division||"D";
     if(String(m.matchType||"").toLowerCase().includes("libertadores"))context="LIB";
+    else if(String(m.matchType||"").toLowerCase().includes("sul-americana"))context="SULA";
     else if(String(m.matchType||"").toLowerCase().includes("champions"))context="LIB";
     else if(String(m.matchType||"").toLowerCase().includes("mundial"))context="LIB";
     else if(String(m.matchType||"").toLowerCase().includes("copa"))context="CUP";
@@ -5976,7 +6275,27 @@ async function simulateFullClubSeason(ownerId){
       const top4=sortEntries(career.data.divisions.A.entries).slice(0,4);
       const leagueQualified=career.user_division==="A"&&top4.some(e=>String(e.clubId)===String(ownerId));
 
-      if(SOUTH_AMERICA_COUNTRIES.has(country)){
+      if(country==="BR"){
+        const qualification=libertadoresQualificationInfo(career,ownerId);
+        const sulaQualification=sudamericanaQualificationInfo(career,ownerId);
+        if(!career.data.libertadores)await makeLibertadores(career);
+        if(!career.data.sudamericana)await makeSudamericana(career);
+
+        if(qualification.qualified){
+          career.phase="LIBERTADORES";
+          await finishFastLibertadores(career,ownerId,clubMap,userMatches,true);
+          await finishFastSudamericana(career,ownerId,clubMap,userMatches,false);
+          await maybeStartClubWorldCup(career);
+        }else if(sulaQualification.qualified){
+          await finishFastLibertadores(career,ownerId,clubMap,userMatches,false);
+          career.phase="SUDAMERICANA";
+          await finishFastSudamericana(career,ownerId,clubMap,userMatches,true);
+        }else{
+          await finishFastLibertadores(career,ownerId,clubMap,userMatches,false);
+          await finishFastSudamericana(career,ownerId,clubMap,userMatches,false);
+          await maybeStartClubWorldCup(career);
+        }
+      }else if(SOUTH_AMERICA_COUNTRIES.has(country)){
         const qualification=libertadoresQualificationInfo(career,ownerId);
         if(!career.data.libertadores)await makeLibertadores(career);
         if(qualification.qualified){
@@ -6000,6 +6319,10 @@ async function simulateFullClubSeason(ownerId){
   if(career.phase==="LIBERTADORES"){
     await finishFastLibertadores(career,ownerId,clubMap,userMatches,true);
     await maybeStartClubWorldCup(career);
+  }
+
+  if(career.phase==="SUDAMERICANA"){
+    await finishFastSudamericana(career,ownerId,clubMap,userMatches,true);
   }
 
   if(career.phase==="CHAMPIONS"){
@@ -6139,7 +6462,24 @@ async function playNational(ownerId){
     const tableA=sortEntries(career.data.divisions.A.entries);
     const userTop4A=career.user_division==="A"&&tableA.slice(0,4).some(e=>String(e.clubId)===String(ownerId));
 
-    if(SOUTH_AMERICA_COUNTRIES.has(country)){
+    if(country==="BR"){
+      const qualification=libertadoresQualificationInfo(career,ownerId);
+      const sulaQualification=sudamericanaQualificationInfo(career,ownerId);
+      await makeLibertadores(career);
+      await makeSudamericana(career);
+
+      if(qualification.qualified){
+        career.phase="LIBERTADORES";
+        await autoFinishSula(career);
+      }else if(sulaQualification.qualified){
+        await autoFinishLib(career);
+        career.phase="SUDAMERICANA";
+      }else{
+        await autoFinishLib(career);
+        await autoFinishSula(career);
+        await maybeStartClubWorldCup(career);
+      }
+    }else if(SOUTH_AMERICA_COUNTRIES.has(country)){
       const qualification=libertadoresQualificationInfo(career,ownerId);
       await makeLibertadores(career);
       if(qualification.qualified){
@@ -6184,6 +6524,27 @@ async function playLib(ownerId,penaltyCorner=null){
     await maybeStartClubWorldCup(career);
   }
   await advanceCalendar(career,ownerId,4,"Libertadores");
+  await saveCareer(career);
+  return {...r,phase:career.phase};
+}
+
+
+async function playSudamericana(ownerId,penaltyCorner=null){
+  const career=await getCareer(ownerId);
+  if(!career||career.phase!=="SUDAMERICANA"){
+    throw Object.assign(new Error("Você não está na Copa Sul-Americana agora."),{status:400});
+  }
+
+  const r=await simulateSulaStep(career,true,penaltyCorner);
+
+  if(r.finished){
+    career.phase="END";
+  }else if(!r.userAlive){
+    await autoFinishSula(career);
+    career.phase="END";
+  }
+
+  await advanceCalendar(career,ownerId,4,"Copa Sul-Americana");
   await saveCareer(career);
   return {...r,phase:career.phase};
 }
@@ -6407,7 +6768,24 @@ async function repairCareer(ownerId){
       const top4=sortEntries(career.data.divisions.A.entries).slice(0,4);
       const leagueQualified=career.user_division==="A"&&top4.some(e=>String(e.clubId)===String(ownerId));
 
-      if(SOUTH_AMERICA_COUNTRIES.has(country)){
+      if(country==="BR"){
+        const qualification=libertadoresQualificationInfo(career,ownerId);
+        const sulaQualification=sudamericanaQualificationInfo(career,ownerId);
+        if(!career.data.libertadores){await makeLibertadores(career);changed=true}
+        if(!career.data.sudamericana){await makeSudamericana(career);changed=true}
+
+        if(qualification.qualified){
+          career.phase="LIBERTADORES";
+          if(career.data.sudamericana?.status!=="finished")await autoFinishSula(career);
+        }else if(sulaQualification.qualified){
+          if(career.data.libertadores?.status!=="finished")await autoFinishLib(career);
+          career.phase="SUDAMERICANA";
+        }else{
+          if(career.data.libertadores?.status!=="finished")await autoFinishLib(career);
+          if(career.data.sudamericana?.status!=="finished")await autoFinishSula(career);
+          await maybeStartClubWorldCup(career);
+        }
+      }else if(SOUTH_AMERICA_COUNTRIES.has(country)){
         const qualification=libertadoresQualificationInfo(career,ownerId);
         if(!career.data.libertadores){await makeLibertadores(career);changed=true}
         if(qualification.qualified)career.phase="LIBERTADORES";
@@ -6445,6 +6823,24 @@ async function repairCareer(ownerId){
       if(!active){
         await autoFinishLib(career);
         await maybeStartClubWorldCup(career);changed=true;
+      }
+    }
+  }
+
+  if(career.phase==="SUDAMERICANA"){
+    const sula=career.data.sudamericana;
+    if(sula?.status==="finished"){
+      if(String(sula.champion)===String(ownerId)){
+        await tx(async client=>{await recordTrophy(client,ownerId,career.season_no,"SUDAMERICANA","Campeão da Copa Sul-Americana")});
+      }
+      career.phase="END";
+      changed=true;
+    }else if(sula&&sula.stage!=="GROUP"){
+      const active=sula.fixtures.some(f=>f.stage===sula.stage&&!f.played&&(String(f.home)===String(ownerId)||String(f.away)===String(ownerId)));
+      if(!active){
+        await autoFinishSula(career);
+        career.phase="END";
+        changed=true;
       }
     }
   }
@@ -6500,6 +6896,10 @@ async function hydrateCareer(career){
     career.data.libertadores.entries.forEach(e=>ids.add(e.clubId));
     career.data.libertadores.fixtures.forEach(f=>{ids.add(f.home);ids.add(f.away)});
   }
+  if(career.data.sudamericana){
+    career.data.sudamericana.entries.forEach(e=>ids.add(e.clubId));
+    career.data.sudamericana.fixtures.forEach(f=>{ids.add(f.home);ids.add(f.away)});
+  }
   if(career.data.championsLeague){
     career.data.championsLeague.entries.forEach(e=>ids.add(e.clubId));
     career.data.championsLeague.fixtures.forEach(f=>{ids.add(f.home);ids.add(f.away)});
@@ -6539,6 +6939,15 @@ async function hydrateCareer(career){
       championClub:career.data.libertadores.champion?map.get(String(career.data.libertadores.champion)):null
     };
   }
+  let sula=null;
+  if(career.data.sudamericana){
+    sula={
+      ...career.data.sudamericana,
+      entries:career.data.sudamericana.entries.map(hEntry),
+      fixtures:career.data.sudamericana.fixtures.map(hFix),
+      championClub:career.data.sudamericana.champion?map.get(String(career.data.sudamericana.champion)):null
+    };
+  }
   let champions=null;
   if(career.data.championsLeague){
     champions={
@@ -6572,7 +6981,7 @@ async function hydrateCareer(career){
       user_division:career.user_division,current_round:career.current_round,
       super_world_season:isSuperWorldSeason(career.season_no)
     },
-    divisions,state:stateObj,libertadores:lib,championsLeague:champions,clubWorldCup:world,copaBrasil:copa,calendar:calendarSummary(career,0)
+    divisions,state:stateObj,libertadores:lib,sudamericana:sula,championsLeague:champions,clubWorldCup:world,copaBrasil:copa,calendar:calendarSummary(career,0)
   };
 }
 
@@ -8391,6 +8800,19 @@ app.post("/api/libertadores/play-next",auth,async(req,res,next)=>{
     res.json(await withCompetitionLock(c.id,async()=>{await repairCareer(c.id);const r=await playLib(c.id,req.body?.penaltyCorner);await mediaAfterCompetitionAction(c.id,"lib",r);return r}));
   }catch(e){next(e)}
 });
+
+app.post("/api/sudamericana/play-next",auth,async(req,res,next)=>{
+  try{
+    const c=await userClub(req.user.id);
+    res.json(await withCompetitionLock(c.id,async()=>{
+      await repairCareer(c.id);
+      const r=await playSudamericana(c.id,req.body?.penaltyCorner);
+      await mediaAfterCompetitionAction(c.id,"sula",r);
+      return r;
+    }));
+  }catch(e){next(e)}
+});
+
 app.post("/api/champions/play-next",auth,async(req,res,next)=>{
   try{
     const c=await userClub(req.user.id);

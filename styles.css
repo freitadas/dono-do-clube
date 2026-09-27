@@ -1092,3 +1092,16 @@ repeating-linear-gradient(0deg,#1e7d43 0,#1e7d43 56px,#237f47 56px,#237f47 112px
     margin-right:-4px;
   }
 }
+
+
+/* v48 — Copa Sul-Americana */
+.sula-qualified-banner{
+  margin:0 0 12px;
+  padding:10px 12px;
+  border:1px solid rgba(219,152,43,.42);
+  border-radius:10px;
+  background:rgba(219,152,43,.10);
+}
+.sula-champion{
+  background:linear-gradient(135deg,rgba(206,132,32,.16),rgba(30,94,56,.10));
+}
