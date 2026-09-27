@@ -1330,3 +1330,15 @@ Reformulação ampla do modo jogador: personalidade e objetivo de carreira, núm
 - Fase de grupos + quartas + semifinal + final.
 - Táticas, formações, convocação automática, confiança da federação, histórico e títulos.
 - Pênaltis interativos também nas partidas de seleção.
+
+
+## v51 — Outras ligas no modo treinador
+- Nova aba `Outras Ligas` dentro de Competições.
+- Consulta dos 30 países jogáveis e das divisões A, B, C e D.
+- Classificação completa com pontos, vitórias, empates, derrotas, gols e saldo.
+- Resultados e próximos jogos por rodada.
+- Tabelas estrangeiras avançam de forma sincronizada com a temporada.
+- Simulação determinística: a mesma temporada/rodada mantém os mesmos resultados.
+- O país da própria carreira usa a classificação real já disputada.
+- Zonas visuais de Champions, Europa League, Conference League, Libertadores, Sul-Americana, acesso e rebaixamento.
+- Clubes das outras ligas podem ser abertos para consulta do elenco.

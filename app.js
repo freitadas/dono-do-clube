@@ -17,6 +17,7 @@ const state={
   playerExpansion:{agent:true,media:true,sponsorship:true,awards:true,nationalTeam:true,legacy:true},
   europeOffersExpansion:true,
   newsFilter:"all",newsSearch:"",newsSort:"latest",
+  otherLeague:{country:null,division:"A",data:null,loading:false,error:null,roundView:null},
   view:"home",authMode:"login",competitionTab:"STATE",roundByDiv:{A:1,B:1,C:1,D:1}
 };
 
@@ -124,6 +125,7 @@ async function refreshPlayerCareer(){
   state.activeType="player";
 }
 async function refreshAll(){
+  if(state.otherLeague)state.otherLeague.data=null;
   const c=await api("/api/competitions");
   const d=await api("/api/dashboard");
   const nt=await api("/api/national-team").catch(()=>({job:null,offers:[]}));
@@ -2079,13 +2081,187 @@ function copaView(){
     }).join("")}
   </div>`;
 }
+
+function defaultOtherLeagueCountry(){
+  const own=state.competitions?.career?.country_code||state.club?.country_code||"BR";
+  const preferred=["ENG","ESP","ITA","GER","FRA","POR","NED","ARG","BR"];
+  return preferred.find(c=>c!==own&&state.countries?.[c])||
+    Object.keys(state.countries||{}).find(c=>c!==own)||
+    own;
+}
+function ensureOtherLeagueSelection(){
+  if(!state.otherLeague)state.otherLeague={country:null,division:"A",data:null,loading:false,error:null,roundView:null};
+  if(!state.otherLeague.country||!state.countries?.[state.otherLeague.country]){
+    state.otherLeague.country=defaultOtherLeagueCountry();
+    state.otherLeague.data=null;
+    state.otherLeague.roundView=null;
+  }
+  if(!["A","B","C","D"].includes(state.otherLeague.division))state.otherLeague.division="A";
+}
+async function loadOtherLeague({silent=false}={}){
+  ensureOtherLeagueSelection();
+  if(state.otherLeague.loading)return;
+  state.otherLeague.loading=true;
+  state.otherLeague.error=null;
+  if(!silent)render();
+
+  try{
+    const country=encodeURIComponent(state.otherLeague.country);
+    const division=encodeURIComponent(state.otherLeague.division);
+    const data=await api(`/api/other-leagues?country=${country}&division=${division}`);
+    state.otherLeague.data=data;
+    if(
+      !state.otherLeague.roundView ||
+      Number(state.otherLeague.roundView)<1 ||
+      Number(state.otherLeague.roundView)>Number(data.totalRounds||38)
+    ){
+      state.otherLeague.roundView=Number(data.currentRound||1);
+    }
+  }catch(err){
+    state.otherLeague.data=null;
+    state.otherLeague.error=err.message;
+  }finally{
+    state.otherLeague.loading=false;
+    render();
+  }
+}
+function otherLeagueZoneClass(zone){
+  return zone?.key?` other-zone-${zone.key}`:"";
+}
+function otherLeagueLegend(data){
+  if(!data||data.division!=="A"){
+    return `<div class="other-league-legend">
+      <span class="promotion">● Acesso</span>
+      ${data?.division!=="D"?`<span class="relegation">● Rebaixamento</span>`:""}
+    </div>`;
+  }
+  const cc=data.countryCode;
+  if(["ENG","ESP","ITA","GER","FRA","POR","NED","BEL","TUR","SCO","AUT","SUI","DEN","NOR","SWE","POL","CZE","CRO","GRE"].includes(cc)){
+    return `<div class="other-league-legend">
+      <span class="champions">● Champions</span><span class="europa">● Europa League</span>
+      <span class="conference">● Conference</span><span class="relegation">● Rebaixamento</span>
+    </div>`;
+  }
+  if(cc==="BR"){
+    return `<div class="other-league-legend">
+      <span class="libertadores">● Libertadores</span><span class="sudamericana">● Sul-Americana</span>
+      <span class="relegation">● Rebaixamento</span>
+    </div>`;
+  }
+  if(["ARG","URU","COL","CHI","ECU","PER"].includes(cc)){
+    return `<div class="other-league-legend">
+      <span class="libertadores">● Libertadores</span><span class="relegation">● Rebaixamento</span>
+    </div>`;
+  }
+  return `<div class="other-league-legend"><span class="relegation">● Rebaixamento</span></div>`;
+}
+function otherLeaguesView(){
+  ensureOtherLeagueSelection();
+  const ol=state.otherLeague;
+  const data=ol.data;
+  const countrySelect=Object.entries(state.countries||{}).map(([code,c])=>
+    `<option value="${code}" ${ol.country===code?"selected":""}>${esc(c.flag||"")} ${esc(c.name)}</option>`
+  ).join("");
+  const divisionSelect=["A","B","C","D"].map(div=>
+    `<option value="${div}" ${ol.division===div?"selected":""}>${esc(leagueLabel(div,ol.country))}</option>`
+  ).join("");
+
+  const filters=`<div class="other-leagues-toolbar">
+    <label><small>PAÍS</small><select id="otherLeagueCountry">${countrySelect}</select></label>
+    <label><small>LIGA</small><select id="otherLeagueDivision">${divisionSelect}</select></label>
+    <button id="refreshOtherLeague" class="secondary" ${ol.loading?"disabled":""}>${ol.loading?"CARREGANDO...":"Atualizar"}</button>
+  </div>`;
+
+  if(ol.loading&&!data){
+    return `${filters}<div class="other-league-loading"><b>Carregando liga...</b><span>Calculando classificação e resultados.</span></div>`;
+  }
+  if(ol.error&&!data){
+    return `${filters}<div class="empty"><h2>Não foi possível abrir a liga</h2><p>${esc(ol.error)}</p></div>`;
+  }
+  if(!data){
+    return `${filters}<div class="empty"><h2>🌍 Outras ligas</h2><p>Escolha um país e uma divisão para acompanhar a classificação.</p></div>`;
+  }
+
+  const round=Math.min(Number(data.totalRounds||38),Math.max(1,Number(ol.roundView||data.currentRound||1)));
+  const games=(data.fixtures||[]).filter(f=>Number(f.round)===round);
+  const roundOptions=Array.from({length:Number(data.totalRounds||38)},(_,i)=>i+1)
+    .map(r=>`<option value="${r}" ${r===round?"selected":""}>Rodada ${r}</option>`).join("");
+
+  return `<div class="other-leagues-page">
+    ${filters}
+
+    <div class="other-league-hero">
+      <div class="other-league-flag">${esc(data.flag||"🌍")}</div>
+      <div>
+        <div class="kicker">CENTRAL DE LIGAS</div>
+        <h2>${esc(data.leagueName)}</h2>
+        <p>${esc(data.countryName)} · Temporada ${data.seasonNo}</p>
+      </div>
+      <div class="other-league-summary">
+        <span><small>RODADAS DISPUTADAS</small><b>${data.completedRound}/38</b></span>
+        <span><small>NÍVEL MÉDIO</small><b>${data.averageRating}</b></span>
+        <span><small>FONTE</small><b>${data.source==="career"?"Carreira":"Simulação"}</b></span>
+      </div>
+    </div>
+
+    ${otherLeagueLegend(data)}
+
+    <div class="other-league-layout">
+      <section class="other-league-table-panel">
+        <div class="section-title">
+          <div><div class="kicker">CLASSIFICAÇÃO</div><h2>${esc(data.leagueName)}</h2></div>
+          <span class="badge">${data.table?.length||0} clubes</span>
+        </div>
+        <div class="table-wrap">
+          <table class="other-league-table">
+            <thead><tr><th>#</th><th>Clube</th><th>J</th><th>V</th><th>E</th><th>D</th><th>GP</th><th>GC</th><th>SG</th><th>PTS</th></tr></thead>
+            <tbody>${(data.table||[]).map(e=>`<tr class="clickable${otherLeagueZoneClass(e.zone)}" data-club="${e.clubId}">
+              <td><b>${e.position}</b></td>
+              <td class="other-club-cell">${crestHtml(e.club,"tiny")}<span>${esc(e.club?.name||"Clube")}${e.zone?`<small>${esc(e.zone.label)}</small>`:""}</span></td>
+              <td>${e.played}</td><td>${e.wins}</td><td>${e.draws}</td><td>${e.losses}</td>
+              <td>${e.gf}</td><td>${e.ga}</td><td>${e.gd>0?"+":""}${e.gd}</td><td><b>${e.points}</b></td>
+            </tr>`).join("")}</tbody>
+          </table>
+        </div>
+      </section>
+
+      <aside class="other-league-round-panel">
+        <div class="section-title">
+          <div><div class="kicker">JOGOS</div><h2>Rodada</h2></div>
+          <select id="otherLeagueRound">${roundOptions}</select>
+        </div>
+        <div class="other-league-fixtures">
+          ${games.map(f=>`<button class="other-league-match ${f.played?"played":"future"}" data-club="${f.home}">
+            <span>${esc(f.homeClub?.name||"Mandante")}</span>
+            <b>${f.played?`${f.hg} × ${f.ag}`:"×"}</b>
+            <span>${esc(f.awayClub?.name||"Visitante")}</span>
+          </button>`).join("")||`<div class="empty">Nenhum jogo nesta rodada.</div>`}
+        </div>
+        <div class="other-league-round-status">
+          ${round<=Number(data.completedRound||0)
+            ?`Resultados já processados na temporada.`
+            :round===Number(data.currentRound||1)
+              ?`Próxima rodada da liga.`
+              :`Rodada futura.`}
+        </div>
+      </aside>
+    </div>
+
+    <div class="other-league-note">
+      ${data.source==="career"
+        ?"Esta é a classificação real da liga dentro da sua carreira."
+        :"As outras ligas avançam de forma sincronizada com a temporada da sua carreira. Os resultados são estáveis para a mesma temporada e rodada."}
+    </div>
+  </div>`;
+}
+
 function competitionsView(){
   const car=state.competitions.career;
   const country=car.country_code||state.club.country_code||"BR";
   const isBR=country==="BR";
   const isEurope=["ENG","ESP","ITA","GER","FRA","POR","NED","BEL","TUR","SCO","AUT","SUI","DEN","NOR","SWE","POL","CZE","CRO","GRE"].includes(country);
   const isSouthAmerica=["BR","ARG","URU","COL","CHI","ECU","PER"].includes(country);
-  const allowed=["STATE","COPA","A","B","C","D","LIB","SULA","CHAMPIONS","EUROPA","CONFERENCE","WORLD"];
+  const allowed=["STATE","COPA","A","B","C","D","LIB","SULA","CHAMPIONS","EUROPA","CONFERENCE","WORLD","OTHER"];
 
   if(!allowed.includes(state.competitionTab))state.competitionTab=car.user_division;
   if(!isBR&&state.competitionTab==="STATE")state.competitionTab=car.user_division;
@@ -2104,6 +2280,7 @@ function competitionsView(){
     state.competitionTab==="EUROPA"?europaLeagueView():
     state.competitionTab==="CONFERENCE"?conferenceLeagueView():
     state.competitionTab==="WORLD"?clubWorldCupView():
+    state.competitionTab==="OTHER"?otherLeaguesView():
     divisionView(state.competitionTab);
 
   return `<section class="card">
@@ -2115,6 +2292,7 @@ function competitionsView(){
       ${isBR?`<button data-comp="SULA" class="${state.competitionTab==="SULA"?"on":""}">SUL-AMERICANA</button>`:""}
       ${isEurope?`<button data-comp="CHAMPIONS" class="${state.competitionTab==="CHAMPIONS"?"on":""}">CHAMPIONS</button><button data-comp="EUROPA" class="${state.competitionTab==="EUROPA"?"on":""}">EUROPA</button><button data-comp="CONFERENCE" class="${state.competitionTab==="CONFERENCE"?"on":""}">CONFERENCE</button>`:""}
       <button data-comp="WORLD" class="${state.competitionTab==="WORLD"?"on":""}">MUNDIAL</button>
+      <button data-comp="OTHER" class="${state.competitionTab==="OTHER"?"on":""}">🌍 OUTRAS LIGAS</button>
     </div>
     ${content}
   </section>`;
@@ -4166,8 +4344,38 @@ function bindFriends(){
   app.querySelectorAll(".remove-friend").forEach(b=>b.onclick=async()=>{if(!confirm("Remover amigo?"))return;try{await api(`/api/friends/${b.dataset.id}`,{method:"DELETE"});await refreshAll();render()}catch(err){alert(err.message)}});
 }
 function bindCompetitions(){
-  app.querySelectorAll("[data-comp]").forEach(b=>b.onclick=()=>{state.competitionTab=b.dataset.comp;render()});
+  app.querySelectorAll("[data-comp]").forEach(b=>b.onclick=async()=>{
+    state.competitionTab=b.dataset.comp;
+    if(state.competitionTab==="OTHER"){
+      ensureOtherLeagueSelection();
+      if(!state.otherLeague.data)await loadOtherLeague();
+      else render();
+    }else render();
+  });
   app.querySelectorAll("[data-club]").forEach(r=>r.onclick=()=>showClub(r.dataset.club));
+
+  const otherCountry=app.querySelector("#otherLeagueCountry");
+  if(otherCountry)otherCountry.onchange=async()=>{
+    state.otherLeague.country=otherCountry.value;
+    state.otherLeague.data=null;
+    state.otherLeague.roundView=null;
+    await loadOtherLeague();
+  };
+  const otherDivision=app.querySelector("#otherLeagueDivision");
+  if(otherDivision)otherDivision.onchange=async()=>{
+    state.otherLeague.division=otherDivision.value;
+    state.otherLeague.data=null;
+    state.otherLeague.roundView=null;
+    await loadOtherLeague();
+  };
+  const otherRound=app.querySelector("#otherLeagueRound");
+  if(otherRound)otherRound.onchange=()=>{
+    state.otherLeague.roundView=Number(otherRound.value);
+    render();
+  };
+  const refreshOther=app.querySelector("#refreshOtherLeague");
+  if(refreshOther)refreshOther.onclick=async()=>await loadOtherLeague();
+
   const rs=app.querySelector("#roundSelect");
   if(rs)rs.onchange=()=>{state.roundByDiv[state.competitionTab]=Number(rs.value);render()};
   const ps=app.querySelector("#playState");if(ps)ps.onclick=async()=>{ps.disabled=true;await careerAction("state")};

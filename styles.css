@@ -1121,3 +1121,47 @@ repeating-linear-gradient(0deg,#1e7d43 0,#1e7d43 56px,#237f47 56px,#237f47 112px
 .player-uefa-card{margin-top:18px;padding:14px;border:1px solid var(--line);border-radius:13px;background:rgba(44,75,105,.07)}
 .player-uefa-card .mini-table{width:100%}
 .player-uefa-card .user-row{background:rgba(52,139,91,.14)}
+
+
+/* v51 — Central de outras ligas */
+.other-leagues-page{display:grid;gap:13px}
+.other-leagues-toolbar{display:flex;gap:8px;align-items:end;flex-wrap:wrap;padding:10px;border:1px solid var(--line);border-radius:12px;background:rgba(255,255,255,.025)}
+.other-leagues-toolbar label{display:grid;gap:4px;min-width:190px;flex:1}
+.other-leagues-toolbar small{font-size:8px;font-weight:900;letter-spacing:.07em;color:var(--muted)}
+.other-leagues-toolbar select{min-height:39px}
+.other-league-loading{display:grid;gap:4px;place-items:center;min-height:190px;border:1px dashed var(--line);border-radius:12px;color:var(--muted)}
+.other-league-hero{display:grid;grid-template-columns:auto 1fr auto;gap:15px;align-items:center;padding:16px;border:1px solid var(--line);border-radius:14px;background:linear-gradient(135deg,rgba(37,92,67,.15),rgba(42,64,94,.12))}
+.other-league-flag{font-size:46px}
+.other-league-hero h2{margin:3px 0}.other-league-hero p{margin:0;color:var(--muted)}
+.other-league-summary{display:flex;gap:7px;flex-wrap:wrap;justify-content:flex-end}
+.other-league-summary span{display:grid;gap:2px;min-width:92px;padding:8px 10px;text-align:center;border-radius:9px;border:1px solid var(--line);background:rgba(255,255,255,.035)}
+.other-league-summary small{font-size:7px;color:var(--muted);letter-spacing:.05em}.other-league-summary b{font-size:14px}
+.other-league-legend{display:flex;gap:12px;flex-wrap:wrap;font-size:9px;font-weight:800}
+.other-league-legend .champions{color:#6aa7ff}.other-league-legend .europa{color:#e99a45}.other-league-legend .conference{color:#60bd82}
+.other-league-legend .libertadores{color:#6aa7ff}.other-league-legend .sudamericana{color:#e6a34c}
+.other-league-legend .promotion{color:#66c68b}.other-league-legend .relegation{color:#e27474}
+.other-league-layout{display:grid;grid-template-columns:minmax(0,1.55fr) minmax(280px,.65fr);gap:12px;align-items:start}
+.other-league-table-panel,.other-league-round-panel{padding:12px;border:1px solid var(--line);border-radius:12px;background:var(--panel)}
+.other-league-table tbody tr{border-left:3px solid transparent}
+.other-league-table tbody tr.other-zone-champions,.other-league-table tbody tr.other-zone-libertadores{border-left-color:#4a8be8}
+.other-league-table tbody tr.other-zone-europa,.other-league-table tbody tr.other-zone-sudamericana{border-left-color:#db8b35}
+.other-league-table tbody tr.other-zone-conference,.other-league-table tbody tr.other-zone-promotion{border-left-color:#45a96e}
+.other-league-table tbody tr.other-zone-relegation{border-left-color:#c95c5c}
+.other-club-cell{display:flex;align-items:center;gap:7px;min-width:180px}
+.other-club-cell>span{display:grid;gap:1px}.other-club-cell small{font-size:7px;color:var(--muted);font-weight:700}
+.crest.tiny{width:24px;height:24px;min-width:24px;font-size:7px}
+.other-league-fixtures{display:grid;gap:5px}
+.other-league-match{display:grid;grid-template-columns:1fr 50px 1fr;gap:6px;align-items:center;width:100%;padding:9px;border:1px solid var(--line);border-radius:9px;background:transparent;color:var(--text);text-align:left}
+.other-league-match span:last-child{text-align:right}.other-league-match b{text-align:center}
+.other-league-match.future{opacity:.72}
+.other-league-round-status,.other-league-note{font-size:9px;color:var(--muted);padding:9px 0}
+.other-league-note{padding:10px;border:1px dashed var(--line);border-radius:9px}
+@media(max-width:900px){
+  .other-league-layout{grid-template-columns:1fr}
+  .other-league-hero{grid-template-columns:auto 1fr}.other-league-summary{grid-column:1/-1;justify-content:flex-start}
+}
+@media(max-width:620px){
+  .other-leagues-toolbar{display:grid;grid-template-columns:1fr 1fr}.other-leagues-toolbar label{min-width:0}.other-leagues-toolbar button{grid-column:1/-1}
+  .other-league-hero{grid-template-columns:1fr;text-align:center}.other-league-summary{justify-content:center}
+  .other-league-table{font-size:9px}.other-league-table th:nth-child(7),.other-league-table td:nth-child(7),.other-league-table th:nth-child(8),.other-league-table td:nth-child(8){display:none}
+}

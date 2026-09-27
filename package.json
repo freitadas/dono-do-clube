@@ -1,8 +1,8 @@
 {
   "name": "dono-do-clube",
-  "version": "50.0.0",
+  "version": "51.0.0",
   "private": true,
-  "description": "Dono do Clube v50 — Champions, Europa League e Conference League no treinador e jogador",
+  "description": "Dono do Clube v51 — central para acompanhar outras ligas no modo treinador",
   "main": "server.js",
   "scripts": {
     "start": "node server.js"

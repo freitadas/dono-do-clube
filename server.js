@@ -9804,6 +9804,190 @@ app.post("/api/career/manual-save",auth,async(req,res,next)=>{
   }catch(e){next(e)}
 });
 
+
+function otherLeagueCompletedRound(career){
+  if(!career)return 0;
+  if(career.phase==="NATIONAL")return clamp(Number(career.current_round||1)-1,0,38);
+  if(["LIBERTADORES","SUDAMERICANA","CHAMPIONS","EUROPA","CONFERENCE","CLUB_WORLD_CUP","END"].includes(career.phase))return 38;
+  return 0;
+}
+
+function seededUnit(seed,index){
+  return (sponsorHash(`${seed}|${index}`)+1)/4294967297;
+}
+function seededPoisson(lambda,seed){
+  const L=Math.exp(-Math.max(.05,lambda));
+  let k=0,p=1;
+  while(p>L&&k<9){
+    k++;
+    p*=seededUnit(seed,k);
+  }
+  return Math.max(0,k-1);
+}
+function deterministicLeagueScore(seasonNo,country,division,round,home,away,homeRating,awayRating){
+  const seed=`other-league|${seasonNo}|${country}|${division}|${round}|${home}|${away}`;
+  const diff=Number(homeRating||64)-Number(awayRating||64);
+  const homeLambda=clamp(1.34+diff*.032,.30,3.20);
+  const awayLambda=clamp(1.05-diff*.030,.22,2.90);
+  return {
+    hg:Math.min(6,seededPoisson(homeLambda,`${seed}|H`)),
+    ag:Math.min(6,seededPoisson(awayLambda,`${seed}|A`))
+  };
+}
+
+function otherLeagueZone(country,division,position){
+  const pos=Number(position);
+  if(division!=="A"){
+    if(pos<=4)return {key:"promotion",label:"Acesso"};
+    if(division!=="D"&&pos>=17)return {key:"relegation",label:"Rebaixamento"};
+    return null;
+  }
+  if(EUROPE_COUNTRIES.has(country)){
+    if(pos<=4)return {key:"champions",label:"Champions"};
+    if(pos<=6)return {key:"europa",label:"Europa League"};
+    if(pos<=8)return {key:"conference",label:"Conference"};
+    if(pos>=17)return {key:"relegation",label:"Rebaixamento"};
+    return null;
+  }
+  if(country==="BR"){
+    if(pos<=4)return {key:"libertadores",label:"Libertadores"};
+    if(pos<=10)return {key:"sudamericana",label:"Sul-Americana"};
+    if(pos>=17)return {key:"relegation",label:"Rebaixamento"};
+    return null;
+  }
+  if(SOUTH_AMERICA_COUNTRIES.has(country)){
+    if(pos<=4)return {key:"libertadores",label:"Libertadores"};
+    if(pos>=17)return {key:"relegation",label:"Rebaixamento"};
+    return null;
+  }
+  if(pos>=17)return {key:"relegation",label:"Rebaixamento"};
+  return null;
+}
+
+async function otherLeagueSnapshot(career,country,division){
+  const countryInfo=COUNTRY_DATA[country];
+  if(!countryInfo)throw Object.assign(new Error("País inválido."),{status:400});
+  if(!DIVS.includes(division))throw Object.assign(new Error("Divisão inválida."),{status:400});
+
+  const completedTarget=otherLeagueCompletedRound(career);
+  let entries=[];
+  let fixtures=[];
+  let clubRows=[];
+  let source="simulated";
+
+  // Quando o usuário consulta o próprio país, mostramos a competição real
+  // da carreira, exatamente com os resultados já disputados.
+  if(country===career.country_code&&career.data?.divisions?.[division]){
+    const div=career.data.divisions[division];
+    entries=JSON.parse(JSON.stringify(div.entries||[]));
+    fixtures=JSON.parse(JSON.stringify(div.fixtures||[]));
+    const ids=[...new Set(entries.map(e=>Number(e.clubId)).filter(Boolean))];
+    clubRows=(await q(`
+      SELECT id,name,primary_color,secondary_color,crest_data,base_rating,team_rating,is_ai,country_code
+      FROM clubs WHERE id=ANY($1::bigint[])
+    `,[ids])).rows;
+    source="career";
+  }else{
+    clubRows=(await q(`
+      SELECT id,name,primary_color,secondary_color,crest_data,base_rating,team_rating,is_ai,country_code
+      FROM clubs
+      WHERE is_ai=TRUE
+        AND club_kind='national'
+        AND country_code=$1
+        AND national_seed_division=$2
+      ORDER BY base_rating DESC,name
+      LIMIT 20
+    `,[country,division])).rows;
+
+    if(clubRows.length!==20){
+      throw Object.assign(new Error(`${countryInfo.divisions?.[division]||"A liga"} possui ${clubRows.length}/20 clubes disponíveis.`),{status:409});
+    }
+
+    const ids=clubRows.map(c=>Number(c.id));
+    entries=ids.map(blankEntry);
+    fixtures=doubleRR(ids).flatMap((games,ri)=>games.map(([home,away])=>({
+      round:ri+1,home,away,played:false,hg:null,ag:null
+    })));
+
+    const ratings=new Map(clubRows.map(c=>[
+      String(c.id),
+      Number(c.base_rating||c.team_rating||64)
+    ]));
+
+    for(const f of fixtures){
+      if(Number(f.round)>completedTarget)continue;
+      const score=deterministicLeagueScore(
+        career.season_no,country,division,f.round,f.home,f.away,
+        ratings.get(String(f.home)),ratings.get(String(f.away))
+      );
+      f.played=true;f.hg=score.hg;f.ag=score.ag;
+      applyResult(findEntry(entries,f.home),score.hg,score.ag);
+      applyResult(findEntry(entries,f.away),score.ag,score.hg);
+    }
+  }
+
+  const map=new Map(clubRows.map(c=>[String(c.id),c]));
+  const sorted=sortEntries(entries).map((e,index)=>{
+    const club=map.get(String(e.clubId))||null;
+    const position=index+1;
+    return {
+      ...e,
+      position,
+      played:Number(e.wins||0)+Number(e.draws||0)+Number(e.losses||0),
+      gd:Number(e.gf||0)-Number(e.ga||0),
+      club,
+      zone:otherLeagueZone(country,division,position)
+    };
+  });
+
+  const hydratedFixtures=fixtures.map(f=>({
+    ...f,
+    homeClub:map.get(String(f.home))||null,
+    awayClub:map.get(String(f.away))||null
+  }));
+
+  const playedRounds=hydratedFixtures.filter(f=>f.played).map(f=>Number(f.round)||0);
+  const completedRound=playedRounds.length?Math.max(...playedRounds):0;
+  const currentRound=Math.min(38,Math.max(1,completedRound+1));
+  const averageRating=clubRows.length
+    ?Math.round(clubRows.reduce((n,c)=>n+Number(c.base_rating||c.team_rating||64),0)/clubRows.length)
+    :0;
+
+  return {
+    countryCode:country,
+    countryName:countryInfo.name,
+    flag:countryInfo.flag||"",
+    division,
+    leagueName:countryInfo.divisions?.[division]||`Divisão ${division}`,
+    seasonNo:Number(career.season_no||1),
+    source,
+    completedRound,
+    currentRound,
+    totalRounds:38,
+    averageRating,
+    table:sorted,
+    fixtures:hydratedFixtures
+  };
+}
+
+app.get("/api/other-leagues",auth,async(req,res,next)=>{
+  try{
+    const club=await userClub(req.user.id);
+    if(!club)return res.status(404).json({error:"Carreira de clube não encontrada."});
+    const career=await repairCareer(club.id);
+    if(!career)return res.status(404).json({error:"Carreira não encontrada."});
+
+    const fallbackCountry=Object.keys(COUNTRY_DATA).find(code=>code!==career.country_code)||career.country_code||"BR";
+    const country=String(req.query.country||fallbackCountry).toUpperCase();
+    const division=String(req.query.division||"A").toUpperCase();
+
+    if(!VALID_COUNTRIES.has(country))return res.status(400).json({error:"País não disponível."});
+    if(!DIVS.includes(division))return res.status(400).json({error:"Divisão inválida."});
+
+    res.json(await otherLeagueSnapshot(career,country,division));
+  }catch(e){next(e)}
+});
+
 app.get("/api/competitions",auth,async(req,res,next)=>{
   try{
     const c=await userClub(req.user.id);
