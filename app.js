@@ -2805,6 +2805,20 @@ function careersView(){
   </section>`;
 }
 
+
+function journalExcerpt(body,max=300){
+  const clean=String(body||"").replace(/\s+/g," ").trim();
+  return clean.length>max?`${clean.slice(0,max).trim()}…`:clean;
+}
+function journalArticleParagraphs(body){
+  const parts=String(body||"").split(/\n{2,}/).map(x=>x.trim()).filter(Boolean);
+  return parts.map((p,i)=>`<p class="${i===0?"journal-lede":""}">${esc(p)}</p>`).join("");
+}
+function journalReadingTime(body){
+  const words=String(body||"").trim().split(/\s+/).filter(Boolean).length;
+  return Math.max(1,Math.ceil(words/190));
+}
+
 function newsGroup(category){
   const c=String(category||"");
   if(["negocios"].includes(c))return "market";
@@ -2897,10 +2911,10 @@ function journalArticleCard(n,compact=false){
   return `<article class="${compact?"journal-story-compact":"journal-story"} importance-${Number(n.importance||1)}" data-news-id="${n.id}">
     <div class="journal-story-meta">
       <span>${newsIcon(n.category)} ${esc(mediaCategoryLabel(n.category))}</span>
-      <span>${esc(n.source_name||"Jornal do Clube")} · ${formatNewsDate(n.created_at)}</span>
+      <span>${esc(n.source_name||"Jornal do Clube")} · ${formatNewsDate(n.created_at)} · ${journalReadingTime(n.body)} min</span>
     </div>
     <h3>${esc(n.headline)}</h3>
-    ${compact?"":`<p>${esc(n.body)}</p>`}
+    ${compact?"":`<p>${esc(journalExcerpt(n.body,340))}</p>`}
     <button class="journal-read" data-open-news="${n.id}">Ler matéria</button>
   </article>`;
 }
@@ -2961,10 +2975,10 @@ function newsView(){
     ${featured?`<div class="journal-lead-grid">
       <article class="journal-lead importance-${featured.importance||1}">
         <div class="journal-lead-label">${newsImportanceLabel(featured.importance)}</div>
-        <div class="news-meta"><span>${esc(featured.source_name||"Jornal do Clube")}</span><span>${formatNewsDate(featured.created_at)}</span></div>
+        <div class="news-meta"><span>${esc(featured.source_name||"Jornal do Clube")}</span><span>${formatNewsDate(featured.created_at)} · ${journalReadingTime(featured.body)} min</span></div>
         <span class="news-category">${newsIcon(featured.category)} ${esc(mediaCategoryLabel(featured.category))}</span>
         <h2>${esc(featured.headline)}</h2>
-        <p>${esc(featured.body)}</p>
+        <p>${esc(journalExcerpt(featured.body,520))}</p>
         <button class="journal-read primary" data-open-news="${featured.id}">Abrir matéria</button>
       </article>
       <aside class="journal-secondary">
@@ -3006,7 +3020,7 @@ function newsView(){
       </aside>
     </div>
 
-    <p class="sponsor-disclaimer journal-disclaimer">As notícias desta aba fazem parte da simulação da carreira e são geradas a partir dos acontecimentos do jogo.</p>
+    <p class="sponsor-disclaimer journal-disclaimer">As notícias desta aba fazem parte da simulação da carreira. As matérias completas agora trazem contexto, repercussão e análise em vários parágrafos.</p>
   </section>`;
 }
 
@@ -3021,9 +3035,16 @@ function openJournalArticle(id){
       <button class="secondary close-modal">Fechar</button>
     </div>
     <div class="journal-article-paper">
-      <span class="journal-article-importance">${newsImportanceLabel(n.importance)}</span>
+      <div class="journal-article-topline">
+        <span class="journal-article-importance">${newsImportanceLabel(n.importance)}</span>
+        <span>${journalReadingTime(n.body)} min de leitura</span>
+      </div>
       <h2>${esc(n.headline)}</h2>
-      <p>${esc(n.body)}</p>
+      <div class="journal-article-byline">
+        <span>Por ${esc(n.source_name||"Jornal do Clube")}</span>
+        <span>${formatNewsDate(n.created_at)}</span>
+      </div>
+      <div class="journal-article-content">${journalArticleParagraphs(n.body)}</div>
       <div class="journal-article-footer">
         <span>Temporada ${n.season_no||state.competitions?.career?.season_no||1}</span>
         <span>${esc(state.club?.name||"Clube")}</span>

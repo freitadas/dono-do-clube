@@ -1,8 +1,8 @@
 {
   "name": "dono-do-clube",
-  "version": "51.0.0",
+  "version": "52.0.0",
   "private": true,
-  "description": "Dono do Clube v51 — central para acompanhar outras ligas no modo treinador",
+  "description": "Dono do Clube v52 — Jornal com matérias longas, contexto e análise",
   "main": "server.js",
   "scripts": {
     "start": "node server.js"

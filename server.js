@@ -3789,13 +3789,140 @@ async function settleMatchFinances(client,clubId,context,isHome,result,attendanc
 
 const MEDIA_SOURCES=["Jornal do Clube","Central da Bola","Esporte Agora","Diário do Futebol","Portal da Torcida"];
 function randomMediaSource(){return MEDIA_SOURCES[rand(0,MEDIA_SOURCES.length-1)]}
+
+function journalTemplateIndex(headline,count){
+  return sponsorHash(`journal-v52|${headline}`)%Math.max(1,count);
+}
+function journalParagraphsFor(category,headline,importance=1){
+  const commonClosing=[
+    "A comissão técnica sabe que o impacto de uma notícia não termina no apito final. O ambiente do elenco, a reação da torcida e a resposta nos próximos compromissos podem mudar rapidamente a leitura da temporada.",
+    "Nos bastidores, o entendimento é de que o episódio precisa ser colocado dentro de uma sequência maior. O próximo compromisso servirá como novo termômetro para avaliar a evolução do trabalho.",
+    "A repercussão deve continuar até a próxima partida. Resultado, desempenho e decisões da comissão técnica serão observados de perto enquanto o clube tenta transformar o momento em continuidade."
+  ];
+
+  const byCategory={
+    partida:[
+      "Além do placar, a partida deixa elementos importantes para a sequência da temporada. A regularidade entre um jogo e outro passa a ser tão relevante quanto o resultado isolado, principalmente quando a tabela começa a separar os clubes por objetivos diferentes.",
+      "O resultado também mexe com a leitura interna do elenco. Jogadores em boa fase ganham espaço, enquanto setores que apresentaram dificuldades entram no radar da comissão técnica para ajustes antes do próximo compromisso.",
+      "A análise da rodada vai além dos pontos conquistados ou perdidos. O rendimento coletivo, a capacidade de reação e a forma como a equipe administrou os momentos do jogo passam a pesar nas próximas escolhas do treinador."
+    ],
+    goleada:[
+      "Uma diferença ampla no placar costuma produzir efeitos que ultrapassam a rodada. Quando a vitória é dominante, a confiança cresce e a cobrança por continuidade aumenta; quando a derrota é pesada, a resposta emocional do elenco se torna parte central da preparação.",
+      "Goleadas também alteram a percepção externa sobre o trabalho. Torcida, diretoria e imprensa passam a observar com mais atenção as decisões seguintes, porque resultados desse tamanho normalmente mudam o nível de expectativa ao redor da equipe.",
+      "O tamanho do placar transforma a partida em referência para a temporada. A comissão técnica terá de decidir o que merece ser mantido e o que precisa ser corrigido para que o episódio não seja tratado apenas como um resultado fora da curva."
+    ],
+    eliminacao:[
+      "A eliminação encerra uma frente importante da temporada e obriga o clube a reorganizar prioridades. O calendário pode ficar menos congestionado, mas a pressão por resposta cresce porque a margem para compensar o resultado passa a depender das competições restantes.",
+      "Internamente, a comissão técnica terá de administrar o impacto do resultado sobre confiança, moral e cobrança. A diretoria acompanha de perto a reação do grupo, principalmente nos jogos imediatamente posteriores à queda.",
+      "Fora de campo, a eliminação também influencia o ambiente. A torcida cobra explicações, a imprensa aumenta o escrutínio e decisões sobre elenco e planejamento passam a ser avaliadas com mais rigor."
+    ],
+    classificacao:[
+      "A posição na tabela é um retrato do momento, mas a distância para os concorrentes ajuda a dimensionar o desafio. A partir desta fase da temporada, pequenas sequências de vitórias ou tropeços podem provocar mudanças rápidas na classificação.",
+      "O cenário também interfere no planejamento de curto prazo. O clube passa a calcular confrontos diretos, desgaste do elenco e a necessidade de administrar jogadores para manter competitividade até as últimas rodadas.",
+      "A briga por objetivos diferentes deixa a tabela mais sensível. Cada rodada pode aproximar o time de vagas continentais, acesso, título ou, no extremo oposto, aumentar a preocupação com a parte inferior."
+    ],
+    negocios:[
+      "A movimentação de mercado precisa ser analisada além dos valores envolvidos. Idade, contrato, necessidade esportiva, profundidade do elenco e impacto na folha salarial entram na conta antes de qualquer decisão.",
+      "Nos bastidores, negociações também alteram a hierarquia do grupo. A chegada de um jogador pode aumentar a disputa por posição, enquanto uma saída importante exige reposição e pode mudar o planejamento para o restante da temporada.",
+      "O departamento de futebol trabalha com duas frentes: resolver necessidades imediatas e evitar comprometer as próximas temporadas. Por isso, propostas atraentes financeiramente nem sempre representam a melhor decisão esportiva."
+    ],
+    outros_clubes:[
+      "O resultado interessa diretamente ao restante da competição porque altera a pressão sobre os clubes próximos na tabela. A disputa deixa de depender apenas do próprio desempenho e passa a ser influenciada pelo ritmo dos concorrentes.",
+      "A comissão técnica acompanha esses movimentos porque a sequência dos rivais ajuda a definir prioridades. Confrontos diretos, saldo de gols e distância em pontos ganham peso conforme a temporada avança.",
+      "O acompanhamento dos adversários também serve como referência de desempenho. Mudanças de forma, sequências positivas e tropeços recorrentes podem alterar o cenário de classificação em poucas rodadas."
+    ],
+    goleada_outros:[
+      "O placar chamou atenção porque resultados amplos costumam influenciar a percepção sobre a força dos concorrentes. Uma atuação dominante pode mudar o nível de confiança de um rival e aumentar a pressão sobre quem disputa posições próximas.",
+      "Para os demais clubes, a goleada vira informação de scouting. Forma de jogar, momento do adversário e capacidade ofensiva passam a ser observados com mais cuidado nos próximos confrontos.",
+      "A rodada ganha uma nova referência quando um time impõe uma diferença tão grande. O desafio agora é descobrir se o desempenho será repetido ou se ficou restrito a uma partida atípica."
+    ],
+    coletiva:[
+      "As declarações públicas do treinador ajudam a definir o ambiente em torno do clube. Uma resposta pode proteger o elenco, assumir responsabilidade ou elevar a cobrança, e esses sinais passam a fazer parte da narrativa da temporada.",
+      "A forma como a comissão técnica se comunica também influencia a relação com torcida e imprensa. Em momentos de pressão, o discurso pode ser tão observado quanto as escolhas feitas dentro de campo.",
+      "A coletiva não encerra o assunto. O comportamento da equipe na partida seguinte será usado para medir se o discurso apresentado encontrou resposta prática no desempenho."
+    ],
+    bastidores:[
+      "A decisão tem efeito direto na rotina do clube, mesmo quando não aparece imediatamente no placar. Gestão de elenco, confiança, planejamento e relação com a diretoria podem mudar a partir de movimentos realizados fora de campo.",
+      "No dia a dia, medidas administrativas e esportivas se cruzam. O treinador precisa equilibrar resultado imediato com decisões que afetam a estabilidade do grupo ao longo de toda a temporada.",
+      "O verdadeiro impacto tende a aparecer nas semanas seguintes. A evolução do desempenho e a reação do elenco indicarão se a escolha fortaleceu ou aumentou a pressão sobre o projeto."
+    ],
+    saf:[
+      "A estrutura de uma SAF coloca o resultado esportivo ao lado de metas financeiras e administrativas. O clube precisa crescer sem perder controle sobre orçamento, dívida e compromissos assumidos com o investidor.",
+      "Decisões de investimento podem acelerar o projeto, mas também elevam a cobrança. Quanto maior o aporte e a ambição, maior tende a ser a expectativa por evolução esportiva e sustentabilidade.",
+      "O balanço entre campo e finanças será acompanhado durante toda a temporada. Contratações, receitas e resultados passam a fazer parte da mesma avaliação do projeto."
+    ],
+    titulo:[
+      "A conquista transforma a temporada e altera o patamar de expectativa sobre o clube. Além do troféu, o título fortalece a confiança do elenco, melhora a imagem do trabalho e aumenta a pressão para manter o nível competitivo.",
+      "Nos bastidores, o resultado também influencia planejamento e mercado. Um time campeão se torna mais atraente para jogadores, patrocinadores e possíveis negociações, ao mesmo tempo em que precisa lidar com valorização do próprio elenco.",
+      "A celebração, porém, divide espaço com o calendário. A comissão técnica terá de administrar a recuperação física e emocional para que a conquista não provoque queda de rendimento nas competições restantes."
+    ],
+    institucional:[
+      "A temporada será acompanhada não apenas pelos resultados, mas também pelas decisões que constroem o projeto esportivo. Mercado, finanças, gestão de elenco e relação com a diretoria terão espaço permanente na cobertura.",
+      "O jornal acompanhará o desenvolvimento da carreira rodada a rodada, registrando mudanças de contexto e acontecimentos que ajudam a explicar a trajetória do clube.",
+      "A proposta é formar um histórico da temporada. Assim, cada notícia passa a representar parte de uma narrativa maior, e não apenas um registro isolado."
+    ],
+    temporada:[
+      "O encerramento ou a abertura de um ciclo permite avaliar o clube de maneira mais ampla. Posição final, evolução do elenco, desempenho financeiro e resultados nas copas ajudam a definir o tamanho real do progresso.",
+      "O planejamento da próxima etapa começa antes mesmo da primeira partida. Contratos, reforços, metas da diretoria e calendário precisam ser equilibrados para evitar que uma área comprometa a outra.",
+      "A nova temporada também redefine expectativas. O desempenho anterior serve de referência, mas o clube precisará construir novamente sua posição dentro de campo."
+    ]
+  };
+
+  const list=byCategory[category]||byCategory.bastidores;
+  const start=journalTemplateIndex(headline,list.length);
+  const paragraphs=[
+    list[start],
+    list[(start+1)%list.length]
+  ];
+  if(Number(importance||1)>=2){
+    paragraphs.push(commonClosing[journalTemplateIndex(`${headline}|close`,commonClosing.length)]);
+  }
+  return paragraphs;
+}
+
+function expandJournalBody(category,headline,body,importance=1){
+  const original=String(body||"").trim();
+  if(!original)return original;
+  // Matérias já ampliadas não são duplicadas.
+  if(original.includes("\n\n")&&original.length>=620)return original;
+
+  const extras=journalParagraphsFor(category,headline,importance);
+  const paragraphs=[original,...extras];
+
+  if(Number(importance||1)>=3){
+    paragraphs.push(
+      "A partir de agora, a resposta do clube será avaliada em duas frentes: o comportamento competitivo dentro de campo e a capacidade de manter estabilidade nas decisões de gestão. Em uma temporada longa, o impacto real deste episódio será definido pela sequência."
+    );
+  }
+  return paragraphs.join("\n\n");
+}
+
+async function ensureExpandedJournalNews(client,clubId){
+  const rows=(await client.query(`
+    SELECT id,category,headline,body,importance
+    FROM media_news
+    WHERE club_id=$1 AND length(body)<620
+    ORDER BY id DESC
+    LIMIT 80
+  `,[clubId])).rows;
+
+  for(const n of rows){
+    const expanded=expandJournalBody(n.category,n.headline,n.body,n.importance);
+    if(expanded!==n.body){
+      await client.query(`UPDATE media_news SET body=$2 WHERE id=$1`,[n.id,expanded]);
+    }
+  }
+}
+
 async function publishNews(client,clubId,seasonNo,category,headline,body,importance=1,sourceName=null){
   const source=sourceName||randomMediaSource();
+  const level=clamp(Number(importance||1),1,3);
+  const longBody=expandJournalBody(category,headline,body,level);
   const r=await client.query(`
     INSERT INTO media_news(club_id,season_no,category,source_name,headline,body,importance)
     VALUES($1,$2,$3,$4,$5,$6,$7)
     RETURNING *
-  `,[clubId,Number(seasonNo||1),category,source,headline,body,clamp(Number(importance||1),1,3)]);
+  `,[clubId,Number(seasonNo||1),category,source,headline,longBody,level]);
   return r.rows[0];
 }
 
@@ -9334,6 +9461,7 @@ app.get("/api/dashboard",auth,async(req,res,next)=>{
     Object.assign(c,freshClub);
     c.team_rating=await clubRating(c.id);
     const career=await getCareer(c.id);
+    await ensureExpandedJournalNews(pool,c.id);
     Object.assign(c,(await q(`SELECT * FROM clubs WHERE id=$1`,[c.id])).rows[0]||c);
     await tx(async client=>{
       await ensureInitialNews(client,c.id,career?.season_no||1,c.name);

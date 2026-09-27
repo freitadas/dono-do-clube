@@ -1165,3 +1165,84 @@ repeating-linear-gradient(0deg,#1e7d43 0,#1e7d43 56px,#237f47 56px,#237f47 112px
   .other-league-hero{grid-template-columns:1fr;text-align:center}.other-league-summary{justify-content:center}
   .other-league-table{font-size:9px}.other-league-table th:nth-child(7),.other-league-table td:nth-child(7),.other-league-table th:nth-child(8),.other-league-table td:nth-child(8){display:none}
 }
+
+
+/* v52 — matérias longas no Jornal */
+.journal-story p{
+  display:-webkit-box;
+  -webkit-line-clamp:5;
+  -webkit-box-orient:vertical;
+  overflow:hidden;
+}
+.journal-lead>p{
+  display:-webkit-box;
+  -webkit-line-clamp:7;
+  -webkit-box-orient:vertical;
+  overflow:hidden;
+}
+.journal-article-modal{
+  width:min(860px,94vw);
+  max-width:860px;
+  max-height:92vh;
+  overflow:auto;
+}
+.journal-article-paper{
+  padding:30px 34px;
+}
+.journal-article-topline{
+  display:flex;
+  align-items:center;
+  justify-content:space-between;
+  gap:12px;
+  color:#746d5e;
+  font-size:9px;
+  text-transform:uppercase;
+  letter-spacing:.06em;
+}
+.journal-article-byline{
+  display:flex;
+  justify-content:space-between;
+  gap:12px;
+  margin:0 0 21px;
+  padding:9px 0 12px;
+  border-bottom:1px solid #c8c0ad;
+  color:#746d5e;
+  font-size:10px;
+}
+.journal-article-content{
+  max-width:720px;
+  margin:0 auto;
+}
+.journal-article-content p{
+  margin:0 0 18px;
+  font-family:Georgia,serif;
+  font-size:16px;
+  line-height:1.75;
+  color:#3c493f;
+}
+.journal-article-content .journal-lede{
+  font-size:18px;
+  line-height:1.65;
+  color:#26382b;
+  font-weight:600;
+}
+.journal-article-content .journal-lede::first-letter{
+  float:left;
+  font-size:46px;
+  line-height:.8;
+  padding:7px 7px 0 0;
+  font-weight:800;
+  color:#17281d;
+}
+.journal-article-paper h2{
+  max-width:760px;
+  font-size:34px;
+  margin:12px auto 10px;
+}
+@media(max-width:620px){
+  .journal-article-paper{padding:21px 17px}
+  .journal-article-paper h2{font-size:27px}
+  .journal-article-content p{font-size:15px;line-height:1.68}
+  .journal-article-content .journal-lede{font-size:16px}
+  .journal-article-byline{display:grid}
+}

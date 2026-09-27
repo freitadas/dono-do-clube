@@ -1342,3 +1342,11 @@ Reformulação ampla do modo jogador: personalidade e objetivo de carreira, núm
 - O país da própria carreira usa a classificação real já disputada.
 - Zonas visuais de Champions, Europa League, Conference League, Libertadores, Sul-Americana, acesso e rebaixamento.
 - Clubes das outras ligas podem ser abertos para consulta do elenco.
+
+
+## v52 — Jornal com matérias mais completas
+- Toda nova notícia agora recebe vários parágrafos de contexto e repercussão.
+- Matérias importantes recebem análise adicional.
+- Notícias antigas e curtas do clube são ampliadas automaticamente ao abrir o jogo.
+- Cards mostram apenas uma prévia para não poluir a tela.
+- A matéria completa abre em modo de leitura com vários parágrafos, autoria, data e tempo estimado de leitura.
