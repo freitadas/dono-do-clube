@@ -1405,3 +1405,26 @@ Reformulação ampla do modo jogador: personalidade e objetivo de carreira, núm
 - Saves já bugados são reparados automaticamente ao carregar a carreira.
 - O grupo e os resultados já disputados pelo usuário são preservados.
 - Os grupos ausentes são preenchidos e simulados até a mesma rodada já alcançada.
+
+
+## v58 — Estratégias da SAF com dinheiro de temporada
+- As três decisões do conselho da SAF agora liberam dinheiro para gastar na temporada.
+- Sustentável: +10% do orçamento anual.
+- Equilibrada: +20% do orçamento anual.
+- Ambiciosa: +35% do orçamento anual.
+- Os valores aparecem nos botões, na confirmação e no resultado final da escolha.
+
+
+## v59 — Bônus extra da estratégia SAF
+- A escolha da estratégia não "libera" parte de um orçamento já existente.
+- Ela faz o clube ganhar dinheiro adicional, somado diretamente ao caixa atual.
+- Sustentável: bônus extra de 10% do orçamento anual de referência.
+- Equilibrada: bônus extra de 20%.
+- Ambiciosa: bônus extra de 35%.
+- O bônus é registrado como `saf_strategy_bonus`.
+
+
+## v60 — Correção real da Libertadores
+- Reconstrói os grupos da Libertadores a partir dos jogos salvos quando a tabela estiver corrompida.
+- Corrige o defeito em que apenas o Grupo A aparece preenchido e os Grupos B–H ficam vazios.
+- Recalcula a classificação da fase de grupos com base nos resultados já disputados.

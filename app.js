@@ -3179,9 +3179,20 @@ function boardView(){
   </section>`;
 }
 
+function safStrategyPackages(saf){
+  const annual=Math.max(0,Number(saf?.annualBudget||0));
+  const round=v=>Math.round(v/100)*100;
+  return {
+    sustainable:{label:"Sustentável",capital:round(annual*.10),text:"Mais paciência, menos pressão"},
+    balanced:{label:"Equilibrada",capital:round(annual*.20),text:"Aporte extra moderado"},
+    ambitious:{label:"Ambiciosa",capital:round(annual*.35),text:"Mais dinheiro, cobrança maior"}
+  };
+}
+
 function safProjectCard(){
   const saf=state.saf||{active:false,offers:[]};
   const car=state.competitions?.career;
+  const packages=safStrategyPackages(saf);
   if(saf.active){
     const debt=Boolean(saf.debtRisk);
     const covenant=Boolean(saf.covenantRisk);
@@ -3205,11 +3216,11 @@ function safProjectCard(){
         debt?`<div class="saf-risk">⚠️ O clube está no vermelho. Se a temporada terminar assim, ${from==="D"?"o time permanecerá na divisão mais baixa sob sanção":`cairá de ${esc(leagueLabel(from,car?.country_code))} para ${esc(leagueLabel(to,car?.country_code))}`}.</div>`:
         `<div class="saf-ok">✓ Situação financeira dentro do acordo com o investidor.</div>`}
       <div class="saf-board-room">
-        <div><div class="kicker">REUNIÃO ANUAL DO CONSELHO</div><p class="muted">${saf.boardDecisionUsed?"A estratégia desta temporada já foi definida.":"Escolha uma estratégia. Só é possível uma decisão por temporada."}</p></div>
+        <div><div class="kicker">REUNIÃO ANUAL DO CONSELHO</div><p class="muted">${saf.boardDecisionUsed?"A estratégia desta temporada já foi definida.":"Escolha uma estratégia. Só é possível uma decisão por temporada. Cada opção faz o clube GANHAR dinheiro a mais, somado ao caixa que você já tem."}</p></div>
         <div class="saf-board-actions">
-          <button type="button" class="secondary saf-board-decision" data-decision="sustainable" ${saf.boardDecisionUsed?"disabled":""}>🌱 Sustentável<small>Mais paciência, menos pressão</small></button>
-          <button type="button" class="secondary saf-board-decision" data-decision="balanced" ${saf.boardDecisionUsed?"disabled":""}>⚖️ Equilibrada<small>Aporte extra moderado</small></button>
-          <button type="button" class="secondary saf-board-decision" data-decision="ambitious" ${saf.boardDecisionUsed?"disabled":""}>🔥 Ambiciosa<small>Mais dinheiro, cobrança maior</small></button>
+          <button type="button" class="secondary saf-board-decision" data-decision="sustainable" ${saf.boardDecisionUsed?"disabled":""}>🌱 Sustentável<small>${packages.sustainable.text}</small><small>GANHA +${Number(packages.sustainable.capital||0).toLocaleString("pt-BR")} moedas extras</small></button>
+          <button type="button" class="secondary saf-board-decision" data-decision="balanced" ${saf.boardDecisionUsed?"disabled":""}>⚖️ Equilibrada<small>${packages.balanced.text}</small><small>GANHA +${Number(packages.balanced.capital||0).toLocaleString("pt-BR")} moedas extras</small></button>
+          <button type="button" class="secondary saf-board-decision" data-decision="ambitious" ${saf.boardDecisionUsed?"disabled":""}>🔥 Ambiciosa<small>${packages.ambitious.text}</small><small>GANHA +${Number(packages.ambitious.capital||0).toLocaleString("pt-BR")} moedas extras</small></button>
         </div>
       </div>
     </div>`;
@@ -4762,13 +4773,15 @@ function bindClub(){
 
   app.querySelectorAll(".saf-board-decision").forEach(btn=>btn.onclick=async()=>{
     const labels={sustainable:"Sustentável",balanced:"Equilibrada",ambitious:"Ambiciosa"};
-    if(!confirm(`Definir a estratégia ${labels[btn.dataset.decision]||btn.dataset.decision} para esta temporada?`))return;
+    const packages=safStrategyPackages(state.saf||{});
+    const info=packages[btn.dataset.decision]||{capital:0};
+    if(!confirm(`Definir a estratégia ${labels[btn.dataset.decision]||btn.dataset.decision} para esta temporada?\n\nVocê GANHARÁ +${Number(info.capital||0).toLocaleString("pt-BR")} moedas extras, somadas ao seu caixa atual.`))return;
     btn.disabled=true;
     try{
       const d=await api("/api/saf/board-decision",{method:"POST",body:JSON.stringify({decision:btn.dataset.decision})});
       await refreshAll();
       render();
-      alert(d.resultText||"Estratégia da SAF definida.");
+      alert((d.resultText||"Estratégia da SAF definida.") + (d.capital?`\n\nDinheiro ganho a mais: +${Number(d.capital).toLocaleString("pt-BR")} moedas.`:""));
     }catch(err){alert(err.message);btn.disabled=false}
   });
 

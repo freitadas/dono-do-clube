@@ -1513,3 +1513,10 @@ repeating-linear-gradient(0deg,#1e7d43 0,#1e7d43 56px,#237f47 56px,#237f47 112px
   padding:18px 8px;
   color:var(--muted);
 }
+
+
+/* v59 — bônus adicional da estratégia SAF */
+.saf-board-decision small:last-child{
+  font-weight:900;
+  color:var(--text);
+}

@@ -5754,6 +5754,31 @@ function safOffersForCareer(career){
     };
   });
 }
+function safBoardDecisionPackage(annual,decision){
+  const budget=Math.max(0,Number(annual||0));
+  const round=v=>Math.round(v/100)*100;
+  if(decision==="sustainable")return {
+    label:"Sustentável",
+    capital:round(budget*.10),
+    board:5,pressure:-4,patience:6,
+    objective:"equilíbrio financeiro, redução de risco e valorização da base",
+    resultText:`O conselho aprovou uma linha sustentável e concedeu um bônus EXTRA de ${round(budget*.10).toLocaleString("pt-BR")} moedas, somado ao dinheiro que o clube já possuía, com menos pressão e mais tolerância para desenvolver a base.`
+  };
+  if(decision==="balanced")return {
+    label:"Equilibrada",
+    capital:round(budget*.20),
+    board:2,pressure:1,patience:1,
+    objective:"crescimento esportivo com orçamento controlado",
+    resultText:`O conselho aprovou uma linha equilibrada e concedeu um bônus EXTRA de ${round(budget*.20).toLocaleString("pt-BR")} moedas, somado ao caixa atual do clube, mantendo uma política de risco controlada.`
+  };
+  return {
+    label:"Ambiciosa",
+    capital:round(budget*.35),
+    board:-4,pressure:7,patience:-8,
+    objective:"resultado imediato, classificação e contratações de impacto",
+    resultText:`O conselho aprovou uma linha ambiciosa e concedeu um bônus EXTRA de ${round(budget*.35).toLocaleString("pt-BR")} moedas, somado ao caixa atual do clube, mas elevou a cobrança por resultados imediatos.`
+  };
+}
 async function safSummary(club,career){
   if(!club)return {active:false,offers:[]};
   const active=Boolean(club.is_saf);
@@ -8155,6 +8180,70 @@ function libertadoresIntegrity(lib){
   return {valid,counts,fixtureCounts,entries:entries.length,unique:uniqueIds.size};
 }
 
+function rebuildLibertadoresEntriesFromFixtures(lib){
+  if(!lib)return false;
+  const groups="ABCDEFGH".split("");
+  const fixtures=Array.isArray(lib.fixtures)?lib.fixtures:[];
+  const oldEntries=Array.isArray(lib.entries)?lib.entries:[];
+  const previous=new Map(
+    oldEntries
+      .filter(e=>e&&e.clubId)
+      .map(e=>[String(e.clubId),{...blankEntry(Number(e.clubId)),...e,clubId:Number(e.clubId)}])
+  );
+
+  let changed=false;
+  const rebuilt=[];
+  const used=new Set();
+
+  for(const g of groups){
+    const fixtureIds=[...new Set(
+      fixtures
+        .filter(f=>f&&f.stage==="GROUP"&&f.group===g)
+        .flatMap(f=>[Number(f.home),Number(f.away)])
+        .filter(Boolean)
+    )];
+
+    if(fixtureIds.length===4){
+      fixtureIds.forEach(id=>{
+        const base=previous.get(String(id))||blankEntry(id);
+        rebuilt.push({...base,clubId:id,group:g});
+        used.add(String(id));
+      });
+      changed=true;
+      continue;
+    }
+
+    const existing=oldEntries
+      .filter(e=>e&&Number(e.clubId)&&e.group===g&&!used.has(String(e.clubId)))
+      .slice(0,4);
+    existing.forEach(e=>{
+      rebuilt.push({...blankEntry(Number(e.clubId)),...e,clubId:Number(e.clubId),group:g});
+      used.add(String(e.clubId));
+    });
+  }
+
+  if(changed)lib.entries=rebuilt;
+  return changed;
+}
+
+function recomputeLibertadoresGroupStats(lib){
+  if(!lib||!Array.isArray(lib.entries))return;
+  const entries=lib.entries.filter(e=>e&&e.group);
+  for(const e of entries){
+    e.points=0;e.wins=0;e.draws=0;e.losses=0;e.gf=0;e.ga=0;
+  }
+  for(const f of (Array.isArray(lib.fixtures)?lib.fixtures:[])){
+    if(!(f&&f.stage==="GROUP"&&f.played))continue;
+    const home=findEntry(entries,f.home);
+    const away=findEntry(entries,f.away);
+    if(!home||!away)continue;
+    const hg=Number(f.hg),ag=Number(f.ag);
+    if(!Number.isFinite(hg)||!Number.isFinite(ag))continue;
+    applyResult(home,hg,ag);
+    applyResult(away,ag,hg);
+  }
+}
+
 async function repairLibertadoresGroups(career){
   const lib=career?.data?.libertadores;
   if(!lib||lib.stage!=="GROUP")return false;
@@ -8165,6 +8254,11 @@ async function repairLibertadoresGroups(career){
   const groups="ABCDEFGH".split("");
   if(!Array.isArray(lib.entries))lib.entries=[];
   if(!Array.isArray(lib.fixtures))lib.fixtures=[];
+
+  // Primeiro tenta reconstruir os participantes corretos a partir dos jogos já
+  // gravados. Isso corrige o defeito em que apenas o Grupo A aparece preenchido,
+  // enquanto os demais ficam vazios na tela apesar de a competição já existir.
+  rebuildLibertadoresEntriesFromFixtures(lib);
 
   // Preserva tudo o que já existe no save, principalmente o grupo do usuário
   // e os resultados já disputados.
@@ -8310,7 +8404,11 @@ async function repairLibertadoresGroups(career){
     }
   }
 
-  lib.entries.sort((a,b)=>a.group.localeCompare(b.group));
+  // Recalcula a classificação inteira a partir dos jogos já disputados, para
+  // evitar tabelas vazias ou com estatísticas incoerentes após o reparo.
+  recomputeLibertadoresGroupStats(lib);
+
+  lib.entries.sort((a,b)=>a.group.localeCompare(b.group)||String(a.clubId).localeCompare(String(b.clubId)));
   career.data.libertadores=lib;
 
   const finalIntegrity=libertadoresIntegrity(lib);
@@ -10664,25 +10762,19 @@ app.post("/api/saf/board-decision",auth,async(req,res,next)=>{
       if(used)throw Object.assign(new Error("A reunião estratégica da SAF desta temporada já foi realizada."),{status:409});
 
       const annual=Math.max(0,Number(fresh.saf_annual_budget||0));
-      let capital=0,board=0,pressure=0,patience=0,objective=fresh.saf_objective||"",resultText="";
+      const pack=safBoardDecisionPackage(annual,decision);
+      const capital=Number(pack.capital||0);
+      const board=Number(pack.board||0);
+      const pressure=Number(pack.pressure||0);
+      const patience=Number(pack.patience||0);
+      const objective=pack.objective||fresh.saf_objective||"";
+      const resultText=pack.resultText||"Estratégia definida.";
 
-      if(decision==="sustainable"){
-        board=5;pressure=-4;patience=6;
-        objective="equilíbrio financeiro, redução de risco e valorização da base";
-        resultText="O conselho aprovou uma linha sustentável: menos pressão por contratações e mais tolerância para desenvolver a base.";
-      }else if(decision==="balanced"){
-        capital=Math.round(annual*.15/100)*100;
-        board=2;pressure=1;patience=1;
-        objective="crescimento esportivo com orçamento controlado";
-        resultText=`O conselho liberou ${capital.toLocaleString("pt-BR")} moedas extras para reforços sem alterar a política de risco.`;
-      }else{
-        capital=Math.round(annual*.30/100)*100;
-        board=-4;pressure=7;patience=-8;
-        objective="resultado imediato, classificação e contratações de impacto";
-        resultText=`O conselho liberou ${capital.toLocaleString("pt-BR")} moedas extras, mas elevou a cobrança por resultados imediatos.`;
-      }
-
-      if(capital>0)await addFinance(client,c.id,capital,"saf_capital_call","Aporte extraordinário aprovado pelo conselho da SAF");
+      if(capital>0)await addFinance(
+        client,c.id,capital,
+        "saf_strategy_bonus",
+        `Bônus adicional da estratégia ${pack.label} — dinheiro extra para a temporada`
+      );
       await client.query(`
         UPDATE clubs SET
           board_confidence=GREATEST(0,LEAST(100,board_confidence+$2)),
@@ -10706,7 +10798,12 @@ app.post("/api/saf/board-decision",auth,async(req,res,next)=>{
         resultText,2,"Jornal do Clube"
       );
 
-      return {ok:true,decision,capital,boardDelta:board,pressureDelta:pressure,patienceDelta:patience,objective,resultText};
+      return {
+        ok:true,decision,label:pack.label,
+        capital,extraMoney:capital,
+        boardDelta:board,pressureDelta:pressure,patienceDelta:patience,
+        objective,resultText
+      };
     });
     res.json(result);
   }catch(e){next(e)}
