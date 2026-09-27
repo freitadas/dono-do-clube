@@ -1184,25 +1184,63 @@ function benchPanel(){
   </section>`;
 }
 
+
+const EUROPE_MANAGER_COUNTRIES=new Set(["ENG","ESP","ITA","GER","FRA","POR","NED","BEL","TUR","SCO","AUT","SUI","DEN","NOR","SWE","POL","CZE","CRO","GRE"]);
+function managerOfferCountryLine(o){
+  const country=state.countries?.[o.country_code];
+  const flag=country?.flag||"🌍";
+  const name=country?.name||countryName(o.country_code);
+  const league=leagueLabel(o.national_seed_division||"D",o.country_code);
+  return `${flag} ${name} · ${league}`;
+}
 function managerOffersCard(compact=false){
   const offers=state.realism?.managerOffers||[];
-  if(!offers.length)return "";
+  const europeanCount=offers.filter(o=>EUROPE_MANAGER_COUNTRIES.has(o.country_code)).length;
+
   return `<section class="card manager-offers-card ${compact?"compact":""}">
     <div class="section-title">
-      <div><div class="kicker">📩 MERCADO DE TREINADORES</div><h2>Propostas de outros clubes</h2></div>
-      <span class="badge red">${offers.length}</span>
+      <div><div class="kicker">📩 MERCADO DE TREINADORES</div><h2>Propostas de clubes</h2></div>
+      <span class="badge ${offers.length?"red":""}">${offers.length}</span>
     </div>
-    <p class="muted">Seu desempenho chamou atenção. Aceitar uma proposta troca o clube que você comanda dentro desta mesma carreira e você assume a situação atual da nova equipe.</p>
-    <div class="manager-offer-list">
-      ${offers.map(o=>`<article class="manager-offer">
-        <div><b>${esc(o.club_name)}</b><small>OVR-base ${o.base_rating} · desempenho que gerou a oferta ${o.performance_score}/100${o.coach_name?` · atual treinador ${esc(o.coach_name)}`:""}</small></div>
-        <div class="offer-value"><small>SALÁRIO</small><b>${Number(o.salary||0).toLocaleString("pt-BR")}/mês</b></div>
-        <div class="offer-actions">
-          <button class="primary accept-manager-offer" data-id="${o.id}">Aceitar cargo</button>
-          <button class="danger decline-manager-offer" data-id="${o.id}">Recusar</button>
-        </div>
-      </article>`).join("")}
+
+    <div class="manager-performance-note">
+      <b>🌍 Clubes europeus acompanham seu trabalho</b>
+      <span>As propostas surgem automaticamente por bom desempenho. Quanto melhor sua sequência, campanha e reputação, maior pode ser o nível do clube interessado.</span>
     </div>
+
+    ${offers.length?`
+      <p class="muted">Você pode manter até três propostas pendentes. As ofertas europeias aparecem naturalmente quando seu trabalho chama atenção.</p>
+      <div class="manager-offer-summary">
+        <span>Propostas <b>${offers.length}</b></span>
+        <span>Europeias <b>${europeanCount}</b></span>
+        <span>Reputação <b>${state.realism?.managerReputation??50}</b></span>
+      </div>
+      <div class="manager-offer-list">
+        ${offers.map(o=>{
+          const europe=EUROPE_MANAGER_COUNTRIES.has(o.country_code);
+          const international=String(o.country_code)!==String(state.club?.country_code);
+          return `<article class="manager-offer ${europe?"european-offer":""}">
+            <div class="manager-offer-main">
+              <div class="manager-offer-tags">
+                ${europe?`<span class="manager-europe-badge">EUROPA</span>`:""}
+                ${international?`<span class="manager-international-badge">INTERNACIONAL</span>`:""}
+              </div>
+              <b>${esc(o.club_name)}</b>
+              <small>${esc(managerOfferCountryLine(o))}</small>
+              <small>OVR-base ${o.base_rating} · desempenho ${o.performance_score}/100${o.coach_name?` · atual treinador ${esc(o.coach_name)}`:""}</small>
+            </div>
+            <div class="offer-value"><small>SALÁRIO</small><b>${Number(o.salary||0).toLocaleString("pt-BR")}/mês</b></div>
+            <div class="offer-actions">
+              <button class="primary accept-manager-offer" data-id="${o.id}">Aceitar cargo</button>
+              <button class="danger decline-manager-offer" data-id="${o.id}">Recusar</button>
+            </div>
+          </article>`;
+        }).join("")}
+      </div>
+    `:`<div class="manager-offers-empty">
+      <b>Nenhuma proposta pendente.</b>
+      <span>Continue conseguindo bons resultados. Clubes europeus poderão procurar você automaticamente quando seu desempenho justificar o interesse.</span>
+    </div>`}
   </section>`;
 }
 
@@ -3919,13 +3957,14 @@ function bindManagerOfferButtons(){
   app.querySelectorAll(".accept-manager-offer").forEach(btn=>btn.onclick=async()=>{
     const offer=(state.realism?.managerOffers||[]).find(x=>String(x.id)===String(btn.dataset.id));
     if(!offer)return;
-    if(!confirm(`Aceitar a proposta do ${offer.club_name}?\n\nVocê deixará o clube atual e assumirá a situação esportiva do novo time nesta mesma carreira. O antigo clube continuará controlado pela IA.`))return;
+    const international=String(offer.country_code)!==String(state.club?.country_code);
+    if(!confirm(`Aceitar a proposta do ${offer.club_name}?\n\n${international?`Você mudará para ${countryName(offer.country_code)} e passará a disputar a liga do novo país.`:"Você assumirá a situação esportiva do novo clube nesta mesma liga."}\nO antigo clube continuará controlado pela IA.`))return;
     btn.disabled=true;btn.textContent="ASSUMINDO...";
     try{
       const d=await api(`/api/manager-offers/${btn.dataset.id}/accept`,{method:"POST",body:"{}"});
       state.view="home";
       await bootstrap();
-      alert(`Novo trabalho: você deixou ${d.from} e assumiu ${d.to}.`);
+      alert(`Novo trabalho: você deixou ${d.from} e assumiu ${d.to}.${d.international?`\nNova liga: ${d.countryName}.`:""}`);
     }catch(err){alert(err.message);btn.disabled=false;btn.textContent="Aceitar cargo"}
   });
 }

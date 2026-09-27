@@ -4295,66 +4295,373 @@ async function teamPerformanceProfile(client,clubId,career=null){
   };
 }
 
-async function maybeGenerateManagerJobOffer(client,clubId,career,performance){
-  if(!career||career.phase==="STATE"||career.phase==="END"||!performance?.hot||Number(performance.score||0)<74)return null;
 
-  const pending=(await client.query(`
-    SELECT 1 FROM manager_job_offers
-    WHERE user_club_id=$1 AND status='pending'
-    LIMIT 1
-  `,[clubId])).rowCount>0;
-  if(pending)return null;
+function managerOfferAccessProfile(club,performance){
+  const reputation=Number(club?.manager_reputation||50);
+  const score=Number(performance?.score||0);
+  const games=Number(performance?.games||0);
 
-  const chance=performance.elite ? 1 : 0.28;
-  if(Math.random()>chance)return null;
+  // A reputação controla o nível máximo dos clubes interessados.
+  // O gatilho de proposta, porém, depende somente de bom desempenho.
+  let maxRating=70;
+  let divisions=["C","D"];
+  if(reputation>=50||score>=66){maxRating=74;divisions=["B","C","D"]}
+  if(reputation>=58||score>=72){maxRating=78;divisions=["A","B","C"]}
+  if(reputation>=68||score>=80){maxRating=82;divisions=["A","B"]}
+  if(reputation>=78||score>=88){maxRating=88;divisions=["A","B"]}
 
-  const current=(await client.query(`SELECT * FROM clubs WHERE id=$1`,[clubId])).rows[0];
-  if(!current)return null;
+  const goodPerformance=Boolean(
+    games>=3 &&
+    (
+      performance?.elite ||
+      performance?.hot ||
+      score>=62
+    )
+  );
 
-  const currentDiv=career.user_division||"D";
-  const candidates=(await client.query(`
+  const passiveChance=performance?.elite
+    ?.94
+    :performance?.hot
+      ?.78
+      :score>=78
+        ?.82
+        :score>=70
+          ?.64
+          :score>=62
+            ?.46
+            :0;
+
+  return {
+    reputation,score,games,maxRating,divisions,
+    unlocked:goodPerformance,
+    goodPerformance,
+    passiveChance,
+    maxPending:3
+  };
+}
+
+function managerOfferDivision(club,career){
+  if(String(club.country_code)===String(career?.country_code)){
+    return divisionOfClub(career,club.id)||club.national_seed_division||"D";
+  }
+  return club.national_seed_division||"D";
+}
+
+async function managerEuropeanCandidates(client,clubId,career,current,performance,{limit=40}={}){
+  const access=managerOfferAccessProfile(current,performance);
+  const european=[...EUROPE_COUNTRIES];
+  const rows=(await client.query(`
+    SELECT c.*
+    FROM clubs c
+    WHERE c.is_ai=TRUE
+      AND c.club_kind='national'
+      AND c.country_code=ANY($1::text[])
+      AND c.id<>$2
+      AND c.base_rating BETWEEN $3 AND $4
+      AND c.national_seed_division=ANY($5::text[])
+    ORDER BY
+      CASE WHEN c.country_code<>$6 THEN 0 ELSE 1 END,
+      ABS(c.base_rating-$7),
+      RANDOM()
+    LIMIT $8
+  `,[
+    european,
+    clubId,
+    Math.max(54,Number(current.team_rating||current.base_rating||64)-8),
+    access.maxRating,
+    access.divisions,
+    current.country_code||"",
+    Math.min(access.maxRating,Number(current.team_rating||current.base_rating||64)+5),
+    limit
+  ])).rows;
+
+  return rows;
+}
+
+async function managerDomesticCandidates(client,clubId,career,current,performance,{limit=20}={}){
+  const access=managerOfferAccessProfile(current,performance);
+  return (await client.query(`
     SELECT c.*
     FROM clubs c
     WHERE c.is_ai=TRUE
       AND c.club_kind='national'
       AND c.country_code=$1
       AND c.id<>$2
-      AND c.base_rating >= $3
+      AND c.base_rating BETWEEN $3 AND $4
     ORDER BY
-      CASE WHEN c.base_rating>$4 THEN 0 ELSE 1 END,
+      CASE WHEN c.base_rating>$5 THEN 0 ELSE 1 END,
       c.base_rating DESC,
       RANDOM()
-    LIMIT 12
-  `,[current.country_code||"BR",clubId,Math.max(55,Number(current.team_rating||current.base_rating||64)-2),Number(current.team_rating||current.base_rating||64)])).rows;
+    LIMIT $6
+  `,[
+    current.country_code||"BR",
+    clubId,
+    Math.max(54,Number(current.team_rating||current.base_rating||64)-4),
+    access.maxRating,
+    Number(current.team_rating||current.base_rating||64),
+    limit
+  ])).rows;
+}
 
-  const eligible=candidates.filter(c=>{
-    const div=divisionOfClub(career,c.id);
-    if(!div)return false;
-    return divisionRank(div)>=Math.max(divisionRank(currentDiv),2)||Number(c.base_rating)>Number(current.team_rating||64);
-  });
-  if(!eligible.length)return null;
+async function insertManagerJobOffer(client,clubId,career,current,target,performance){
+  const duplicate=(await client.query(`
+    SELECT 1 FROM manager_job_offers
+    WHERE user_club_id=$1 AND offering_club_id=$2 AND status='pending'
+    LIMIT 1
+  `,[clubId,target.id])).rowCount>0;
+  if(duplicate)return null;
 
-  const target=eligible[rand(0,eligible.length-1)];
   await createRoster(client,target,false);
-  const salary=Math.round((1200+Number(target.base_rating||65)*55+Number(performance.score||0)*18)/100)*100;
+
+  const european=EUROPE_COUNTRIES.has(target.country_code);
+  const international=String(target.country_code)!==String(current.country_code);
+  const prestige=Math.max(0,Number(target.base_rating||65)-65);
+  const salary=Math.round((
+    1400+
+    Number(target.base_rating||65)*62+
+    Number(performance?.score||55)*20+
+    prestige*85+
+    (international?900:0)
+  )/100)*100;
+
   const r=await client.query(`
-    INSERT INTO manager_job_offers(user_club_id,offering_club_id,season_no,salary,performance_score,status)
+    INSERT INTO manager_job_offers(
+      user_club_id,offering_club_id,season_no,salary,performance_score,status
+    )
     VALUES($1,$2,$3,$4,$5,'pending')
     RETURNING *
-  `,[clubId,target.id,career.season_no,salary,performance.score]);
+  `,[clubId,target.id,career.season_no,salary,Number(performance?.score||0)]);
 
+  const destination=`${countryName(target.country_code)} · ${leagueName(target.country_code,target.national_seed_division||"D")}`;
   await client.query(
     `INSERT INTO club_events(club_id,event_type,title,description)
-     VALUES($1,'manager_offer','Proposta para comandar outro clube',$2)`,
-    [clubId,`${target.name} procurou você após a grande fase da equipe. O clube oferece um projeto com remuneração de ${salary.toLocaleString("pt-BR")} moedas por mês.`]
+     VALUES($1,'manager_offer',$2,$3)`,
+    [
+      clubId,
+      european&&international?"Proposta de clube europeu":"Proposta para comandar outro clube",
+      `${target.name} (${destination}) procurou você. A proposta oferece ${salary.toLocaleString("pt-BR")} moedas por mês.`
+    ]
   );
+
   await publishNewsOnce(
     client,clubId,career.season_no,"bastidores",
-    `${target.name} demonstra interesse no treinador de ${current.name}`,
-    `A sequência de bons resultados colocou o trabalho do treinador no radar de outros clubes. ${target.name} formalizou uma proposta para assumir o comando.`,
-    2,"Central da Bola"
+    european&&international
+      ?`${target.name}, da Europa, procura o treinador de ${current.name}`
+      :`${target.name} demonstra interesse no treinador de ${current.name}`,
+    european&&international
+      ?`O trabalho do treinador ganhou repercussão internacional. ${target.name}, de ${countryName(target.country_code)}, formalizou uma proposta de emprego e abriu a possibilidade de mudança para o futebol europeu.`
+      :`A sequência de resultados colocou o trabalho do treinador no radar de outros clubes. ${target.name} formalizou uma proposta para assumir o comando.`,
+    european&&international?3:2,
+    european&&international?"Futebol Internacional":"Central da Bola"
   );
-  return r.rows[0];
+
+  return {...r.rows[0],target};
+}
+
+async function maybeGenerateManagerJobOffer(
+  client,clubId,career,performance,
+  {count=1}={}
+){
+  if(!career||career.phase==="END")return [];
+
+  const current=(await client.query(`SELECT * FROM clubs WHERE id=$1`,[clubId])).rows[0];
+  if(!current)return [];
+
+  const access=managerOfferAccessProfile(current,performance);
+  if(!access.goodPerformance)return [];
+  if(Math.random()>access.passiveChance)return [];
+
+  const pendingRows=(await client.query(`
+    SELECT offering_club_id
+    FROM manager_job_offers
+    WHERE user_club_id=$1 AND status='pending'
+  `,[clubId])).rows;
+  if(pendingRows.length>=access.maxPending)return [];
+
+  const pendingIds=new Set(pendingRows.map(r=>String(r.offering_club_id)));
+  const european=await managerEuropeanCandidates(client,clubId,career,current,performance,{limit:50});
+  const domestic=await managerDomesticCandidates(client,clubId,career,current,performance,{limit:25});
+
+  const europeChance=
+    Number(performance?.score||0)>=82?.82:
+    Number(performance?.score||0)>=74?.72:
+    Number(performance?.score||0)>=66?.62:.52;
+
+  const preferEurope=
+    european.length>0 &&
+    (
+      !EUROPE_COUNTRIES.has(current.country_code)
+        ?Math.random()<europeChance
+        :Math.random()<Math.max(.45,europeChance-.12)
+    );
+
+  const candidatePool=preferEurope?european:[...domestic,...european];
+
+  const eligible=candidatePool.filter(c=>{
+    if(pendingIds.has(String(c.id)))return false;
+    const div=managerOfferDivision(c,career);
+    if(!access.divisions.includes(div)&&String(c.country_code)!==String(current.country_code))return false;
+
+    if(String(c.country_code)===String(current.country_code)){
+      const currentDiv=career.user_division||"D";
+      return divisionRank(div)>=Math.max(divisionRank(currentDiv)-1,1)||
+        Number(c.base_rating)>=Number(current.team_rating||64)-2;
+    }
+    return true;
+  });
+
+  if(!eligible.length)return [];
+
+  const slots=Math.max(0,Math.min(
+    Number(count||1),
+    access.maxPending-pendingRows.length,
+    eligible.length
+  ));
+
+  const created=[];
+  const shuffled=shuffle([...eligible]);
+  for(const target of shuffled.slice(0,slots)){
+    const offer=await insertManagerJobOffer(client,clubId,career,current,target,performance);
+    if(offer)created.push(offer);
+  }
+  return created;
+}
+
+
+
+async function buildManagerCrossCountryCareer(client,ownerId,target,career,oldName,targetName){
+  const countryCode=target.country_code;
+  const targetDiv=target.national_seed_division||"A";
+  const data={
+    state:null,
+    divisions:{},
+    libertadores:null,
+    sudamericana:null,
+    championsLeague:null,
+    europaLeague:null,
+    conferenceLeague:null,
+    clubWorldCup:null,
+    copaBrasil:null,
+    countryCode,
+    calendar:career.data?.calendar?JSON.parse(JSON.stringify(career.data.calendar)):initialCalendar(career.season_no),
+    managerHistory:Array.isArray(career.data?.managerHistory)?JSON.parse(JSON.stringify(career.data.managerHistory)):[]
+  };
+
+  const members={A:[],B:[],C:[],D:[]};
+  for(const div of DIVS){
+    const rows=(await client.query(`
+      SELECT id
+      FROM clubs
+      WHERE is_ai=TRUE
+        AND club_kind='national'
+        AND country_code=$1
+        AND national_seed_division=$2
+      ORDER BY base_rating DESC,name
+      LIMIT 20
+    `,[countryCode,div])).rows.map(r=>Number(r.id));
+
+    if(div===targetDiv){
+      const replaced=rows.map(id=>String(id)===String(target.id)?Number(ownerId):id);
+      if(!replaced.some(id=>String(id)===String(ownerId))){
+        if(replaced.length>=20)replaced[replaced.length-1]=Number(ownerId);
+        else replaced.push(Number(ownerId));
+      }
+      members[div]=[...new Set(replaced)].slice(0,20);
+      while(members[div].length<20){
+        const extra=rows.find(id=>!members[div].some(x=>String(x)===String(id))&&String(id)!==String(target.id));
+        if(!extra)break;
+        members[div].push(extra);
+      }
+    }else{
+      members[div]=rows.filter(id=>String(id)!==String(target.id)).slice(0,20);
+    }
+
+    if(members[div].length!==20){
+      throw new Error(`${leagueName(countryCode,div)} ficou com ${members[div].length} clubes durante a mudança de emprego.`);
+    }
+    data.divisions[div]=divisionObject(members[div]);
+  }
+
+  const allIds=[...new Set(Object.values(members).flat())];
+  const ratingRows=(await client.query(`
+    SELECT id,base_rating,team_rating,is_ai
+    FROM clubs
+    WHERE id=ANY($1::bigint[])
+  `,[allIds.filter(id=>String(id)!==String(ownerId))])).rows;
+  const ratings=new Map(ratingRows.map(c=>[
+    String(c.id),
+    Number(c.is_ai?c.base_rating:(c.team_rating||c.base_rating||64))
+  ]));
+  ratings.set(String(ownerId),Number(target.base_rating||target.team_rating||70));
+
+  const carryRound=career.phase==="NATIONAL"
+    ?Math.min(38,Math.max(1,Number(career.current_round||1)))
+    :Math.min(38,Math.max(1,Number(career.current_round||19)));
+  const completed=Math.max(0,carryRound-1);
+
+  for(const div of DIVS){
+    const league=data.divisions[div];
+    for(const f of league.fixtures){
+      if(Number(f.round)>completed)continue;
+      const sc=deterministicLeagueScore(
+        career.season_no,countryCode,div,f.round,f.home,f.away,
+        ratings.get(String(f.home))||64,
+        ratings.get(String(f.away))||64
+      );
+      f.played=true;f.hg=sc.hg;f.ag=sc.ag;
+      applyResult(findEntry(league.entries,f.home),sc.hg,sc.ag);
+      applyResult(findEntry(league.entries,f.away),sc.ag,sc.hg);
+    }
+  }
+
+  // Copa nacional do novo país: começa disponível no novo trabalho.
+  const cupPool=(await client.query(`
+    SELECT id
+    FROM clubs
+    WHERE is_ai=TRUE
+      AND club_kind='national'
+      AND country_code=$1
+      AND id<>$2
+      AND id<>$3
+    ORDER BY base_rating DESC,RANDOM()
+    LIMIT 31
+  `,[countryCode,target.id,ownerId])).rows.map(r=>Number(r.id));
+
+  if(cupPool.length>=31){
+    const teams=shuffle([Number(ownerId),...cupPool.slice(0,31)]);
+    const fixtures=[];
+    const twoLegged=countryCode==="BR";
+    for(let i=0;i<teams.length;i+=2){
+      const home=teams[i],away=teams[i+1],slot=i/2+1,tie=`R32-${slot}`;
+      fixtures.push({
+        stage:"R32",tie,slot,leg:1,home,away,
+        played:false,hg:null,ag:null,pw:null,penHome:null,penAway:null
+      });
+      if(twoLegged){
+        fixtures.push({
+          stage:"R32",tie,slot,leg:2,home:away,away:home,
+          played:false,hg:null,ag:null,pw:null,penHome:null,penAway:null
+        });
+      }
+    }
+    data.copaBrasil={
+      name:domesticCupName(countryCode),
+      countryCode,twoLegged,status:"active",stage:"R32",leg:1,
+      champion:null,userEliminated:false,fixtures
+    };
+  }
+
+  data.managerHistory.push({
+    season:career.season_no,
+    from:oldName,
+    to:targetName,
+    fromCountry:career.country_code,
+    toCountry:countryCode,
+    date:data.calendar?.date||null,
+    international:true
+  });
+
+  return {data,targetDiv,currentRound:carryRound};
 }
 
 function swapCareerClubReferences(node,a,b,parentKey=""){
@@ -11387,6 +11694,8 @@ app.put("/api/realism/stadium",auth,async(req,res,next)=>{
   }catch(e){next(e)}
 });
 
+
+
 app.post("/api/manager-offers/:offerId/decline",auth,async(req,res,next)=>{
   try{
     const c=await userClub(req.user.id);
@@ -11421,11 +11730,17 @@ app.post("/api/manager-offers/:offerId/accept",auth,async(req,res,next)=>{
       const career=(await client.query(`SELECT * FROM careers WHERE owner_club_id=$1 FOR UPDATE`,[current.id])).rows[0];
       if(!oldClub||!target||!career)throw new Error("Não foi possível carregar a carreira.");
 
-      if(oldClub.country_code!==target.country_code){
-        throw Object.assign(new Error("Nesta versão, propostas de treinador durante a temporada são aceitas apenas dentro do mesmo país."),{status:400});
-      }
+      const crossCountry=String(oldClub.country_code)!==String(target.country_code);
+      const targetDiv=crossCountry
+        ?(target.national_seed_division||"D")
+        :(divisionOfClub(career,target.id)||career.user_division);
 
-      const targetDiv=divisionOfClub(career,target.id)||career.user_division;
+      let internationalCareer=null;
+      if(crossCountry){
+        internationalCareer=await buildManagerCrossCountryCareer(
+          client,oldClub.id,target,career,oldClub.name,target.name
+        );
+      }
       await createRoster(client,target,false);
       const oldName=oldClub.name,targetName=target.name;
       const oldPlayers=(await client.query(`SELECT id FROM players WHERE club_id=$1`,[oldClub.id])).rows.map(x=>Number(x.id));
@@ -11483,23 +11798,49 @@ app.post("/api/manager-offers/:offerId/accept",auth,async(req,res,next)=>{
         oldClub.tactic_style,oldClub.tactic_marking
       ]);
 
-      const data=swapCareerClubReferences(career.data,oldClub.id,target.id);
-      if(!Array.isArray(data.managerHistory))data.managerHistory=[];
-      data.managerHistory.push({
-        season:career.season_no,
-        from:oldName,
-        to:targetName,
-        date:data.calendar?.date||null
-      });
+      if(crossCountry){
+        const moved=internationalCareer;
+        await client.query(`
+          UPDATE careers SET
+            phase='NATIONAL',
+            state_code=$2,
+            country_code=$3,
+            user_division=$4,
+            current_round=$5,
+            data=$6::jsonb,
+            updated_at=NOW()
+          WHERE owner_club_id=$1
+        `,[
+          oldClub.id,
+          target.country_code==="BR"?(target.state_code||""):"",
+          target.country_code,
+          moved.targetDiv,
+          moved.currentRound,
+          JSON.stringify(moved.data)
+        ]);
+      }else{
+        const data=swapCareerClubReferences(career.data,oldClub.id,target.id);
+        if(!Array.isArray(data.managerHistory))data.managerHistory=[];
+        data.managerHistory.push({
+          season:career.season_no,
+          from:oldName,
+          to:targetName,
+          fromCountry:oldClub.country_code,
+          toCountry:target.country_code,
+          date:data.calendar?.date||null,
+          international:false
+        });
 
-      await client.query(`
-        UPDATE careers SET
-          user_division=$2,
-          state_code=$3,
-          data=$4::jsonb,
-          updated_at=NOW()
-        WHERE owner_club_id=$1
-      `,[oldClub.id,targetDiv,target.state_code||"",JSON.stringify(data)]);
+        await client.query(`
+          UPDATE careers SET
+            user_division=$2,
+            state_code=$3,
+            country_code=$4,
+            data=$5::jsonb,
+            updated_at=NOW()
+          WHERE owner_club_id=$1
+        `,[oldClub.id,targetDiv,target.state_code||"",target.country_code,JSON.stringify(data)]);
+      }
 
       await client.query(`UPDATE sponsorship_contracts SET status='completed' WHERE club_id=$1 AND status='active'`,[oldClub.id]);
       await client.query(`UPDATE manager_job_offers SET status=CASE WHEN id=$2 THEN 'accepted' ELSE 'declined' END WHERE user_club_id=$1 AND status='pending'`,[oldClub.id,offerId]);
@@ -11507,10 +11848,23 @@ app.post("/api/manager-offers/:offerId/accept",auth,async(req,res,next)=>{
       await client.query(
         `INSERT INTO club_events(club_id,event_type,title,description)
          VALUES($1,'manager_offer','Novo desafio profissional',$2)`,
-        [oldClub.id,`Você deixou ${oldName} e aceitou a proposta para comandar ${targetName}. A carreira continua a partir da situação atual do novo clube.`]
+        [
+          oldClub.id,
+          crossCountry
+            ?`Você deixou ${oldName} e aceitou a proposta internacional do ${targetName}, de ${countryName(target.country_code)}. A carreira foi transferida para a nova liga.`
+            :`Você deixou ${oldName} e aceitou a proposta para comandar ${targetName}. A carreira continua a partir da situação atual do novo clube.`
+        ]
       );
 
-      return {ok:true,from:oldName,to:targetName,division:targetDiv};
+      return {
+        ok:true,
+        from:oldName,
+        to:targetName,
+        division:targetDiv,
+        countryCode:target.country_code,
+        countryName:countryName(target.country_code),
+        international:crossCountry
+      };
     });
 
     res.json(result);

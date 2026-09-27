@@ -1363,3 +1363,26 @@ Reformulação ampla do modo jogador: personalidade e objetivo de carreira, núm
 - Mudança de formação ajusta automaticamente a escalação quando necessário.
 - O XI titular influencia a força usada na simulação das partidas da seleção.
 - Compatível com carreiras existentes: escalações antigas inexistentes são preenchidas automaticamente.
+
+
+## v54 — Mercado de treinadores europeu
+- Propostas de emprego aparecem com mais facilidade.
+- Técnicos em ascensão podem receber propostas europeias sem precisar estar em uma fase excepcional.
+- Até 3 propostas de treinador podem ficar pendentes simultaneamente.
+- Nova ação `Buscar propostas na Europa`.
+- A busca gera clubes europeus compatíveis com reputação, desempenho e nível atual do técnico.
+- Técnicos com reputação menor recebem oportunidades em clubes/divisões menores; a qualidade das propostas cresce com a carreira.
+- Mudanças de emprego entre países agora são aceitas.
+- Ao aceitar um clube estrangeiro, a carreira passa para o país e divisão do novo clube.
+- O campeonato do novo país é sincronizado aproximadamente à rodada já alcançada na temporada.
+- O elenco do clube contratado passa a ser o elenco controlado pelo usuário; o clube anterior volta para a IA.
+
+
+## v55 — Propostas europeias por desempenho
+- Removido o botão `Buscar propostas na Europa`.
+- Removida a busca manual de empregos europeus.
+- Propostas europeias agora surgem somente de forma automática por bom desempenho.
+- É necessário ter pelo menos 3 jogos no ciclo avaliado e desempenho relevante.
+- A reputação influencia o nível dos clubes que podem fazer proposta, mas não gera oferta sozinha.
+- Quanto melhor o desempenho, maior a chance de interesse europeu.
+- Até 3 propostas podem permanecer pendentes.

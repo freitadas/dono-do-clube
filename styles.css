@@ -1398,3 +1398,91 @@ repeating-linear-gradient(0deg,#1e7d43 0,#1e7d43 56px,#237f47 56px,#237f47 112px
   .national-selection-player{grid-template-columns:20px 34px minmax(0,1fr) 39px}
   .national-selection-form{display:none}
 }
+
+
+/* v54 — mercado de treinadores europeu */
+.manager-europe-search{
+  display:flex;
+  justify-content:space-between;
+  gap:12px;
+  align-items:center;
+  margin:10px 0 12px;
+  padding:13px;
+  border:1px solid rgba(74,139,232,.38);
+  border-radius:12px;
+  background:linear-gradient(135deg,rgba(45,91,151,.13),rgba(35,107,70,.08));
+}
+.manager-europe-search>div{display:grid;gap:3px}
+.manager-europe-search span{font-size:9px;color:var(--muted);max-width:620px}
+.manager-europe-search button{flex:0 0 auto}
+.manager-offer-summary{
+  display:flex;
+  gap:8px;
+  flex-wrap:wrap;
+  margin:8px 0 10px;
+}
+.manager-offer-summary span{
+  padding:6px 9px;
+  border:1px solid var(--line);
+  border-radius:999px;
+  font-size:8px;
+  color:var(--muted);
+}
+.manager-offer-summary b{color:var(--text);margin-left:3px}
+.manager-offer.european-offer{
+  border-color:rgba(74,139,232,.35);
+  background:linear-gradient(135deg,rgba(60,102,164,.08),rgba(255,255,255,.02));
+}
+.manager-offer-main{display:grid;gap:3px}
+.manager-offer-main>small{color:var(--muted);font-size:8px}
+.manager-offer-tags{display:flex;gap:4px;flex-wrap:wrap}
+.manager-europe-badge,.manager-international-badge{
+  display:inline-flex;
+  width:max-content;
+  padding:3px 6px;
+  border-radius:999px;
+  font-size:7px;
+  font-weight:950;
+  letter-spacing:.07em;
+}
+.manager-europe-badge{
+  background:rgba(69,125,209,.18);
+  border:1px solid rgba(77,139,229,.42);
+  color:#8ab9ff;
+}
+.manager-international-badge{
+  background:rgba(55,158,95,.12);
+  border:1px solid rgba(55,158,95,.35);
+  color:#78d49c;
+}
+.manager-offers-empty{
+  display:grid;
+  gap:4px;
+  padding:14px;
+  border:1px dashed var(--line);
+  border-radius:10px;
+  color:var(--muted);
+}
+.manager-offers-empty b{color:var(--text)}
+.manager-offers-empty span{font-size:9px}
+@media(max-width:700px){
+  .manager-europe-search{align-items:stretch;flex-direction:column}
+  .manager-europe-search button{width:100%}
+}
+
+
+/* v55 — propostas europeias apenas por desempenho */
+.manager-performance-note{
+  display:grid;
+  gap:4px;
+  margin:10px 0 12px;
+  padding:12px 13px;
+  border:1px solid rgba(74,139,232,.28);
+  border-radius:12px;
+  background:linear-gradient(135deg,rgba(45,91,151,.10),rgba(35,107,70,.06));
+}
+.manager-performance-note span{
+  font-size:9px;
+  color:var(--muted);
+  line-height:1.45;
+}

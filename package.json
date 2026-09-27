@@ -1,8 +1,8 @@
 {
   "name": "dono-do-clube",
-  "version": "53.0.0",
+  "version": "55.0.0",
   "private": true,
-  "description": "Dono do Clube v53 — escalação manual da seleção no modo treinador",
+  "description": "Dono do Clube v55 — propostas europeias automáticas por bom desempenho",
   "main": "server.js",
   "scripts": {
     "start": "node server.js"
