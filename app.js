@@ -2993,13 +2993,44 @@ async function manualSaveCareer(){
   }
 }
 
+
+const MANAGER_SECTIONS={
+  home:["home"],
+  team:["starters","squad"],
+  management:["board","realism","market","news"],
+  competitions:["league","national"],
+  club:["club","friends","careers"]
+};
+function managerSectionForView(view){
+  for(const [section,views] of Object.entries(MANAGER_SECTIONS)){
+    if(views.includes(view))return section;
+  }
+  return "home";
+}
+function managerSectionTabs(section){
+  const tabs={
+    team:[["starters","Titulares"],["squad","Elenco"]],
+    management:[["board","Diretoria"],["realism","Gestão"],["market","Mercado"],["news","Jornal"]],
+    competitions:[["league","Clubes"],["national","Seleção"]],
+    club:[["club","Meu clube"],["friends","Amigos"],["careers","Carreiras"]]
+  }[section]||[];
+  if(!tabs.length)return "";
+  return `<div class="manager-subnav">
+    ${tabs.map(([view,label])=>`<button data-subview="${view}" class="${state.view===view?"on":""}">${label}</button>`).join("")}
+  </div>`;
+}
+function managerSectionWrap(section,content){
+  return section==="home"?content:`${managerSectionTabs(section)}${content}`;
+}
+
 function render(){
   if(!state.me)return renderAuth();
   if(state.activeType==="player"&&state.playerCareer)return renderPlayerCareer();
   if(!state.club)return renderCreateClub();
   if((state.club.country_code||"BR")==="BR"&&!state.club.state_code)return renderStateSetup();
 
-  const body=state.view==="starters"?startersView():
+  const section=managerSectionForView(state.view);
+  const rawBody=state.view==="starters"?startersView():
     state.view==="squad"?squadView():
     state.view==="market"?marketView():
     state.view==="news"?newsView():
@@ -3010,6 +3041,7 @@ function render(){
     state.view==="league"?competitionsView():
     state.view==="club"?clubView():
     state.view==="careers"?careersView():homeView();
+  const body=managerSectionWrap(section,rawBody);
 
   app.innerHTML=`<div class="shell">
     <header class="topbar"><div class="brand"><span class="logo">⚽</span>Dono do Clube</div>
@@ -3021,23 +3053,35 @@ function render(){
       </div>
     </header>${body}
   </div>
-  <nav class="nav">
-    <button data-view="home" class="${state.view==="home"?"on":""}">INÍCIO</button>
-    <button data-view="news" class="${state.view==="news"?"on":""}">JORNAL</button>
-    <button data-view="board" class="${state.view==="board"?"on":""}">DIRETORIA</button>
-    <button data-view="starters" class="${state.view==="starters"?"on":""}">TITULARES</button>
-    <button data-view="squad" class="${state.view==="squad"?"on":""}">ELENCO</button>
-    <button data-view="realism" class="${state.view==="realism"?"on":""}">GESTÃO</button>
-    <button data-view="market" class="${state.view==="market"?"on":""}">MERCADO</button>
-    <button data-view="friends" class="${state.view==="friends"?"on":""}">AMIGOS</button>
-    <button data-view="national" class="${state.view==="national"?"on":""}">SELEÇÃO</button>
-    <button data-view="league" class="${state.view==="league"?"on":""}">COMPETIÇÕES</button>
-    <button data-view="club" class="${state.view==="club"?"on":""}">CLUBE</button>
-    <button data-view="careers" class="${state.view==="careers"?"on":""}">CARREIRAS</button>
+  <nav class="nav manager-main-nav">
+    <button data-main-section="home" class="${section==="home"?"on":""}">🏠 <span>INÍCIO</span></button>
+    <button data-main-section="team" class="${section==="team"?"on":""}">👥 <span>TIME</span></button>
+    <button data-main-section="management" class="${section==="management"?"on":""}">📋 <span>GESTÃO</span></button>
+    <button data-main-section="competitions" class="${section==="competitions"?"on":""}">🏆 <span>COMPETIÇÕES</span></button>
+    <button data-main-section="club" class="${section==="club"?"on":""}">🛡️ <span>CLUBE</span></button>
   </nav>`;
 
   app.querySelectorAll("[data-view]").forEach(b=>b.onclick=async()=>{
     state.view=b.dataset.view;
+    if(state.view==="careers"){
+      try{await refreshCareerList()}catch{}
+    }
+    render();
+  });
+
+  app.querySelectorAll("[data-main-section]").forEach(b=>b.onclick=async()=>{
+    state.view={
+      home:"home",
+      team:"starters",
+      management:"board",
+      competitions:"league",
+      club:"club"
+    }[b.dataset.mainSection]||"home";
+    render();
+  });
+
+  app.querySelectorAll("[data-subview]").forEach(b=>b.onclick=async()=>{
+    state.view=b.dataset.subview;
     if(state.view==="careers"){
       try{await refreshCareerList()}catch{}
     }

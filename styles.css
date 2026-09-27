@@ -1015,3 +1015,80 @@ repeating-linear-gradient(0deg,#1e7d43 0,#1e7d43 56px,#237f47 56px,#237f47 112px
 .national-resign-card{display:flex;justify-content:space-between;align-items:center;gap:12px}
 @media(max-width:900px){.national-squad{grid-template-columns:repeat(2,1fr)}.national-columns{grid-template-columns:1fr}.national-hero{grid-template-columns:auto 1fr}.national-metrics{grid-column:1/-1}}
 @media(max-width:600px){.national-squad{grid-template-columns:1fr}.national-hero{grid-template-columns:1fr;text-align:center}.national-flag.huge{font-size:58px}.national-metrics{justify-content:center;flex-wrap:wrap}.national-next-match,.national-resign-card{align-items:stretch;flex-direction:column}}
+
+
+/* v47 — Menu principal simplificado */
+.manager-main-nav{
+  grid-template-columns:repeat(5,minmax(0,1fr));
+  max-width:760px;
+  left:50%;
+  transform:translateX(-50%);
+  border-radius:18px 18px 0 0;
+  padding:6px 8px calc(6px + env(safe-area-inset-bottom));
+  gap:4px;
+}
+.manager-main-nav button{
+  display:flex;
+  flex-direction:column;
+  align-items:center;
+  justify-content:center;
+  gap:2px;
+  min-height:48px;
+  font-size:16px;
+}
+.manager-main-nav button span{
+  font-size:8px;
+  font-weight:900;
+  letter-spacing:.04em;
+}
+.manager-subnav{
+  position:sticky;
+  top:62px;
+  z-index:8;
+  display:flex;
+  gap:6px;
+  overflow-x:auto;
+  padding:8px;
+  margin:0 0 12px;
+  border:1px solid var(--line);
+  border-radius:12px;
+  background:rgba(18,24,21,.96);
+  backdrop-filter:blur(10px);
+  scrollbar-width:none;
+}
+.manager-subnav::-webkit-scrollbar{display:none}
+.manager-subnav button{
+  flex:0 0 auto;
+  min-width:96px;
+  padding:9px 13px;
+  border-radius:9px;
+  border:1px solid transparent;
+  background:transparent;
+  color:var(--muted);
+  font-size:10px;
+  font-weight:900;
+}
+.manager-subnav button.on{
+  background:rgba(255,255,255,.08);
+  color:var(--text);
+  border-color:var(--line);
+}
+@media(max-width:680px){
+  .manager-main-nav{
+    width:100%;
+    max-width:none;
+    border-radius:0;
+    padding-left:4px;
+    padding-right:4px;
+  }
+  .manager-main-nav button{
+    min-width:0;
+    padding:6px 2px;
+  }
+  .manager-main-nav button span{font-size:7px}
+  .manager-subnav{
+    top:56px;
+    margin-left:-4px;
+    margin-right:-4px;
+  }
+}
