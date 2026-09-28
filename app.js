@@ -10,7 +10,7 @@ const state={
   nationalTeam:{job:null,offers:[]},
   nationalTab:"overview",
   careers:[],maxCareers:10,lineupDirty:false,
-  boardMessages:[],boardExpectation:null,teamPerformance:null,rotationAdvice:null,realism:null,
+  boardMessages:[],boardExpectation:null,teamPerformance:null,rotationAdvice:null,realism:null,managerCareer:null,
   transferWindow:null,scoutLevel:1,
   transferSearch:{name:"",position:"",minRating:58,maxPrice:500000,realOnly:false},
   activeType:null,playerCareer:null,playerData:null,countries:{},creationMode:"club",playerView:"home",
@@ -1355,7 +1355,7 @@ function realismView(){
         <div class="section-title"><div><div class="kicker">COMISSÃO TÉCNICA</div><h2>Especialistas</h2></div></div>
         <div class="staff-list">
           ${(r.staff||[]).map(x=>`<div class="staff-row">
-            <div><b>${esc(x.staff_name)}</b><small>${esc(({FITNESS:"Preparador físico",PHYSIO:"Fisioterapeuta",SCOUT:"Olheiro",GK_COACH:"Treinador de goleiros"})[x.role]||x.role)} · nível ${x.level}/5 · salário ${Number(x.salary).toLocaleString("pt-BR")}</small></div>
+            <div><b>${esc(x.staff_name)}</b><small>${esc(({FITNESS:"Preparador físico",PHYSIO:"Fisioterapeuta",SCOUT:"Olheiro",GK_COACH:"Treinador de goleiros",ANALYST:"Analista de desempenho",SET_PIECE:"Treinador de bolas paradas",YOUTH_COACH:"Treinador da base"})[x.role]||x.role)} · nível ${x.level}/5 · salário ${Number(x.salary).toLocaleString("pt-BR")}</small></div>
             <button class="secondary upgrade-staff" data-role="${x.role}" ${Number(x.level)>=5?"disabled":""}>${Number(x.level)>=5?"Nível máximo":`Melhorar · ${Number(x.level)*4500}`}</button>
           </div>`).join("")}
         </div>
@@ -3137,6 +3137,121 @@ function boardStatusLabel(status){
 function boardToneLabel(tone){
   return ({positive:"POSITIVA",negative:"ALERTA",neutral:"INFORMATIVA"})[tone]||"DIRETORIA";
 }
+
+function managerContractStatusLabel(v){return ({ACTIVE:"Ativo",ULTIMATUM:"Ultimato",FIRED:"Demitido",RENEWAL_AVAILABLE:"Renovação disponível",EXPIRING:"Fim de contrato"})[v]||v}
+function managerObjectiveStatusLabel(v){return ({COMPLETED:"Concluída",FAILED:"Falhou",PENDING:"Em andamento"})[v]||v}
+function managerTrainingLabel(v){return ({RECOVERY:"Recuperação",ATTACK:"Ataque",DEFENSE:"Defesa",POSSESSION:"Posse",PHYSICAL:"Físico",SET_PIECES:"Bolas paradas",YOUTH:"Base"})[v]||v}
+function managerPlanLabel(v){return ({ATTACK:"Ofensivo",CONTROL:"Controle",COUNTER:"Contra-ataque",DEFEND:"Defensivo",SET_PIECES:"Bolas paradas"})[v]||v}
+function managerFacilityLabel(v){return ({training_center:"Centro de treinamento",academy:"Categorias de base",medical:"Departamento médico",scouting:"Scouting",marketing:"Marketing"})[v]||v}
+function managerSkillLabel(v){return ({tactics:"Tática",motivation:"Motivação",youth:"Desenvolvimento de jovens",negotiation:"Negociação",squad:"Gestão de elenco",fitness:"Preparação física",defense:"Defesa",attack:"Ataque"})[v]||v}
+
+function managerCareerView(){
+  const m=state.managerCareer||{},c=m.contract||{},d=m.development||{},f=m.facilities||{},pres=m.president||{},rep=typeof d.region_reputation==="string"?JSON.parse(d.region_reputation||"{}"):d.region_reputation||{};
+  const objectives=m.objectives||[],players=m.pendingPlayers||[],promises=m.promises||[],ranking=m.ranking||[],awards=m.awards||[],groups=m.squadGroups||{};
+  const fired=c.status==="FIRED";
+  return `<section class="manager-career-page">
+    <div class="manager-career-hero ${fired?"fired":""}">
+      <div><div class="kicker">MODO CARREIRA TREINADOR 3.0</div><h1>Sua carreira como técnico</h1><p>Contrato, metas, vestiário, treino, evolução, reputação, diretoria e legado.</p></div>
+      <div class="manager-career-kpis">
+        <span><small>NÍVEL</small><b>${d.level||1}</b></span>
+        <span><small>REPUTAÇÃO</small><b>${state.realism?.managerReputation??50}</b></span>
+        <span><small>LEGADO</small><b>${m.hallOfFame?.legacy||0}</b></span>
+        <span><small>STATUS</small><b>${esc(managerContractStatusLabel(c.status||"ACTIVE"))}</b></span>
+      </div>
+    </div>
+    ${fired?`<div class="manager-dismissed"><b>Você foi demitido.</b><span>Entre em Gestão → Gestão e aceite uma proposta de outro clube para continuar a carreira.</span></div>`:""}
+
+    <div class="manager-career-grid two">
+      <section class="card manager-contract-card">
+        <div class="section-title"><div><div class="kicker">CONTRATO DO TREINADOR</div><h2>${esc(state.club?.name||"Clube")}</h2></div><span class="badge">${esc(managerContractStatusLabel(c.status||"ACTIVE"))}</span></div>
+        <div class="manager-stat-grid">
+          <span><small>SALÁRIO</small><b>${Number(c.salary||0).toLocaleString("pt-BR")}/mês</b></span>
+          <span><small>INÍCIO</small><b>T${c.started_season||1}</b></span>
+          <span><small>FIM</small><b>T${c.ends_season||3}</b></span>
+          <span><small>ADVERTÊNCIAS</small><b>${c.warnings||0}</b></span>
+        </div>
+        ${c.status==="ULTIMATUM"?`<div class="manager-warning">⚠️ Ultimato: ${c.ultimatum_rounds||0} jogo(s) restantes. Você precisa de pelo menos uma vitória.</div>`:""}
+        ${["RENEWAL_AVAILABLE","EXPIRING"].includes(c.status)?`<button id="renewManagerContract" class="primary">Negociar renovação por +2 temporadas</button>`:""}
+      </section>
+      <section class="card">
+        <div class="section-title"><div><div class="kicker">PRESIDENTE</div><h2>Perfil da diretoria</h2></div><span class="badge">${esc(pres.label||"—")}</span></div>
+        <p>${esc(pres.description||"O perfil da direção influencia pedidos, cobrança e paciência com o trabalho.")}</p>
+        <div class="manager-stat-grid">
+          <span><small>CONFIANÇA</small><b>${state.boardExpectation?.confidence??state.club?.board_confidence??60}%</b></span>
+          <span><small>PRESSÃO</small><b>${state.boardExpectation?.mediaPressure??state.club?.media_pressure??0}%</b></span>
+          <span><small>VESTIÁRIO</small><b>${groups.unhappy||0} insatisfeito(s)</b></span>
+          <span><small>JANELA</small><b>${m.deadline?.deadlineDay?"DEADLINE DAY":m.deadline?.open?"ABERTA":"FECHADA"}</b></span>
+        </div>
+      </section>
+    </div>
+
+    <section class="card">
+      <div class="section-title"><div><div class="kicker">METAS REAIS DA DIRETORIA</div><h2>Objetivos da temporada</h2></div><span class="badge">${objectives.filter(o=>o.status==="COMPLETED").length}/${objectives.length}</span></div>
+      <div class="manager-objectives">${objectives.map(o=>`<article class="manager-objective ${String(o.status).toLowerCase()}"><div><b>${esc(o.title)}</b><small>${esc(o.description)}</small></div><strong>${esc(managerObjectiveStatusLabel(o.status))}</strong><div class="meter"><i style="width:${Math.max(0,Math.min(100,Number(o.progress||0)))}%"></i></div><span>${o.progress||0}%</span></article>`).join("")}</div>
+    </section>
+
+    <div class="manager-career-grid two">
+      <section class="card">
+        <div class="section-title"><div><div class="kicker">TREINO SEMANAL</div><h2>Preparação da rodada</h2></div><span class="badge">${m.training?esc(managerTrainingLabel(m.training.focus)):"Disponível"}</span></div>
+        <p class="muted">Um treino principal por rodada. O centro de treinamento e suas habilidades aumentam o efeito.</p>
+        ${m.training?`<div class="msg ok">${esc(m.training.result_text)}</div>`:`<div class="manager-action-grid">
+          <button class="secondary manager-training" data-focus="RECOVERY">🧊 Recuperação<small>Recupera físico</small></button>
+          <button class="secondary manager-training" data-focus="ATTACK">⚔️ Ataque<small>Forma de MEI/ATA</small></button>
+          <button class="secondary manager-training" data-focus="DEFENSE">🛡️ Defesa<small>Forma de GOL/DEF</small></button>
+          <button class="secondary manager-training" data-focus="POSSESSION">🎯 Posse<small>Entrosamento + forma</small></button>
+          <button class="secondary manager-training" data-focus="PHYSICAL">🏋️ Físico<small>Mais forma, mais desgaste</small></button>
+          <button class="secondary manager-training" data-focus="SET_PIECES">🎯 Bola parada<small>Prepara faltas e escanteios</small></button>
+          <button class="secondary manager-training" data-focus="YOUTH">🌱 Base<small>Evolui uma promessa</small></button>
+        </div>`}
+      </section>
+      <section class="card">
+        <div class="section-title"><div><div class="kicker">PLANO PARA O PRÓXIMO JOGO</div><h2>Estratégia específica</h2></div><span class="badge">${m.gamePlan?esc(managerPlanLabel(m.gamePlan.plan_key)):"Nenhum"}</span></div>
+        <p class="muted">O plano escolhido altera de verdade a simulação da próxima partida.</p>
+        <div class="manager-action-grid compact">
+          <button class="secondary manager-game-plan" data-plan="ATTACK">🔥 Ofensivo</button>
+          <button class="secondary manager-game-plan" data-plan="CONTROL">🧠 Controle</button>
+          <button class="secondary manager-game-plan" data-plan="COUNTER">⚡ Contra-ataque</button>
+          <button class="secondary manager-game-plan" data-plan="DEFEND">🧱 Defensivo</button>
+          <button class="secondary manager-game-plan" data-plan="SET_PIECES">🎯 Bolas paradas</button>
+        </div>
+        ${state.realism?.opponent?`<div class="manager-opponent-mini"><b>${esc(state.realism.opponent.name)}</b><span>OVR ${state.realism.opponent.rating} · ${esc(state.realism.opponent.strength)} · vulnerável em ${esc(state.realism.opponent.weakness)}</span></div>`:""}
+      </section>
+    </div>
+
+    <section class="card">
+      <div class="section-title"><div><div class="kicker">VESTIÁRIO</div><h2>Reuniões e promessas aos jogadores</h2></div><span class="badge">${promises.length} promessa(s)</span></div>
+      <div class="manager-group-summary"><span>⭐ Importantes <b>${groups.stars||0}</b></span><span>🧓 Veteranos <b>${groups.veterans||0}</b></span><span>🌱 Jovens <b>${groups.youth||0}</b></span><span>😠 Insatisfeitos <b>${groups.unhappy||0}</b></span></div>
+      <div class="manager-player-meetings">${players.map(p=>`<article><div><b>${esc(p.name)} · ${posName(p.position)} · OVR ${p.rating}</b><small>Moral ${p.morale}% · Felicidade ${p.happiness}% · ${esc(p.squad_status)}</small></div><select class="manager-meeting-action" data-player="${p.id}"><option value="">Conversar...</option><option value="SUPPORT">Apoiar jogador</option><option value="CHALLENGE">Cobrar desempenho</option><option value="PROMISE_STARTS">Prometer mais titularidade</option><option value="PROMISE_ROLE">Prometer papel importante</option><option value="TRANSFER_TALK">Aceitar discutir transferência</option></select></article>`).join("")}</div>
+      ${promises.length?`<div class="manager-promises"><h3>Promessas ativas</h3>${promises.map(p=>`<span>${esc(p.player_name)} · ${p.promise_key==="STARTS"?"mais titularidade":"papel importante"} · ${p.rounds_left} rodada(s)</span>`).join("")}</div>`:""}
+    </section>
+
+    <section class="card">
+      <div class="section-title"><div><div class="kicker">EVOLUÇÃO DO TREINADOR</div><h2>Especialidades</h2></div><span class="badge blue">${d.skill_points||0} ponto(s)</span></div>
+      <div class="manager-skill-grid">${["tactics","motivation","youth","negotiation","squad","fitness","defense","attack"].map(k=>`<article><small>${esc(managerSkillLabel(k))}</small><b>Nível ${d[k]||1}/10</b><button class="secondary manager-skill" data-skill="${k}" ${(d.skill_points||0)<=0||Number(d[k]||1)>=10?"disabled":""}>Evoluir</button></article>`).join("")}</div>
+      <div class="manager-xp"><span>Nível ${d.level||1}</span><div class="meter"><i style="width:${Math.min(100,Math.round(Number(d.xp||0)/Math.max(1,Number(d.level||1)*100)*100))}%"></i></div><span>${d.xp||0}/${Number(d.level||1)*100} XP</span></div>
+      <div class="region-reputation"><span>🇧🇷 Brasil <b>${rep.BR||0}</b></span><span>🌎 América do Sul <b>${rep.SA||0}</b></span><span>🇪🇺 Europa <b>${rep.EU||0}</b></span><span>🌎 América do Norte <b>${rep.NA||0}</b></span><span>🌏 Ásia <b>${rep.AS||0}</b></span><span>🏳️ Seleções <b>${rep.NT||0}</b></span></div>
+    </section>
+
+    <div class="manager-career-grid two">
+      <section class="card">
+        <div class="section-title"><div><div class="kicker">INFRAESTRUTURA</div><h2>Projeto do clube</h2></div></div>
+        <div class="manager-facilities">${["training_center","academy","medical","scouting","marketing"].map(k=>{const lv=Number(f[k]||1),cost=lv*6500;return `<div><span><b>${esc(managerFacilityLabel(k))}</b><small>Nível ${lv}/10</small></span><button class="secondary manager-facility" data-key="${k}" ${lv>=10?"disabled":""}>${lv>=10?"Máximo":`Melhorar · ${cost.toLocaleString("pt-BR")}`}</button></div>`}).join("")}</div>
+        <div class="international-youth"><select id="managerYouthCountry">${countryOptions(state.club?.country_code||"BR")}</select><button id="managerYouthScout" class="secondary">🌍 Buscar promessa no exterior</button></div>
+      </section>
+      <section class="card">
+        <div class="section-title"><div><div class="kicker">PEDIDOS À DIRETORIA</div><h2>Negocie recursos</h2></div></div>
+        <div class="manager-action-grid compact"><button class="secondary manager-board-request" data-request="BUDGET">💰 Mais verba</button><button class="secondary manager-board-request" data-request="FACILITY">🏗️ Infraestrutura</button><button class="secondary manager-board-request" data-request="STAFF">👔 Comissão</button><button class="secondary manager-board-request" data-request="YOUTH">🌱 Promessa da base</button></div>
+        <div class="manager-request-history">${(m.requests||[]).slice(0,5).map(r=>`<span class="${String(r.status).toLowerCase()}"><b>${r.status==="APPROVED"?"✓":"✕"}</b> ${esc(r.result_text)}</span>`).join("")||`<span class="muted">Nenhum pedido recente.</span>`}</div>
+      </section>
+    </div>
+
+    <div class="manager-career-grid two">
+      <section class="card"><div class="section-title"><div><div class="kicker">RANKING DE TREINADORES</div><h2>Ranking mundial</h2></div></div><div class="manager-ranking">${ranking.slice(0,10).map(r=>`<div class="${r.isUser?"me":""}"><b>${r.position}º</b><span>${esc(r.isUser?"Você":r.coach_name||`Treinador de ${r.name}`)}</span><small>${esc(countryName(r.country_code))}</small><strong>${r.score}</strong></div>`).join("")}</div></section>
+      <section class="card"><div class="section-title"><div><div class="kicker">PRÊMIOS E LEGADO</div><h2>${esc(m.hallOfFame?.tier||"Em construção")}</h2></div><span class="badge">${m.hallOfFame?.legacy||0}</span></div>${awards.length?`<div class="manager-awards">${awards.map(a=>`<span>🏅 T${a.season_no} · ${esc(a.title)}</span>`).join("")}</div>`:`<div class="empty">Seus prêmios de treinador aparecerão ao concluir grandes temporadas.</div>`}</section>
+    </div>
+  </section>`;
+}
+
 function boardView(){
   const ex=state.boardExpectation;
   const messages=state.boardMessages||[];
@@ -3689,7 +3804,7 @@ async function manualSaveCareer(){
 const MANAGER_SECTIONS={
   home:["home"],
   team:["starters","squad"],
-  management:["board","realism","market","news"],
+  management:["board","managerCareer","realism","market","news"],
   competitions:["league","national"],
   club:["club","friends","careers"]
 };
@@ -3702,7 +3817,7 @@ function managerSectionForView(view){
 function managerSectionTabs(section){
   const tabs={
     team:[["starters","Titulares"],["squad","Elenco"]],
-    management:[["board","Diretoria"],["realism","Gestão"],["market","Mercado"],["news","Jornal"]],
+    management:[["board","Diretoria"],["managerCareer","Treinador"],["realism","Gestão"],["market","Mercado"],["news","Jornal"]],
     competitions:[["league","Clubes"],["national","Seleção"]],
     club:[["club","Meu clube"],["friends","Amigos"],["careers","Carreiras"]]
   }[section]||[];
@@ -3727,6 +3842,7 @@ function render(){
     state.view==="market"?marketView():
     state.view==="news"?newsView():
     state.view==="board"?boardView():
+    state.view==="managerCareer"?managerCareerView():
     state.view==="realism"?realismView():
     state.view==="national"?nationalTeamView():
     state.view==="friends"?friendsView():
@@ -3785,6 +3901,7 @@ function render(){
   if(state.view==="home")bindHome();
   if(state.view==="starters")bindStarters();
   if(state.view==="squad")bindSquad();
+  if(state.view==="managerCareer")bindManagerCareer();
   if(state.view==="realism")bindRealism();
   if(state.view==="news")bindNews();
   if(state.view==="market")bindMarket();
@@ -3911,6 +4028,7 @@ async function showClub(id){
 }
 
 async function careerAction(action){
+  if(state.managerCareer?.contract?.status==="FIRED")throw new Error("Você foi demitido. Aceite uma proposta de outro clube para continuar a carreira.");
   const endpoints={
     state:"/api/state/play-next",
     national:"/api/national/play-round",
@@ -3974,14 +4092,29 @@ function bindManagerOfferButtons(){
     if(!offer)return;
     const international=String(offer.country_code)!==String(state.club?.country_code);
     if(!confirm(`Aceitar a proposta do ${offer.club_name}?\n\n${international?`Você mudará para ${countryName(offer.country_code)} e passará a disputar a liga do novo país.`:"Você assumirá a situação esportiva do novo clube nesta mesma liga."}\nO antigo clube continuará controlado pela IA.`))return;
+    const answer=prompt("ENTREVISTA COM A DIRETORIA\n\nDigite 1 para prometer usar a base.\nDigite 2 para apresentar um projeto equilibrado.\nDigite 3 para prometer resultados e títulos.","2");
+    if(answer===null)return;
+    const interviewVision=String(answer).trim()==="1"?"YOUTH":String(answer).trim()==="3"?"AMBITIOUS":"BALANCED";
     btn.disabled=true;btn.textContent="ASSUMINDO...";
     try{
-      const d=await api(`/api/manager-offers/${btn.dataset.id}/accept`,{method:"POST",body:"{}"});
+      const d=await api(`/api/manager-offers/${btn.dataset.id}/accept`,{method:"POST",body:JSON.stringify({interviewVision})});
       state.view="home";
       await bootstrap();
       alert(`Novo trabalho: você deixou ${d.from} e assumiu ${d.to}.${d.international?`\nNova liga: ${d.countryName}.`:""}`);
     }catch(err){alert(err.message);btn.disabled=false;btn.textContent="Aceitar cargo"}
   });
+}
+
+
+function bindManagerCareer(){
+  app.querySelectorAll(".manager-training").forEach(btn=>btn.onclick=async()=>{btn.disabled=true;try{const r=await api("/api/manager-career/training",{method:"POST",body:JSON.stringify({focus:btn.dataset.focus})});await refreshAll();render();alert(r.text)}catch(e){alert(e.message);btn.disabled=false}});
+  app.querySelectorAll(".manager-game-plan").forEach(btn=>btn.onclick=async()=>{try{await api("/api/manager-career/game-plan",{method:"POST",body:JSON.stringify({plan:btn.dataset.plan})});await refreshAll();render();}catch(e){alert(e.message)}});
+  app.querySelectorAll(".manager-meeting-action").forEach(sel=>sel.onchange=async()=>{if(!sel.value)return;const action=sel.value;sel.disabled=true;try{const r=await api("/api/manager-career/player-meeting",{method:"POST",body:JSON.stringify({playerId:Number(sel.dataset.player),action})});await refreshAll();render();alert(r.text)}catch(e){alert(e.message);sel.disabled=false}});
+  app.querySelectorAll(".manager-skill").forEach(btn=>btn.onclick=async()=>{btn.disabled=true;try{await api("/api/manager-career/skill",{method:"POST",body:JSON.stringify({skill:btn.dataset.skill})});await refreshAll();render()}catch(e){alert(e.message);btn.disabled=false}});
+  app.querySelectorAll(".manager-board-request").forEach(btn=>btn.onclick=async()=>{btn.disabled=true;try{const r=await api("/api/manager-career/board-request",{method:"POST",body:JSON.stringify({request:btn.dataset.request})});await refreshAll();render();alert(r.text)}catch(e){alert(e.message);btn.disabled=false}});
+  app.querySelectorAll(".manager-facility").forEach(btn=>btn.onclick=async()=>{if(!confirm("Investir nesta infraestrutura?"))return;btn.disabled=true;try{const r=await api("/api/manager-career/facilities/upgrade",{method:"POST",body:JSON.stringify({key:btn.dataset.key})});await refreshAll();render();alert(`Estrutura melhorada para o nível ${r.newLevel}.`)}catch(e){alert(e.message);btn.disabled=false}});
+  const scout=app.querySelector("#managerYouthScout");if(scout)scout.onclick=async()=>{scout.disabled=true;try{const country=app.querySelector("#managerYouthCountry")?.value||state.club.country_code;const r=await api("/api/manager-career/youth-scout",{method:"POST",body:JSON.stringify({country})});await refreshAll();render();alert(`Nova promessa encontrada: ${r.name} · ${posName(r.position)} · OVR ${r.rating} · potencial ${r.potential}.`)}catch(e){alert(e.message);scout.disabled=false}};
+  const renew=app.querySelector("#renewManagerContract");if(renew)renew.onclick=async()=>{renew.disabled=true;try{const r=await api("/api/manager-career/contract/renew",{method:"POST",body:"{}"});await refreshAll();render();alert(`Contrato renovado até T${r.endsSeason}. Novo salário: ${Number(r.salary).toLocaleString("pt-BR")}/mês.`)}catch(e){alert(e.message);renew.disabled=false}};
 }
 
 function bindRealism(){

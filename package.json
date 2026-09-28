@@ -1,8 +1,8 @@
 {
   "name": "dono-do-clube",
-  "version": "60.0.0",
+  "version": "61.0.0",
   "private": true,
-  "description": "Dono do Clube v60 — reparo real da Libertadores com reconstrução de grupos",
+  "description": "Dono do Clube v61 — Modo Carreira Treinador 3.0",
   "main": "server.js",
   "scripts": {
     "start": "node server.js"

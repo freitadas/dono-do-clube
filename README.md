@@ -1428,3 +1428,15 @@ Reformulação ampla do modo jogador: personalidade e objetivo de carreira, núm
 - Reconstrói os grupos da Libertadores a partir dos jogos salvos quando a tabela estiver corrompida.
 - Corrige o defeito em que apenas o Grupo A aparece preenchido e os Grupos B–H ficam vazios.
 - Recalcula a classificação da fase de grupos com base nos resultados já disputados.
+
+
+## v61 — Modo Carreira Treinador 3.0
+- Contrato, salário, renovação, advertências e ultimato/demissão.
+- Metas de liga, copa, base, finanças e clássicos.
+- Treino semanal e plano específico para o próximo adversário com efeito na simulação.
+- Reuniões individuais, promessas e consequências no vestiário.
+- Árvore de evolução do treinador, XP, níveis e reputação regional.
+- Infraestrutura do clube, pedidos à diretoria e scouting internacional da base.
+- Presidente com personalidade, ranking de treinadores, prêmios e legado/Hall da Fama.
+- Comissão técnica ampliada com analista, bolas paradas e treinador da base.
+- Deadline Day identificado quando a janela está perto do fechamento.
