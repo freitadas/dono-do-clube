@@ -2,11 +2,10 @@
   "name": "dono-do-clube",
   "version": "63.0.0",
   "private": true,
-  "description": "Dono do Clube v63 — escudos reais de clubes e seleções com imagens locais",
+  "description": "Dono do Clube v63 — escudos reais de clubes e seleções, sem brasões genéricos para equipes reais",
   "main": "server.js",
   "scripts": {
-    "start": "node server.js",
-    "test:crests": "node verify_crests.js"
+    "start": "node server.js"
   },
   "engines": {
     "node": "20.x"

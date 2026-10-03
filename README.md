@@ -1438,3 +1438,10 @@ Reformulação ampla do modo jogador: personalidade e objetivo de carreira, núm
 - Cada Estadual passa a selecionar clubes reais do respectivo estado.
 - Saves antigos com clubes estaduais genéricos são reparados para clubes reais, preservando resultados e classificação quando possível.
 - Tabelas e jogos principais exibem escudos ao lado dos clubes.
+
+## v63 — Escudos reais de clubes e seleções
+- Removido o gerador de brasões genéricos por iniciais e cores.
+- Clubes passam a buscar escudos reais em catálogo externo e, quando necessário, em uma segunda fonte de escudos.
+- As seleções nacionais jogáveis exibem seus respectivos escudos/federações.
+- SVGs genéricos herdados da v62 são limpos automaticamente dos saves/banco.
+- Quando uma fonte externa não possui determinado escudo, o jogo mantém o espaço neutro em vez de inventar um brasão.

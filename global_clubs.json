@@ -297,37 +297,37 @@
     "secondary": "#f5f7f6"
   },
   {
-    "name": "Clube do País-Sede 1",
-    "country": "HOST",
-    "confed": "HOST",
+    "name": "FC Cincinnati",
+    "country": "USA",
+    "confed": "CONCACAF",
     "rating": 76,
     "state": null,
     "kind": "world",
     "division": null,
-    "primary": "#755220",
-    "secondary": "#f5f7f6"
+    "primary": "#f15a29",
+    "secondary": "#17365d"
   },
   {
-    "name": "Clube do País-Sede 2",
-    "country": "HOST",
-    "confed": "HOST",
-    "rating": 73,
+    "name": "Orlando City",
+    "country": "USA",
+    "confed": "CONCACAF",
+    "rating": 74,
     "state": null,
     "kind": "world",
     "division": null,
-    "primary": "#582b7e",
-    "secondary": "#f5f7f6"
+    "primary": "#61259e",
+    "secondary": "#ffffff"
   },
   {
-    "name": "Clube do País-Sede 3",
-    "country": "HOST",
-    "confed": "HOST",
-    "rating": 71,
+    "name": "Atlanta United",
+    "country": "USA",
+    "confed": "CONCACAF",
+    "rating": 74,
     "state": null,
     "kind": "world",
     "division": null,
-    "primary": "#0b6f72",
-    "secondary": "#f5f7f6"
+    "primary": "#80000a",
+    "secondary": "#d4af37"
   },
   {
     "name": "Mercado Mundial",

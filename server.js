@@ -3,7 +3,6 @@ const express = require("express");
 const { Pool } = require("pg");
 const crypto = require("crypto");
 const path = require("path");
-const RealCrests = require("./real_crests.js");
 const STATE_CLUB_SEED = require("./state_clubs.json");
 const CLUB_SEED = [...require("./clubs.json"),...require("./international_clubs.json"),...require("./global_clubs.json"),...STATE_CLUB_SEED];
 const REAL_PLAYER_SEED = require("./real_players.json");
@@ -624,8 +623,12 @@ const randomName=()=>`${firstNames[rand(0,firstNames.length-1)]} ${lastNames[ran
 const normalizeSearch=v=>String(v||"").normalize("NFD").replace(/[\u0300-\u036f]/g,"").toLowerCase().trim();
 
 
-function realClubCrest(name){
-  return RealCrests.club(name)?.src||null;
+function xmlSafe(value){
+  return String(value??"").replace(/[&<>"']/g,ch=>({"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;","'":"&apos;"})[ch]);
+}
+function clubInitials(name){
+  const parts=String(name||"FC").replace(/[-_]/g," ").split(/\s+/).filter(Boolean);
+  return (parts.slice(0,2).map(x=>x[0]).join("")||"FC").toUpperCase().slice(0,3);
 }
 function canonicalStateClubNames(stateCode){
   return STATE_CLUB_SEED.filter(x=>x.state===stateCode).map(x=>x.name);
@@ -650,7 +653,7 @@ async function seedClubs(){
   await tx(async c=>{
     for(const x of CLUB_SEED){
       const confed=x.confed||confederationForCountry(x.country);
-      const crest=realClubCrest(x.name);
+      const crest=null;
       await c.query(`
         INSERT INTO clubs(
           name,is_ai,state_code,country_code,confederation_code,club_kind,national_seed_division,
@@ -680,17 +683,9 @@ async function seedClubs(){
       `,[x.name,x.state,x.country,confed,x.kind,x.division,x.rating,x.primary,x.secondary,crest]);
     }
 
-    // Repara o escudo nos saves existentes sem recriar clube, elenco ou carreira.
-    // Remove somente o SVG de iniciais da v62; uploads pessoais continuam disponíveis.
-    const existing=(await c.query(`SELECT id,name,is_ai,crest_data FROM clubs`)).rows;
-    for(const club of existing){
-      const official=realClubCrest(club.name);
-      const next=official||
-        (RealCrests.isGenerated(club.crest_data)?null:club.crest_data);
-      if(next!==club.crest_data){
-        await c.query(`UPDATE clubs SET crest_data=$2 WHERE id=$1`,[club.id,next]);
-      }
-    }
+    // v63: remove brasões SVG genéricos herdados das versões anteriores.
+    // Escudos reais são resolvidos pelo catálogo do frontend; imagens personalizadas PNG/JPG/WebP são preservadas.
+    await c.query(`UPDATE clubs SET crest_data=NULL WHERE crest_data LIKE 'data:image/svg+xml%'`);
 
     const missing=await c.query(`SELECT id FROM clubs WHERE friend_code IS NULL`);
     for(const r of missing.rows) await ensureFriendCode(c,r.id);
@@ -9799,13 +9794,13 @@ app.delete("/api/careers/:clubId",auth,async(req,res,next)=>{
 app.put("/api/club/customize",auth,async(req,res,next)=>{
   try{
     const c=await userClub(req.user.id);
-    const name=String(req.body.name||c.name).trim().replace(/\s+/g," "),primary=String(req.body.primaryColor||c.primary_color),secondary=String(req.body.secondaryColor||c.secondary_color),crest=req.body.crestData==null?(req.body.crestData===null?null:(RealCrests.uploaded(c.crest_data)?c.crest_data:null)):String(req.body.crestData);
+    const name=String(req.body.name||c.name).trim().replace(/\s+/g," "),primary=String(req.body.primaryColor||c.primary_color),secondary=String(req.body.secondaryColor||c.secondary_color),crest=req.body.crestData===null?null:String(req.body.crestData||c.crest_data||"");
     if(name.length<3||name.length>30)return res.status(400).json({error:"Nome deve ter 3 a 30 caracteres."});
     if(!/^#[0-9a-fA-F]{6}$/.test(primary)||!/^#[0-9a-fA-F]{6}$/.test(secondary))return res.status(400).json({error:"Cor inválida."});
     if(crest&&!/^data:image\/(png|jpeg|webp);base64,/i.test(crest))return res.status(400).json({error:"Escudo inválido."});
-    if(crest&&crest.length>700000)return res.status(400).json({error:"Escudo grande demais."});
+    if(crest.length>700000)return res.status(400).json({error:"Escudo grande demais."});
     const updated=await tx(async client=>{
-      const finalCrest=crest||realClubCrest(name);
+      const finalCrest=crest||null;
       const r=await client.query(`UPDATE clubs SET name=$2,primary_color=$3,secondary_color=$4,crest_data=$5 WHERE id=$1 RETURNING *`,[c.id,name,primary,secondary,finalCrest]);
       const felipeMode=await applyFelipeMode(client,c.id);
       return {club:(await client.query(`SELECT * FROM clubs WHERE id=$1`,[c.id])).rows[0],felipeMode};
@@ -12363,9 +12358,8 @@ app.post("/api/friends/:clubId/play",auth,async(req,res,next)=>{
   }catch(e){next(e)}
 });
 
-app.use("/assets/crests",express.static(path.join(__dirname,"assets","crests"),{maxAge:"1y",immutable:true,index:false}));
-app.get("/real_crests.js",(_req,res)=>res.sendFile(path.join(__dirname,"real_crests.js")));
 app.get("/styles.css",(_req,res)=>res.sendFile(path.join(__dirname,"styles.css")));
+app.get("/real_crests.js",(_req,res)=>res.sendFile(path.join(__dirname,"real_crests.js")));
 app.get("/app.js",(_req,res)=>res.sendFile(path.join(__dirname,"app.js")));
 app.get("/",(_req,res)=>res.sendFile(path.join(__dirname,"index.html")));
 

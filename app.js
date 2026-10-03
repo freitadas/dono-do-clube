@@ -21,6 +21,7 @@ const state={
   otherLeague:{country:null,division:"A",data:null,loading:false,error:null,roundView:null},
   view:"home",authMode:"login",competitionTab:"STATE",roundByDiv:{A:1,B:1,C:1,D:1}
 };
+window.RealCrests?.ready?.then(()=>{if(state.me)render();}).catch(()=>{});
 
 async function api(url,options={}){
   const res=await fetch(url,{
@@ -34,22 +35,47 @@ async function api(url,options={}){
 }
 function esc(v){return String(v??"").replace(/[&<>"']/g,c=>({"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;","'":"&#039;"}[c]))}
 function initials(n){return String(n||"FC").split(/\s+/).filter(Boolean).slice(0,2).map(x=>x[0]).join("").toUpperCase()}
+function isLegacyGeneratedCrest(src){
+  return /^data:image\/svg\+xml/i.test(String(src||""));
+}
+function realClubCrestCandidates(c){
+  const custom=String(c?.crest_data||"");
+  const fromCatalog=window.RealCrests?.clubCandidates?.(c||{})||[];
+  const all=[];
+  if(custom&&!isLegacyGeneratedCrest(custom))all.push(custom);
+  all.push(...fromCatalog);
+  return [...new Set(all.filter(Boolean))];
+}
+function realClubCrestSource(c){return realClubCrestCandidates(c)[0]||""}
+window.tryNextRealCrest=function(img){
+  const list=String(img?.dataset?.fallbacks||"").split("|").filter(Boolean);
+  if(list.length){
+    const next=list.shift();
+    img.dataset.fallbacks=list.join("|");
+    img.src=next;
+    return;
+  }
+  const parent=img?.parentElement;
+  img?.remove();
+  parent?.classList.add("crest-unavailable");
+  if(parent)parent.title="Escudo real não localizado";
+};
 function crestHtml(c,size=""){
   const cls=`crest ${size}`.trim();
-  const src=RealCrests.source(c);
+  const candidates=realClubCrestCandidates(c);
+  const src=candidates.shift()||"";
   return src
-    ?`<span class="${cls}"><img src="${esc(src)}" alt="Escudo de ${esc(c?.name||"clube")}" decoding="async"></span>`
-    :`<span class="${cls} crest-unavailable" title="${esc(c?.name||"Clube")}: sem escudo oficial" aria-label="Sem escudo oficial">—</span>`;
-}
-function nationalCrestHtml(code,size="small"){
-  const entry=RealCrests.nation(code);
-  return entry?`<span class="crest ${size}"><img src="${esc(entry.src)}" alt="Escudo de ${esc(entry.name)}" decoding="async"></span>`:'';
-}
-function nationalIdentity(code,name,size="tiny"){
-  const entry=RealCrests.nation(code)||RealCrests.nation(name);
-  return `<span class="club-with-crest">${entry?`<span class="crest ${size}"><img src="${esc(entry.src)}" alt="Escudo de ${esc(entry.name)}" decoding="async"></span>`:''}<b>${esc(name||entry?.name||code||"Seleção")}</b></span>`;
+    ?`<div class="${cls}"><img src="${esc(src)}" data-fallbacks="${esc(candidates.join("|"))}" alt="Escudo de ${esc(c?.name||"clube")}" loading="lazy" referrerpolicy="no-referrer" onerror="window.tryNextRealCrest(this)"></div>`
+    :`<div class="${cls} crest-unavailable" title="Escudo real não localizado"></div>`;
 }
 function clubWithCrest(c,size="tiny"){return `<span class="club-with-crest">${crestHtml(c,size)}<b>${esc(c?.name||"Clube")}</b></span>`}
+function nationalCrestSource(code,name){return window.RealCrests?.national?.(code,name)||""}
+function nationalCrestHtml(code,name,size="medium",flag=""){
+  const src=nationalCrestSource(code,name);
+  return src
+    ?`<span class="national-emblem ${size}"><img src="${esc(src)}" alt="Escudo de ${esc(name||code||"seleção")}" loading="lazy" referrerpolicy="no-referrer" onerror="this.remove();this.parentElement.classList.add('fallback');this.parentElement.textContent='${esc(flag||"🏳️")}'"></span>`
+    :`<span class="national-emblem ${size} fallback">${esc(flag||"🏳️")}</span>`;
+}
 function posName(p){return({GK:"GOL",DEF:"DEF",MID:"MEI",ATT:"ATA"})[p]||p}
 function stateOptions(){return Object.entries(STATES).map(([k,v])=>`<option value="${k}">${esc(v)}</option>`).join("")}
 function countryProfile(code){
@@ -104,6 +130,7 @@ function phaseName(p){
 
 async function bootstrap(){
   try{
+    await Promise.race([window.RealCrests?.ready||Promise.resolve(),new Promise(r=>setTimeout(r,4500))]);
     const d=await api("/api/me");
     state.me=d.user;
     state.activeType=d.activeType||null;
@@ -193,12 +220,6 @@ async function loadPlayerStarterClubs(countryCode){
     if(current){
       current.disabled=false;
       current.innerHTML=state.playerStarterClubs.map(c=>`<option value="${c.id}">${esc(c.name)} · OVR ${c.base_rating}</option>`).join("");
-      current.onchange=()=>{
-        const chosen=state.playerStarterClubs.find(c=>String(c.id)===String(current.value));
-        const preview=app.querySelector("#playerClubCrestPreview");
-        if(preview)preview.innerHTML=chosen?clubWithCrest(chosen,"medium"):"";
-      };
-      current.onchange();
     }
   }catch(err){
     const current=app.querySelector("#playerClub");
@@ -274,7 +295,6 @@ function renderCreateClub(){
             <option value="SHOT_STOPPER">Pegador de chutes</option>
           </select></label>
         <label>Clube inicial da 4ª divisão<select id="playerClub" name="clubId" required><option>Carregando clubes...</option></select></label>
-        <div id="playerClubCrestPreview" class="starter-club-crest"></div>
         <div class="player-career-note">Você começa aos 17 anos. Há 30 países de liga, mercado internacional, agente, contratos, lesões, prêmios e uma carreira de seleção jogável quando você for convocado.</div>
         <button class="primary">Criar carreira de jogador</button>
         ${hasCareers?`<button type="button" id="cancelNewCareer" class="secondary">Voltar para minhas carreiras</button>`:""}
@@ -300,7 +320,7 @@ function renderCreateClub(){
       const felipe=n.trim().toLowerCase()==="felipe";
       const country=app.querySelector("#clubCountry").value||"BR";
       const div=leagueLabel("D",country);
-      app.querySelector("#preview").innerHTML=`<div><div class="preview-crest">${crestHtml({name:n},"large")}</div><h2>${esc(n)}</h2><p>${felipe?"⚡ Modo Felipe será ativado":`Começa em ${esc(div)}`}</p></div>`;
+      app.querySelector("#preview").innerHTML=`<div><div class="preview-crest">${esc(initials(n))}</div><h2>${esc(n)}</h2><p>${felipe?"⚡ Modo Felipe será ativado":`Começa em ${esc(div)}`}</p></div>`;
     };
     const syncCountry=()=>{
       const country=app.querySelector("#clubCountry").value||"BR";
@@ -994,7 +1014,7 @@ function activeLoansMarketCard(){
       ${loans.map(x=>`<article class="active-loan-card">
         <div>
           <b>${esc(x.player_name)}</b>
-          <small>${clubWithCrest({name:x.parent_club_name},"tiny")} · OVR ${x.rating}</small>
+          <small>${esc(x.parent_club_name)} · OVR ${x.rating}</small>
         </div>
         <div class="active-loan-meta">
           <span>${x.months_elapsed}/${x.months_total} meses</span>
@@ -1095,7 +1115,7 @@ function copaQuickCard(){
   if(!copa||car?.phase==="STATE")return "";
   const active=copa.status!=="finished"&&!copa.userEliminated;
   const legText=copa.twoLegged?` · ${Number(copa.leg||1)===1?"ida":"volta"}`:"";
-  return `<div class="card copa-home"><div><div class="kicker">${esc(copa.name||"COPA NACIONAL")}</div><h2>${copa.status==="finished"?`🏆 ${clubWithCrest(copa.championClub||{name:"Encerrada"},"medium")}`:esc(({R32:"Primeira fase",R16:"Oitavas",QF:"Quartas",SF:"Semifinais",FINAL:"Final"})[copa.stage]||copa.stage)+legText}</h2><p class="muted">${copa.twoLegged?"Mata-mata em ida e volta. Empate no agregado vai para os pênaltis.":"Torneio mata-mata em jogo único."}</p></div>${active?`<button id="playCopaHome" class="primary">Jogar ${copa.twoLegged?(Number(copa.leg||1)===1?"ida":"volta"):esc(copa.name||"Copa")}</button>`:""}</div>`;
+  return `<div class="card copa-home"><div><div class="kicker">${esc(copa.name||"COPA NACIONAL")}</div><h2>${copa.status==="finished"?`🏆 ${esc(copa.championClub?.name||"Encerrada")}`:esc(({R32:"Primeira fase",R16:"Oitavas",QF:"Quartas",SF:"Semifinais",FINAL:"Final"})[copa.stage]||copa.stage)+legText}</h2><p class="muted">${copa.twoLegged?"Mata-mata em ida e volta. Empate no agregado vai para os pênaltis.":"Torneio mata-mata em jogo único."}</p></div>${active?`<button id="playCopaHome" class="primary">Jogar ${copa.twoLegged?(Number(copa.leg||1)===1?"ida":"volta"):esc(copa.name||"Copa")}</button>`:""}</div>`;
 }
 function superWorldQuickCard(){
   const car=state.competitions?.career;
@@ -1247,7 +1267,7 @@ function managerOffersCard(compact=false){
                 ${international&&!europe?`<span class="manager-world-badge">EXTERIOR</span>`:""}
                 ${international?`<span class="manager-international-badge">INTERNACIONAL</span>`:""}
               </div>
-              <b>${clubWithCrest({name:o.club_name},"tiny")}</b>
+              <b>${esc(o.club_name)}</b>
               <small>${esc(managerOfferCountryLine(o))}</small>
               <small>OVR-base ${o.base_rating} · desempenho ${o.performance_score}/100${o.coach_name?` · atual treinador ${esc(o.coach_name)}`:""}</small>
             </div>
@@ -1296,7 +1316,7 @@ function realismView(){
       <div class="realism-kpis">
         <span>Entrosamento <b>${r.chemistry??70}</b></span>
         <span>Reputação do treinador <b>${r.managerReputation??50}</b></span>
-        <span>Rival <b>${r.rival?clubWithCrest(r.rival,"tiny"):"A definir"}</b></span>
+        <span>Rival <b>${esc(r.rival?.name||"A definir")}</b></span>
         <span>Janela <b>${window.open?"ABERTA":"FECHADA"}</b></span>
       </div>
     </div>
@@ -1322,7 +1342,7 @@ function realismView(){
       <div class="section-title"><div><div class="kicker">PRÓXIMO ADVERSÁRIO</div><h2>Análise pré-jogo</h2></div></div>
       ${opp?`
         <div class="opponent-grid">
-          <div><b>${clubWithCrest({name:opp.name},"tiny")}</b><span>OVR ${opp.rating} · ${esc(opp.formation)} · treinador ${esc(opp.coachName||"Treinador")}</span></div>
+          <div><b>${esc(opp.name)}</b><span>OVR ${opp.rating} · ${esc(opp.formation)} · treinador ${esc(opp.coachName||"Treinador")}</span></div>
           <div><small>ESTILO</small><b>${esc(tacticLabel(opp.style))}</b><span>Pressão ${esc(tacticLabel(opp.pressing))}</span></div>
           <div><small>PONTO FORTE</small><b>${esc(opp.strength)}</b><span>Ponto vulnerável: ${esc(opp.weakness)}</span></div>
           <div><small>DESTAQUE</small><b>${esc(opp.star?.name||"Sem informação")}</b><span>${opp.star?`${esc(opp.star.role)} · OVR estimado ${opp.star.ratingMin}–${opp.star.ratingMax}`:""}</span></div>
@@ -1441,7 +1461,7 @@ function realismView(){
       </div>
       <div class="card">
         <div class="section-title"><div><div class="kicker">MERCADO DA IA</div><h2>Transferências entre clubes</h2></div></div>
-        ${(r.aiTransfers||[]).length?(r.aiTransfers||[]).map(x=>`<div class="ai-transfer-row"><b>${esc(x.player_name)}</b><span>${clubWithCrest({name:x.from_club_name},"tiny")} → ${clubWithCrest({name:x.to_club_name},"tiny")}</span><small>${Number(x.fee||0).toLocaleString("pt-BR")} moedas</small></div>`).join(""):`<div class="empty">A movimentação aparecerá durante as janelas de transferências.</div>`}
+        ${(r.aiTransfers||[]).length?(r.aiTransfers||[]).map(x=>`<div class="ai-transfer-row"><b>${esc(x.player_name)}</b><span>${esc(x.from_club_name)} → ${esc(x.to_club_name)}</span><small>${Number(x.fee||0).toLocaleString("pt-BR")} moedas</small></div>`).join(""):`<div class="empty">A movimentação aparecerá durante as janelas de transferências.</div>`}
       </div>
     </section>
 
@@ -1505,7 +1525,7 @@ function homeView(){
     <div class="card"><div class="section-title"><h2>Últimos jogos</h2><span class="badge">${state.matches.length}</span></div>
       ${state.matches.length?state.matches.slice(0,7).map(m=>`<div class="match">
         <b>${esc(c.name)}</b><span class="score">${m.user_goals} × ${m.opponent_goals}</span>
-        <span class="right">${clubWithCrest({name:m.opponent_name},"tiny")}<br><small class="muted">${esc(m.match_type)}</small></span>
+        <span class="right">${esc(m.opponent_name)}<br><small class="muted">${esc(m.match_type)}</small></span>
       </div>`).join(""):`<div class="empty">Nenhum jogo ainda.</div>`}
     </div>
     <div class="card"><div class="section-title"><h2>Finanças</h2><span class="badge">${Number(c.coins).toLocaleString("pt-BR")}</span></div>
@@ -1701,7 +1721,7 @@ function marketView(){
 function incomingOfferCards(){
   if(!(state.incomingOffers||[]).length)return `<div class="empty">Nenhuma proposta pendente. Coloque jogadores à venda ou aguarde o avanço do calendário.</div>`;
   return `<div class="offer-list">${state.incomingOffers.map(o=>`<article class="incoming-offer">
-    <div><div class="kicker">${clubWithCrest({name:o.buying_club_name},"tiny")}</div><h4>${esc(o.player_name)}</h4><span class="muted">${esc(o.role||o.position)} · OVR ${o.rating} · ${o.age} anos</span></div>
+    <div><div class="kicker">${esc(o.buying_club_name)}</div><h4>${esc(o.player_name)}</h4><span class="muted">${esc(o.role||o.position)} · OVR ${o.rating} · ${o.age} anos</span></div>
     <div class="offer-value"><small>OFERTA</small><b>${Number(o.amount).toLocaleString("pt-BR")}</b></div>
     <div class="offer-actions"><button class="primary accept-offer" data-id="${o.id}">Aceitar</button><button class="danger reject-offer" data-id="${o.id}">Recusar</button></div>
   </article>`).join("")}</div>`;
@@ -1720,7 +1740,7 @@ function transferCards(){
       <span class="pos">${esc(p.role||posName(p.position))} · ${p.age} anos${p.nationality_code?` · ${esc(p.nationality_code)}`:""}</span>
       <span class="rating">${ratingText}</span>
       <h4>${esc(p.name)} ${p.is_real_name?`<span class="real-player-badge">REAL</span>`:""}</h4>
-      <div class="transfer-source">${p.source_club_name?clubWithCrest({name:p.source_club_name},"tiny"):(p.is_real_name?"Mercado global":"Livre no mercado")}${p.source_division?` · ${esc(leagueLabel(p.source_division,state.competitions?.career?.country_code||state.club?.country_code))}`:""}</div>
+      <div class="transfer-source">${p.source_club_name?esc(p.source_club_name):(p.is_real_name?"Mercado global":"Livre no mercado")}${p.source_division?` · ${esc(leagueLabel(p.source_division,state.competitions?.career?.country_code||state.club?.country_code))}`:""}</div>
 
       ${scouted?`<div class="attrs">
         <span>VEL <b>${p.pace}</b></span><span>CHU <b>${p.shooting}</b></span>
@@ -1804,7 +1824,7 @@ function stateView(){
     <h2>${esc(s.name)}</h2>
     <span class="muted">${s.stage==="GROUP"?`Fase classificatória · rodada ${Math.min(s.round,7)}/7`:s.stage==="SF"?"Semifinais":s.stage==="FINAL"?"Final":"Encerrado"}</span>
   </div>${state.competitions.career.phase==="STATE"?`<button id="playState" class="primary">Jogar próxima fase</button>`:""}</div>
-  ${s.champion?`<div class="champion-card"><div class="kicker">CAMPEÃO ESTADUAL</div><h2>🏆 ${clubWithCrest(s.championClub||{name:"Campeão"},"medium")}</h2></div>`:""}
+  ${s.champion?`<div class="champion-card"><div class="kicker">CAMPEÃO ESTADUAL</div><h2>🏆 ${esc(s.championClub?.name||"Campeão")}</h2></div>`:""}
   <div class="table-wrap"><table>
     <thead><tr><th>#</th><th>Clube</th><th>PTS</th><th>J</th><th>V</th><th>E</th><th>D</th><th>SG</th></tr></thead>
     <tbody>${s.entries.map((e,i)=>`<tr class="clickable ${String(e.clubId)===String(state.club.id)?"me":""}" data-club="${e.clubId}">
@@ -1833,7 +1853,7 @@ function penaltySummary(f){
   if(!f?.pw)return "";
   const winner=String(f.pw)===String(f.home)?f.homeClub?.name:f.awayClub?.name;
   if(f.penHome!=null&&f.penAway!=null){
-    return `<em class="penalty-detail">Pênaltis: ${clubWithCrest(f.homeClub||{name:"Mandante"},"tiny")} <b>${f.penHome}</b> × <b>${f.penAway}</b> ${clubWithCrest(f.awayClub||{name:"Visitante"},"tiny")} · <strong>${esc(winner||"Vencedor")} passou</strong></em>`;
+    return `<em class="penalty-detail">Pênaltis: ${esc(f.homeClub?.name||"Mandante")} <b>${f.penHome}</b> × <b>${f.penAway}</b> ${esc(f.awayClub?.name||"Visitante")} · <strong>${esc(winner||"Vencedor")} passou</strong></em>`;
   }
   return `<em class="penalty-detail">Decidido nos pênaltis · <strong>${esc(winner||"Vencedor")} passou</strong></em>`;
 }
@@ -1875,8 +1895,8 @@ function knockoutList(lib){
         <small>${code==="FINAL"?"Final · jogo único":`Chave ${fs[0]?.slot} · ida e volta`}</small>
         ${fs.map(f=>`<div class="ko-leg">
           <span class="leg-label">${code==="FINAL"?"FINAL":Number(f.leg||1)===1?"IDA":"VOLTA"}</span>
-          <span>${clubWithCrest(f.homeClub||{name:""},"tiny")} ${f.played?`<b>${f.hg}</b>`:""}</span>
-          <span>${clubWithCrest(f.awayClub||{name:""},"tiny")} ${f.played?`<b>${f.ag}</b>`:""}</span>
+          <span>${esc(f.homeClub?.name||"")} ${f.played?`<b>${f.hg}</b>`:""}</span>
+          <span>${esc(f.awayClub?.name||"")} ${f.played?`<b>${f.ag}</b>`:""}</span>
           ${penaltySummary(f)}
         </div>`).join("")}
         ${aggregateSummary(fs)}
@@ -1889,7 +1909,7 @@ function libertadoresView(){
   if(!lib)return `<div class="empty"><h2>🏆 Libertadores</h2><p>Classificam-se os 4 primeiros da Série A e também o campeão da Copa do Brasil. Se o campeão da Copa estiver fora do G4, ele entra como vaga adicional.</p></div>`;
   const qualificationReason=lib.qualification?.userReason;
   const qualificationBanner=qualificationReason?`<div class="libertadores-qualified-banner">✅ Seu clube se classificou: <b>${esc(qualificationReason)}</b>.</div>`:"";
-  if(lib.status==="finished")return `${qualificationBanner}<div class="champion-card"><div class="kicker">CAMPEÃO DA LIBERTADORES</div><h2>🏆 ${clubWithCrest(lib.championClub||{name:"Campeão"},"medium")}</h2></div>${knockoutList(lib)}`;
+  if(lib.status==="finished")return `${qualificationBanner}<div class="champion-card"><div class="kicker">CAMPEÃO DA LIBERTADORES</div><h2>🏆 ${esc(lib.championClub?.name||"Campeão")}</h2></div>${knockoutList(lib)}`;
   const button=state.competitions.career.phase==="LIBERTADORES"?`<button id="playLib" class="primary">Jogar próxima fase</button>`:"";
   if(lib.stage==="GROUP")return `${qualificationBanner}<div class="section-title"><div><div class="kicker">${lib.entries?.length||0}/32 CLUBES · 8 GRUPOS</div><h2>Libertadores — fase de grupos</h2><span class="muted">6 jogos por clube · 2 classificados por grupo</span></div>${button}</div>
     <div class="groups-grid">${"ABCDEFGH".split("").map(groupCard).join("")}</div>`;
@@ -1919,7 +1939,7 @@ function sudamericanaView(){
     return `${qualificationBanner}
       <div class="champion-card sula-champion">
         <div class="kicker">CAMPEÃO DA COPA SUL-AMERICANA</div>
-        <h2>🌎🏆 ${clubWithCrest(sula.championClub||{name:"Campeão"},"medium")}</h2>
+        <h2>🌎🏆 ${esc(sula.championClub?.name||"Campeão")}</h2>
       </div>
       ${knockoutList(sula)}`;
   }
@@ -1961,8 +1981,8 @@ function championsKnockoutList(ch){
       <small>${code==="FINAL"?"Final · jogo único":`Chave ${fs[0]?.slot} · ida e volta`}</small>
       ${fs.map(f=>`<div class="ko-leg">
         <span class="leg-label">${code==="FINAL"?"FINAL":Number(f.leg||1)===1?"IDA":"VOLTA"}</span>
-        <span>${clubWithCrest(f.homeClub||{name:""},"tiny")} ${f.played?`<b>${f.hg}</b>`:""}</span>
-        <span>${clubWithCrest(f.awayClub||{name:""},"tiny")} ${f.played?`<b>${f.ag}</b>`:""}</span>
+        <span>${esc(f.homeClub?.name||"")} ${f.played?`<b>${f.hg}</b>`:""}</span>
+        <span>${esc(f.awayClub?.name||"")} ${f.played?`<b>${f.ag}</b>`:""}</span>
         ${penaltySummary(f)}
       </div>`).join("")}
       ${aggregateSummary(fs)}
@@ -1978,7 +1998,7 @@ function championsView(){
   const button=state.competitions.career.phase==="CHAMPIONS"?`<button id="playChampions" class="primary">Jogar próxima fase</button>`:"";
 
   if(ch.status==="finished"){
-    return `<div class="champion-card"><div class="kicker">CAMPEÃO DA CHAMPIONS LEAGUE</div><h2>⭐ ${clubWithCrest(ch.championClub||{name:"Campeão"},"medium")}</h2></div>
+    return `<div class="champion-card"><div class="kicker">CAMPEÃO DA CHAMPIONS LEAGUE</div><h2>⭐ ${esc(ch.championClub?.name||"Campeão")}</h2></div>
       ${championsKnockoutList(ch)}`;
   }
 
@@ -2015,7 +2035,7 @@ function uefaSecondaryView(comp,config){
   if(comp.status==="finished"){
     return `<div class="champion-card ${config.cssClass}">
       <div class="kicker">CAMPEÃO DA ${esc(config.shortName.toUpperCase())}</div>
-      <h2>${config.icon} ${clubWithCrest(comp.championClub||{name:"Campeão"},"medium")}</h2>
+      <h2>${config.icon} ${esc(comp.championClub?.name||"Campeão")}</h2>
     </div>${championsKnockoutList(comp)}`;
   }
 
@@ -2070,8 +2090,8 @@ function worldKnockoutList(world){
     const fs=world.fixtures.filter(f=>f.stage===code);if(!fs.length)return "";
     return `<div class="knockout-stage"><h3>${label}</h3>${fs.map(f=>`<div class="ko-match">
       <small>${code==="FINAL"?"Final":`Chave ${f.slot}`}</small>
-      <span>${clubWithCrest(f.homeClub||{name:""},"tiny")} ${f.played?`<b>${f.hg}</b>`:""}</span>
-      <span>${clubWithCrest(f.awayClub||{name:""},"tiny")} ${f.played?`<b>${f.ag}</b>`:""}</span>
+      <span>${esc(f.homeClub?.name||"")} ${f.played?`<b>${f.hg}</b>`:""}</span>
+      <span>${esc(f.awayClub?.name||"")} ${f.played?`<b>${f.ag}</b>`:""}</span>
       ${penaltySummary(f)}
     </div>`).join("")}</div>`;
   }).join("")}</div>`;
@@ -2095,7 +2115,7 @@ function clubWorldCupView(){
 
   const button=car.phase==="CLUB_WORLD_CUP"?`<button id="playWorld" class="primary">Jogar próxima fase</button>`:"";
   if(world.status==="finished"){
-    return `<div class="champion-card"><div class="kicker">CAMPEÃO MUNDIAL DE CLUBES</div><h2>🌍🏆 ${clubWithCrest(world.championClub||{name:"Campeão"},"medium")}</h2></div>${allocation}${worldKnockoutList(world)}`;
+    return `<div class="champion-card"><div class="kicker">CAMPEÃO MUNDIAL DE CLUBES</div><h2>🌍🏆 ${esc(world.championClub?.name||"Campeão")}</h2></div>${allocation}${worldKnockoutList(world)}`;
   }
 
   if(world.stage==="GROUP"){
@@ -2122,7 +2142,7 @@ function copaView(){
     </div>
     ${active?`<button id="playCopa" class="primary">${brazilTwoLeg?`Jogar ${Number(copa.leg||1)===1?"ida":"volta"}`:"Jogar próxima fase"}</button>`:""}
   </div>
-  ${copa.status==="finished"?`<div class="champion-card"><div class="kicker">CAMPEÃO DA COPA</div><h2>🏆 ${clubWithCrest(copa.championClub||{name:"Campeão"},"medium")}</h2>
+  ${copa.status==="finished"?`<div class="champion-card"><div class="kicker">CAMPEÃO DA COPA</div><h2>🏆 ${esc(copa.championClub?.name||"Campeão")}</h2>
     ${String(copa.champion||"")===String(state.club.id)&&state.competitions.career.country_code==="BR"?`<div class="libertadores-qualified-banner">🌎 Vaga na Libertadores garantida pelo título da Copa do Brasil.</div>`:""}
   </div>`:""}
   ${copa.userEliminated?`<div class="msg">Seu clube foi eliminado. O restante do torneio foi simulado automaticamente.</div>`:""}
@@ -2133,8 +2153,8 @@ function copaView(){
         <small>Chave ${fs[0]?.slot}${brazilTwoLeg?" · ida e volta":" · jogo único"}</small>
         ${fs.map(f=>`<div class="ko-leg">
           <span class="leg-label">${brazilTwoLeg?(Number(f.leg||1)===1?"IDA":"VOLTA"):"JOGO"}</span>
-          <span>${clubWithCrest(f.homeClub||{name:""},"tiny")} ${f.played?`<b>${f.hg}</b>`:""}</span>
-          <span>${clubWithCrest(f.awayClub||{name:""},"tiny")} ${f.played?`<b>${f.ag}</b>`:""}</span>
+          <span>${esc(f.homeClub?.name||"")} ${f.played?`<b>${f.hg}</b>`:""}</span>
+          <span>${esc(f.awayClub?.name||"")} ${f.played?`<b>${f.ag}</b>`:""}</span>
           ${penaltySummary(f)}
         </div>`).join("")}
         ${brazilTwoLeg?aggregateSummary(fs):""}
@@ -2293,9 +2313,9 @@ function otherLeaguesView(){
         </div>
         <div class="other-league-fixtures">
           ${games.map(f=>`<button class="other-league-match ${f.played?"played":"future"}" data-club="${f.home}">
-            <span>${clubWithCrest(f.homeClub||{name:"Mandante"},"tiny")}</span>
+            <span>${esc(f.homeClub?.name||"Mandante")}</span>
             <b>${f.played?`${f.hg} × ${f.ag}`:"×"}</b>
-            <span>${clubWithCrest(f.awayClub||{name:"Visitante"},"tiny")}</span>
+            <span>${esc(f.awayClub?.name||"Visitante")}</span>
           </button>`).join("")||`<div class="empty">Nenhum jogo nesta rodada.</div>`}
         </div>
         <div class="other-league-round-status">
@@ -2421,7 +2441,7 @@ function playerJourneyView(){
       <div class="card"><div class="kicker">DISPUTA POR POSIÇÃO</div><h2>${esc(c.competitor?.name||"Concorrente")}</h2><div class="real-grid"><div><small>Seu OVR</small><b>${pc.overall}</b></div><div><small>Concorrente</small><b>${c.competitor?.rating??"—"}</b></div><div><small>Situação</small><b>${esc((c.status||"").replaceAll("_"," "))}</b></div><div><small>Liderança</small><b>${pc.leadership}</b></div></div>${pc.is_captain?`<div class="msg ok">© Você é capitão do elenco.</div>`:""}</div>
       <div class="card player-national-card">
         <div class="kicker">SELEÇÃO NACIONAL</div>
-        <h2>${nationalIdentity(pc.nationality_code,d.nationalTeam?.nationName||countryName(pc.nationality_code),"medium")}</h2>
+        <h2 class="national-title-with-emblem">${nationalCrestHtml(d.nationalTeam?.nationCode||pc.nationality_code,d.nationalTeam?.nationName||countryName(pc.nationality_code),"small",d.nationalTeam?.flag||"🏳️")}<span>${esc(d.nationalTeam?.nationName||countryName(pc.nationality_code))}</span></h2>
         <div class="real-grid">
           <div><small>Jogos</small><b>${d.nationalTeam?.caps||0}</b></div>
           <div><small>Gols</small><b>${d.nationalTeam?.goals||0}</b></div>
@@ -2435,7 +2455,7 @@ function playerJourneyView(){
             :d.nationalTeam?.status==="active"
               ?`<div class="player-national-next">
                   <small>${esc(d.nationalTeam.competition||"Competição internacional")} · ${esc(nationalStageLabel(d.nationalTeam.stage))}</small>
-                  <b>${d.nationalTeam.nextMatch?`${nationalIdentity(d.nationalTeam.nextMatch.home,d.nationalTeam.nextMatch.homeName)} × ${nationalIdentity(d.nationalTeam.nextMatch.away,d.nationalTeam.nextMatch.awayName)}`:"Próximo jogo internacional"}</b>
+                  <b>${d.nationalTeam.nextMatch?`${nationalCrestHtml(d.nationalTeam.nextMatch.home,d.nationalTeam.nextMatch.homeName,"tiny",d.nationalTeam.nextMatch.homeFlag)} ${esc(d.nationalTeam.nextMatch.homeName)} × ${esc(d.nationalTeam.nextMatch.awayName)} ${nationalCrestHtml(d.nationalTeam.nextMatch.away,d.nationalTeam.nextMatch.awayName,"tiny",d.nationalTeam.nextMatch.awayFlag)}`:"Próximo jogo internacional"}</b>
                 </div>
                 <button id="playerNationalPlay" class="primary">🌍 JOGAR PELA SELEÇÃO</button>`
               :`<div class="msg">${d.nationalTeam?.championName?`Campeão: ${esc(d.nationalTeam.championName)}`:"Campanha internacional encerrada nesta temporada."}</div>`}
@@ -2444,16 +2464,16 @@ function playerJourneyView(){
     ${(d.nationalTeam?.history||[]).length?`<section class="card">
       <div class="section-title"><div><div class="kicker">CARREIRA INTERNACIONAL</div><h2>Jogos pela seleção</h2></div><span class="badge">${d.nationalTeam.history.length}</span></div>
       <div class="national-history">${d.nationalTeam.history.slice(0,10).map(m=>`<div>
-        <span>${nationalIdentity(m.home,m.homeName)}</span>
+        <span class="national-history-team">${nationalCrestHtml(m.home,m.homeName,"tiny",m.homeFlag)} ${esc(m.homeName)}</span>
         <b>${m.homeGoals} × ${m.awayGoals}${m.penaltyShootout?` (${m.penaltyShootout.homePens}×${m.penaltyShootout.awayPens} p.)`:""}</b>
-        <span>${nationalIdentity(m.away,m.awayName)}</span>
+        <span class="national-history-team">${esc(m.awayName)} ${nationalCrestHtml(m.away,m.awayName,"tiny",m.awayFlag)}</span>
         <small>Nota ${Number(m.performance||0).toFixed(1)}${pc.position==="GK"?` · ${m.saves||0} defesas`:` · ${m.goals||0} G · ${m.assists||0} A`}</small>
       </div>`).join("")}</div>
     </section>`:""}
     ${(d.uefaClubHistory||[]).length?`<section class="card">
       <div class="section-title"><div><div class="kicker">EUROPA</div><h2>Jogos continentais por clubes</h2></div><span class="badge">${d.uefaClubHistory.length}</span></div>
       <div class="national-history">${d.uefaClubHistory.slice(0,10).map(m=>`<div>
-        <span>${clubWithCrest({name:m.homeName},"tiny")}</span><b>${m.homeGoals} × ${m.awayGoals}${m.penaltyShootout?` (${m.penaltyShootout.homePens}×${m.penaltyShootout.awayPens} p.)`:""}</b><span>${clubWithCrest({name:m.awayName},"tiny")}</span>
+        <span>${esc(m.homeName)}</span><b>${m.homeGoals} × ${m.awayGoals}${m.penaltyShootout?` (${m.penaltyShootout.homePens}×${m.penaltyShootout.awayPens} p.)`:""}</b><span>${esc(m.awayName)}</span>
         <small>${esc(m.competition)}${m.performance?` · nota ${Number(m.performance).toFixed(1)}`:""}</small>
       </div>`).join("")}</div>
     </section>`:""}
@@ -2467,7 +2487,7 @@ function playerMarketView(){
   const d=state.playerData,pc=d.career,ag=d.agent||{},ct=d.contract||{},interest=d.marketInterest||[],loans=d.loanOffers||[];
   return `<section class="player-v44-page">
     <div class="player-v44-grid two">
-      <div class="card"><div class="kicker">CONTRATO</div><h2>${clubWithCrest({name:pc.club_name},"tiny")}</h2><div class="real-grid"><div><small>Salário</small><b>${Number(pc.salary).toLocaleString("pt-BR")}</b></div><div><small>Anos</small><b>${ct.years}</b></div><div><small>Valor de mercado</small><b>${Number(ct.marketValue||0).toLocaleString("pt-BR")}</b></div><div><small>Cláusula</small><b>${Number(ct.releaseClause||0).toLocaleString("pt-BR")}</b></div></div></div>
+      <div class="card"><div class="kicker">CONTRATO</div><h2>${esc(pc.club_name)}</h2><div class="real-grid"><div><small>Salário</small><b>${Number(pc.salary).toLocaleString("pt-BR")}</b></div><div><small>Anos</small><b>${ct.years}</b></div><div><small>Valor de mercado</small><b>${Number(ct.marketValue||0).toLocaleString("pt-BR")}</b></div><div><small>Cláusula</small><b>${Number(ct.releaseClause||0).toLocaleString("pt-BR")}</b></div></div></div>
       <div class="card"><div class="kicker">EMPRESÁRIO</div><h2>Nível ${ag.level}/3</h2><p>Relação ${ag.relation}% · ${ag.cooldown?`nova ação em ${ag.cooldown} rodada(s)`:"disponível"}</p><div class="v44-action-grid"><button class="secondary player-agent-action" data-action="seek_transfer">🔎 Buscar mercado</button><button class="secondary player-agent-action" data-action="seek_europe">🌍 Buscar Europa</button><button class="secondary player-agent-action" data-action="seek_loan">🔁 Buscar empréstimo</button><button class="secondary player-agent-action" data-action="renegotiate">📝 Renegociar</button><button class="secondary player-agent-action" data-action="upgrade_agent">⭐ Melhorar agente</button></div></div>
     </div>
     <section class="card"><div class="kicker">SONDAGENS</div><h2>Clubes acompanhando você</h2>${interest.length?`<div class="player-offer-grid">${interest.map(o=>`<article class="player-offer"><b>${esc(o.club?.name||o.clubName)}</b><span>${esc(countryName(o.countryCode))} · ${esc(leagueLabel(o.division,o.countryCode))}</span><small>Interesse para próxima janela</small></article>`).join("")}</div>`:`<div class="empty">Peça ao empresário para movimentar seu nome.</div>`}</section>
@@ -2503,7 +2523,7 @@ function playerCareerHome(){
     <div class="player-identity">
       <div class="kicker">TEMPORADA ${pc.season_no} · ${esc(countryName(pc.country_code))}</div>
       <h1>${esc(pc.player_name)}</h1>
-      <p>${esc(playerPositionLabel(pc.position))} · ${clubWithCrest({name:pc.club_name},"tiny")} · ${esc(pc.league_name)}${pos?` · ${pos}º`:""}</p>
+      <p>${esc(playerPositionLabel(pc.position))} · ${esc(pc.club_name)} · ${esc(pc.league_name)}${pos?` · ${pos}º`:""}</p>
       <small>${pc.height_cm} cm · ${pc.weight_kg} kg · pé ${foot.toLowerCase()} · ${esc(styleLabels[pc.play_style]||pc.play_style||"Equilibrado")}</small>
     </div>
     <div class="player-overall"><small>OVR</small><b>${pc.overall}</b><span>POT ${pc.potential_hidden}</span></div>
@@ -2549,7 +2569,7 @@ function playerCareerHome(){
   ${last?`<section class="card">
     <div class="kicker">ÚLTIMA PARTIDA</div>
     <div class="player-last-match">
-      <span>${clubWithCrest({name:last.homeName},"tiny")}</span><b>${last.homeGoals} × ${last.awayGoals}</b><span>${clubWithCrest({name:last.awayName},"tiny")}</span>
+      <span>${esc(last.homeName)}</span><b>${last.homeGoals} × ${last.awayGoals}</b><span>${esc(last.awayName)}</span>
     </div>
     <div class="player-match-performance">
       ${last.played===false?`<span><b>Você ficou no banco</b></span>`:`<span>Nota <b>${last.performance}</b></span>`}
@@ -2575,7 +2595,7 @@ function playerCareerHome(){
     <div class="section-title"><div><div class="kicker">COPA</div><h2>${esc(d.cup.name||"Copa Nacional")}</h2></div>
       <span class="badge">${d.cup.status==="finished"?"Encerrada":d.cup.userEliminated?"Eliminado":d.cup.stage}</span></div>
     <p class="muted">${d.cup.status==="finished"
-      ?`Campeão: ${clubWithCrest(d.cup.championClub||{name:"—"},"medium")}`
+      ?`Campeão: ${esc(d.cup.championClub?.name||"—")}`
       :d.cup.userEliminated
         ?"Seu clube foi eliminado da Copa."
         :`Próxima fase na rodada ${d.cup.nextRound||"—"}. Em caso de empate, você participa da decisão por pênaltis.`}</p>
@@ -2583,7 +2603,7 @@ function playerCareerHome(){
   ${statusEnd?playerTransferOffersView():""}
   ${playerCareerRealisticPanel()}
   <section class="grid">
-    <div class="card"><div class="kicker">CONTRATO</div><h2>${clubWithCrest({name:pc.club_name},"tiny")}</h2>
+    <div class="card"><div class="kicker">CONTRATO</div><h2>${esc(pc.club_name)}</h2>
       <div class="finance-row"><span>Salário</span><b class="income">+${Number(pc.salary).toLocaleString("pt-BR")}/mês</b></div>
       <p class="muted">O salário entra no saldo pessoal a cada 4 rodadas. Seu status no elenco depende da confiança do treinador e das atuações.</p>
     </div>
@@ -2604,12 +2624,12 @@ function playerSeasonView(){
       ${table.map((e,i)=>`<tr class="${String(e.clubId)===String(pc.club_id)?"user-row":""}"><td>${i+1}</td><td>${clubWithCrest(e.club,"tiny")}</td><td>${e.p??e.wins+e.draws+e.losses}</td><td>${e.w??e.wins}</td><td>${e.d??e.draws}</td><td>${e.l??e.losses}</td><td>${e.gd}</td><td><b>${e.pts??e.points}</b></td></tr>`).join("")}
     </tbody></table></div>
     <h3>Rodada ${round}</h3>
-    <div class="fixtures">${games.map(f=>`<div class="match"><span>${clubWithCrest(f.homeClub||{name:""},"tiny")}</span><b>${f.played?`${f.hg} × ${f.ag}`:"×"}</b><span class="right">${clubWithCrest(f.awayClub||{name:""},"tiny")}</span></div>`).join("")}</div>
+    <div class="fixtures">${games.map(f=>`<div class="match"><span>${esc(f.homeClub?.name||"")}</span><b>${f.played?`${f.hg} × ${f.ag}`:"×"}</b><span class="right">${esc(f.awayClub?.name||"")}</span></div>`).join("")}</div>
     ${d.cup?`<h3>${esc(d.cup.name||"Copa Nacional")}</h3>
     <div class="fixtures">${(d.cup.fixtures||[]).filter(f=>f.stage===d.cup.stage).map(f=>`<div class="match">
-      <span>${clubWithCrest(f.homeClub||{name:""},"tiny")}</span>
+      <span>${esc(f.homeClub?.name||"")}</span>
       <b>${f.played?`${f.hg} × ${f.ag}${f.penHome!=null?` (${f.penHome}×${f.penAway} p.)`:""}`:"×"}</b>
-      <span class="right">${clubWithCrest(f.awayClub||{name:""},"tiny")}</span>
+      <span class="right">${esc(f.awayClub?.name||"")}</span>
     </div>`).join("")||`<div class="empty">Sem jogos pendentes.</div>`}</div>`:""}
     ${d.uefaClubCompetition?`<div class="player-uefa-card">
       <div class="section-title">
@@ -2622,13 +2642,13 @@ function playerSeasonView(){
           <td>${i+1}</td><td>${clubWithCrest(e.club,"tiny")}</td><td>${e.points}</td><td>${e.wins+e.draws+e.losses}</td><td>${e.gd>0?"+":""}${e.gd}</td>
         </tr>`).join("")}</tbody>
       </table></div>`:`<div class="fixtures">${(d.uefaClubCompetition.fixtures||[]).filter(f=>f.stage===d.uefaClubCompetition.stage).map(f=>`<div class="match">
-        <span>${clubWithCrest(f.homeClub||{name:""},"tiny")}</span><b>${f.played?`${f.hg} × ${f.ag}${f.penHome!=null?` (${f.penHome}×${f.penAway} p.)`:""}`:"×"}</b><span class="right">${clubWithCrest(f.awayClub||{name:""},"tiny")}</span>
+        <span>${esc(f.homeClub?.name||"")}</span><b>${f.played?`${f.hg} × ${f.ag}${f.penHome!=null?` (${f.penHome}×${f.penAway} p.)`:""}`:"×"}</b><span class="right">${esc(f.awayClub?.name||"")}</span>
       </div>`).join("")||`<div class="empty">Sem confronto pendente.</div>`}</div>`}
       ${d.uefaClubCompetition.nextRound?`<p class="muted">Próxima etapa europeia na rodada ${d.uefaClubCompetition.nextRound} do calendário da carreira.</p>`:""}
       ${d.uefaClubCompetition.championClub?`<div class="msg ok">🏆 Campeão: ${esc(d.uefaClubCompetition.championClub.name)}</div>`:""}
     </div>`:""}
     <h3>Seus últimos jogos</h3>
-    ${(d.history||[]).slice(0,10).map(m=>`<div class="match"><span>${clubWithCrest({name:m.homeName},"tiny")}</span><b>${m.homeGoals} × ${m.awayGoals}</b><span class="right">${clubWithCrest({name:m.awayName},"tiny")}<br><small>Nota ${m.performance}</small></span></div>`).join("")||`<div class="empty">Nenhum jogo disputado.</div>`}
+    ${(d.history||[]).slice(0,10).map(m=>`<div class="match"><span>${esc(m.homeName)}</span><b>${m.homeGoals} × ${m.awayGoals}</b><span class="right">${esc(m.awayName)}<br><small>Nota ${m.performance}</small></span></div>`).join("")||`<div class="empty">Nenhum jogo disputado.</div>`}
   </section>`;
 }
 function playerTrainingView(){
@@ -2947,10 +2967,10 @@ function journalMarketBrief(){
   }
   return `<div class="journal-brief-list">
     ${playerOffers.slice(0,3).map(o=>`<button class="journal-brief-item" data-journal-link="market">
-      <span>💰</span><div><b>${clubWithCrest({name:o.buying_club_name},"tiny")} quer ${esc(o.player_name)}</b><small>Oferta de ${Number(o.amount||0).toLocaleString("pt-BR")} moedas</small></div>
+      <span>💰</span><div><b>${esc(o.buying_club_name)} quer ${esc(o.player_name)}</b><small>Oferta de ${Number(o.amount||0).toLocaleString("pt-BR")} moedas</small></div>
     </button>`).join("")}
     ${managerOffers.slice(0,2).map(o=>`<button class="journal-brief-item" data-journal-link="realism">
-      <span>👔</span><div><b>${clubWithCrest({name:o.club_name},"tiny")} procura seu treinador</b><small>Salário: ${Number(o.salary||0).toLocaleString("pt-BR")}/mês</small></div>
+      <span>👔</span><div><b>${esc(o.club_name)} procura seu treinador</b><small>Salário: ${Number(o.salary||0).toLocaleString("pt-BR")}/mês</small></div>
     </button>`).join("")}
     ${sponsorOffers.slice(0,2).map(o=>`<button class="journal-brief-item" data-journal-link="club">
       <span>🤝</span><div><b>${esc(o.name)} abriu proposta</b><small>${Number(o.monthly||0).toLocaleString("pt-BR")}/mês · ${esc(o.benefitLabel||"benefício")}</small></div>
@@ -3351,7 +3371,7 @@ function nationalLineupSubView(nt){
                 <label class="national-selection-player ${lineupIds.has(String(p.id))?"selected":""}">
                   <input type="checkbox" class="national-lineup-check" value="${p.id}" ${lineupIds.has(String(p.id))?"checked":""}>
                   <span class="national-pos">${posName(p.position)}</span>
-                  <span class="national-selection-name"><b>${esc(p.name)}</b><small>${p.club_name?clubWithCrest({name:p.club_name},"tiny"):"Sem clube"} · ${p.age} anos</small></span>
+                  <span class="national-selection-name"><b>${esc(p.name)}</b><small>${esc(p.club_name||"Sem clube")} · ${p.age} anos</small></span>
                   <span class="national-selection-rating"><b>${p.rating}</b><small>OVR</small></span>
                   <span class="national-selection-form"><b>${p.fitness??"—"}</b><small>FIS</small></span>
                 </label>`).join("")}
@@ -3376,7 +3396,7 @@ function nationalTeamView(){
         <div class="section-title"><div><div class="kicker">PROPOSTAS DE FEDERAÇÕES</div><h2>Seleções interessadas</h2></div><span class="badge">${(nt.offers||[]).length}</span></div>
         <div class="national-offers">
           ${(nt.offers||[]).map(o=>`<article class="national-offer">
-            <div class="national-flag">${nationalCrestHtml(o.code,"medium")}</div>
+            ${nationalCrestHtml(o.code,o.name,"medium",o.flag)}
             <div><h3>${esc(o.name)}</h3><span>OVR ${o.rating} · ${esc(o.confed)}</span><p>Meta: <b>${esc(o.target)}</b></p></div>
             <button class="primary accept-national" data-code="${o.code}">Aceitar cargo</button>
           </article>`).join("")||`<div class="empty">Nenhuma seleção apresentou proposta neste momento. Aumente sua reputação como treinador.</div>`}
@@ -3394,7 +3414,7 @@ function nationalTeamView(){
   if((state.nationalTab||"overview")==="lineup"){
     return `<section class="national-page">
       <div class="national-hero">
-        <div class="national-flag huge">${nationalCrestHtml(j.nation_code,"large")}</div>
+        ${nationalCrestHtml(j.nation_code,j.nationName,"huge",j.flag)}
         <div class="national-identity">
           <div class="kicker">SELEÇÃO NACIONAL</div>
           <h1>${esc(j.nationName)}</h1>
@@ -3413,7 +3433,7 @@ function nationalTeamView(){
 
   return `<section class="national-page">
     <div class="national-hero">
-      <div class="national-flag huge">${nationalCrestHtml(j.nation_code,"large")}</div>
+      ${nationalCrestHtml(j.nation_code,j.nationName,"huge",j.flag)}
       <div class="national-identity">
         <div class="kicker">SELEÇÃO NACIONAL</div>
         <h1>${esc(j.nationName)}</h1>
@@ -3430,7 +3450,7 @@ function nationalTeamView(){
 
     ${canPlay?`<div class="card national-next-match">
       <div><div class="kicker">PRÓXIMO COMPROMISSO</div>
-        <h2>${userFixture?`${nationalIdentity(userFixture.home,userFixture.homeName)} × ${nationalIdentity(userFixture.away,userFixture.awayName)}`:esc(nationalStageLabel(j.stage))}</h2>
+        <h2>${userFixture?`${nationalCrestHtml(userFixture.home,userFixture.homeName,"tiny",userFixture.homeFlag)} ${esc(userFixture.homeName)} × ${esc(userFixture.awayName)} ${nationalCrestHtml(userFixture.away,userFixture.awayName,"tiny",userFixture.awayFlag)}`:esc(nationalStageLabel(j.stage))}</h2>
         <p class="muted">${j.stage==="GROUP"?`Rodada ${j.matchday}/3`:"Mata-mata em jogo único. Empate vai para os pênaltis."}</p>
       </div>
       <button id="playNationalTeam" class="primary">🌍 JOGAR PELA SELEÇÃO</button>
@@ -3457,7 +3477,7 @@ function nationalTeamView(){
         <div class="section-title"><div><div class="kicker">GRUPO / FASE</div><h2>Situação na competição</h2></div></div>
         ${(nt.table||[]).length?`<div class="national-table">
           ${(nt.table||[]).map((e,i)=>`<div class="${String(e.clubId)===String(j.nation_code)?"user":""}">
-            <span>${i+1}º</span><b>${nationalIdentity(e.clubId,e.name)}</b><span>${Number(e.points||0)} pts</span><small>SG ${e.gd}</small>
+            <span>${i+1}º</span><b class="national-table-team">${nationalCrestHtml(e.clubId,e.name,"tiny",e.flag)} ${esc(e.name)}</b><span>${Number(e.points||0)} pts</span><small>SG ${e.gd}</small>
           </div>`).join("")}
         </div>`:`<p class="muted">${esc(nationalStageLabel(j.stage))}</p>`}
       </div>
@@ -3467,7 +3487,7 @@ function nationalTeamView(){
       <div class="section-title"><div><div class="kicker">CONVOCAÇÃO</div><h2>23 jogadores</h2></div><span class="badge">Atualização automática</span></div>
       <div class="national-squad">
         ${(nt.squad||[]).map(p=>`<div class="national-player">
-          <span class="national-pos">${posName(p.position)}</span><div><b>${esc(p.name)}</b><small>${p.club_name?clubWithCrest({name:p.club_name},"tiny"):"Sem clube"} · ${p.age} anos</small></div><strong>${p.rating}</strong>
+          <span class="national-pos">${posName(p.position)}</span><div><b>${esc(p.name)}</b><small>${esc(p.club_name||"Sem clube")} · ${p.age} anos</small></div><strong>${p.rating}</strong>
         </div>`).join("")||`<div class="empty">Convocação sendo preparada.</div>`}
       </div>
     </div>
@@ -3475,7 +3495,7 @@ function nationalTeamView(){
     ${(j.history||[]).length?`<div class="card">
       <div class="section-title"><div><div class="kicker">ÚLTIMOS JOGOS</div><h2>Histórico internacional</h2></div></div>
       <div class="national-history">${(j.history||[]).slice(0,8).map(m=>`<div>
-        <span>${nationalIdentity(m.home,m.homeName)}</span><b>${m.homeGoals} × ${m.awayGoals}${m.penaltyShootout?` (${m.penaltyShootout.homePens}×${m.penaltyShootout.awayPens} p.)`:""}</b><span>${nationalIdentity(m.away,m.awayName)}</span>
+        <span class="national-history-team">${nationalCrestHtml(m.home,m.homeName,"tiny",m.homeFlag)} ${esc(m.homeName)}</span><b>${m.homeGoals} × ${m.awayGoals}${m.penaltyShootout?` (${m.penaltyShootout.homePens}×${m.penaltyShootout.awayPens} p.)`:""}</b><span class="national-history-team">${esc(m.awayName)} ${nationalCrestHtml(m.away,m.awayName,"tiny",m.awayFlag)}</span>
       </div>`).join("")}</div>
     </div>`:""}
 
@@ -3620,7 +3640,7 @@ function clubView(){
   const c=state.club;
   return `<section class="custom-grid">
     <div class="card"><div id="clubPreview" class="club-preview" style="background:linear-gradient(135deg,${c.primary_color},${c.secondary_color})">
-      <div><div id="crestPreview" class="preview-crest">${RealCrests.source(c)?`<img src="${esc(RealCrests.source(c))}" alt="Escudo">`:"—"}</div>
+      <div><div id="crestPreview" class="preview-crest">${(()=>{const cs=realClubCrestCandidates(c),src=cs.shift()||"";return src?`<img src="${esc(src)}" data-fallbacks="${esc(cs.join("|"))}" onerror="window.tryNextRealCrest(this)" alt="">`:`<span class="no-real-crest">SEM ESCUDO</span>`})()}</div>
       <h2 id="namePreview">${esc(c.name)}</h2><p>${esc(locationLabel(c))}</p><p>Código: <b>${esc(c.friend_code||"")}</b></p></div>
     </div></div>
     <div class="card"><div class="kicker">Identidade do clube</div><h2>Personalização</h2>
@@ -4480,7 +4500,7 @@ function openLoanOffer(p){
 
   const bg=document.createElement("div");bg.className="modal-bg";
   bg.innerHTML=`<div class="modal">
-    <div class="modal-head"><div><div class="kicker">EMPRÉSTIMO</div><h2>${esc(p.name)}</h2><span class="muted">${clubWithCrest({name:p.source_club_name},"tiny")} · ${esc(p.role||p.position)} · OVR ${p.rating}</span></div><button class="secondary close-modal">Fechar</button></div>
+    <div class="modal-head"><div><div class="kicker">EMPRÉSTIMO</div><h2>${esc(p.name)}</h2><span class="muted">${esc(p.source_club_name)} · ${esc(p.role||p.position)} · OVR ${p.rating}</span></div><button class="secondary close-modal">Fechar</button></div>
     <form id="loanForm" class="stack" style="margin-top:16px">
       <label>Duração<select id="loanMonths"><option value="3">3 meses</option><option value="6" selected>6 meses</option><option value="12">12 meses</option></select></label>
       <label>Taxa mensal ao clube<input id="loanFee" type="number" min="0" value="${suggested}"></label>
@@ -4733,12 +4753,12 @@ function bindCareers(){
   });
 }
 function bindClub(){
-  pendingCrest=RealCrests.uploaded(state.club.crest_data)?state.club.crest_data:null;
+  pendingCrest=state.club.crest_data||null;
   const name=app.querySelector("#customName"),c1=app.querySelector("#customPrimary"),c2=app.querySelector("#customSecondary");
   const sync=()=>{
     app.querySelector("#clubPreview").style.background=`linear-gradient(135deg,${c1.value},${c2.value})`;
     app.querySelector("#namePreview").textContent=name.value||"Clube";
-    app.querySelector("#crestPreview").innerHTML=pendingCrest?`<img src="${esc(pendingCrest)}" alt="Escudo">`:RealCrests.club(name.value)?`<img src="${esc(RealCrests.club(name.value).src)}" alt="Escudo">`:"—";
+    {const cs=realClubCrestCandidates({...state.club,name:name.value,crest_data:pendingCrest}),src=cs.shift()||"";app.querySelector("#crestPreview").innerHTML=src?`<img src="${esc(src)}" data-fallbacks="${esc(cs.join("|"))}" onerror="window.tryNextRealCrest(this)" alt="">`:`<span class="no-real-crest">SEM ESCUDO</span>`;}
   };
   [name,c1,c2].forEach(el=>el.oninput=sync);
   app.querySelector("#crestFile").onchange=async e=>{

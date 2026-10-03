@@ -1531,11 +1531,19 @@ repeating-linear-gradient(0deg,#1e7d43 0,#1e7d43 56px,#237f47 56px,#237f47 112px
 .fixture .right .club-with-crest{justify-content:flex-end}
 .group-card .club-with-crest,.other-league-table .club-with-crest{gap:5px}
 
-/* v63 — arquivos reais, sem geração de escudos por iniciais. */
-.crest{display:inline-flex;align-items:center;justify-content:center;vertical-align:middle;flex-shrink:0}
-.crest.large{width:88px;height:100px}
-.crest img{object-fit:contain;max-width:100%;max-height:100%}
-.crest-unavailable{color:var(--muted);font-weight:400}
-.national-flag .crest{width:62px;height:70px}
-.national-flag.huge .crest{width:92px;height:105px}
-.preview-crest img{object-fit:contain}
+/* v63 — escudos reais de clubes e seleções; sem brasão genérico */
+.crest-unavailable{position:relative;background:transparent!important;border:1px dashed rgba(255,255,255,.12)!important;border-radius:50%!important;opacity:.28}
+.crest-unavailable::after{content:""}
+.national-emblem{display:inline-grid;place-items:center;flex:0 0 auto;vertical-align:middle;overflow:visible;background:transparent}
+.national-emblem img{width:100%;height:100%;object-fit:contain;filter:drop-shadow(0 2px 4px rgba(0,0,0,.28))}
+.national-emblem.tiny{width:24px;height:24px}
+.national-emblem.small{width:38px;height:38px}
+.national-emblem.medium{width:54px;height:54px}
+.national-emblem.huge{width:92px;height:92px}
+.national-emblem.fallback{font-size:1.4em}
+.national-title-with-emblem{display:flex;align-items:center;gap:10px}
+.national-offer>.national-emblem{align-self:center}
+.national-hero>.national-emblem{align-self:center}
+.national-next-match h2,.player-national-next b,.national-table-team{display:flex;align-items:center;gap:7px}
+.no-real-crest{font-size:10px;letter-spacing:.08em;font-weight:900;color:var(--muted)}
+.national-history-team{display:flex;align-items:center;gap:6px}
