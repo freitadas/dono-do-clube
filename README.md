@@ -1430,13 +1430,11 @@ Reformulação ampla do modo jogador: personalidade e objetivo de carreira, núm
 - Recalcula a classificação da fase de grupos com base nos resultados já disputados.
 
 
-## v61 — Modo Carreira Treinador 3.0
-- Contrato, salário, renovação, advertências e ultimato/demissão.
-- Metas de liga, copa, base, finanças e clássicos.
-- Treino semanal e plano específico para o próximo adversário com efeito na simulação.
-- Reuniões individuais, promessas e consequências no vestiário.
-- Árvore de evolução do treinador, XP, níveis e reputação regional.
-- Infraestrutura do clube, pedidos à diretoria e scouting internacional da base.
-- Presidente com personalidade, ranking de treinadores, prêmios e legado/Hall da Fama.
-- Comissão técnica ampliada com analista, bolas paradas e treinador da base.
-- Deadline Day identificado quando a janela está perto do fechamento.
+## v61 — Modo Carreira Jogador 3.0
+- Objetivo pessoal por temporada: protagonista, espaço no time, físico ou mercado.
+- Decisão de jogo antes de cada rodada, com opções próprias para jogadores de linha e goleiros.
+- As decisões alteram nota, chances de gol/assistência/defesa, desgaste, risco de lesão, reputação e confiança.
+- Sistema de relacionamentos com treinador, empresário, companheiros, torcida e imprensa.
+- Recordes de craque do jogo, sequências, jogos com 2+ gols, hat-tricks e sequências sem sofrer gol.
+- Marcos de carreira com recompensas de evolução.
+- Histórico continental europeu passa a ser preservado entre temporadas.

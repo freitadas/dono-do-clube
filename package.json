@@ -2,7 +2,7 @@
   "name": "dono-do-clube",
   "version": "61.0.0",
   "private": true,
-  "description": "Dono do Clube v61 — Modo Carreira Treinador 3.0",
+  "description": "Dono do Clube v61 — Modo Carreira Jogador 3.0 com decisões de jogo, ambição, relações e recordes",
   "main": "server.js",
   "scripts": {
     "start": "node server.js"
