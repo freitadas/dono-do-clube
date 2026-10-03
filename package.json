@@ -1,8 +1,8 @@
 {
   "name": "dono-do-clube",
-  "version": "63.0.0",
+  "version": "64.0.0",
   "private": true,
-  "description": "Dono do Clube v63 — escudos reais de clubes e seleções, sem brasões genéricos para equipes reais",
+  "description": "Dono do Clube v64 — início de carreira com clube real escolhido ou criação de clube próprio, mantendo escudos reais",
   "main": "server.js",
   "scripts": {
     "start": "node server.js"

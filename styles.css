@@ -1547,3 +1547,20 @@ repeating-linear-gradient(0deg,#1e7d43 0,#1e7d43 56px,#237f47 56px,#237f47 112px
 .national-next-match h2,.player-national-next b,.national-table-team{display:flex;align-items:center;gap:7px}
 .no-real-crest{font-size:10px;letter-spacing:.08em;font-weight:900;color:var(--muted)}
 .national-history-team{display:flex;align-items:center;gap:6px}
+
+/* v64 — início da carreira: clube real ou clube próprio */
+.club-start-switch{display:grid;grid-template-columns:1fr 1fr;gap:8px;margin:0 0 18px}
+.club-start-switch button{min-height:52px;border-radius:14px;border:1px solid var(--line);background:#0b1711;color:#c5d5ca;font-weight:900;padding:10px 14px}
+.club-start-switch button.on{background:#17492b;border-color:#4e9a68;color:#fff;box-shadow:0 0 0 1px rgba(78,154,104,.22) inset}
+.real-club-grid{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:9px;max-height:430px;overflow:auto;padding:3px}
+.real-club-card{display:flex;align-items:center;gap:12px;text-align:left;min-height:76px;padding:10px 12px;border-radius:14px;border:1px solid var(--line);background:#0a1510;color:#eef7f0;transition:.15s ease}
+.real-club-card:hover{border-color:#4e9a68;background:#102219}
+.real-club-card.selected{border-color:#6ed38c;background:#153823;box-shadow:0 0 0 2px rgba(110,211,140,.16)}
+.real-club-card .crest.small{flex:0 0 auto}
+.real-club-card-text{display:grid;gap:4px;min-width:0}
+.real-club-card-text b{white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.real-club-card-text small{color:var(--muted);font-size:12px}
+.real-club-loading{grid-column:1/-1;padding:24px;border:1px dashed var(--line);border-radius:14px;color:var(--muted);text-align:center}
+.real-club-chosen{min-height:50px;border-radius:13px;border:1px solid var(--line);background:#09150e;padding:10px 12px;display:flex;align-items:center;gap:10px;color:#cfe0d4}
+#realClubSubmit:disabled{opacity:.48;cursor:not-allowed}
+@media(max-width:700px){.club-start-switch,.real-club-grid{grid-template-columns:1fr}}

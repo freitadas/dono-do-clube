@@ -13,8 +13,8 @@ const state={
   boardMessages:[],boardExpectation:null,teamPerformance:null,rotationAdvice:null,realism:null,
   transferWindow:null,scoutLevel:1,
   transferSearch:{name:"",position:"",minRating:58,maxPrice:500000,realOnly:false},
-  activeType:null,playerCareer:null,playerData:null,countries:{},creationMode:"club",playerView:"home",
-  playerStarterClubs:[],
+  activeType:null,playerCareer:null,playerData:null,countries:{},creationMode:"club",clubStartMode:"real",playerView:"home",
+  playerStarterClubs:[],realClubChoices:[],realClubDivision:"A",selectedRealClubId:null,
   playerExpansion:{agent:true,media:true,sponsorship:true,awards:true,nationalTeam:true,legacy:true},
   europeOffersExpansion:true,
   newsFilter:"all",newsSearch:"",newsSort:"latest",
@@ -227,10 +227,48 @@ async function loadPlayerStarterClubs(countryCode){
   }
 }
 
+async function loadRealClubChoices(countryCode,division){
+  const grid=app.querySelector("#realClubGrid");
+  const submit=app.querySelector("#realClubSubmit");
+  if(!grid)return;
+  grid.innerHTML=`<div class="real-club-loading">Carregando clubes reais...</div>`;
+  if(submit)submit.disabled=true;
+  state.selectedRealClubId=null;
+  try{
+    const d=await api(`/api/club-career/clubs?country=${encodeURIComponent(countryCode)}&division=${encodeURIComponent(division)}`);
+    state.realClubChoices=d.clubs||[];
+    const current=app.querySelector("#realClubGrid");
+    if(!current)return;
+    if(!state.realClubChoices.length){
+      current.innerHTML=`<div class="real-club-loading">Nenhum clube disponível nesta divisão.</div>`;
+      return;
+    }
+    current.innerHTML=state.realClubChoices.map(c=>`
+      <button type="button" class="real-club-card" data-real-club-id="${esc(c.id)}">
+        ${crestHtml(c,"small")}
+        <span class="real-club-card-text"><b>${esc(c.name)}</b><small>${esc(leagueLabel(c.national_seed_division||division,c.country_code||countryCode))} · OVR ${Number(c.base_rating||64)}</small></span>
+      </button>
+    `).join("");
+    current.querySelectorAll("[data-real-club-id]").forEach(btn=>btn.onclick=()=>{
+      state.selectedRealClubId=String(btn.dataset.realClubId);
+      current.querySelectorAll(".real-club-card").forEach(x=>x.classList.toggle("selected",x===btn));
+      const picked=state.realClubChoices.find(c=>String(c.id)===state.selectedRealClubId);
+      const chosen=app.querySelector("#realClubChosen");
+      if(chosen&&picked)chosen.innerHTML=`${crestHtml(picked,"tiny")}<span>Selecionado: <b>${esc(picked.name)}</b> · OVR ${Number(picked.base_rating||64)}</span>`;
+      const go=app.querySelector("#realClubSubmit");
+      if(go)go.disabled=false;
+    });
+  }catch(err){
+    const current=app.querySelector("#realClubGrid");
+    if(current)current.innerHTML=`<div class="msg">${esc(err.message)}</div>`;
+  }
+}
+
 function renderCreateClub(){
   const hasCareers=(state.careers||[]).length>0;
   const nextNumber=Math.min(state.maxCareers||10,(state.careers||[]).length+1);
   const mode=state.creationMode||"club";
+  const clubStartMode=state.clubStartMode||"real";
   const defaultLabel=mode==="player"?`Jogador ${nextNumber}`:`Carreira ${nextNumber}`;
 
   app.innerHTML=`<main class="auth"><section class="authbox career-create-box">
@@ -244,21 +282,44 @@ function renderCreateClub(){
     </div>
 
     ${mode==="club"?`
-      <form id="clubForm" class="stack">
-        <label>Nome da carreira<input id="careerLabel" name="careerLabel" value="${esc(defaultLabel)}" maxlength="40" required></label>
-        <label>Nome do clube<input id="clubName" name="name" value="Meu Clube FC" maxlength="30" required></label>
-        <label>País da carreira<select id="clubCountry" name="countryCode" required>${countryOptions("BR")}</select></label>
-        <label id="stateField">Estado<select name="stateCode"><option value="">Escolha o estado</option>${stateOptions()}</select></label>
-        <div class="country-note" id="clubCountryNote">🇧🇷 No Brasil, seu clube começa na Série D e também disputa o Estadual.</div>
-        <div class="colors">
-          <label>Cor principal<input id="c1" type="color" name="primaryColor" value="#18864b"></label>
-          <label>Cor secundária<input id="c2" type="color" name="secondaryColor" value="#f7fafc"></label>
-        </div>
-        <div id="preview" class="club-preview"></div>
-        <button class="primary">Criar carreira de clube</button>
-        ${hasCareers?`<button type="button" id="cancelNewCareer" class="secondary">Voltar para minhas carreiras</button>`:""}
-        <div id="clubMsg"></div>
-      </form>
+      <div class="club-start-switch">
+        <button type="button" data-club-start="real" class="${clubStartMode==="real"?"on":""}">🛡️ Começar com clube real</button>
+        <button type="button" data-club-start="custom" class="${clubStartMode==="custom"?"on":""}">✨ Criar meu próprio clube</button>
+      </div>
+
+      ${clubStartMode==="real"?`
+        <form id="realClubForm" class="stack">
+          <label>Nome da carreira<input name="careerLabel" value="${esc(defaultLabel)}" maxlength="40" required></label>
+          <div class="two-cols">
+            <label>País<select id="realClubCountry" name="countryCode" required>${countryOptions("BR")}</select></label>
+            <label>Divisão<select id="realClubDivision" name="division" required>
+              ${["A","B","C","D"].map(d=>`<option value="${d}" ${d===(state.realClubDivision||"A")?"selected":""}>${esc(leagueLabel(d,"BR"))}</option>`).join("")}
+            </select></label>
+          </div>
+          <div class="country-note">Escolha qualquer clube real disponível. A carreira começa na divisão original do clube escolhido.</div>
+          <div id="realClubGrid" class="real-club-grid"><div class="real-club-loading">Carregando clubes reais...</div></div>
+          <div id="realClubChosen" class="real-club-chosen">Selecione um clube para começar.</div>
+          <button id="realClubSubmit" class="primary" disabled>Começar carreira com o clube escolhido</button>
+          ${hasCareers?`<button type="button" id="cancelNewCareer" class="secondary">Voltar para minhas carreiras</button>`:""}
+          <div id="clubMsg"></div>
+        </form>
+      `:`
+        <form id="clubForm" class="stack">
+          <label>Nome da carreira<input id="careerLabel" name="careerLabel" value="${esc(defaultLabel)}" maxlength="40" required></label>
+          <label>Nome do clube<input id="clubName" name="name" value="Meu Clube FC" maxlength="30" required></label>
+          <label>País da carreira<select id="clubCountry" name="countryCode" required>${countryOptions("BR")}</select></label>
+          <label id="stateField">Estado<select name="stateCode"><option value="">Escolha o estado</option>${stateOptions()}</select></label>
+          <div class="country-note" id="clubCountryNote">🇧🇷 No Brasil, seu clube começa na Série D e também disputa o Estadual.</div>
+          <div class="colors">
+            <label>Cor principal<input id="c1" type="color" name="primaryColor" value="#18864b"></label>
+            <label>Cor secundária<input id="c2" type="color" name="secondaryColor" value="#f7fafc"></label>
+          </div>
+          <div id="preview" class="club-preview"></div>
+          <button class="primary">Criar meu clube e começar carreira</button>
+          ${hasCareers?`<button type="button" id="cancelNewCareer" class="secondary">Voltar para minhas carreiras</button>`:""}
+          <div id="clubMsg"></div>
+        </form>
+      `}
     `:`
       <form id="playerCareerForm" class="stack">
         <label>Nome da carreira<input name="careerLabel" value="${esc(defaultLabel)}" maxlength="40" required></label>
@@ -308,11 +369,55 @@ function renderCreateClub(){
     state.playerStarterClubs=[];
     renderCreateClub();
   });
+  app.querySelectorAll("[data-club-start]").forEach(btn=>btn.onclick=()=>{
+    state.clubStartMode=btn.dataset.clubStart;
+    state.realClubChoices=[];
+    state.selectedRealClubId=null;
+    renderCreateClub();
+  });
 
   const cancel=app.querySelector("#cancelNewCareer");
   if(cancel)cancel.onclick=()=>{state.view="careers";render()};
 
-  if(mode==="club"){
+  if(mode==="club"&&clubStartMode==="real"){
+    const country=app.querySelector("#realClubCountry");
+    const division=app.querySelector("#realClubDivision");
+    const syncDivisionLabels=()=>{
+      const code=country.value||"BR";
+      [...division.options].forEach(opt=>{opt.textContent=leagueLabel(opt.value,code)});
+    };
+    const reload=()=>{
+      state.realClubDivision=division.value||"A";
+      syncDivisionLabels();
+      loadRealClubChoices(country.value||"BR",state.realClubDivision);
+    };
+    country.onchange=reload;
+    division.onchange=reload;
+    syncDivisionLabels();
+    loadRealClubChoices(country.value||"BR",division.value||"A");
+
+    app.querySelector("#realClubForm").onsubmit=async e=>{
+      e.preventDefault();
+      if(!state.selectedRealClubId){
+        app.querySelector("#clubMsg").innerHTML=`<div class="msg">Escolha um clube real.</div>`;
+        return;
+      }
+      const f=new FormData(e.target);
+      try{
+        await api("/api/club/real",{method:"POST",body:JSON.stringify({
+          careerLabel:f.get("careerLabel"),sourceClubId:state.selectedRealClubId
+        })});
+        state.view="home";
+        state.creationMode="club";
+        state.clubStartMode="real";
+        state.realClubChoices=[];
+        state.selectedRealClubId=null;
+        await bootstrap();
+      }catch(err){
+        app.querySelector("#clubMsg").innerHTML=`<div class="msg">${esc(err.message)}</div>`;
+      }
+    };
+  }else if(mode==="club"){
     const sync=()=>{
       const n=app.querySelector("#clubName").value||"Meu Clube FC";
       const c1=app.querySelector("#c1").value,c2=app.querySelector("#c2").value;

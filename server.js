@@ -556,6 +556,7 @@ CREATE TABLE IF NOT EXISTS player_careers(
     `ALTER TABLE clubs ADD COLUMN IF NOT EXISTS career_slot INTEGER`,
     `ALTER TABLE clubs ADD COLUMN IF NOT EXISTS career_label TEXT`,
     `ALTER TABLE clubs ADD COLUMN IF NOT EXISTS is_active_career BOOLEAN NOT NULL DEFAULT FALSE`,
+    `ALTER TABLE clubs ADD COLUMN IF NOT EXISTS source_club_id BIGINT REFERENCES clubs(id) ON DELETE SET NULL`,
     `ALTER TABLE clubs ADD COLUMN IF NOT EXISTS is_saf BOOLEAN NOT NULL DEFAULT FALSE`,
     `ALTER TABLE clubs ADD COLUMN IF NOT EXISTS saf_investor_name TEXT`,
     `ALTER TABLE clubs ADD COLUMN IF NOT EXISTS saf_investment INTEGER NOT NULL DEFAULT 0`,
@@ -585,7 +586,9 @@ CREATE TABLE IF NOT EXISTS player_careers(
 
   await q(`ALTER TABLE clubs DROP CONSTRAINT IF EXISTS clubs_coins_check`);
   await q(`ALTER TABLE clubs DROP CONSTRAINT IF EXISTS clubs_user_id_key`);
+  await q(`ALTER TABLE clubs DROP CONSTRAINT IF EXISTS clubs_name_key`);
   await q(`DROP INDEX IF EXISTS idx_transfer_offers_pending_player`);
+  await q(`CREATE UNIQUE INDEX IF NOT EXISTS idx_ai_clubs_unique_name ON clubs(name) WHERE is_ai=TRUE`);
   await q(`CREATE UNIQUE INDEX IF NOT EXISTS idx_clubs_user_career_slot ON clubs(user_id,career_slot) WHERE user_id IS NOT NULL AND career_slot IS NOT NULL`);
   await q(`CREATE UNIQUE INDEX IF NOT EXISTS idx_clubs_one_active_career ON clubs(user_id) WHERE user_id IS NOT NULL AND is_active_career=TRUE`);
   await q(`CREATE UNIQUE INDEX IF NOT EXISTS idx_transfer_offers_pending_buyer_player ON transfer_offers(player_id,buying_club_id) WHERE status='pending'`);
@@ -660,8 +663,8 @@ async function seedClubs(){
           base_rating,team_rating,coins,primary_color,secondary_color,crest_data
         )
         VALUES($1,TRUE,$2,$3,$4,$5,$6,$7,$7,0,$8,$9,$10)
-        ON CONFLICT(name) DO UPDATE SET
-          is_ai=CASE WHEN clubs.user_id IS NULL THEN TRUE ELSE clubs.is_ai END,
+        ON CONFLICT(name) WHERE is_ai=TRUE DO UPDATE SET
+          is_ai=TRUE,
           state_code=COALESCE(EXCLUDED.state_code,clubs.state_code),
           country_code=COALESCE(EXCLUDED.country_code,clubs.country_code),
           confederation_code=COALESCE(EXCLUDED.confederation_code,clubs.confederation_code),
@@ -1408,9 +1411,10 @@ async function createRoster(client, club, force=false){
   }
   if(force)await client.query(`DELETE FROM players WHERE club_id=$1`,[club.id]);
 
-  const base=club.is_ai?Number(club.base_rating||64):64;
-  const lo=club.is_ai?Math.max(52,base-4):61;
-  const hi=club.is_ai?Math.min(85,base+3):68;
+  const realCareer=Boolean(club.source_club_id);
+  const base=(club.is_ai||realCareer)?Number(club.base_rating||64):64;
+  const lo=(club.is_ai||realCareer)?Math.max(52,base-4):61;
+  const hi=(club.is_ai||realCareer)?Math.min(85,base+3):68;
   const target={GK:2,DEF:6,MID:6,ATT:4};
   const starterTarget={GK:1,DEF:4,MID:3,ATT:3};
   const rolePlan={
@@ -5694,8 +5698,22 @@ async function buildSeasonData(ownerId,stateCode,previous=null,countryCode="BR")
   let members={A:[],B:[],C:[],D:[]};
 
   if(!previous){
-    for(const d of DIVS)members[d]=await clubIdsBySeed(d,d==="D"?19:20,countryCode);
-    members.D.push(Number(ownerId));
+    const ownerClub=(await q(`SELECT source_club_id,national_seed_division FROM clubs WHERE id=$1`,[ownerId])).rows[0]||{};
+    const sourceClubId=Number(ownerClub.source_club_id||0);
+    const startDiv=DIVS.includes(String(ownerClub.national_seed_division||"").toUpperCase())
+      ?String(ownerClub.national_seed_division).toUpperCase()
+      :"D";
+    for(const d of DIVS){
+      const limit=d===startDiv?19:20;
+      members[d]=(await q(`
+        SELECT id FROM clubs
+        WHERE is_ai=TRUE AND club_kind='national' AND national_seed_division=$1 AND country_code=$2
+          AND ($3::bigint=0 OR id<>$3)
+        ORDER BY base_rating DESC,name
+        LIMIT $4
+      `,[d,countryCode,sourceClubId,limit])).rows.map(x=>Number(x.id));
+    }
+    members[startDiv].push(Number(ownerId));
   }else{
     const t={};
     for(const d of DIVS)t[d]=sortEntries(previous.divisions[d].entries);
@@ -5722,6 +5740,7 @@ async function buildSeasonData(ownerId,stateCode,previous=null,countryCode="BR")
         AND state_code=$1
         AND name=ANY($2::text[])
         AND id<>$3
+        AND id<>COALESCE((SELECT source_club_id FROM clubs WHERE id=$3),0)
       ORDER BY base_rating DESC,RANDOM()
       LIMIT 7
     `,[stateCode,canonical,ownerId])).rows.map(x=>Number(x.id));
@@ -9278,6 +9297,23 @@ app.post("/api/careers/:careerType/:careerId/activate",auth,async(req,res,next)=
   }catch(e){next(e)}
 });
 
+app.get("/api/club-career/clubs",auth,async(req,res,next)=>{
+  try{
+    const country=String(req.query.country||"BR").toUpperCase();
+    const division=String(req.query.division||"A").toUpperCase();
+    if(!VALID_COUNTRIES.has(country))return res.status(400).json({error:"País inválido."});
+    if(!DIVS.includes(division))return res.status(400).json({error:"Divisão inválida."});
+    const clubs=(await q(`
+      SELECT id,name,state_code,country_code,national_seed_division,base_rating,team_rating,primary_color,secondary_color,crest_data
+      FROM clubs
+      WHERE is_ai=TRUE AND club_kind='national' AND country_code=$1 AND national_seed_division=$2
+      ORDER BY base_rating DESC,name
+      LIMIT 40
+    `,[country,division])).rows;
+    res.json({country,division,clubs});
+  }catch(e){next(e)}
+});
+
 app.get("/api/player-career/clubs",auth,async(req,res,next)=>{
   try{
     const country=String(req.query.country||"BR").toUpperCase();
@@ -9669,6 +9705,54 @@ app.delete("/api/player-careers/:careerId",auth,async(req,res,next)=>{
       else await activateUserCareer(req.user.id,first.id);
     }
     res.json({ok:true,careers:await listUserCareers(req.user.id)});
+  }catch(e){next(e)}
+});
+
+app.post("/api/club/real",auth,async(req,res,next)=>{
+  try{
+    const sourceClubId=String(req.body.sourceClubId||"");
+    const requestedLabel=String(req.body.careerLabel||"").trim().replace(/\s+/g," ");
+    if(requestedLabel.length>40)return res.status(400).json({error:"Nome da carreira deve ter no máximo 40 caracteres."});
+
+    const club=await tx(async c=>{
+      const count=await totalCareerCount(req.user.id,c);
+      if(count>=MAX_CAREERS_PER_USER)throw Object.assign(new Error(`Você já possui o limite de ${MAX_CAREERS_PER_USER} carreiras.`),{status:409});
+      const slot=await nextCareerSlot(req.user.id,c);
+      if(!slot)throw Object.assign(new Error("Não há vaga de carreira disponível."),{status:409});
+
+      const source=(await c.query(`
+        SELECT * FROM clubs
+        WHERE id=$1 AND is_ai=TRUE AND club_kind='national' AND national_seed_division=ANY($2::text[])
+      `,[sourceClubId,DIVS])).rows[0];
+      if(!source)throw Object.assign(new Error("Clube real inválido ou indisponível."),{status:404});
+
+      const label=requestedLabel||`${source.name} ${slot}`;
+      await c.query(`UPDATE player_careers SET is_active_career=FALSE WHERE user_id=$1`,[req.user.id]);
+      await c.query(`UPDATE clubs SET is_active_career=FALSE WHERE user_id=$1`,[req.user.id]);
+
+      const x=(await c.query(`
+        INSERT INTO clubs(
+          user_id,name,state_code,country_code,confederation_code,club_kind,national_seed_division,source_club_id,
+          base_rating,team_rating,coins,primary_color,secondary_color,crest_data,career_slot,career_label,is_active_career,
+          stadium_capacity,stadium_level,fans
+        )
+        VALUES($1,$2,$3,$4,$5,'user',$6,$7,$8,$8,30000,$9,$10,$11,$12,$13,TRUE,$14,$15,$16)
+        RETURNING *
+      `,[
+        req.user.id,source.name,source.state_code,source.country_code,source.confederation_code,source.national_seed_division,source.id,
+        Number(source.base_rating||64),source.primary_color,source.secondary_color,source.crest_data,slot,label,
+        Math.max(12000,Math.round((Number(source.base_rating||64)-50)*2500)),
+        Math.max(1,Math.round((Number(source.base_rating||64)-55)/8)),
+        Math.max(5000,Math.round((Number(source.base_rating||64)-50)*18000))
+      ])).rows[0];
+
+      await ensureFriendCode(c,x.id);
+      await createRoster(c,x,true);
+      return (await c.query(`SELECT * FROM clubs WHERE id=$1`,[x.id])).rows[0];
+    });
+
+    await createCareer(club.id,club.country_code==="BR"?(club.state_code||""):"",1,null,club.country_code);
+    res.status(201).json({club,activeType:"club",careers:await listUserCareers(req.user.id)});
   }catch(e){next(e)}
 });
 
