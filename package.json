@@ -1,8 +1,8 @@
 {
   "name": "dono-do-clube",
-  "version": "61.0.0",
+  "version": "62.0.0",
   "private": true,
-  "description": "Dono do Clube v61 — Modo Carreira Jogador 3.0 com decisões de jogo, ambição, relações e recordes",
+  "description": "Dono do Clube v62 — Modo Felipe Supremo com tudo no máximo e dinheiro infinito",
   "main": "server.js",
   "scripts": {
     "start": "node server.js"

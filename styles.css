@@ -1532,3 +1532,11 @@ repeating-linear-gradient(0deg,#1e7d43 0,#1e7d43 56px,#237f47 56px,#237f47 112px
 .player-record-grid{display:grid;grid-template-columns:repeat(4,minmax(0,1fr));gap:8px;margin-bottom:12px}.player-record-grid>div{display:grid;gap:3px;padding:10px;border:1px solid var(--line);border-radius:10px}.player-record-grid small{font-size:8px;color:var(--muted)}.player-record-grid b{font-size:18px}
 .player-milestone-list{display:grid;grid-template-columns:1fr 1fr;gap:6px}.player-milestone-list>div{display:grid;grid-template-columns:auto 1fr auto;gap:6px;align-items:center;padding:8px;border:1px solid var(--line);border-radius:8px}.player-milestone-list b{font-size:9px}.player-milestone-list small{font-size:8px;color:var(--muted)}
 @media(max-width:780px){.player-ambition-grid{grid-template-columns:1fr 1fr}.player-moment-grid{grid-template-columns:1fr}.player-relations-grid{grid-template-columns:1fr}.player-record-grid{grid-template-columns:1fr 1fr}.player-milestone-list{grid-template-columns:1fr}}
+
+
+/* v62 — Modo Felipe Supremo */
+.felipe-banner{
+  border:1px solid rgba(230,186,60,.55);
+  background:linear-gradient(135deg,rgba(238,190,49,.15),rgba(71,126,224,.10));
+  font-weight:900;
+}

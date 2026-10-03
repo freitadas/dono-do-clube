@@ -33,6 +33,13 @@ async function api(url,options={}){
   return data;
 }
 function esc(v){return String(v??"").replace(/[&<>"']/g,c=>({"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;","'":"&#039;"}[c]))}
+function isFelipeManager(){
+  return String(state.club?.name||"").trim().toLowerCase()==="felipe";
+}
+function managerMoneyLabel(value){
+  return isFelipeManager()?"∞":Number(value||0).toLocaleString("pt-BR");
+}
+
 function initials(n){return String(n||"FC").split(/\s+/).slice(0,2).map(x=>x[0]).join("").toUpperCase()}
 function crestHtml(c,size=""){
   const cls=`crest ${size}`.trim();
@@ -282,7 +289,7 @@ function renderCreateClub(){
       const felipe=n.trim().toLowerCase()==="felipe";
       const country=app.querySelector("#clubCountry").value||"BR";
       const div=leagueLabel("D",country);
-      app.querySelector("#preview").innerHTML=`<div><div class="preview-crest">${esc(initials(n))}</div><h2>${esc(n)}</h2><p>${felipe?"⚡ Modo Felipe será ativado":`Começa em ${esc(div)}`}</p></div>`;
+      app.querySelector("#preview").innerHTML=`<div><div class="preview-crest">${esc(initials(n))}</div><h2>${esc(n)}</h2><p>${felipe?"⚡ Modo Felipe Supremo: tudo no máximo + dinheiro ∞":`Começa em ${esc(div)}`}</p></div>`;
     };
     const syncCountry=()=>{
       const country=app.querySelector("#clubCountry").value||"BR";
@@ -1463,7 +1470,7 @@ function homeView(){
     </div>
     <div class="stats">
       <div class="stat"><small>Overall</small><b>${c.team_rating}</b></div>
-      <div class="stat"><small>Caixa</small><b>${Number(c.coins).toLocaleString("pt-BR")}</b></div>
+      <div class="stat"><small>Caixa</small><b>${managerMoneyLabel(c.coins)}</b></div>
       <div class="stat"><small>Folha mensal</small><b>${Number(state.finance?.wages||0).toLocaleString("pt-BR")}</b></div>
       <div class="stat"><small>Elenco</small><b>${tired} cansados · ${injured} lesionados</b></div>
     </div>
@@ -1490,7 +1497,7 @@ function homeView(){
         <span class="right">${esc(m.opponent_name)}<br><small class="muted">${esc(m.match_type)}</small></span>
       </div>`).join(""):`<div class="empty">Nenhum jogo ainda.</div>`}
     </div>
-    <div class="card"><div class="section-title"><h2>Finanças</h2><span class="badge">${Number(c.coins).toLocaleString("pt-BR")}</span></div>
+    <div class="card"><div class="section-title"><h2>Finanças</h2><span class="badge">${managerMoneyLabel(c.coins)}</span></div>
       ${(state.finance?.recent||[]).length?(state.finance.recent||[]).slice(0,6).map(x=>`<div class="finance-row"><span>${esc(x.description)}</span><b class="${Number(x.amount)>=0?"income":"expense"}">${Number(x.amount)>=0?"+":""}${Number(x.amount).toLocaleString("pt-BR")}</b></div>`).join(""):`<p class="muted">As receitas e despesas aparecerão após os jogos.</p>`}
     </div>
   </section>
@@ -1632,12 +1639,12 @@ function marketView(){
   return `<section class="card">
     <div class="section-title">
       <div><div class="kicker">Scout, compras e vendas</div><h2>Mercado de transferências</h2></div>
-      <div class="finance-chips"><span class="coins">Caixa ● ${Number(state.club.coins).toLocaleString("pt-BR")}</span><span class="badge red">Folha mensal ${Number(state.finance?.wages||0).toLocaleString("pt-BR")}</span></div>
+      <div class="finance-chips"><span class="coins">Caixa ● ${managerMoneyLabel(state.club.coins)}</span><span class="badge red">Folha mensal ${Number(state.finance?.wages||0).toLocaleString("pt-BR")}</span></div>
     </div>
     ${transferBanBanner()}
     <div class="transfer-window-banner ${window.open?"open":"closed"}">
-      <b>${window.open?"🟢 JANELA DE TRANSFERÊNCIAS ABERTA":"🔒 JANELA DE TRANSFERÊNCIAS FECHADA"}</b>
-      <span>${window.open?"Compras e empréstimos podem ser registrados agora.":`Você pode pesquisar e observar jogadores, mas só poderá contratar quando a janela reabrir${window.next?` em ${esc(window.next)}`:""}.`}</span>
+      <b>${isFelipeManager()?"⚡ MERCADO SEMPRE ABERTO — MODO FELIPE":window.open?"🟢 JANELA DE TRANSFERÊNCIAS ABERTA":"🔒 JANELA DE TRANSFERÊNCIAS FECHADA"}</b>
+      <span>${isFelipeManager()?"Você pode contratar e exercer opções de compra em qualquer data.":window.open?"Compras e empréstimos podem ser registrados agora.":`Você pode pesquisar e observar jogadores, mas só poderá contratar quando a janela reabrir${window.next?` em ${esc(window.next)}`:""}.`}</span>
     </div>
     ${activeLoansMarketCard()}
     ${state.teamPerformance?`<div class="performance-market ${state.teamPerformance.hot?"hot":""} ${state.teamPerformance.elite?"elite":""}">
@@ -3658,7 +3665,7 @@ function clubView(){
           <span class="muted">Você pode alterar o nome a qualquer momento.</span>
           <label>Novo nome<input id="customName" value="${esc(c.name)}" maxlength="30" required></label>
         </div>
-        ${String(c.name||"").trim().toLowerCase()==="felipe"?`<div class="felipe-banner">⚡ MODO FELIPE ATIVO — elenco 100 e goleadas especiais.</div>`:""}
+        ${String(c.name||"").trim().toLowerCase()==="felipe"?`<div class="felipe-banner">⚡ MODO FELIPE SUPREMO — dinheiro ∞, elenco 100, base 100, comissão máxima, estádio máximo e recursos máximos.</div>`:""}
         <label>País<input value="${esc(countryName(c.country_code||"BR"))}" disabled></label>
         ${(c.country_code||"BR")==="BR"?`<label>Estado<input value="${esc(STATES[c.state_code])}" disabled></label>`:""}
         <div class="colors"><label>Cor principal<input id="customPrimary" type="color" value="${c.primary_color}"></label>
@@ -3787,7 +3794,7 @@ function render(){
         <button class="career-top-btn" data-view="careers">${esc(state.club.career_label||`Carreira ${state.club.career_slot||1}`)}</button>
         ${(state.realism?.managerOffers||[]).length?`<button class="notification-top-btn" data-view="realism" title="Propostas de outros clubes">📩 ${(state.realism.managerOffers||[]).length}</button>`:""}
         <button id="manualSave" class="manual-save-btn" title="Salvar a carreira agora">💾 SALVAR</button>
-        <span class="coins">● ${Number(state.club.coins).toLocaleString("pt-BR")}</span><button id="logout" class="icon-btn">↪</button>
+        <span class="coins">● ${managerMoneyLabel(state.club.coins)}</span><button id="logout" class="icon-btn">↪</button>
       </div>
     </header>${body}
   </div>
@@ -4840,7 +4847,7 @@ function bindClub(){
       await refreshAll();
       await refreshCareerList().catch(()=>{});
       render();
-      if(result.felipeMode)alert("MODO FELIPE ATIVADO: todos os jogadores do clube agora têm atributos 100 e o time recebe placares especiais.");
+      if(result.felipeMode)alert("MODO FELIPE SUPREMO ATIVADO: dinheiro infinito, 30 jogadores OVR 100, atributos e potencial 100, comissão nível 5, estádio nível 8, torcida/confiança/entrosamento/reputação no máximo, sem lesões ou suspensões e mercado sempre aberto.");
     }catch(err){
       app.querySelector("#customMsg").innerHTML=`<div class="msg">${esc(err.message)}</div>`;
     }

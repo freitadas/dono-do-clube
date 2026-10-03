@@ -1297,16 +1297,118 @@ async function applyV46Migration(){
   });
 }
 
+const FELIPE_INFINITE_COINS=2000000000;
+
+async function fillFelipeSquadToMaximum(client,club){
+  const target={GK:4,DEF:10,MID:10,ATT:6};
+  const rows=(await client.query(`
+    SELECT position,COUNT(*)::int count
+    FROM players
+    WHERE club_id=$1
+    GROUP BY position
+  `,[club.id])).rows;
+  const have=Object.fromEntries(rows.map(r=>[r.position,Number(r.count||0)]));
+  const rolePlan={
+    GK:["GK"],
+    DEF:["CB","RB","LB","CB"],
+    MID:["CM","CDM","CAM","RM","LM"],
+    ATT:["ST","RW","LW","ST"]
+  };
+
+  for(const pos of ["GK","DEF","MID","ATT"]){
+    const missing=Math.max(0,Number(target[pos])-Number(have[pos]||0));
+    for(let i=0;i<missing;i++){
+      const role=rolePlan[pos][i%rolePlan[pos].length];
+      await client.query(`
+        INSERT INTO players(
+          club_id,name,position,role,rating,pace,shooting,passing,defending,price,
+          is_starter,age,salary,contract_seasons,fitness,morale,injury_games,
+          potential,form_rating,happiness,squad_status,tactical_role,nationality_code
+        )
+        VALUES(
+          $1,$2,$3,$4,100,100,100,100,100,999999999,
+          FALSE,$5,0,99,100,100,0,
+          100,100,100,'STAR','BALANCED',$6
+        )
+      `,[
+        club.id,
+        `Felipe Elite ${pos} ${Number(have[pos]||0)+i+1}`,
+        pos,role,rand(18,27),club.country_code||"BR"
+      ]);
+    }
+  }
+}
+
 async function applyFelipeMode(client,clubId){
-  const club=(await client.query(`SELECT id,name FROM clubs WHERE id=$1`,[clubId])).rows[0];
+  const club=(await client.query(`SELECT * FROM clubs WHERE id=$1`,[clubId])).rows[0];
   if(!club||!isFelipeName(club.name))return false;
+
+  await fillFelipeSquadToMaximum(client,club);
+
   await client.query(`
     UPDATE players SET
-      rating=100,pace=100,shooting=100,passing=100,defending=100,
-      fitness=100,morale=100,injury_games=0
+      rating=100,
+      pace=100,
+      shooting=100,
+      passing=100,
+      defending=100,
+      price=999999999,
+      salary=0,
+      contract_seasons=99,
+      fitness=100,
+      morale=100,
+      injury_games=0,
+      injury_type=NULL,
+      suspension_games=0,
+      yellow_accumulation=0,
+      potential=100,
+      form_rating=100,
+      happiness=100
     WHERE club_id=$1
   `,[clubId]);
-  await client.query(`UPDATE clubs SET team_rating=100 WHERE id=$1`,[clubId]);
+
+  await client.query(`
+    UPDATE clubs SET
+      coins=$2,
+      base_rating=100,
+      team_rating=100,
+      fans=$2,
+      board_confidence=100,
+      media_pressure=0,
+      chemistry=100,
+      manager_reputation=100,
+      stadium_level=8,
+      stadium_capacity=100000,
+      ticket_price=100,
+      saf_patience=100,
+      saf_annual_budget=$2,
+      saf_debt_limit=-2000000000
+    WHERE id=$1
+  `,[clubId,FELIPE_INFINITE_COINS]);
+
+  for(const [role,meta] of Object.entries(STAFF_ROLES)){
+    await client.query(`
+      INSERT INTO club_staff(club_id,role,staff_name,level,salary)
+      VALUES($1,$2,$3,5,0)
+      ON CONFLICT(club_id,role) DO UPDATE SET
+        level=5,
+        salary=0
+    `,[clubId,role,`Felipe ${meta.label}`]);
+  }
+
+  await client.query(`
+    UPDATE academy_players SET
+      rating=100,
+      potential=100
+    WHERE club_id=$1 AND status='academy'
+  `,[clubId]);
+
+  await client.query(`
+    UPDATE manager_national_jobs SET
+      confidence=100
+    WHERE club_id=$1
+  `,[clubId]);
+
   return true;
 }
 function felipeScore(){
@@ -1512,6 +1614,10 @@ async function ensureRealismClubData(client,clubId,career=null){
         VALUES($1,$2,$3,$4,$5,$6,$7,$8,'academy')
       `,[clubId,season,randomName(),position,roleFor(position),rand(15,18),rating,potential]);
     }
+  }
+
+  if(isFelipeName(club.name)){
+    await applyFelipeMode(client,clubId);
   }
 }
 
@@ -3864,8 +3970,25 @@ async function recordUserMatch(client,ownerId,opponentId,m,events,type,reward=0)
   ]);
 }
 async function addFinance(client,clubId,amount,category,description){
-  await client.query(`UPDATE clubs SET coins=coins+$2 WHERE id=$1`,[clubId,amount]);
-  await client.query(`INSERT INTO club_finance_events(club_id,amount,category,description) VALUES($1,$2,$3,$4)`,[clubId,amount,category,description]);
+  const club=(await client.query(`SELECT name FROM clubs WHERE id=$1`,[clubId])).rows[0];
+  if(club&&isFelipeName(club.name)){
+    await client.query(`UPDATE clubs SET coins=$2 WHERE id=$1`,[clubId,FELIPE_INFINITE_COINS]);
+    await client.query(`
+      INSERT INTO club_finance_events(club_id,amount,category,description)
+      VALUES($1,0,$2,$3)
+    `,[clubId,category,`${description} · Modo Felipe: caixa infinito`]);
+    return;
+  }
+
+  await client.query(
+    `UPDATE clubs SET coins=LEAST($3,coins+$2) WHERE id=$1`,
+    [clubId,amount,FELIPE_INFINITE_COINS]
+  );
+  await client.query(
+    `INSERT INTO club_finance_events(club_id,amount,category,description)
+     VALUES($1,$2,$3,$4)`,
+    [clubId,amount,category,description]
+  );
 }
 async function wageBill(client,clubId){
   const [players,staff]=await Promise.all([
@@ -5088,7 +5211,9 @@ async function realismSummary(client,club,career){
   ]);
 
   const opponent=await opponentAnalysis(client,club.id,career,staff.levels.SCOUT);
-  const window=transferWindowInfo(career?.data?.calendar?.date);
+  const window=isFelipeName(club.name)
+    ?{open:true,next:null,date:career?.data?.calendar?.date,felipeMode:true}
+    :transferWindowInfo(career?.data?.calendar?.date);
   const latestHome=(await client.query(`
     SELECT attendance,game_date FROM matches
     WHERE user_club_id=$1 AND is_home=TRUE
@@ -9202,7 +9327,7 @@ async function payTransferInstallments(client,clubId,month){
       continue;
     }
     await addFinance(client,clubId,-payment,"transfer_installment",`Parcela de ${r.player_name} — ${Number(r.installments_paid)+1}/${r.installments_total}`);
-    if(r.selling_club_id)await client.query(`UPDATE clubs SET coins=coins+$2 WHERE id=$1`,[r.selling_club_id,payment]);
+    if(r.selling_club_id)await client.query(`UPDATE clubs SET coins=LEAST($3,coins+$2) WHERE id=$1`,[r.selling_club_id,payment,FELIPE_INFINITE_COINS]);
     const remaining=Math.max(0,Number(r.amount_remaining)-payment);
     const paid=Number(r.installments_paid)+1;
     const finished=remaining<=0||paid>=Number(r.installments_total);
@@ -9236,7 +9361,7 @@ async function processLoanMonth(client,clubId,month){
     const fee=Number(l.monthly_fee||0);
     if(fee>0){
       await addFinance(client,clubId,-fee,"loan_fee",`Empréstimo de ${l.player_name} — ${month}`);
-      await client.query(`UPDATE clubs SET coins=coins+$2 WHERE id=$1`,[l.parent_club_id,fee]);
+      await client.query(`UPDATE clubs SET coins=LEAST($3,coins+$2) WHERE id=$1`,[l.parent_club_id,fee,FELIPE_INFINITE_COINS]);
       total+=fee;
     }
     const elapsed=Number(l.months_elapsed||0)+1;
@@ -11424,7 +11549,13 @@ app.post("/api/players/:id/release",auth,async(req,res,next)=>{
       if(count<=12)throw Object.assign(new Error("Mantenha pelo menos 12 jogadores."),{status:400});
 
       const severance=Math.max(100,Number(p.salary||0)*2);
-      await x.query(`UPDATE clubs SET coins=coins-$2 WHERE id=$1`,[c.id,severance]);
+      await x.query(`
+        UPDATE clubs SET coins=CASE
+          WHEN LOWER(BTRIM(name))='felipe' THEN $3
+          ELSE coins-$2
+        END
+        WHERE id=$1
+      `,[c.id,severance,FELIPE_INFINITE_COINS]);
       await x.query(`INSERT INTO club_finance_events(club_id,amount,category,description) VALUES($1,$2,'severance',$3)`,[c.id,-severance,`Rescisão de ${p.name}`]);
 
       // A instância é arquivada fora do save e nunca aparece no mercado de outra carreira.
@@ -11554,7 +11685,9 @@ app.get("/api/transfers/search",auth,async(req,res,next)=>{
     const realOnly=String(req.query.realOnly||"")==="1";
     const userDiv=career?.user_division||"D";
     const profile=marketProfile(userDiv);
-    const window=transferWindowInfo(career?.data?.calendar?.date);
+    const window=isFelipeName(c.name)
+      ?{open:true,next:null,date:career?.data?.calendar?.date,felipeMode:true}
+      :transferWindowInfo(career?.data?.calendar?.date);
     const staff=await staffLevels(pool,c.id);
     const scoutLevel=Number(staff.levels.SCOUT||1);
     const reportRows=(await q(`SELECT target_player_id FROM scout_reports WHERE club_id=$1`,[c.id])).rows;
@@ -11636,7 +11769,7 @@ app.post("/api/transfers/offer",auth,async(req,res,next)=>{
     const career=await getCareer(c.id);
     const userDiv=career?.user_division||"D";
     const window=transferWindowInfo(career?.data?.calendar?.date);
-    if(!window.open){
+    if(!window.open&&!isFelipeName(c.name)){
       return res.status(403).json({error:`Janela de transferências fechada. Próxima abertura: ${window.next||"próxima temporada"}.`});
     }
 
@@ -11695,11 +11828,17 @@ app.post("/api/transfers/offer",auth,async(req,res,next)=>{
         throw Object.assign(new Error(`Caixa insuficiente para a entrada e as luvas. Custo imediato: ${immediateCost.toLocaleString("pt-BR")} moedas.`),{status:400});
       }
 
-      await client.query(`UPDATE clubs SET coins=coins-$2 WHERE id=$1`,[c.id,immediateCost]);
+      await client.query(`
+        UPDATE clubs SET coins=CASE
+          WHEN LOWER(BTRIM(name))='felipe' THEN $3
+          ELSE coins-$2
+        END
+        WHERE id=$1
+      `,[c.id,immediateCost,FELIPE_INFINITE_COINS]);
       await client.query(`INSERT INTO club_finance_events(club_id,amount,category,description) VALUES($1,$2,'transfer',$3)`,
         [c.id,-immediateCost,`Contratação de ${p.name}: ${realInstallments>1?`entrada 1/${realInstallments}`:"transferência"} + luvas`]);
 
-      if(p.club_id&&firstFee>0)await client.query(`UPDATE clubs SET coins=coins+$2 WHERE id=$1`,[p.club_id,firstFee]);
+      if(p.club_id&&firstFee>0)await client.query(`UPDATE clubs SET coins=LEAST($3,coins+$2) WHERE id=$1`,[p.club_id,firstFee,FELIPE_INFINITE_COINS]);
 
       const signed=await clonePlayerForCareer(client,p,c.id,{
         salary:Math.round(salaryOffer),
@@ -11755,7 +11894,7 @@ app.post("/api/transfers/loan",auth,async(req,res,next)=>{
     const career=await getCareer(c.id);
     const userDiv=career?.user_division||"D";
     const window=transferWindowInfo(career?.data?.calendar?.date);
-    if(!window.open)return res.status(403).json({error:`Janela de transferências fechada. Próxima abertura: ${window.next||"próxima temporada"}.`});
+    if(!window.open&&!isFelipeName(c.name))return res.status(403).json({error:`Janela de transferências fechada. Próxima abertura: ${window.next||"próxima temporada"}.`});
 
     const result=await tx(async client=>{
       const balance=Number((await client.query(`SELECT coins FROM clubs WHERE id=$1 FOR UPDATE`,[c.id])).rows[0]?.coins||0);
@@ -11873,7 +12012,7 @@ app.post("/api/transfers/loans/:loanId/buy",auth,async(req,res,next)=>{
     if(transferBanInfo(c.coins).active)return res.status(403).json({error:"Transfer ban ativo. A opção de compra não pode ser exercida enquanto o clube estiver bloqueado."});
     const loanCareer=await getCareer(c.id);
     const loanWindow=transferWindowInfo(loanCareer?.data?.calendar?.date);
-    if(!loanWindow.open)return res.status(403).json({error:`Janela de transferências fechada. A opção poderá ser exercida a partir de ${loanWindow.next||"próxima temporada"}.`});
+    if(!loanWindow.open&&!isFelipeName(c.name))return res.status(403).json({error:`Janela de transferências fechada. A opção poderá ser exercida a partir de ${loanWindow.next||"próxima temporada"}.`});
 
     const loanId=String(req.params.loanId||"");
     const result=await tx(async client=>{
@@ -11903,7 +12042,7 @@ app.post("/api/transfers/loans/:loanId/buy",auth,async(req,res,next)=>{
         client,c.id,-price,"loan_purchase",
         `Opção de compra exercida — ${loan.player_name}`
       );
-      await client.query(`UPDATE clubs SET coins=coins+$2 WHERE id=$1`,[loan.parent_club_id,price]);
+      await client.query(`UPDATE clubs SET coins=LEAST($3,coins+$2) WHERE id=$1`,[loan.parent_club_id,price,FELIPE_INFINITE_COINS]);
 
       const newContract=Math.max(3,Number(loan.contract_seasons||1));
       await client.query(`
