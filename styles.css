@@ -6,7 +6,7 @@ button,input,select{font:inherit}button{cursor:pointer}img{max-width:100%;displa
 .shell{width:min(1200px,100%);margin:auto;padding:18px 18px 98px}.topbar{display:flex;justify-content:space-between;align-items:center;gap:12px;margin-bottom:16px}.brand{display:flex;align-items:center;gap:10px;font-size:22px;font-weight:950;letter-spacing:-.03em}
 .top-actions{display:flex;gap:9px;align-items:center}.coins{padding:9px 12px;border-radius:999px;background:#28210b;color:#ffe28a;border:1px solid #564816;font-weight:900}.icon-btn{width:40px;height:40px;border-radius:12px;border:1px solid var(--line);background:var(--panel2);color:white}
 .hero,.card{background:rgba(14,29,22,.96);border:1px solid var(--line);border-radius:22px;padding:20px;box-shadow:var(--shadow)}.hero{padding:26px;background:linear-gradient(135deg,#17452b,#0d2519);position:relative;overflow:hidden}.hero h1{font-size:clamp(32px,6vw,54px);line-height:1;margin:6px 0 10px;letter-spacing:-.05em}.hero p{color:#bfd0c6}
-.club-head{display:flex;align-items:center;gap:16px}.crest{width:70px;height:70px;border-radius:20px;display:grid;place-items:center;overflow:hidden;background:#102b1c;border:2px solid rgba(255,255,255,.14);flex:0 0 auto;font-size:24px;font-weight:950}.crest.small{width:38px;height:38px;border-radius:11px;font-size:14px}.crest.medium{width:54px;height:54px;border-radius:15px}.crest img{width:100%;height:100%;object-fit:cover}
+.club-head{display:flex;align-items:center;gap:16px}.crest{width:70px;height:70px;border-radius:20px;display:grid;place-items:center;overflow:hidden;background:#102b1c;border:2px solid rgba(255,255,255,.14);flex:0 0 auto;font-size:24px;font-weight:950}.crest.small{width:38px;height:38px;border-radius:11px;font-size:14px}.crest.medium{width:54px;height:54px;border-radius:15px}.crest img{width:100%;height:100%;object-fit:contain;padding:3px}
 .kicker{font-size:11px;color:#9be8b5;text-transform:uppercase;letter-spacing:.12em;font-weight:900}.stats{display:flex;flex-wrap:wrap;gap:9px;margin-top:17px}.stat{padding:9px 12px;border-radius:13px;background:rgba(0,0,0,.2);border:1px solid rgba(255,255,255,.1)}.stat small{display:block;color:#a8bdaf;font-size:10px;text-transform:uppercase}.stat b{font-size:18px}
 .primary,.secondary,.danger{border:0;border-radius:13px;padding:11px 15px;font-weight:900}.primary{background:linear-gradient(135deg,var(--green),var(--green2));color:#04150a}.secondary{background:var(--panel2);color:white;border:1px solid var(--line)}.danger{background:#341719;color:#ffb4b4;border:1px solid #6b2c31}.primary:disabled,.secondary:disabled,.danger:disabled{opacity:.55;cursor:not-allowed}
 .grid{display:grid;grid-template-columns:1.2fr .8fr;gap:14px;margin-top:14px}.stack{display:grid;gap:12px}.auth{min-height:100vh;display:grid;place-items:center;padding:18px}.authbox{width:min(500px,100%);background:var(--panel);border:1px solid var(--line);border-radius:25px;padding:26px;box-shadow:var(--shadow)}.authbox h1{font-size:36px;letter-spacing:-.05em;margin:15px 0 8px}.authbox p{color:var(--muted)}
@@ -1522,30 +1522,94 @@ repeating-linear-gradient(0deg,#1e7d43 0,#1e7d43 56px,#237f47 56px,#237f47 112px
 }
 
 
-/* v61 — inovações do Modo Carreira Jogador */
-.player-innovation-grid{
-  display:grid;
-  grid-template-columns:repeat(3,minmax(0,1fr));
-  gap:10px;
-  margin:12px 0;
+/* v61 — imagens de clubes e seleções */
+.club-table-name{
+  display:flex;
+  align-items:center;
+  gap:7px;
+  min-width:155px;
 }
-.player-level-card,.player-mission-card,.player-locker-card{display:grid;gap:8px}
-.player-level-line{display:flex;align-items:end;justify-content:space-between;gap:8px}
-.player-level-line b{font-size:22px}.player-level-line span{font-size:9px;color:var(--muted)}
-.player-progress-track{height:8px;border-radius:999px;background:rgba(255,255,255,.08);overflow:hidden;border:1px solid var(--line)}
-.player-progress-track span{display:block;height:100%;background:currentColor;opacity:.65;border-radius:999px}
-.player-mission-card h3,.player-locker-card h3{margin:0;font-size:16px}
-.player-mission-card p,.player-locker-card p{margin:0;font-size:9px;color:var(--muted)}
-.player-interview-card{border-color:rgba(218,152,51,.45);background:linear-gradient(135deg,rgba(218,152,51,.10),rgba(255,255,255,.02))}
-.player-interview-actions{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:8px}
-.player-interview-actions button{display:grid;gap:3px;text-align:left}
-.player-interview-actions small{font-size:8px;color:var(--muted);font-weight:500}
-.player-last-mission{margin-top:9px;padding:8px 10px;border-radius:8px;font-size:9px;font-weight:800}
-.player-last-mission.success{background:rgba(63,167,98,.12);border:1px solid rgba(63,167,98,.32)}
-.player-last-mission.fail{background:rgba(193,74,74,.10);border:1px solid rgba(193,74,74,.26)}
-.player-milestones-grid{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:8px}
-.player-milestone{display:grid;grid-template-columns:auto 1fr;gap:3px 8px;align-items:center;padding:9px;border:1px solid var(--line);border-radius:9px;opacity:.55}
-.player-milestone.unlocked{opacity:1;background:rgba(220,168,54,.08);border-color:rgba(220,168,54,.30)}
-.player-milestone span{grid-row:1/3;font-size:18px}.player-milestone b{font-size:9px}.player-milestone small{font-size:8px;color:var(--muted)}
-@media(max-width:900px){.player-innovation-grid{grid-template-columns:1fr 1fr}.player-interview-actions{grid-template-columns:1fr}.player-milestones-grid{grid-template-columns:1fr 1fr}}
-@media(max-width:560px){.player-innovation-grid,.player-milestones-grid{grid-template-columns:1fr}}
+.club-team-label{
+  display:flex;
+  align-items:center;
+  gap:6px;
+  min-width:0;
+}
+.club-team-label.right{
+  justify-content:flex-end;
+  text-align:right;
+}
+.club-team-label>span:last-child{
+  overflow:hidden;
+  text-overflow:ellipsis;
+}
+.fixture .club-team-label{
+  min-width:0;
+}
+.ko-team{
+  display:flex;
+  align-items:center;
+  gap:6px;
+}
+.visual-champion{
+  display:flex;
+  align-items:center;
+  gap:13px;
+}
+.national-badge{
+  width:28px;
+  height:28px;
+  display:inline-grid;
+  place-items:center;
+  border-radius:50%;
+  background:rgba(255,255,255,.08);
+  overflow:hidden;
+  vertical-align:middle;
+  flex:0 0 auto;
+}
+.national-badge.tiny{width:22px;height:22px}
+.national-badge.small{width:34px;height:34px}
+.national-badge.medium{width:48px;height:48px}
+.national-badge.huge{width:82px;height:82px}
+.national-badge img{
+  width:100%;
+  height:100%;
+  object-fit:contain;
+  padding:2px;
+}
+.national-team-label{
+  display:inline-flex;
+  align-items:center;
+  gap:6px;
+  min-width:0;
+}
+.national-team-label>span:last-child{
+  overflow:hidden;
+  text-overflow:ellipsis;
+}
+.national-flag{
+  display:grid;
+  place-items:center;
+  font-size:0;
+}
+.national-flag.huge{font-size:0}
+.national-next-pair{
+  display:flex;
+  align-items:center;
+  justify-content:flex-start;
+  gap:10px;
+  flex-wrap:wrap;
+}
+.player-national-title{
+  display:flex;
+  align-items:center;
+  gap:10px;
+}
+.national-table b .national-team-label{
+  font-weight:800;
+}
+@media(max-width:650px){
+  .national-badge.huge{width:68px;height:68px}
+  .club-table-name{min-width:130px}
+  .fixture .club-team-label>span:last-child{font-size:9px}
+}

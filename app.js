@@ -33,11 +33,159 @@ async function api(url,options={}){
   return data;
 }
 function esc(v){return String(v??"").replace(/[&<>"']/g,c=>({"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;","'":"&#039;"}[c]))}
-function initials(n){return String(n||"FC").split(/\s+/).slice(0,2).map(x=>x[0]).join("").toUpperCase()}
+function initials(n){return String(n||"FC").split(/\s+/).filter(Boolean).slice(0,2).map(x=>x[0]).join("").toUpperCase()}
+
+const NATIONAL_BADGE_URLS={
+  BR:"https://raw.githubusercontent.com/guardian/football-assets/main/source/crests/23104.png",
+  ARG:"https://raw.githubusercontent.com/guardian/football-assets/main/source/crests/965.png",
+  ENG:"https://raw.githubusercontent.com/guardian/football-assets/main/source/crests/497.png",
+  ESP:"https://raw.githubusercontent.com/guardian/football-assets/main/source/crests/999.png",
+  ITA:"https://raw.githubusercontent.com/guardian/football-assets/main/source/crests/717.png",
+  GER:"https://raw.githubusercontent.com/guardian/football-assets/main/source/crests/1678.png",
+  FRA:"https://raw.githubusercontent.com/guardian/football-assets/main/source/crests/619.png",
+  POR:"https://raw.githubusercontent.com/guardian/football-assets/main/source/crests/5539.png",
+  NED:"https://raw.githubusercontent.com/guardian/football-assets/main/source/crests/631.png",
+  BEL:"https://raw.githubusercontent.com/guardian/football-assets/main/source/crests/997.png",
+  TUR:"https://raw.githubusercontent.com/guardian/football-assets/main/source/crests/1661.png",
+  SCO:"https://raw.githubusercontent.com/guardian/football-assets/main/source/crests/499.png",
+  MEX:"https://raw.githubusercontent.com/guardian/football-assets/main/source/crests/5837.png",
+  USA:"https://raw.githubusercontent.com/guardian/football-assets/main/source/crests/7356.png",
+  JPN:"https://raw.githubusercontent.com/guardian/football-assets/main/source/crests/6736.png",
+  KSA:"https://raw.githubusercontent.com/guardian/football-assets/main/source/crests/8022.png",
+  URU:"https://raw.githubusercontent.com/guardian/football-assets/main/source/crests/37260.png",
+  COL:"https://raw.githubusercontent.com/guardian/football-assets/main/source/crests/60670.png",
+  AUT:"https://raw.githubusercontent.com/guardian/football-assets/main/source/crests/992.png",
+  SUI:"https://raw.githubusercontent.com/guardian/football-assets/main/source/crests/1660.png",
+  DEN:"https://raw.githubusercontent.com/guardian/football-assets/main/source/crests/986.png",
+  NOR:"https://raw.githubusercontent.com/guardian/football-assets/main/source/crests/716.png",
+  SWE:"https://raw.githubusercontent.com/guardian/football-assets/main/source/crests/5845.png",
+  POL:"https://raw.githubusercontent.com/guardian/football-assets/main/source/crests/629.png",
+  CZE:"https://raw.githubusercontent.com/guardian/football-assets/main/source/crests/6318.png",
+  CRO:"https://raw.githubusercontent.com/guardian/football-assets/main/source/crests/2489.png",
+  GRE:"https://raw.githubusercontent.com/guardian/football-assets/main/source/crests/6286.png",
+  CHI:"https://raw.githubusercontent.com/guardian/football-assets/main/source/crests/2559.png",
+  ECU:"https://raw.githubusercontent.com/guardian/football-assets/main/source/crests/37262.png",
+  PER:"https://raw.githubusercontent.com/guardian/football-assets/main/source/crests/37261.png"
+};
+
+const REAL_CLUB_BADGES={
+  "Manchester City":"https://raw.githubusercontent.com/guardian/football-assets/main/source/crests/11.png",
+  "Liverpool":"https://raw.githubusercontent.com/guardian/football-assets/main/source/crests/9.png",
+  "Arsenal":"https://raw.githubusercontent.com/guardian/football-assets/main/source/crests/1006.png",
+  "Chelsea":"https://raw.githubusercontent.com/guardian/football-assets/main/source/crests/4.png",
+  "Manchester United":"https://raw.githubusercontent.com/guardian/football-assets/main/source/crests/12.png",
+  "Tottenham":"https://raw.githubusercontent.com/guardian/football-assets/main/source/crests/19.png",
+  "Newcastle United":"https://raw.githubusercontent.com/guardian/football-assets/main/source/crests/31.png",
+  "Aston Villa":"https://raw.githubusercontent.com/guardian/football-assets/main/source/crests/2.png",
+  "West Ham United":"https://raw.githubusercontent.com/guardian/football-assets/main/source/crests/43.png",
+  "Brighton":"https://raw.githubusercontent.com/guardian/football-assets/main/source/crests/6795.png",
+  "Everton":"https://raw.githubusercontent.com/guardian/football-assets/main/source/crests/8.png",
+  "Real Madrid":"https://raw.githubusercontent.com/guardian/football-assets/main/source/crests/26303.png",
+  "Barcelona":"https://raw.githubusercontent.com/guardian/football-assets/main/source/crests/26300.png",
+  "Atlético de Madrid":"https://raw.githubusercontent.com/guardian/football-assets/main/source/crests/26305.png",
+  "Athletic Club":"https://raw.githubusercontent.com/guardian/football-assets/main/source/crests/26313.png",
+  "Real Sociedad":"https://raw.githubusercontent.com/guardian/football-assets/main/source/crests/26308.png",
+  "Villarreal":"https://raw.githubusercontent.com/guardian/football-assets/main/source/crests/38295.png",
+  "Real Betis":"https://raw.githubusercontent.com/guardian/football-assets/main/source/crests/26314.png",
+  "Sevilla":"https://raw.githubusercontent.com/guardian/football-assets/main/source/crests/27821.png",
+  "Valencia":"https://raw.githubusercontent.com/guardian/football-assets/main/source/crests/26316.png",
+  "Inter":"https://raw.githubusercontent.com/guardian/football-assets/main/source/crests/6136.png",
+  "Milan":"https://raw.githubusercontent.com/guardian/football-assets/main/source/crests/26368.png",
+  "Juventus":"https://raw.githubusercontent.com/guardian/football-assets/main/source/crests/26359.png",
+  "Napoli":"https://raw.githubusercontent.com/guardian/football-assets/main/source/crests/26370.png",
+  "Roma":"https://raw.githubusercontent.com/guardian/football-assets/main/source/crests/26357.png",
+  "Lazio":"https://raw.githubusercontent.com/guardian/football-assets/main/source/crests/26362.png",
+  "Atalanta":"https://raw.githubusercontent.com/guardian/football-assets/main/source/crests/26364.png",
+  "Fiorentina":"https://raw.githubusercontent.com/guardian/football-assets/main/source/crests/26366.png",
+  "Bayern München":"https://raw.githubusercontent.com/guardian/football-assets/main/source/crests/26247.png",
+  "Borussia Dortmund":"https://raw.githubusercontent.com/guardian/football-assets/main/source/crests/26261.png",
+  "Bayer Leverkusen":"https://raw.githubusercontent.com/guardian/football-assets/main/source/crests/26256.png",
+  "RB Leipzig":"https://raw.githubusercontent.com/guardian/football-assets/main/source/crests/61019.png",
+  "Eintracht Frankfurt":"https://raw.githubusercontent.com/guardian/football-assets/main/source/crests/26460.png",
+  "VfB Stuttgart":"https://raw.githubusercontent.com/guardian/football-assets/main/source/crests/26250.png",
+  "Paris Saint-Germain":"https://raw.githubusercontent.com/guardian/football-assets/main/source/crests/26339.png",
+  "Marseille":"https://raw.githubusercontent.com/guardian/football-assets/main/source/crests/26344.png",
+  "Monaco":"https://raw.githubusercontent.com/guardian/football-assets/main/source/crests/26343.png",
+  "Lyon":"https://raw.githubusercontent.com/guardian/football-assets/main/source/crests/26345.png",
+  "Lille":"https://raw.githubusercontent.com/guardian/football-assets/main/source/crests/27372.png",
+  "Benfica":"https://raw.githubusercontent.com/guardian/football-assets/main/source/crests/26274.png",
+  "Sporting CP":"https://raw.githubusercontent.com/guardian/football-assets/main/source/crests/26268.png",
+  "Porto":"https://raw.githubusercontent.com/guardian/football-assets/main/source/crests/26264.png",
+  "Braga":"https://raw.githubusercontent.com/guardian/football-assets/main/source/crests/26269.png",
+  "Ajax":"https://raw.githubusercontent.com/guardian/football-assets/main/source/crests/26320.png",
+  "PSV":"https://raw.githubusercontent.com/guardian/football-assets/main/source/crests/26321.png",
+  "Feyenoord":"https://raw.githubusercontent.com/guardian/football-assets/main/source/crests/26323.png",
+  "Club Brugge":"https://raw.githubusercontent.com/guardian/football-assets/main/source/crests/26282.png",
+  "Anderlecht":"https://raw.githubusercontent.com/guardian/football-assets/main/source/crests/26291.png",
+  "Galatasaray":"https://raw.githubusercontent.com/guardian/football-assets/main/source/crests/26451.png",
+  "Fenerbahçe":"https://raw.githubusercontent.com/guardian/football-assets/main/source/crests/26449.png",
+  "Beşiktaş":"https://raw.githubusercontent.com/guardian/football-assets/main/source/crests/26446.png",
+  "Celtic":"https://raw.githubusercontent.com/guardian/football-assets/main/source/crests/94.png",
+  "Rangers":"https://raw.githubusercontent.com/guardian/football-assets/main/source/crests/101.png",
+  "Red Bull Salzburg":"https://raw.githubusercontent.com/guardian/football-assets/main/source/crests/26404.png",
+  "Young Boys":"https://raw.githubusercontent.com/guardian/football-assets/main/source/crests/26458.png",
+  "FC Copenhagen":"https://raw.githubusercontent.com/guardian/football-assets/main/source/crests/26412.png",
+  "Dinamo Zagreb":"https://raw.githubusercontent.com/guardian/football-assets/main/source/crests/32166.png"
+};
+
+function visualClubName(name){
+  return String(name||"Clube").replace(/\s*\([A-Z]{2,3}\)\s*$/,"").trim();
+}
+function safeVisualColor(value,fallback){
+  return /^#[0-9a-f]{6}$/i.test(String(value||""))?String(value):fallback;
+}
+function clubFallbackSvg(c){
+  const name=visualClubName(c?.name||"FC");
+  const abbr=initials(name)||"FC";
+  const primary=safeVisualColor(c?.primary_color,"#176b47");
+  const secondary=safeVisualColor(c?.secondary_color,"#f3f7f4");
+  const country=String(c?.country_code||"").slice(0,3);
+  const svg=`<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 120 140">
+    <defs><linearGradient id="g" x1="0" y1="0" x2="1" y2="1"><stop stop-color="${primary}"/><stop offset="1" stop-color="${secondary}"/></linearGradient></defs>
+    <path d="M60 4 110 20v49c0 34-20 55-50 67C30 124 10 103 10 69V20Z" fill="url(#g)" stroke="white" stroke-width="5"/>
+    <path d="M19 28h82v35H19z" fill="rgba(0,0,0,.18)"/>
+    <text x="60" y="57" text-anchor="middle" font-family="Arial,sans-serif" font-weight="900" font-size="26" fill="white">${abbr}</text>
+    <text x="60" y="103" text-anchor="middle" font-family="Arial,sans-serif" font-weight="800" font-size="11" fill="white">${country}</text>
+  </svg>`;
+  return `data:image/svg+xml;charset=UTF-8,${encodeURIComponent(svg)}`;
+}
+function clubBadgeUrl(c){
+  if(c?.crest_data)return c.crest_data;
+  const official=REAL_CLUB_BADGES[visualClubName(c?.name)];
+  return official||clubFallbackSvg(c);
+}
 function crestHtml(c,size=""){
   const cls=`crest ${size}`.trim();
-  if(c?.crest_data)return `<div class="${cls}"><img src="${c.crest_data}" alt=""></div>`;
-  return `<div class="${cls}" style="background:linear-gradient(135deg,${c?.primary_color||"#18864b"},${c?.secondary_color||"#f7fafc"});color:#fff">${esc(initials(c?.name))}</div>`;
+  const fallback=clubFallbackSvg(c);
+  const src=clubBadgeUrl(c);
+  return `<div class="${cls}" title="${esc(visualClubName(c?.name||"Clube"))}">
+    <img src="${esc(src)}" data-fallback="${esc(fallback)}" alt="Escudo de ${esc(visualClubName(c?.name||"Clube"))}" onerror="this.onerror=null;this.src=this.dataset.fallback">
+  </div>`;
+}
+function nationalFallbackSvg(code){
+  const name=countryName(code)||code||"Seleção";
+  const abbr=String(code||"NT").slice(0,3);
+  const svg=`<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 120 120">
+    <circle cx="60" cy="60" r="55" fill="#102b1c" stroke="#e9f4ed" stroke-width="5"/>
+    <circle cx="60" cy="60" r="42" fill="#1f6b45"/>
+    <text x="60" y="68" text-anchor="middle" font-family="Arial,sans-serif" font-weight="900" font-size="25" fill="white">${abbr}</text>
+    <title>${name}</title>
+  </svg>`;
+  return `data:image/svg+xml;charset=UTF-8,${encodeURIComponent(svg)}`;
+}
+function nationalBadgeHtml(code,size=""){
+  const cls=`national-badge ${size}`.trim();
+  const fallback=nationalFallbackSvg(code);
+  const src=NATIONAL_BADGE_URLS[code]||fallback;
+  return `<span class="${cls}" title="${esc(countryName(code)||code||"Seleção")}">
+    <img src="${esc(src)}" data-fallback="${esc(fallback)}" alt="Emblema de ${esc(countryName(code)||code||"seleção")}" onerror="this.onerror=null;this.src=this.dataset.fallback">
+  </span>`;
+}
+function nationalTeamLabel(code,name,size="tiny"){
+  return `<span class="national-team-label">${nationalBadgeHtml(code,size)}<span>${esc(name||countryName(code)||code)}</span></span>`;
+}
+function clubTeamLabel(c,size="tiny",right=false){
+  return `<span class="club-team-label ${right?"right":""}">${crestHtml(c,size)}<span>${esc(c?.name||"Clube")}</span></span>`;
 }
 function posName(p){return({GK:"GOL",DEF:"DEF",MID:"MEI",ATT:"ATA"})[p]||p}
 function stateOptions(){return Object.entries(STATES).map(([k,v])=>`<option value="${k}">${esc(v)}</option>`).join("")}
@@ -1769,13 +1917,13 @@ function divisionView(div){
   <div class="table-wrap" style="margin-top:12px"><table>
     <thead><tr><th>#</th><th>Clube</th><th>PTS</th><th>J</th><th>V</th><th>E</th><th>D</th><th>GP</th><th>GC</th><th>SG</th></tr></thead>
     <tbody>${d.entries.map((e,i)=>`<tr class="${rowClass(div,i,e.clubId)}" data-club="${e.clubId}">
-      <td>${i+1}</td><td><b>${esc(e.club.name)}</b></td><td><b>${e.points}</b></td><td>${e.wins+e.draws+e.losses}</td>
+      <td>${i+1}</td><td><div class="club-table-name">${crestHtml(e.club,"tiny")}<b>${esc(e.club.name)}</b></div></td><td><b>${e.points}</b></td><td>${e.wins+e.draws+e.losses}</td>
       <td>${e.wins}</td><td>${e.draws}</td><td>${e.losses}</td><td>${e.gf}</td><td>${e.ga}</td><td>${e.gd>0?"+":""}${e.gd}</td>
     </tr>`).join("")}</tbody>
   </table></div>
   <div class="round-head"><label>Rodada<select id="roundSelect">${Array.from({length:38},(_,i)=>i+1).map(r=>`<option value="${r}" ${r===Number(round)?"selected":""}>Rodada ${r}</option>`).join("")}</select></label></div>
   <div class="fixture-grid">${games.map(f=>`<div class="fixture ${String(f.home)===String(state.club.id)||String(f.away)===String(state.club.id)?"user-fixture":""}">
-    <span>${esc(f.homeClub.name)}</span><b>${f.played?`${f.hg} × ${f.ag}`:"×"}</b><span class="right">${esc(f.awayClub.name)}</span>
+    ${clubTeamLabel(f.homeClub,"tiny")}<b>${f.played?`${f.hg} × ${f.ag}`:"×"}</b>${clubTeamLabel(f.awayClub,"tiny",true)}
   </div>`).join("")}</div>`;
 }
 
@@ -1790,11 +1938,11 @@ function stateView(){
   <div class="table-wrap"><table>
     <thead><tr><th>#</th><th>Clube</th><th>PTS</th><th>J</th><th>V</th><th>E</th><th>D</th><th>SG</th></tr></thead>
     <tbody>${s.entries.map((e,i)=>`<tr class="clickable ${String(e.clubId)===String(state.club.id)?"me":""}" data-club="${e.clubId}">
-      <td>${i+1}</td><td>${esc(e.club.name)}</td><td><b>${e.points}</b></td><td>${e.wins+e.draws+e.losses}</td><td>${e.wins}</td><td>${e.draws}</td><td>${e.losses}</td><td>${e.gd>0?"+":""}${e.gd}</td>
+      <td>${i+1}</td><td><div class="club-table-name">${crestHtml(e.club,"tiny")}<span>${esc(e.club.name)}</span></div></td><td><b>${e.points}</b></td><td>${e.wins+e.draws+e.losses}</td><td>${e.wins}</td><td>${e.draws}</td><td>${e.losses}</td><td>${e.gd>0?"+":""}${e.gd}</td>
     </tr>`).join("")}</tbody>
   </table></div>
   <h3>Jogos</h3><div class="fixture-grid">${s.fixtures.map(f=>`<div class="fixture ${String(f.home)===String(state.club.id)||String(f.away)===String(state.club.id)?"user-fixture":""}">
-    <span>${esc(f.homeClub.name)}</span><b>${f.played?`${f.hg} × ${f.ag}`:"×"}</b><span class="right">${esc(f.awayClub.name)}</span>
+    ${clubTeamLabel(f.homeClub,"tiny")}<b>${f.played?`${f.hg} × ${f.ag}`:"×"}</b>${clubTeamLabel(f.awayClub,"tiny",true)}
     ${penaltySummary(f)}
   </div>`).join("")}</div>`;
 }
@@ -1806,7 +1954,7 @@ function groupCard(group,competition=null){
   return `<div class="group-card"><h3>Grupo ${group}</h3>
     <table class="mini-table"><thead><tr><th>#</th><th>Clube</th><th>PTS</th><th>J</th><th>SG</th></tr></thead>
     <tbody>${rows.length?rows.map((e,i)=>`<tr class="${i<2?"qualified":""} clickable" data-club="${e.clubId}">
-      <td>${i+1}</td><td>${esc(e.club?.name||"Clube")}</td><td>${e.points}</td><td>${e.wins+e.draws+e.losses}</td><td>${e.gd>0?"+":""}${e.gd}</td>
+      <td>${i+1}</td><td><div class="club-table-name">${crestHtml(e.club,"tiny")}<span>${esc(e.club?.name||"Clube")}</span></div></td><td>${e.points}</td><td>${e.wins+e.draws+e.losses}</td><td>${e.gd>0?"+":""}${e.gd}</td>
     </tr>`).join(""):`<tr><td colspan="5" class="muted">Grupo sem participantes — recarregue a competição.</td></tr>`}</tbody></table>
   </div>`;
 }
@@ -1857,8 +2005,8 @@ function knockoutList(lib){
         <small>${code==="FINAL"?"Final · jogo único":`Chave ${fs[0]?.slot} · ida e volta`}</small>
         ${fs.map(f=>`<div class="ko-leg">
           <span class="leg-label">${code==="FINAL"?"FINAL":Number(f.leg||1)===1?"IDA":"VOLTA"}</span>
-          <span>${esc(f.homeClub?.name||"")} ${f.played?`<b>${f.hg}</b>`:""}</span>
-          <span>${esc(f.awayClub?.name||"")} ${f.played?`<b>${f.ag}</b>`:""}</span>
+          <span class="ko-team">${crestHtml(f.homeClub,"tiny")}<span>${esc(f.homeClub?.name||"")} ${f.played?`<b>${f.hg}</b>`:""}</span></span>
+          <span class="ko-team">${crestHtml(f.awayClub,"tiny")}<span>${esc(f.awayClub?.name||"")} ${f.played?`<b>${f.ag}</b>`:""}</span></span>
           ${penaltySummary(f)}
         </div>`).join("")}
         ${aggregateSummary(fs)}
@@ -1871,7 +2019,7 @@ function libertadoresView(){
   if(!lib)return `<div class="empty"><h2>🏆 Libertadores</h2><p>Classificam-se os 4 primeiros da Série A e também o campeão da Copa do Brasil. Se o campeão da Copa estiver fora do G4, ele entra como vaga adicional.</p></div>`;
   const qualificationReason=lib.qualification?.userReason;
   const qualificationBanner=qualificationReason?`<div class="libertadores-qualified-banner">✅ Seu clube se classificou: <b>${esc(qualificationReason)}</b>.</div>`:"";
-  if(lib.status==="finished")return `${qualificationBanner}<div class="champion-card"><div class="kicker">CAMPEÃO DA LIBERTADORES</div><h2>🏆 ${esc(lib.championClub?.name||"Campeão")}</h2></div>${knockoutList(lib)}`;
+  if(lib.status==="finished")return `${qualificationBanner}<div class="champion-card visual-champion">${crestHtml(lib.championClub,"medium")}<div><div class="kicker">CAMPEÃO DA LIBERTADORES</div><h2>🏆 ${esc(lib.championClub?.name||"Campeão")}</h2></div></div>${knockoutList(lib)}`;
   const button=state.competitions.career.phase==="LIBERTADORES"?`<button id="playLib" class="primary">Jogar próxima fase</button>`:"";
   if(lib.stage==="GROUP")return `${qualificationBanner}<div class="section-title"><div><div class="kicker">${lib.entries?.length||0}/32 CLUBES · 8 GRUPOS</div><h2>Libertadores — fase de grupos</h2><span class="muted">6 jogos por clube · 2 classificados por grupo</span></div>${button}</div>
     <div class="groups-grid">${"ABCDEFGH".split("").map(groupCard).join("")}</div>`;
@@ -1943,8 +2091,8 @@ function championsKnockoutList(ch){
       <small>${code==="FINAL"?"Final · jogo único":`Chave ${fs[0]?.slot} · ida e volta`}</small>
       ${fs.map(f=>`<div class="ko-leg">
         <span class="leg-label">${code==="FINAL"?"FINAL":Number(f.leg||1)===1?"IDA":"VOLTA"}</span>
-        <span>${esc(f.homeClub?.name||"")} ${f.played?`<b>${f.hg}</b>`:""}</span>
-        <span>${esc(f.awayClub?.name||"")} ${f.played?`<b>${f.ag}</b>`:""}</span>
+        <span class="ko-team">${crestHtml(f.homeClub,"tiny")}<span>${esc(f.homeClub?.name||"")} ${f.played?`<b>${f.hg}</b>`:""}</span></span>
+        <span class="ko-team">${crestHtml(f.awayClub,"tiny")}<span>${esc(f.awayClub?.name||"")} ${f.played?`<b>${f.ag}</b>`:""}</span></span>
         ${penaltySummary(f)}
       </div>`).join("")}
       ${aggregateSummary(fs)}
@@ -1960,7 +2108,7 @@ function championsView(){
   const button=state.competitions.career.phase==="CHAMPIONS"?`<button id="playChampions" class="primary">Jogar próxima fase</button>`:"";
 
   if(ch.status==="finished"){
-    return `<div class="champion-card"><div class="kicker">CAMPEÃO DA CHAMPIONS LEAGUE</div><h2>⭐ ${esc(ch.championClub?.name||"Campeão")}</h2></div>
+    return `<div class="champion-card visual-champion">${crestHtml(ch.championClub,"medium")}<div><div class="kicker">CAMPEÃO DA CHAMPIONS LEAGUE</div><h2>⭐ ${esc(ch.championClub?.name||"Campeão")}</h2></div></div>
       ${championsKnockoutList(ch)}`;
   }
 
@@ -1973,7 +2121,7 @@ function championsView(){
     <div class="table-wrap champions-table"><table>
       <thead><tr><th>#</th><th>Clube</th><th>PTS</th><th>J</th><th>V</th><th>E</th><th>D</th><th>SG</th></tr></thead>
       <tbody>${rows.map((e,i)=>`<tr class="clickable ${i<8?"qualified":i<24?"playoff-zone":"eliminated-zone"} ${String(e.clubId)===String(state.club.id)?"me":""}" data-club="${e.clubId}">
-        <td>${i+1}</td><td>${esc(e.club?.name||"")}</td><td><b>${e.points}</b></td><td>${e.wins+e.draws+e.losses}</td><td>${e.wins}</td><td>${e.draws}</td><td>${e.losses}</td><td>${e.gd>0?"+":""}${e.gd}</td>
+        <td>${i+1}</td><td><div class="club-table-name">${crestHtml(e.club,"tiny")}<span>${esc(e.club?.name||"")}</span></div></td><td><b>${e.points}</b></td><td>${e.wins+e.draws+e.losses}</td><td>${e.wins}</td><td>${e.draws}</td><td>${e.losses}</td><td>${e.gd>0?"+":""}${e.gd}</td>
       </tr>`).join("")}</tbody>
     </table></div>`;
   }
@@ -2010,7 +2158,7 @@ function uefaSecondaryView(comp,config){
     <div class="table-wrap champions-table"><table>
       <thead><tr><th>#</th><th>Clube</th><th>PTS</th><th>J</th><th>V</th><th>E</th><th>D</th><th>SG</th></tr></thead>
       <tbody>${rows.map((e,i)=>`<tr class="clickable ${i<8?"qualified":i<24?"playoff-zone":"eliminated-zone"} ${String(e.clubId)===String(state.club.id)?"me":""}" data-club="${e.clubId}">
-        <td>${i+1}</td><td>${esc(e.club?.name||"")}</td><td><b>${e.points}</b></td>
+        <td>${i+1}</td><td><div class="club-table-name">${crestHtml(e.club,"tiny")}<span>${esc(e.club?.name||"")}</span></div></td><td><b>${e.points}</b></td>
         <td>${e.wins+e.draws+e.losses}</td><td>${e.wins}</td><td>${e.draws}</td><td>${e.losses}</td>
         <td>${e.gd>0?"+":""}${e.gd}</td>
       </tr>`).join("")}</tbody>
@@ -2115,8 +2263,8 @@ function copaView(){
         <small>Chave ${fs[0]?.slot}${brazilTwoLeg?" · ida e volta":" · jogo único"}</small>
         ${fs.map(f=>`<div class="ko-leg">
           <span class="leg-label">${brazilTwoLeg?(Number(f.leg||1)===1?"IDA":"VOLTA"):"JOGO"}</span>
-          <span>${esc(f.homeClub?.name||"")} ${f.played?`<b>${f.hg}</b>`:""}</span>
-          <span>${esc(f.awayClub?.name||"")} ${f.played?`<b>${f.ag}</b>`:""}</span>
+          <span class="ko-team">${crestHtml(f.homeClub,"tiny")}<span>${esc(f.homeClub?.name||"")} ${f.played?`<b>${f.hg}</b>`:""}</span></span>
+          <span class="ko-team">${crestHtml(f.awayClub,"tiny")}<span>${esc(f.awayClub?.name||"")} ${f.played?`<b>${f.ag}</b>`:""}</span></span>
           ${penaltySummary(f)}
         </div>`).join("")}
         ${brazilTwoLeg?aggregateSummary(fs):""}
@@ -2396,49 +2544,6 @@ function playerObjectivesCard(){
     <div class="objective-list">${obs.map(o=>{const pct=Math.min(100,Math.round(Number(o.value||0)/Number(o.target||1)*100));return `<div class="objective-row ${o.completed?"done":""}"><div><b>${o.completed?"✓ ":""}${esc(o.label)}</b><small>${Number(o.value||0).toFixed(o.key==="avgRating"?2:0)} / ${o.target} · recompensa ${o.reward} pts</small></div><div class="meter"><i style="width:${pct}%"></i></div></div>`}).join("")}</div>
   </section>`;
 }
-
-function playerMissionIcon(key){
-  return ({GOAL:"⚽",ASSIST:"🎯",GOAL_OR_ASSIST:"✨",RATING:"⭐",CLEAN_SHEET:"🧱",SAVES:"🧤",WIN:"🏆"})[key]||"🎯";
-}
-function playerProgressBar(value,max){
-  const pct=Math.max(0,Math.min(100,Math.round(Number(value||0)/Math.max(1,Number(max||1))*100)));
-  return `<div class="player-progress-track"><span style="width:${pct}%"></span></div>`;
-}
-function playerInnovationCards(){
-  const d=state.playerData||{},p=d.progression||{},m=d.matchMission,locker=d.lockerRoom||{};
-  return `<section class="player-innovation-grid">
-    <div class="card player-level-card">
-      <div class="kicker">NÍVEL DO JOGADOR</div>
-      <div class="player-level-line"><b>Nível ${p.level||1}</b><span>${p.xp||0}/${p.needed||120} XP</span></div>
-      ${playerProgressBar(p.xp,p.needed)}
-      <small class="muted">Cada nível concede 1 ponto de evolução. Atuações, vitórias e missões dão XP.</small>
-    </div>
-    <div class="card player-mission-card">
-      <div class="kicker">MISSÃO DA PRÓXIMA RODADA</div>
-      ${m?`<h3>${playerMissionIcon(m.key)} ${esc(m.label)}</h3><p>Recompensa: <b>+${m.rewardXp} XP</b>, reputação e seguidores.</p>`:`<h3>Temporada encerrada</h3><p class="muted">Novas missões chegam na próxima temporada.</p>`}
-    </div>
-    <div class="card player-locker-card">
-      <div class="kicker">VESTIÁRIO</div>
-      <h3>Entrosamento ${locker.teammateBond??55}/100</h3>
-      ${playerProgressBar(locker.teammateBond??55,100)}
-      <p class="muted">Bom relacionamento com o elenco melhora seu rendimento. ${locker.preparation?`Preparação ativa: <b>${esc(locker.preparation.label||"especial")}</b>.`:"Nenhuma preparação especial ativa."}</p>
-    </div>
-  </section>`;
-}
-function playerInterviewCard(){
-  const it=state.playerData?.pendingInterview;
-  if(!it)return "";
-  return `<section class="card player-interview-card">
-    <div class="section-title"><div><div class="kicker">🎙️ ENTREVISTA PÓS-JOGO</div><h2>A imprensa quer falar com você</h2></div><span class="badge red">PENDENTE</span></div>
-    <p>Motivo: <b>${esc(it.reason||"destaque da rodada")}</b>${it.opponent?` contra ${esc(it.opponent)}`:""}. Nota ${Number(it.performance||0).toFixed(1)}.</p>
-    <div class="player-interview-actions">
-      <button class="secondary player-interview-answer" data-choice="team">🤝 Dividir mérito com o time<small>Confiança, liderança e vestiário</small></button>
-      <button class="secondary player-interview-answer" data-choice="ambitious">🔥 Mostrar ambição<small>Reputação e fama, com mais cobrança</small></button>
-      <button class="secondary player-interview-answer" data-choice="charismatic">😎 Responder com carisma<small>Muitos seguidores e fama</small></button>
-    </div>
-  </section>`;
-}
-
 function playerJourneyView(){
   const d=state.playerData,pc=d.career,c=d.competition||{},hist=d.careerHistory||[],awards=d.awards||[],timeline=d.timeline||[];
   return `<section class="player-v44-page">
@@ -2446,7 +2551,7 @@ function playerJourneyView(){
       <div class="card"><div class="kicker">DISPUTA POR POSIÇÃO</div><h2>${esc(c.competitor?.name||"Concorrente")}</h2><div class="real-grid"><div><small>Seu OVR</small><b>${pc.overall}</b></div><div><small>Concorrente</small><b>${c.competitor?.rating??"—"}</b></div><div><small>Situação</small><b>${esc((c.status||"").replaceAll("_"," "))}</b></div><div><small>Liderança</small><b>${pc.leadership}</b></div></div>${pc.is_captain?`<div class="msg ok">© Você é capitão do elenco.</div>`:""}</div>
       <div class="card player-national-card">
         <div class="kicker">SELEÇÃO NACIONAL</div>
-        <h2>${d.nationalTeam?.flag||"🏳️"} ${esc(d.nationalTeam?.nationName||countryName(pc.nationality_code))}</h2>
+        <h2 class="player-national-title">${nationalBadgeHtml(d.nationalTeam?.nationCode||pc.nationality_code,"medium")}<span>${esc(d.nationalTeam?.nationName||countryName(pc.nationality_code))}</span></h2>
         <div class="real-grid">
           <div><small>Jogos</small><b>${d.nationalTeam?.caps||0}</b></div>
           <div><small>Gols</small><b>${d.nationalTeam?.goals||0}</b></div>
@@ -2460,7 +2565,7 @@ function playerJourneyView(){
             :d.nationalTeam?.status==="active"
               ?`<div class="player-national-next">
                   <small>${esc(d.nationalTeam.competition||"Competição internacional")} · ${esc(nationalStageLabel(d.nationalTeam.stage))}</small>
-                  <b>${d.nationalTeam.nextMatch?`${d.nationalTeam.nextMatch.homeFlag} ${esc(d.nationalTeam.nextMatch.homeName)} × ${esc(d.nationalTeam.nextMatch.awayName)} ${d.nationalTeam.nextMatch.awayFlag}`:"Próximo jogo internacional"}</b>
+                  <b class="national-next-pair">${d.nationalTeam.nextMatch?`${nationalTeamLabel(d.nationalTeam.nextMatch.home,d.nationalTeam.nextMatch.homeName,"tiny")}<span>×</span>${nationalTeamLabel(d.nationalTeam.nextMatch.away,d.nationalTeam.nextMatch.awayName,"tiny")}`:"Próximo jogo internacional"}</b>
                 </div>
                 <button id="playerNationalPlay" class="primary">🌍 JOGAR PELA SELEÇÃO</button>`
               :`<div class="msg">${d.nationalTeam?.championName?`Campeão: ${esc(d.nationalTeam.championName)}`:"Campanha internacional encerrada nesta temporada."}</div>`}
@@ -2469,9 +2574,9 @@ function playerJourneyView(){
     ${(d.nationalTeam?.history||[]).length?`<section class="card">
       <div class="section-title"><div><div class="kicker">CARREIRA INTERNACIONAL</div><h2>Jogos pela seleção</h2></div><span class="badge">${d.nationalTeam.history.length}</span></div>
       <div class="national-history">${d.nationalTeam.history.slice(0,10).map(m=>`<div>
-        <span>${m.homeFlag||""} ${esc(m.homeName)}</span>
+        <span>${nationalTeamLabel(m.home,m.homeName,"tiny")}</span>
         <b>${m.homeGoals} × ${m.awayGoals}${m.penaltyShootout?` (${m.penaltyShootout.homePens}×${m.penaltyShootout.awayPens} p.)`:""}</b>
-        <span>${esc(m.awayName)} ${m.awayFlag||""}</span>
+        <span>${nationalTeamLabel(m.away,m.awayName,"tiny")}</span>
         <small>Nota ${Number(m.performance||0).toFixed(1)}${pc.position==="GK"?` · ${m.saves||0} defesas`:` · ${m.goals||0} G · ${m.assists||0} A`}</small>
       </div>`).join("")}</div>
     </section>`:""}
@@ -2482,13 +2587,8 @@ function playerJourneyView(){
         <small>${esc(m.competition)}${m.performance?` · nota ${Number(m.performance).toFixed(1)}`:""}</small>
       </div>`).join("")}</div>
     </section>`:""}
-    <section class="card player-milestones-card">
-      <div class="section-title"><div><div class="kicker">MARCOS DA CARREIRA</div><h2>Conquistas permanentes</h2></div><span class="badge">${(d.milestones||[]).filter(x=>x.unlocked).length}/${(d.milestones||[]).length}</span></div>
-      <div class="player-milestones-grid">${(d.milestones||[]).map(x=>`<div class="player-milestone ${x.unlocked?"unlocked":""}"><span>${x.unlocked?"🏅":"🔒"}</span><b>${esc(x.label)}</b><small>${x.unlocked?"Conquistado":`${Math.min(x.progress,x.target)}/${x.target}`}</small></div>`).join("")}</div>
-    </section>
     <section class="card"><div class="section-title"><div><div class="kicker">PRÊMIOS</div><h2>Conquistas individuais</h2></div><span class="badge blue">${awards.length}</span></div>${awards.length?`<div class="v44-awards">${awards.map(a=>`<div>🏆 <b>${esc(a.award)}</b><span>Temporada ${a.season}</span></div>`).join("")}</div>`:`<div class="empty">Seus prêmios aparecerão aqui conforme a carreira evoluir.</div>`}</section>
     <section class="card"><div class="kicker">HISTÓRICO DA CARREIRA</div><h2>Temporadas</h2>${hist.length?`<div class="v44-history">${hist.map(h=>`<div><b>Temporada ${h.season}</b><span>${h.appearances} J · ${h.goals} G · ${h.assists} A · nota ${Number(h.avgRating||0).toFixed(2)}</span><small>${(h.awards||[]).map(esc).join(" · ")||`${h.objectives}/${h.totalObjectives} objetivos`}</small></div>`).join("")}</div>`:`<div class="empty">A primeira temporada ainda está em andamento.</div>`}</section>
-    ${(d.interviewHistory||[]).length?`<section class="card"><div class="section-title"><div><div class="kicker">MÍDIA</div><h2>Entrevistas marcantes</h2></div><span class="badge">${d.interviewHistory.length}</span></div><div class="v44-history">${d.interviewHistory.slice(0,8).map(x=>`<div><b>${esc(x.reason||"Entrevista")}</b><span>${esc(x.text||"")}</span><small>Temporada ${x.season} · rodada ${x.round}</small></div>`).join("")}</div></section>`:""}
     <section class="card"><div class="kicker">LINHA DO TEMPO</div><h2>Momentos importantes</h2><div class="v44-timeline">${timeline.slice(0,20).map(x=>`<div><span>${esc(String(x.type||"evento").toUpperCase())}</span><b>${esc(x.text)}</b><small>T${x.season||pc.season_no} · R${x.round||"—"}</small></div>`).join("")||`<div class="empty">Sem eventos importantes ainda.</div>`}</div></section>
     ${!pc.retired&&(Number(pc.age)>=34||Number(pc.season_no)>=15)?`<section class="card danger-zone"><div><div class="kicker danger-kicker">FIM DE CARREIRA</div><h3>Aposentadoria</h3><p class="muted">Encerre a carreira e preserve todo o histórico, prêmios e legado.</p></div><button id="playerRetire" class="danger">Aposentar jogador</button></section>`:""}
   </section>`;
@@ -2544,8 +2644,6 @@ function playerCareerHome(){
     </div>
   </section>
 
-  ${playerInnovationCards()}
-  ${playerInterviewCard()}
 
   <section class="card v44-match-plan">
     <div class="section-title"><div><div class="kicker">PLANO DE PARTIDA</div><h2>Como você quer jogar?</h2></div>${pc.injury_games>0?`<span class="badge red">🩹 ${pc.injury_games} rodada(s) fora</span>`:""}</div>
@@ -2587,7 +2685,6 @@ function playerCareerHome(){
       ${last.played===false?`<span><b>Você ficou no banco</b></span>`:`<span>Nota <b>${last.performance}</b></span>`}
       ${isGK&&last.played!==false?`<span>Defesas <b>${last.saves||0}</b></span><span>Sem sofrer gol <b>${last.cleanSheet?"Sim":"Não"}</b></span>`:`<span>Gols <b>${last.goals||0}</b></span><span>Assistências <b>${last.assists||0}</b></span>`}
     </div>
-    ${d.missionHistory?.[0]&&Number(d.missionHistory[0].round)===Number(last.round)?`<div class="player-last-mission ${d.missionHistory[0].completed?"success":"fail"}">${d.missionHistory[0].completed?"✅":"❌"} Missão: ${esc(d.missionHistory[0].label)}</div>`:""}
   </section>`:""}
 
   ${!statusEnd?`<section class="card player-interactions">
@@ -2601,11 +2698,6 @@ function playerCareerHome(){
       <button class="secondary player-interaction" data-type="agent_push" ${interaction.used?"disabled":""}>🤝 Cobrar o agente<small>Aumenta exposição no mercado</small></button>
       <button class="secondary player-interaction" data-type="recovery" ${interaction.used?"disabled":""}>🧊 Recuperação extra<small>Recupera físico</small></button>
       <button class="secondary player-interaction" data-type="media" ${interaction.used?"disabled":""}>🎙️ Dar entrevista<small>Ganha reputação, com pressão</small></button>
-      <button class="secondary player-interaction" data-type="video_analysis" ${interaction.used?"disabled":""}>📺 Analisar adversário<small>Bônus de desempenho no próximo jogo da liga</small></button>
-      <button class="secondary player-interaction" data-type="teammates" ${interaction.used?"disabled":""}>🫂 Fortalecer o vestiário<small>Melhora entrosamento, moral e liderança</small></button>
-      <button class="secondary player-interaction" data-type="mentor" ${interaction.used?"disabled":""}>🧑‍🏫 Orientar jovens<small>Liderança e respeito do elenco</small></button>
-      <button class="secondary player-interaction" data-type="fan_event" ${interaction.used?"disabled":""}>🙌 Evento com torcida<small>Seguidores, fama e moral</small></button>
-      <button class="secondary player-interaction" data-type="psychology" ${interaction.used?"disabled":""}>🧠 Psicologia esportiva<small>Grande ganho de moral</small></button>
     </div>
   </section>`:""}
 
@@ -2657,7 +2749,7 @@ function playerSeasonView(){
       ${d.uefaClubCompetition.stage==="LEAGUE"?`<div class="table-wrap"><table class="mini-table">
         <thead><tr><th>#</th><th>Clube</th><th>PTS</th><th>J</th><th>SG</th></tr></thead>
         <tbody>${(d.uefaClubCompetition.entries||[]).slice(0,24).map((e,i)=>`<tr class="${String(e.clubId)===String(pc.club_id)?"user-row":""}">
-          <td>${i+1}</td><td>${esc(e.club?.name||"Clube")}</td><td>${e.points}</td><td>${e.wins+e.draws+e.losses}</td><td>${e.gd>0?"+":""}${e.gd}</td>
+          <td>${i+1}</td><td><div class="club-table-name">${crestHtml(e.club,"tiny")}<span>${esc(e.club?.name||"Clube")}</span></div></td><td>${e.points}</td><td>${e.wins+e.draws+e.losses}</td><td>${e.gd>0?"+":""}${e.gd}</td>
         </tr>`).join("")}</tbody>
       </table></div>`:`<div class="fixtures">${(d.uefaClubCompetition.fixtures||[]).filter(f=>f.stage===d.uefaClubCompetition.stage).map(f=>`<div class="match">
         <span>${esc(f.homeClub?.name||"")}</span><b>${f.played?`${f.hg} × ${f.ag}${f.penHome!=null?` (${f.penHome}×${f.penAway} p.)`:""}`:"×"}</b><span class="right">${esc(f.awayClub?.name||"")}</span>
@@ -2682,15 +2774,6 @@ function playerTrainingView(){
 }
 
 function bindPlayerCareer(){
-  app.querySelectorAll(".player-interview-answer").forEach(btn=>btn.onclick=async()=>{
-    btn.disabled=true;
-    try{
-      const d=await api("/api/player-career/interview/respond",{method:"POST",body:JSON.stringify({choice:btn.dataset.choice})});
-      await refreshPlayerCareer();renderPlayerCareer();
-      alert(d.text||"Entrevista concluída.");
-    }catch(err){alert(err.message);btn.disabled=false}
-  });
-
   const nationalJoin=app.querySelector("#playerNationalJoin");
   if(nationalJoin)nationalJoin.onclick=async()=>{
     nationalJoin.disabled=true;nationalJoin.textContent="ACEITANDO...";
@@ -2738,11 +2821,7 @@ function bindPlayerCareer(){
           :(pc?.position==="GK"
             ?`Sua nota: ${r.match.performance} · Defesas: ${r.match.saves||0} · Pênaltis defendidos: ${r.match.penaltySaves||0}`
             :`Sua nota: ${r.match.performance} · Gols: ${r.match.goals||0} · Assistências: ${r.match.assists||0}`);
-        let summary=`${r.match.homeName} ${r.match.homeGoals} x ${r.match.awayGoals} ${r.match.awayName}\n${extra}`;
-        if(r.missionResult)summary+=`\n\n${r.missionResult.completed?"✅ MISSÃO CUMPRIDA":"❌ MISSÃO NÃO CUMPRIDA"}: ${r.missionResult.label}`;
-        if(r.xpResult)summary+=`\nXP ganho: +${r.xpResult.gained}${r.xpResult.levelsGained?` · SUBIU PARA O NÍVEL ${r.xpResult.level}`:""}`;
-        if(r.interviewAvailable)summary+="\n\n🎙️ Há uma entrevista pós-jogo esperando por você na tela inicial.";
-        alert(summary);
+        alert(`${r.match.homeName} ${r.match.homeGoals} x ${r.match.awayGoals} ${r.match.awayName}\n${extra}`);
       }
       if(r.cupMatch){
         const p=r.cupMatch.penaltyShootout;
@@ -2824,10 +2903,6 @@ function playerExpansionPanel(){
   <div>🇧🇷 Seleção: convocação por desempenho</div>
   <div>👟 Patrocínios: contratos individuais</div>
   <div>🏅 Legado: histórico da carreira</div>
-  <div>🎯 Missões: objetivos diferentes a cada rodada</div>
-  <div>⭐ Níveis: XP e progressão contínua</div>
-  <div>🫂 Vestiário: entrosamento e liderança</div>
-  <div>🎙️ Entrevistas: escolhas com consequências</div>
   </div></section>`;
 }
 
@@ -3431,7 +3506,7 @@ function nationalTeamView(){
         <div class="section-title"><div><div class="kicker">PROPOSTAS DE FEDERAÇÕES</div><h2>Seleções interessadas</h2></div><span class="badge">${(nt.offers||[]).length}</span></div>
         <div class="national-offers">
           ${(nt.offers||[]).map(o=>`<article class="national-offer">
-            <div class="national-flag">${o.flag}</div>
+            <div class="national-flag">${nationalBadgeHtml(o.code,"medium")}</div>
             <div><h3>${esc(o.name)}</h3><span>OVR ${o.rating} · ${esc(o.confed)}</span><p>Meta: <b>${esc(o.target)}</b></p></div>
             <button class="primary accept-national" data-code="${o.code}">Aceitar cargo</button>
           </article>`).join("")||`<div class="empty">Nenhuma seleção apresentou proposta neste momento. Aumente sua reputação como treinador.</div>`}
@@ -3449,7 +3524,7 @@ function nationalTeamView(){
   if((state.nationalTab||"overview")==="lineup"){
     return `<section class="national-page">
       <div class="national-hero">
-        <div class="national-flag huge">${j.flag}</div>
+        <div class="national-flag huge">${nationalBadgeHtml(j.nation_code,"huge")}</div>
         <div class="national-identity">
           <div class="kicker">SELEÇÃO NACIONAL</div>
           <h1>${esc(j.nationName)}</h1>
@@ -3468,7 +3543,7 @@ function nationalTeamView(){
 
   return `<section class="national-page">
     <div class="national-hero">
-      <div class="national-flag huge">${j.flag}</div>
+      <div class="national-flag huge">${nationalBadgeHtml(j.nation_code,"huge")}</div>
       <div class="national-identity">
         <div class="kicker">SELEÇÃO NACIONAL</div>
         <h1>${esc(j.nationName)}</h1>
@@ -3485,7 +3560,7 @@ function nationalTeamView(){
 
     ${canPlay?`<div class="card national-next-match">
       <div><div class="kicker">PRÓXIMO COMPROMISSO</div>
-        <h2>${userFixture?`${userFixture.homeFlag} ${esc(userFixture.homeName)} × ${esc(userFixture.awayName)} ${userFixture.awayFlag}`:esc(nationalStageLabel(j.stage))}</h2>
+        <h2 class="national-next-pair">${userFixture?`${nationalTeamLabel(userFixture.home,userFixture.homeName,"small")}<span>×</span>${nationalTeamLabel(userFixture.away,userFixture.awayName,"small")}`:esc(nationalStageLabel(j.stage))}</h2>
         <p class="muted">${j.stage==="GROUP"?`Rodada ${j.matchday}/3`:"Mata-mata em jogo único. Empate vai para os pênaltis."}</p>
       </div>
       <button id="playNationalTeam" class="primary">🌍 JOGAR PELA SELEÇÃO</button>
@@ -3512,7 +3587,7 @@ function nationalTeamView(){
         <div class="section-title"><div><div class="kicker">GRUPO / FASE</div><h2>Situação na competição</h2></div></div>
         ${(nt.table||[]).length?`<div class="national-table">
           ${(nt.table||[]).map((e,i)=>`<div class="${String(e.clubId)===String(j.nation_code)?"user":""}">
-            <span>${i+1}º</span><b>${e.flag} ${esc(e.name)}</b><span>${Number(e.points||0)} pts</span><small>SG ${e.gd}</small>
+            <span>${i+1}º</span><b>${nationalTeamLabel(e.clubId,e.name,"tiny")}</b><span>${Number(e.points||0)} pts</span><small>SG ${e.gd}</small>
           </div>`).join("")}
         </div>`:`<p class="muted">${esc(nationalStageLabel(j.stage))}</p>`}
       </div>
@@ -3530,7 +3605,7 @@ function nationalTeamView(){
     ${(j.history||[]).length?`<div class="card">
       <div class="section-title"><div><div class="kicker">ÚLTIMOS JOGOS</div><h2>Histórico internacional</h2></div></div>
       <div class="national-history">${(j.history||[]).slice(0,8).map(m=>`<div>
-        <span>${m.homeFlag||""} ${esc(m.homeName)}</span><b>${m.homeGoals} × ${m.awayGoals}${m.penaltyShootout?` (${m.penaltyShootout.homePens}×${m.penaltyShootout.awayPens} p.)`:""}</b><span>${esc(m.awayName)} ${m.awayFlag||""}</span>
+        <span>${nationalTeamLabel(m.home,m.homeName,"tiny")}</span><b>${m.homeGoals} × ${m.awayGoals}${m.penaltyShootout?` (${m.penaltyShootout.homePens}×${m.penaltyShootout.awayPens} p.)`:""}</b><span>${nationalTeamLabel(m.away,m.awayName,"tiny")}</span>
       </div>`).join("")}</div>
     </div>`:""}
 

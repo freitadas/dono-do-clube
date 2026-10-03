@@ -2,7 +2,7 @@
   "name": "dono-do-clube",
   "version": "61.0.0",
   "private": true,
-  "description": "Dono do Clube v61 — Modo Carreira Jogador com XP, missões, entrevistas e vestiário",
+  "description": "Dono do Clube v61 — escudos dos times e emblemas das seleções",
   "main": "server.js",
   "scripts": {
     "start": "node server.js"

@@ -1430,12 +1430,12 @@ Reformulação ampla do modo jogador: personalidade e objetivo de carreira, núm
 - Recalcula a classificação da fase de grupos com base nos resultados já disputados.
 
 
-## v61 — Inovações do Modo Carreira Jogador
-- Sistema de nível e XP: partidas e missões dão experiência; subir de nível concede ponto de evolução.
-- Missão individual diferente a cada rodada, adaptada à posição.
-- Entrevistas pós-jogo após grandes atuações, com respostas e consequências diferentes.
-- Entrosamento pessoal com o vestiário, que influencia desempenho.
-- Preparação por análise de vídeo para a próxima partida da liga.
-- Novas decisões semanais: análise de adversário, vestiário, mentoria, evento com torcida e psicologia esportiva.
-- Marcos permanentes da carreira: estreia, gols, jogos, seleção, fama e feitos de goleiro.
-- Histórico de missões e entrevistas integrado à jornada.
+## v61 — Imagens de times e seleções
+- Todos os clubes agora possuem um escudo visual em vez de apenas iniciais.
+- Grandes clubes europeus usam escudos reais quando há imagem pública disponível.
+- Clubes sem imagem oficial mapeada recebem um escudo gerado automaticamente com suas cores e iniciais.
+- As 30 seleções jogáveis usam emblemas reais.
+- Os emblemas aparecem em propostas de seleções, tela da seleção, grupos, jogos e carreira internacional do jogador.
+- Escudos de clubes aparecem nas tabelas, jogos, Libertadores, Champions e demais competições.
+- Imagens remotas têm fallback automático para um escudo local gerado, evitando ícones quebrados.
+- Fontes dos emblemas públicos: Guardian football-assets / GitHub. Marcas e escudos pertencem aos respectivos clubes e federações.
