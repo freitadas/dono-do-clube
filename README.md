@@ -1430,12 +1430,11 @@ Reformulação ampla do modo jogador: personalidade e objetivo de carreira, núm
 - Recalcula a classificação da fase de grupos com base nos resultados já disputados.
 
 
-## v61 — Imagens de times e seleções
-- Todos os clubes agora possuem um escudo visual em vez de apenas iniciais.
-- Grandes clubes europeus usam escudos reais quando há imagem pública disponível.
-- Clubes sem imagem oficial mapeada recebem um escudo gerado automaticamente com suas cores e iniciais.
-- As 30 seleções jogáveis usam emblemas reais.
-- Os emblemas aparecem em propostas de seleções, tela da seleção, grupos, jogos e carreira internacional do jogador.
-- Escudos de clubes aparecem nas tabelas, jogos, Libertadores, Champions e demais competições.
-- Imagens remotas têm fallback automático para um escudo local gerado, evitando ícones quebrados.
-- Fontes dos emblemas públicos: Guardian football-assets / GitHub. Marcas e escudos pertencem aos respectivos clubes e federações.
+## v62 — Escudos universais e Estaduais reais
+- Todos os clubes recebem um escudo visual persistente gerado pelas cores e iniciais do clube quando não existe imagem personalizada.
+- Escudos são preenchidos também para clubes de saves antigos e clubes criados pelo usuário.
+- Os 27 Estaduais brasileiros usam seus nomes oficiais já cadastrados (Paulista, Carioca, Capixaba, Mineiro, Gaúcho etc.).
+- Os antigos clubes estaduais genéricos deixam de ser usados.
+- Cada Estadual passa a selecionar clubes reais do respectivo estado.
+- Saves antigos com clubes estaduais genéricos são reparados para clubes reais, preservando resultados e classificação quando possível.
+- Tabelas e jogos principais exibem escudos ao lado dos clubes.

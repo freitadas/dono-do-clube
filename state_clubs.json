@@ -1,0 +1,2772 @@
+[
+  {
+    "name": "Rio Branco-AC",
+    "state": "AC",
+    "country": "BR",
+    "kind": "state",
+    "division": null,
+    "rating": 61,
+    "primary": "#92400e",
+    "secondary": "#fde68a"
+  },
+  {
+    "name": "Atlético Acreano",
+    "state": "AC",
+    "country": "BR",
+    "kind": "state",
+    "division": null,
+    "rating": 71,
+    "primary": "#4338ca",
+    "secondary": "#ffffff"
+  },
+  {
+    "name": "Galvez",
+    "state": "AC",
+    "country": "BR",
+    "kind": "state",
+    "division": null,
+    "rating": 70,
+    "primary": "#ca8a04",
+    "secondary": "#111827"
+  },
+  {
+    "name": "Humaitá-AC",
+    "state": "AC",
+    "country": "BR",
+    "kind": "state",
+    "division": null,
+    "rating": 69,
+    "primary": "#b91c1c",
+    "secondary": "#ffffff"
+  },
+  {
+    "name": "Independência-AC",
+    "state": "AC",
+    "country": "BR",
+    "kind": "state",
+    "division": null,
+    "rating": 68,
+    "primary": "#4d7c0f",
+    "secondary": "#ffffff"
+  },
+  {
+    "name": "Vasco-AC",
+    "state": "AC",
+    "country": "BR",
+    "kind": "state",
+    "division": null,
+    "rating": 67,
+    "primary": "#92400e",
+    "secondary": "#fde68a"
+  },
+  {
+    "name": "São Francisco-AC",
+    "state": "AC",
+    "country": "BR",
+    "kind": "state",
+    "division": null,
+    "rating": 66,
+    "primary": "#92400e",
+    "secondary": "#fde68a"
+  },
+  {
+    "name": "Andirá",
+    "state": "AC",
+    "country": "BR",
+    "kind": "state",
+    "division": null,
+    "rating": 65,
+    "primary": "#1d4ed8",
+    "secondary": "#ffffff"
+  },
+  {
+    "name": "Náuas",
+    "state": "AC",
+    "country": "BR",
+    "kind": "state",
+    "division": null,
+    "rating": 64,
+    "primary": "#7c3aed",
+    "secondary": "#ffffff"
+  },
+  {
+    "name": "Plácido de Castro",
+    "state": "AC",
+    "country": "BR",
+    "kind": "state",
+    "division": null,
+    "rating": 63,
+    "primary": "#1d4ed8",
+    "secondary": "#ffffff"
+  },
+  {
+    "name": "CRB",
+    "state": "AL",
+    "country": "BR",
+    "kind": "state",
+    "division": null,
+    "rating": 69,
+    "primary": "#111827",
+    "secondary": "#f8fafc"
+  },
+  {
+    "name": "CSA",
+    "state": "AL",
+    "country": "BR",
+    "kind": "state",
+    "division": null,
+    "rating": 68,
+    "primary": "#7c3aed",
+    "secondary": "#ffffff"
+  },
+  {
+    "name": "ASA",
+    "state": "AL",
+    "country": "BR",
+    "kind": "state",
+    "division": null,
+    "rating": 62,
+    "primary": "#0369a1",
+    "secondary": "#f8fafc"
+  },
+  {
+    "name": "CSE",
+    "state": "AL",
+    "country": "BR",
+    "kind": "state",
+    "division": null,
+    "rating": 69,
+    "primary": "#4338ca",
+    "secondary": "#ffffff"
+  },
+  {
+    "name": "Murici",
+    "state": "AL",
+    "country": "BR",
+    "kind": "state",
+    "division": null,
+    "rating": 68,
+    "primary": "#92400e",
+    "secondary": "#fde68a"
+  },
+  {
+    "name": "Coruripe",
+    "state": "AL",
+    "country": "BR",
+    "kind": "state",
+    "division": null,
+    "rating": 67,
+    "primary": "#7c3aed",
+    "secondary": "#ffffff"
+  },
+  {
+    "name": "Penedense",
+    "state": "AL",
+    "country": "BR",
+    "kind": "state",
+    "division": null,
+    "rating": 66,
+    "primary": "#92400e",
+    "secondary": "#fde68a"
+  },
+  {
+    "name": "CEO",
+    "state": "AL",
+    "country": "BR",
+    "kind": "state",
+    "division": null,
+    "rating": 65,
+    "primary": "#166534",
+    "secondary": "#ffffff"
+  },
+  {
+    "name": "Cruzeiro-AL",
+    "state": "AL",
+    "country": "BR",
+    "kind": "state",
+    "division": null,
+    "rating": 64,
+    "primary": "#7c3aed",
+    "secondary": "#ffffff"
+  },
+  {
+    "name": "Zumbi",
+    "state": "AL",
+    "country": "BR",
+    "kind": "state",
+    "division": null,
+    "rating": 63,
+    "primary": "#166534",
+    "secondary": "#ffffff"
+  },
+  {
+    "name": "Trem",
+    "state": "AP",
+    "country": "BR",
+    "kind": "state",
+    "division": null,
+    "rating": 60,
+    "primary": "#166534",
+    "secondary": "#ffffff"
+  },
+  {
+    "name": "Ypiranga-AP",
+    "state": "AP",
+    "country": "BR",
+    "kind": "state",
+    "division": null,
+    "rating": 71,
+    "primary": "#92400e",
+    "secondary": "#fde68a"
+  },
+  {
+    "name": "Santos-AP",
+    "state": "AP",
+    "country": "BR",
+    "kind": "state",
+    "division": null,
+    "rating": 70,
+    "primary": "#be123c",
+    "secondary": "#ffffff"
+  },
+  {
+    "name": "Oratório",
+    "state": "AP",
+    "country": "BR",
+    "kind": "state",
+    "division": null,
+    "rating": 69,
+    "primary": "#0f766e",
+    "secondary": "#ffffff"
+  },
+  {
+    "name": "Independente-AP",
+    "state": "AP",
+    "country": "BR",
+    "kind": "state",
+    "division": null,
+    "rating": 68,
+    "primary": "#166534",
+    "secondary": "#ffffff"
+  },
+  {
+    "name": "São Paulo-AP",
+    "state": "AP",
+    "country": "BR",
+    "kind": "state",
+    "division": null,
+    "rating": 67,
+    "primary": "#7c3aed",
+    "secondary": "#ffffff"
+  },
+  {
+    "name": "Santana",
+    "state": "AP",
+    "country": "BR",
+    "kind": "state",
+    "division": null,
+    "rating": 66,
+    "primary": "#111827",
+    "secondary": "#f8fafc"
+  },
+  {
+    "name": "Macapá",
+    "state": "AP",
+    "country": "BR",
+    "kind": "state",
+    "division": null,
+    "rating": 65,
+    "primary": "#be123c",
+    "secondary": "#ffffff"
+  },
+  {
+    "name": "Cristal-AP",
+    "state": "AP",
+    "country": "BR",
+    "kind": "state",
+    "division": null,
+    "rating": 64,
+    "primary": "#0369a1",
+    "secondary": "#f8fafc"
+  },
+  {
+    "name": "Mazagão",
+    "state": "AP",
+    "country": "BR",
+    "kind": "state",
+    "division": null,
+    "rating": 63,
+    "primary": "#92400e",
+    "secondary": "#fde68a"
+  },
+  {
+    "name": "Amazonas FC",
+    "state": "AM",
+    "country": "BR",
+    "kind": "state",
+    "division": null,
+    "rating": 64,
+    "primary": "#0369a1",
+    "secondary": "#f8fafc"
+  },
+  {
+    "name": "Manaus FC",
+    "state": "AM",
+    "country": "BR",
+    "kind": "state",
+    "division": null,
+    "rating": 71,
+    "primary": "#1d4ed8",
+    "secondary": "#ffffff"
+  },
+  {
+    "name": "Nacional-AM",
+    "state": "AM",
+    "country": "BR",
+    "kind": "state",
+    "division": null,
+    "rating": 70,
+    "primary": "#be123c",
+    "secondary": "#ffffff"
+  },
+  {
+    "name": "Princesa do Solimões",
+    "state": "AM",
+    "country": "BR",
+    "kind": "state",
+    "division": null,
+    "rating": 69,
+    "primary": "#be123c",
+    "secondary": "#ffffff"
+  },
+  {
+    "name": "Manauara",
+    "state": "AM",
+    "country": "BR",
+    "kind": "state",
+    "division": null,
+    "rating": 68,
+    "primary": "#1d4ed8",
+    "secondary": "#ffffff"
+  },
+  {
+    "name": "Parintins FC",
+    "state": "AM",
+    "country": "BR",
+    "kind": "state",
+    "division": null,
+    "rating": 67,
+    "primary": "#92400e",
+    "secondary": "#fde68a"
+  },
+  {
+    "name": "São Raimundo-AM",
+    "state": "AM",
+    "country": "BR",
+    "kind": "state",
+    "division": null,
+    "rating": 66,
+    "primary": "#0f766e",
+    "secondary": "#ffffff"
+  },
+  {
+    "name": "Fast Clube",
+    "state": "AM",
+    "country": "BR",
+    "kind": "state",
+    "division": null,
+    "rating": 65,
+    "primary": "#ca8a04",
+    "secondary": "#111827"
+  },
+  {
+    "name": "Rio Negro-AM",
+    "state": "AM",
+    "country": "BR",
+    "kind": "state",
+    "division": null,
+    "rating": 64,
+    "primary": "#be123c",
+    "secondary": "#ffffff"
+  },
+  {
+    "name": "Operário-AM",
+    "state": "AM",
+    "country": "BR",
+    "kind": "state",
+    "division": null,
+    "rating": 63,
+    "primary": "#166534",
+    "secondary": "#ffffff"
+  },
+  {
+    "name": "Bahia",
+    "state": "BA",
+    "country": "BR",
+    "kind": "state",
+    "division": null,
+    "rating": 74,
+    "primary": "#166534",
+    "secondary": "#ffffff"
+  },
+  {
+    "name": "Vitória",
+    "state": "BA",
+    "country": "BR",
+    "kind": "state",
+    "division": null,
+    "rating": 72,
+    "primary": "#1d4ed8",
+    "secondary": "#ffffff"
+  },
+  {
+    "name": "Juazeirense",
+    "state": "BA",
+    "country": "BR",
+    "kind": "state",
+    "division": null,
+    "rating": 70,
+    "primary": "#4338ca",
+    "secondary": "#ffffff"
+  },
+  {
+    "name": "Jacuipense",
+    "state": "BA",
+    "country": "BR",
+    "kind": "state",
+    "division": null,
+    "rating": 69,
+    "primary": "#4338ca",
+    "secondary": "#ffffff"
+  },
+  {
+    "name": "Barcelona de Ilhéus",
+    "state": "BA",
+    "country": "BR",
+    "kind": "state",
+    "division": null,
+    "rating": 68,
+    "primary": "#166534",
+    "secondary": "#ffffff"
+  },
+  {
+    "name": "Atlético de Alagoinhas",
+    "state": "BA",
+    "country": "BR",
+    "kind": "state",
+    "division": null,
+    "rating": 67,
+    "primary": "#0f766e",
+    "secondary": "#ffffff"
+  },
+  {
+    "name": "Jequié",
+    "state": "BA",
+    "country": "BR",
+    "kind": "state",
+    "division": null,
+    "rating": 66,
+    "primary": "#be123c",
+    "secondary": "#ffffff"
+  },
+  {
+    "name": "Bahia de Feira",
+    "state": "BA",
+    "country": "BR",
+    "kind": "state",
+    "division": null,
+    "rating": 65,
+    "primary": "#ca8a04",
+    "secondary": "#111827"
+  },
+  {
+    "name": "Vitória da Conquista",
+    "state": "BA",
+    "country": "BR",
+    "kind": "state",
+    "division": null,
+    "rating": 64,
+    "primary": "#b91c1c",
+    "secondary": "#ffffff"
+  },
+  {
+    "name": "Jacobina",
+    "state": "BA",
+    "country": "BR",
+    "kind": "state",
+    "division": null,
+    "rating": 63,
+    "primary": "#166534",
+    "secondary": "#ffffff"
+  },
+  {
+    "name": "Fortaleza",
+    "state": "CE",
+    "country": "BR",
+    "kind": "state",
+    "division": null,
+    "rating": 74,
+    "primary": "#b91c1c",
+    "secondary": "#ffffff"
+  },
+  {
+    "name": "Ceará",
+    "state": "CE",
+    "country": "BR",
+    "kind": "state",
+    "division": null,
+    "rating": 72,
+    "primary": "#111827",
+    "secondary": "#f8fafc"
+  },
+  {
+    "name": "Ferroviário-CE",
+    "state": "CE",
+    "country": "BR",
+    "kind": "state",
+    "division": null,
+    "rating": 70,
+    "primary": "#0369a1",
+    "secondary": "#f8fafc"
+  },
+  {
+    "name": "Floresta",
+    "state": "CE",
+    "country": "BR",
+    "kind": "state",
+    "division": null,
+    "rating": 64,
+    "primary": "#111827",
+    "secondary": "#f8fafc"
+  },
+  {
+    "name": "Maracanã-CE",
+    "state": "CE",
+    "country": "BR",
+    "kind": "state",
+    "division": null,
+    "rating": 68,
+    "primary": "#0369a1",
+    "secondary": "#f8fafc"
+  },
+  {
+    "name": "Iguatu",
+    "state": "CE",
+    "country": "BR",
+    "kind": "state",
+    "division": null,
+    "rating": 67,
+    "primary": "#7c3aed",
+    "secondary": "#ffffff"
+  },
+  {
+    "name": "Horizonte",
+    "state": "CE",
+    "country": "BR",
+    "kind": "state",
+    "division": null,
+    "rating": 66,
+    "primary": "#0f766e",
+    "secondary": "#ffffff"
+  },
+  {
+    "name": "Caucaia",
+    "state": "CE",
+    "country": "BR",
+    "kind": "state",
+    "division": null,
+    "rating": 65,
+    "primary": "#4338ca",
+    "secondary": "#ffffff"
+  },
+  {
+    "name": "Barbalha",
+    "state": "CE",
+    "country": "BR",
+    "kind": "state",
+    "division": null,
+    "rating": 64,
+    "primary": "#166534",
+    "secondary": "#ffffff"
+  },
+  {
+    "name": "Guarany de Sobral",
+    "state": "CE",
+    "country": "BR",
+    "kind": "state",
+    "division": null,
+    "rating": 63,
+    "primary": "#166534",
+    "secondary": "#ffffff"
+  },
+  {
+    "name": "Brasiliense",
+    "state": "DF",
+    "country": "BR",
+    "kind": "state",
+    "division": null,
+    "rating": 64,
+    "primary": "#7c3aed",
+    "secondary": "#ffffff"
+  },
+  {
+    "name": "Gama",
+    "state": "DF",
+    "country": "BR",
+    "kind": "state",
+    "division": null,
+    "rating": 62,
+    "primary": "#0369a1",
+    "secondary": "#f8fafc"
+  },
+  {
+    "name": "Capital-DF",
+    "state": "DF",
+    "country": "BR",
+    "kind": "state",
+    "division": null,
+    "rating": 70,
+    "primary": "#ca8a04",
+    "secondary": "#111827"
+  },
+  {
+    "name": "Ceilândia",
+    "state": "DF",
+    "country": "BR",
+    "kind": "state",
+    "division": null,
+    "rating": 61,
+    "primary": "#92400e",
+    "secondary": "#fde68a"
+  },
+  {
+    "name": "Real Brasília",
+    "state": "DF",
+    "country": "BR",
+    "kind": "state",
+    "division": null,
+    "rating": 68,
+    "primary": "#0f766e",
+    "secondary": "#ffffff"
+  },
+  {
+    "name": "Samambaia",
+    "state": "DF",
+    "country": "BR",
+    "kind": "state",
+    "division": null,
+    "rating": 67,
+    "primary": "#be123c",
+    "secondary": "#ffffff"
+  },
+  {
+    "name": "Paranoá",
+    "state": "DF",
+    "country": "BR",
+    "kind": "state",
+    "division": null,
+    "rating": 66,
+    "primary": "#7c3aed",
+    "secondary": "#ffffff"
+  },
+  {
+    "name": "Sobradinho",
+    "state": "DF",
+    "country": "BR",
+    "kind": "state",
+    "division": null,
+    "rating": 65,
+    "primary": "#b91c1c",
+    "secondary": "#ffffff"
+  },
+  {
+    "name": "Santa Maria-DF",
+    "state": "DF",
+    "country": "BR",
+    "kind": "state",
+    "division": null,
+    "rating": 64,
+    "primary": "#1d4ed8",
+    "secondary": "#ffffff"
+  },
+  {
+    "name": "Taguatinga",
+    "state": "DF",
+    "country": "BR",
+    "kind": "state",
+    "division": null,
+    "rating": 63,
+    "primary": "#b91c1c",
+    "secondary": "#ffffff"
+  },
+  {
+    "name": "Rio Branco-ES",
+    "state": "ES",
+    "country": "BR",
+    "kind": "state",
+    "division": null,
+    "rating": 72,
+    "primary": "#0369a1",
+    "secondary": "#f8fafc"
+  },
+  {
+    "name": "Desportiva Ferroviária",
+    "state": "ES",
+    "country": "BR",
+    "kind": "state",
+    "division": null,
+    "rating": 71,
+    "primary": "#111827",
+    "secondary": "#f8fafc"
+  },
+  {
+    "name": "Vitória-ES",
+    "state": "ES",
+    "country": "BR",
+    "kind": "state",
+    "division": null,
+    "rating": 70,
+    "primary": "#be123c",
+    "secondary": "#ffffff"
+  },
+  {
+    "name": "Porto Vitória",
+    "state": "ES",
+    "country": "BR",
+    "kind": "state",
+    "division": null,
+    "rating": 69,
+    "primary": "#4338ca",
+    "secondary": "#ffffff"
+  },
+  {
+    "name": "Real Noroeste",
+    "state": "ES",
+    "country": "BR",
+    "kind": "state",
+    "division": null,
+    "rating": 68,
+    "primary": "#b91c1c",
+    "secondary": "#ffffff"
+  },
+  {
+    "name": "Serra",
+    "state": "ES",
+    "country": "BR",
+    "kind": "state",
+    "division": null,
+    "rating": 67,
+    "primary": "#ca8a04",
+    "secondary": "#111827"
+  },
+  {
+    "name": "Nova Venécia",
+    "state": "ES",
+    "country": "BR",
+    "kind": "state",
+    "division": null,
+    "rating": 66,
+    "primary": "#be123c",
+    "secondary": "#ffffff"
+  },
+  {
+    "name": "Rio Branco-VN",
+    "state": "ES",
+    "country": "BR",
+    "kind": "state",
+    "division": null,
+    "rating": 65,
+    "primary": "#0369a1",
+    "secondary": "#f8fafc"
+  },
+  {
+    "name": "Estrela do Norte",
+    "state": "ES",
+    "country": "BR",
+    "kind": "state",
+    "division": null,
+    "rating": 64,
+    "primary": "#4338ca",
+    "secondary": "#ffffff"
+  },
+  {
+    "name": "Jaguaré",
+    "state": "ES",
+    "country": "BR",
+    "kind": "state",
+    "division": null,
+    "rating": 63,
+    "primary": "#0f766e",
+    "secondary": "#ffffff"
+  },
+  {
+    "name": "Goiás",
+    "state": "GO",
+    "country": "BR",
+    "kind": "state",
+    "division": null,
+    "rating": 72,
+    "primary": "#166534",
+    "secondary": "#ffffff"
+  },
+  {
+    "name": "Atlético Goianiense",
+    "state": "GO",
+    "country": "BR",
+    "kind": "state",
+    "division": null,
+    "rating": 71,
+    "primary": "#1d4ed8",
+    "secondary": "#ffffff"
+  },
+  {
+    "name": "Vila Nova",
+    "state": "GO",
+    "country": "BR",
+    "kind": "state",
+    "division": null,
+    "rating": 70,
+    "primary": "#0369a1",
+    "secondary": "#f8fafc"
+  },
+  {
+    "name": "Anápolis",
+    "state": "GO",
+    "country": "BR",
+    "kind": "state",
+    "division": null,
+    "rating": 69,
+    "primary": "#0369a1",
+    "secondary": "#f8fafc"
+  },
+  {
+    "name": "Aparecidense",
+    "state": "GO",
+    "country": "BR",
+    "kind": "state",
+    "division": null,
+    "rating": 68,
+    "primary": "#0369a1",
+    "secondary": "#f8fafc"
+  },
+  {
+    "name": "Goiatuba",
+    "state": "GO",
+    "country": "BR",
+    "kind": "state",
+    "division": null,
+    "rating": 67,
+    "primary": "#0f766e",
+    "secondary": "#ffffff"
+  },
+  {
+    "name": "Goianésia",
+    "state": "GO",
+    "country": "BR",
+    "kind": "state",
+    "division": null,
+    "rating": 66,
+    "primary": "#7c3aed",
+    "secondary": "#ffffff"
+  },
+  {
+    "name": "CRAC",
+    "state": "GO",
+    "country": "BR",
+    "kind": "state",
+    "division": null,
+    "rating": 65,
+    "primary": "#7c3aed",
+    "secondary": "#ffffff"
+  },
+  {
+    "name": "Inhumas",
+    "state": "GO",
+    "country": "BR",
+    "kind": "state",
+    "division": null,
+    "rating": 64,
+    "primary": "#ca8a04",
+    "secondary": "#111827"
+  },
+  {
+    "name": "Jataiense",
+    "state": "GO",
+    "country": "BR",
+    "kind": "state",
+    "division": null,
+    "rating": 63,
+    "primary": "#be123c",
+    "secondary": "#ffffff"
+  },
+  {
+    "name": "Sampaio Corrêa",
+    "state": "MA",
+    "country": "BR",
+    "kind": "state",
+    "division": null,
+    "rating": 67,
+    "primary": "#b91c1c",
+    "secondary": "#ffffff"
+  },
+  {
+    "name": "Moto Club",
+    "state": "MA",
+    "country": "BR",
+    "kind": "state",
+    "division": null,
+    "rating": 71,
+    "primary": "#ca8a04",
+    "secondary": "#111827"
+  },
+  {
+    "name": "Maranhão AC",
+    "state": "MA",
+    "country": "BR",
+    "kind": "state",
+    "division": null,
+    "rating": 70,
+    "primary": "#0369a1",
+    "secondary": "#f8fafc"
+  },
+  {
+    "name": "Imperatriz",
+    "state": "MA",
+    "country": "BR",
+    "kind": "state",
+    "division": null,
+    "rating": 69,
+    "primary": "#ca8a04",
+    "secondary": "#111827"
+  },
+  {
+    "name": "IAPE",
+    "state": "MA",
+    "country": "BR",
+    "kind": "state",
+    "division": null,
+    "rating": 68,
+    "primary": "#7c3aed",
+    "secondary": "#ffffff"
+  },
+  {
+    "name": "Tuntum",
+    "state": "MA",
+    "country": "BR",
+    "kind": "state",
+    "division": null,
+    "rating": 67,
+    "primary": "#92400e",
+    "secondary": "#fde68a"
+  },
+  {
+    "name": "Pinheiro",
+    "state": "MA",
+    "country": "BR",
+    "kind": "state",
+    "division": null,
+    "rating": 66,
+    "primary": "#0369a1",
+    "secondary": "#f8fafc"
+  },
+  {
+    "name": "Cordino",
+    "state": "MA",
+    "country": "BR",
+    "kind": "state",
+    "division": null,
+    "rating": 65,
+    "primary": "#111827",
+    "secondary": "#f8fafc"
+  },
+  {
+    "name": "São José-MA",
+    "state": "MA",
+    "country": "BR",
+    "kind": "state",
+    "division": null,
+    "rating": 64,
+    "primary": "#92400e",
+    "secondary": "#fde68a"
+  },
+  {
+    "name": "Bacabal",
+    "state": "MA",
+    "country": "BR",
+    "kind": "state",
+    "division": null,
+    "rating": 63,
+    "primary": "#0f766e",
+    "secondary": "#ffffff"
+  },
+  {
+    "name": "Cuiabá",
+    "state": "MT",
+    "country": "BR",
+    "kind": "state",
+    "division": null,
+    "rating": 71,
+    "primary": "#b91c1c",
+    "secondary": "#ffffff"
+  },
+  {
+    "name": "Operário-VG",
+    "state": "MT",
+    "country": "BR",
+    "kind": "state",
+    "division": null,
+    "rating": 71,
+    "primary": "#111827",
+    "secondary": "#f8fafc"
+  },
+  {
+    "name": "Mixto",
+    "state": "MT",
+    "country": "BR",
+    "kind": "state",
+    "division": null,
+    "rating": 70,
+    "primary": "#b91c1c",
+    "secondary": "#ffffff"
+  },
+  {
+    "name": "Luverdense",
+    "state": "MT",
+    "country": "BR",
+    "kind": "state",
+    "division": null,
+    "rating": 69,
+    "primary": "#92400e",
+    "secondary": "#fde68a"
+  },
+  {
+    "name": "União Rondonópolis",
+    "state": "MT",
+    "country": "BR",
+    "kind": "state",
+    "division": null,
+    "rating": 68,
+    "primary": "#1d4ed8",
+    "secondary": "#ffffff"
+  },
+  {
+    "name": "Nova Mutum",
+    "state": "MT",
+    "country": "BR",
+    "kind": "state",
+    "division": null,
+    "rating": 67,
+    "primary": "#0f766e",
+    "secondary": "#ffffff"
+  },
+  {
+    "name": "Academia-MT",
+    "state": "MT",
+    "country": "BR",
+    "kind": "state",
+    "division": null,
+    "rating": 66,
+    "primary": "#92400e",
+    "secondary": "#fde68a"
+  },
+  {
+    "name": "Primavera-MT",
+    "state": "MT",
+    "country": "BR",
+    "kind": "state",
+    "division": null,
+    "rating": 65,
+    "primary": "#4338ca",
+    "secondary": "#ffffff"
+  },
+  {
+    "name": "Dom Bosco-MT",
+    "state": "MT",
+    "country": "BR",
+    "kind": "state",
+    "division": null,
+    "rating": 64,
+    "primary": "#1d4ed8",
+    "secondary": "#ffffff"
+  },
+  {
+    "name": "Sport Sinop",
+    "state": "MT",
+    "country": "BR",
+    "kind": "state",
+    "division": null,
+    "rating": 63,
+    "primary": "#7c3aed",
+    "secondary": "#ffffff"
+  },
+  {
+    "name": "Operário-MS",
+    "state": "MS",
+    "country": "BR",
+    "kind": "state",
+    "division": null,
+    "rating": 72,
+    "primary": "#7c3aed",
+    "secondary": "#ffffff"
+  },
+  {
+    "name": "Costa Rica-MS",
+    "state": "MS",
+    "country": "BR",
+    "kind": "state",
+    "division": null,
+    "rating": 71,
+    "primary": "#4d7c0f",
+    "secondary": "#ffffff"
+  },
+  {
+    "name": "Ivinhema",
+    "state": "MS",
+    "country": "BR",
+    "kind": "state",
+    "division": null,
+    "rating": 70,
+    "primary": "#b91c1c",
+    "secondary": "#ffffff"
+  },
+  {
+    "name": "Dourados AC",
+    "state": "MS",
+    "country": "BR",
+    "kind": "state",
+    "division": null,
+    "rating": 69,
+    "primary": "#7c3aed",
+    "secondary": "#ffffff"
+  },
+  {
+    "name": "Portuguesa-MS",
+    "state": "MS",
+    "country": "BR",
+    "kind": "state",
+    "division": null,
+    "rating": 68,
+    "primary": "#4d7c0f",
+    "secondary": "#ffffff"
+  },
+  {
+    "name": "Corumbaense",
+    "state": "MS",
+    "country": "BR",
+    "kind": "state",
+    "division": null,
+    "rating": 67,
+    "primary": "#4d7c0f",
+    "secondary": "#ffffff"
+  },
+  {
+    "name": "Aquidauanense",
+    "state": "MS",
+    "country": "BR",
+    "kind": "state",
+    "division": null,
+    "rating": 66,
+    "primary": "#be123c",
+    "secondary": "#ffffff"
+  },
+  {
+    "name": "Águia Negra",
+    "state": "MS",
+    "country": "BR",
+    "kind": "state",
+    "division": null,
+    "rating": 65,
+    "primary": "#7c3aed",
+    "secondary": "#ffffff"
+  },
+  {
+    "name": "Naviraiense",
+    "state": "MS",
+    "country": "BR",
+    "kind": "state",
+    "division": null,
+    "rating": 64,
+    "primary": "#ca8a04",
+    "secondary": "#111827"
+  },
+  {
+    "name": "Comercial-MS",
+    "state": "MS",
+    "country": "BR",
+    "kind": "state",
+    "division": null,
+    "rating": 63,
+    "primary": "#111827",
+    "secondary": "#f8fafc"
+  },
+  {
+    "name": "Atlético Mineiro",
+    "state": "MG",
+    "country": "BR",
+    "kind": "state",
+    "division": null,
+    "rating": 77,
+    "primary": "#1d4ed8",
+    "secondary": "#ffffff"
+  },
+  {
+    "name": "Cruzeiro",
+    "state": "MG",
+    "country": "BR",
+    "kind": "state",
+    "division": null,
+    "rating": 75,
+    "primary": "#b91c1c",
+    "secondary": "#ffffff"
+  },
+  {
+    "name": "América Mineiro",
+    "state": "MG",
+    "country": "BR",
+    "kind": "state",
+    "division": null,
+    "rating": 72,
+    "primary": "#92400e",
+    "secondary": "#fde68a"
+  },
+  {
+    "name": "Athletic Club",
+    "state": "MG",
+    "country": "BR",
+    "kind": "state",
+    "division": null,
+    "rating": 68,
+    "primary": "#1d4ed8",
+    "secondary": "#ffffff"
+  },
+  {
+    "name": "Tombense",
+    "state": "MG",
+    "country": "BR",
+    "kind": "state",
+    "division": null,
+    "rating": 66,
+    "primary": "#166534",
+    "secondary": "#ffffff"
+  },
+  {
+    "name": "Pouso Alegre",
+    "state": "MG",
+    "country": "BR",
+    "kind": "state",
+    "division": null,
+    "rating": 67,
+    "primary": "#4d7c0f",
+    "secondary": "#ffffff"
+  },
+  {
+    "name": "Uberlândia",
+    "state": "MG",
+    "country": "BR",
+    "kind": "state",
+    "division": null,
+    "rating": 66,
+    "primary": "#4338ca",
+    "secondary": "#ffffff"
+  },
+  {
+    "name": "Villa Nova-MG",
+    "state": "MG",
+    "country": "BR",
+    "kind": "state",
+    "division": null,
+    "rating": 65,
+    "primary": "#4338ca",
+    "secondary": "#ffffff"
+  },
+  {
+    "name": "Democrata-GV",
+    "state": "MG",
+    "country": "BR",
+    "kind": "state",
+    "division": null,
+    "rating": 64,
+    "primary": "#1d4ed8",
+    "secondary": "#ffffff"
+  },
+  {
+    "name": "Itabirito",
+    "state": "MG",
+    "country": "BR",
+    "kind": "state",
+    "division": null,
+    "rating": 63,
+    "primary": "#92400e",
+    "secondary": "#fde68a"
+  },
+  {
+    "name": "Paysandu",
+    "state": "PA",
+    "country": "BR",
+    "kind": "state",
+    "division": null,
+    "rating": 69,
+    "primary": "#92400e",
+    "secondary": "#fde68a"
+  },
+  {
+    "name": "Remo",
+    "state": "PA",
+    "country": "BR",
+    "kind": "state",
+    "division": null,
+    "rating": 70,
+    "primary": "#166534",
+    "secondary": "#ffffff"
+  },
+  {
+    "name": "Tuna Luso",
+    "state": "PA",
+    "country": "BR",
+    "kind": "state",
+    "division": null,
+    "rating": 70,
+    "primary": "#ca8a04",
+    "secondary": "#111827"
+  },
+  {
+    "name": "Águia de Marabá",
+    "state": "PA",
+    "country": "BR",
+    "kind": "state",
+    "division": null,
+    "rating": 69,
+    "primary": "#1d4ed8",
+    "secondary": "#ffffff"
+  },
+  {
+    "name": "Castanhal",
+    "state": "PA",
+    "country": "BR",
+    "kind": "state",
+    "division": null,
+    "rating": 68,
+    "primary": "#4338ca",
+    "secondary": "#ffffff"
+  },
+  {
+    "name": "Bragantino-PA",
+    "state": "PA",
+    "country": "BR",
+    "kind": "state",
+    "division": null,
+    "rating": 67,
+    "primary": "#4338ca",
+    "secondary": "#ffffff"
+  },
+  {
+    "name": "Cametá",
+    "state": "PA",
+    "country": "BR",
+    "kind": "state",
+    "division": null,
+    "rating": 66,
+    "primary": "#be123c",
+    "secondary": "#ffffff"
+  },
+  {
+    "name": "São Francisco-PA",
+    "state": "PA",
+    "country": "BR",
+    "kind": "state",
+    "division": null,
+    "rating": 65,
+    "primary": "#be123c",
+    "secondary": "#ffffff"
+  },
+  {
+    "name": "Independente-PA",
+    "state": "PA",
+    "country": "BR",
+    "kind": "state",
+    "division": null,
+    "rating": 64,
+    "primary": "#b91c1c",
+    "secondary": "#ffffff"
+  },
+  {
+    "name": "Paragominas",
+    "state": "PA",
+    "country": "BR",
+    "kind": "state",
+    "division": null,
+    "rating": 63,
+    "primary": "#0f766e",
+    "secondary": "#ffffff"
+  },
+  {
+    "name": "Botafogo-PB",
+    "state": "PB",
+    "country": "BR",
+    "kind": "state",
+    "division": null,
+    "rating": 67,
+    "primary": "#0369a1",
+    "secondary": "#f8fafc"
+  },
+  {
+    "name": "Treze",
+    "state": "PB",
+    "country": "BR",
+    "kind": "state",
+    "division": null,
+    "rating": 62,
+    "primary": "#92400e",
+    "secondary": "#fde68a"
+  },
+  {
+    "name": "Campinense",
+    "state": "PB",
+    "country": "BR",
+    "kind": "state",
+    "division": null,
+    "rating": 61,
+    "primary": "#166534",
+    "secondary": "#ffffff"
+  },
+  {
+    "name": "Sousa",
+    "state": "PB",
+    "country": "BR",
+    "kind": "state",
+    "division": null,
+    "rating": 69,
+    "primary": "#166534",
+    "secondary": "#ffffff"
+  },
+  {
+    "name": "Nacional de Patos",
+    "state": "PB",
+    "country": "BR",
+    "kind": "state",
+    "division": null,
+    "rating": 68,
+    "primary": "#b91c1c",
+    "secondary": "#ffffff"
+  },
+  {
+    "name": "Serra Branca",
+    "state": "PB",
+    "country": "BR",
+    "kind": "state",
+    "division": null,
+    "rating": 67,
+    "primary": "#111827",
+    "secondary": "#f8fafc"
+  },
+  {
+    "name": "CSP",
+    "state": "PB",
+    "country": "BR",
+    "kind": "state",
+    "division": null,
+    "rating": 66,
+    "primary": "#0369a1",
+    "secondary": "#f8fafc"
+  },
+  {
+    "name": "Pombal EC",
+    "state": "PB",
+    "country": "BR",
+    "kind": "state",
+    "division": null,
+    "rating": 65,
+    "primary": "#166534",
+    "secondary": "#ffffff"
+  },
+  {
+    "name": "Atlético Cajazeirense",
+    "state": "PB",
+    "country": "BR",
+    "kind": "state",
+    "division": null,
+    "rating": 64,
+    "primary": "#4d7c0f",
+    "secondary": "#ffffff"
+  },
+  {
+    "name": "Esporte de Patos",
+    "state": "PB",
+    "country": "BR",
+    "kind": "state",
+    "division": null,
+    "rating": 63,
+    "primary": "#111827",
+    "secondary": "#f8fafc"
+  },
+  {
+    "name": "Athletico Paranaense",
+    "state": "PR",
+    "country": "BR",
+    "kind": "state",
+    "division": null,
+    "rating": 74,
+    "primary": "#0369a1",
+    "secondary": "#f8fafc"
+  },
+  {
+    "name": "Coritiba",
+    "state": "PR",
+    "country": "BR",
+    "kind": "state",
+    "division": null,
+    "rating": 72,
+    "primary": "#92400e",
+    "secondary": "#fde68a"
+  },
+  {
+    "name": "Operário-PR",
+    "state": "PR",
+    "country": "BR",
+    "kind": "state",
+    "division": null,
+    "rating": 67,
+    "primary": "#b91c1c",
+    "secondary": "#ffffff"
+  },
+  {
+    "name": "Maringá",
+    "state": "PR",
+    "country": "BR",
+    "kind": "state",
+    "division": null,
+    "rating": 69,
+    "primary": "#0369a1",
+    "secondary": "#f8fafc"
+  },
+  {
+    "name": "Londrina",
+    "state": "PR",
+    "country": "BR",
+    "kind": "state",
+    "division": null,
+    "rating": 66,
+    "primary": "#1d4ed8",
+    "secondary": "#ffffff"
+  },
+  {
+    "name": "FC Cascavel",
+    "state": "PR",
+    "country": "BR",
+    "kind": "state",
+    "division": null,
+    "rating": 67,
+    "primary": "#166534",
+    "secondary": "#ffffff"
+  },
+  {
+    "name": "Cianorte",
+    "state": "PR",
+    "country": "BR",
+    "kind": "state",
+    "division": null,
+    "rating": 66,
+    "primary": "#7c3aed",
+    "secondary": "#ffffff"
+  },
+  {
+    "name": "Azuriz",
+    "state": "PR",
+    "country": "BR",
+    "kind": "state",
+    "division": null,
+    "rating": 65,
+    "primary": "#92400e",
+    "secondary": "#fde68a"
+  },
+  {
+    "name": "Rio Branco-PR",
+    "state": "PR",
+    "country": "BR",
+    "kind": "state",
+    "division": null,
+    "rating": 64,
+    "primary": "#0f766e",
+    "secondary": "#ffffff"
+  },
+  {
+    "name": "Paraná Clube",
+    "state": "PR",
+    "country": "BR",
+    "kind": "state",
+    "division": null,
+    "rating": 63,
+    "primary": "#7c3aed",
+    "secondary": "#ffffff"
+  },
+  {
+    "name": "Sport Recife",
+    "state": "PE",
+    "country": "BR",
+    "kind": "state",
+    "division": null,
+    "rating": 72,
+    "primary": "#7c3aed",
+    "secondary": "#ffffff"
+  },
+  {
+    "name": "Náutico",
+    "state": "PE",
+    "country": "BR",
+    "kind": "state",
+    "division": null,
+    "rating": 68,
+    "primary": "#1d4ed8",
+    "secondary": "#ffffff"
+  },
+  {
+    "name": "Santa Cruz",
+    "state": "PE",
+    "country": "BR",
+    "kind": "state",
+    "division": null,
+    "rating": 68,
+    "primary": "#b91c1c",
+    "secondary": "#ffffff"
+  },
+  {
+    "name": "Retrô",
+    "state": "PE",
+    "country": "BR",
+    "kind": "state",
+    "division": null,
+    "rating": 69,
+    "primary": "#1d4ed8",
+    "secondary": "#ffffff"
+  },
+  {
+    "name": "Central",
+    "state": "PE",
+    "country": "BR",
+    "kind": "state",
+    "division": null,
+    "rating": 68,
+    "primary": "#166534",
+    "secondary": "#ffffff"
+  },
+  {
+    "name": "Maguary",
+    "state": "PE",
+    "country": "BR",
+    "kind": "state",
+    "division": null,
+    "rating": 67,
+    "primary": "#4d7c0f",
+    "secondary": "#ffffff"
+  },
+  {
+    "name": "Decisão",
+    "state": "PE",
+    "country": "BR",
+    "kind": "state",
+    "division": null,
+    "rating": 66,
+    "primary": "#4338ca",
+    "secondary": "#ffffff"
+  },
+  {
+    "name": "Jaguar-PE",
+    "state": "PE",
+    "country": "BR",
+    "kind": "state",
+    "division": null,
+    "rating": 65,
+    "primary": "#1d4ed8",
+    "secondary": "#ffffff"
+  },
+  {
+    "name": "Petrolina",
+    "state": "PE",
+    "country": "BR",
+    "kind": "state",
+    "division": null,
+    "rating": 64,
+    "primary": "#0f766e",
+    "secondary": "#ffffff"
+  },
+  {
+    "name": "Afogados",
+    "state": "PE",
+    "country": "BR",
+    "kind": "state",
+    "division": null,
+    "rating": 63,
+    "primary": "#111827",
+    "secondary": "#f8fafc"
+  },
+  {
+    "name": "Altos",
+    "state": "PI",
+    "country": "BR",
+    "kind": "state",
+    "division": null,
+    "rating": 61,
+    "primary": "#1d4ed8",
+    "secondary": "#ffffff"
+  },
+  {
+    "name": "River-PI",
+    "state": "PI",
+    "country": "BR",
+    "kind": "state",
+    "division": null,
+    "rating": 71,
+    "primary": "#4d7c0f",
+    "secondary": "#ffffff"
+  },
+  {
+    "name": "Parnahyba",
+    "state": "PI",
+    "country": "BR",
+    "kind": "state",
+    "division": null,
+    "rating": 70,
+    "primary": "#111827",
+    "secondary": "#f8fafc"
+  },
+  {
+    "name": "Fluminense-PI",
+    "state": "PI",
+    "country": "BR",
+    "kind": "state",
+    "division": null,
+    "rating": 69,
+    "primary": "#111827",
+    "secondary": "#f8fafc"
+  },
+  {
+    "name": "4 de Julho",
+    "state": "PI",
+    "country": "BR",
+    "kind": "state",
+    "division": null,
+    "rating": 68,
+    "primary": "#7c3aed",
+    "secondary": "#ffffff"
+  },
+  {
+    "name": "Oeirense",
+    "state": "PI",
+    "country": "BR",
+    "kind": "state",
+    "division": null,
+    "rating": 67,
+    "primary": "#0369a1",
+    "secondary": "#f8fafc"
+  },
+  {
+    "name": "Piauí EC",
+    "state": "PI",
+    "country": "BR",
+    "kind": "state",
+    "division": null,
+    "rating": 66,
+    "primary": "#ca8a04",
+    "secondary": "#111827"
+  },
+  {
+    "name": "Corisabbá",
+    "state": "PI",
+    "country": "BR",
+    "kind": "state",
+    "division": null,
+    "rating": 65,
+    "primary": "#4338ca",
+    "secondary": "#ffffff"
+  },
+  {
+    "name": "Comercial-PI",
+    "state": "PI",
+    "country": "BR",
+    "kind": "state",
+    "division": null,
+    "rating": 64,
+    "primary": "#7c3aed",
+    "secondary": "#ffffff"
+  },
+  {
+    "name": "Parnahyba SC",
+    "state": "PI",
+    "country": "BR",
+    "kind": "state",
+    "division": null,
+    "rating": 63,
+    "primary": "#4d7c0f",
+    "secondary": "#ffffff"
+  },
+  {
+    "name": "Flamengo",
+    "state": "RJ",
+    "country": "BR",
+    "kind": "state",
+    "division": null,
+    "rating": 79,
+    "primary": "#166534",
+    "secondary": "#ffffff"
+  },
+  {
+    "name": "Fluminense",
+    "state": "RJ",
+    "country": "BR",
+    "kind": "state",
+    "division": null,
+    "rating": 76,
+    "primary": "#0369a1",
+    "secondary": "#f8fafc"
+  },
+  {
+    "name": "Vasco da Gama",
+    "state": "RJ",
+    "country": "BR",
+    "kind": "state",
+    "division": null,
+    "rating": 74,
+    "primary": "#92400e",
+    "secondary": "#fde68a"
+  },
+  {
+    "name": "Botafogo",
+    "state": "RJ",
+    "country": "BR",
+    "kind": "state",
+    "division": null,
+    "rating": 77,
+    "primary": "#166534",
+    "secondary": "#ffffff"
+  },
+  {
+    "name": "Volta Redonda",
+    "state": "RJ",
+    "country": "BR",
+    "kind": "state",
+    "division": null,
+    "rating": 67,
+    "primary": "#7c3aed",
+    "secondary": "#ffffff"
+  },
+  {
+    "name": "Madureira",
+    "state": "RJ",
+    "country": "BR",
+    "kind": "state",
+    "division": null,
+    "rating": 67,
+    "primary": "#be123c",
+    "secondary": "#ffffff"
+  },
+  {
+    "name": "Portuguesa-RJ",
+    "state": "RJ",
+    "country": "BR",
+    "kind": "state",
+    "division": null,
+    "rating": 63,
+    "primary": "#b91c1c",
+    "secondary": "#ffffff"
+  },
+  {
+    "name": "Boavista-RJ",
+    "state": "RJ",
+    "country": "BR",
+    "kind": "state",
+    "division": null,
+    "rating": 65,
+    "primary": "#be123c",
+    "secondary": "#ffffff"
+  },
+  {
+    "name": "Nova Iguaçu",
+    "state": "RJ",
+    "country": "BR",
+    "kind": "state",
+    "division": null,
+    "rating": 64,
+    "primary": "#111827",
+    "secondary": "#f8fafc"
+  },
+  {
+    "name": "Bangu",
+    "state": "RJ",
+    "country": "BR",
+    "kind": "state",
+    "division": null,
+    "rating": 63,
+    "primary": "#166534",
+    "secondary": "#ffffff"
+  },
+  {
+    "name": "Sampaio Corrêa-RJ",
+    "state": "RJ",
+    "country": "BR",
+    "kind": "state",
+    "division": null,
+    "rating": 62,
+    "primary": "#7c3aed",
+    "secondary": "#ffffff"
+  },
+  {
+    "name": "Maricá",
+    "state": "RJ",
+    "country": "BR",
+    "kind": "state",
+    "division": null,
+    "rating": 61,
+    "primary": "#0f766e",
+    "secondary": "#ffffff"
+  },
+  {
+    "name": "ABC",
+    "state": "RN",
+    "country": "BR",
+    "kind": "state",
+    "division": null,
+    "rating": 66,
+    "primary": "#166534",
+    "secondary": "#ffffff"
+  },
+  {
+    "name": "América-RN",
+    "state": "RN",
+    "country": "BR",
+    "kind": "state",
+    "division": null,
+    "rating": 66,
+    "primary": "#1d4ed8",
+    "secondary": "#ffffff"
+  },
+  {
+    "name": "Potiguar de Mossoró",
+    "state": "RN",
+    "country": "BR",
+    "kind": "state",
+    "division": null,
+    "rating": 70,
+    "primary": "#7c3aed",
+    "secondary": "#ffffff"
+  },
+  {
+    "name": "Globo FC",
+    "state": "RN",
+    "country": "BR",
+    "kind": "state",
+    "division": null,
+    "rating": 69,
+    "primary": "#4d7c0f",
+    "secondary": "#ffffff"
+  },
+  {
+    "name": "Santa Cruz de Natal",
+    "state": "RN",
+    "country": "BR",
+    "kind": "state",
+    "division": null,
+    "rating": 68,
+    "primary": "#be123c",
+    "secondary": "#ffffff"
+  },
+  {
+    "name": "Força e Luz",
+    "state": "RN",
+    "country": "BR",
+    "kind": "state",
+    "division": null,
+    "rating": 67,
+    "primary": "#be123c",
+    "secondary": "#ffffff"
+  },
+  {
+    "name": "Baraúnas",
+    "state": "RN",
+    "country": "BR",
+    "kind": "state",
+    "division": null,
+    "rating": 66,
+    "primary": "#166534",
+    "secondary": "#ffffff"
+  },
+  {
+    "name": "Laguna",
+    "state": "RN",
+    "country": "BR",
+    "kind": "state",
+    "division": null,
+    "rating": 65,
+    "primary": "#4d7c0f",
+    "secondary": "#ffffff"
+  },
+  {
+    "name": "Alecrim",
+    "state": "RN",
+    "country": "BR",
+    "kind": "state",
+    "division": null,
+    "rating": 64,
+    "primary": "#b91c1c",
+    "secondary": "#ffffff"
+  },
+  {
+    "name": "ASSU",
+    "state": "RN",
+    "country": "BR",
+    "kind": "state",
+    "division": null,
+    "rating": 63,
+    "primary": "#1d4ed8",
+    "secondary": "#ffffff"
+  },
+  {
+    "name": "Grêmio",
+    "state": "RS",
+    "country": "BR",
+    "kind": "state",
+    "division": null,
+    "rating": 75,
+    "primary": "#111827",
+    "secondary": "#f8fafc"
+  },
+  {
+    "name": "Internacional",
+    "state": "RS",
+    "country": "BR",
+    "kind": "state",
+    "division": null,
+    "rating": 76,
+    "primary": "#7c3aed",
+    "secondary": "#ffffff"
+  },
+  {
+    "name": "Juventude",
+    "state": "RS",
+    "country": "BR",
+    "kind": "state",
+    "division": null,
+    "rating": 70,
+    "primary": "#111827",
+    "secondary": "#f8fafc"
+  },
+  {
+    "name": "Caxias",
+    "state": "RS",
+    "country": "BR",
+    "kind": "state",
+    "division": null,
+    "rating": 67,
+    "primary": "#92400e",
+    "secondary": "#fde68a"
+  },
+  {
+    "name": "Brasil de Pelotas",
+    "state": "RS",
+    "country": "BR",
+    "kind": "state",
+    "division": null,
+    "rating": 68,
+    "primary": "#0369a1",
+    "secondary": "#f8fafc"
+  },
+  {
+    "name": "São José-RS",
+    "state": "RS",
+    "country": "BR",
+    "kind": "state",
+    "division": null,
+    "rating": 62,
+    "primary": "#1f6b3a",
+    "secondary": "#f4f7f5"
+  },
+  {
+    "name": "Ypiranga-RS",
+    "state": "RS",
+    "country": "BR",
+    "kind": "state",
+    "division": null,
+    "rating": 66,
+    "primary": "#0369a1",
+    "secondary": "#f8fafc"
+  },
+  {
+    "name": "Avenida",
+    "state": "RS",
+    "country": "BR",
+    "kind": "state",
+    "division": null,
+    "rating": 65,
+    "primary": "#4d7c0f",
+    "secondary": "#ffffff"
+  },
+  {
+    "name": "São Luiz-RS",
+    "state": "RS",
+    "country": "BR",
+    "kind": "state",
+    "division": null,
+    "rating": 64,
+    "primary": "#be123c",
+    "secondary": "#ffffff"
+  },
+  {
+    "name": "Guarany de Bagé",
+    "state": "RS",
+    "country": "BR",
+    "kind": "state",
+    "division": null,
+    "rating": 63,
+    "primary": "#0369a1",
+    "secondary": "#f8fafc"
+  },
+  {
+    "name": "Porto Velho EC",
+    "state": "RO",
+    "country": "BR",
+    "kind": "state",
+    "division": null,
+    "rating": 72,
+    "primary": "#4d7c0f",
+    "secondary": "#ffffff"
+  },
+  {
+    "name": "Ji-Paraná",
+    "state": "RO",
+    "country": "BR",
+    "kind": "state",
+    "division": null,
+    "rating": 71,
+    "primary": "#be123c",
+    "secondary": "#ffffff"
+  },
+  {
+    "name": "Barcelona-RO",
+    "state": "RO",
+    "country": "BR",
+    "kind": "state",
+    "division": null,
+    "rating": 70,
+    "primary": "#92400e",
+    "secondary": "#fde68a"
+  },
+  {
+    "name": "União Cacoalense",
+    "state": "RO",
+    "country": "BR",
+    "kind": "state",
+    "division": null,
+    "rating": 69,
+    "primary": "#ca8a04",
+    "secondary": "#111827"
+  },
+  {
+    "name": "Genus",
+    "state": "RO",
+    "country": "BR",
+    "kind": "state",
+    "division": null,
+    "rating": 68,
+    "primary": "#be123c",
+    "secondary": "#ffffff"
+  },
+  {
+    "name": "Vilhenense",
+    "state": "RO",
+    "country": "BR",
+    "kind": "state",
+    "division": null,
+    "rating": 67,
+    "primary": "#ca8a04",
+    "secondary": "#111827"
+  },
+  {
+    "name": "Real Ariquemes",
+    "state": "RO",
+    "country": "BR",
+    "kind": "state",
+    "division": null,
+    "rating": 66,
+    "primary": "#4d7c0f",
+    "secondary": "#ffffff"
+  },
+  {
+    "name": "Rondoniense SC",
+    "state": "RO",
+    "country": "BR",
+    "kind": "state",
+    "division": null,
+    "rating": 65,
+    "primary": "#0f766e",
+    "secondary": "#ffffff"
+  },
+  {
+    "name": "Guaporé FC",
+    "state": "RO",
+    "country": "BR",
+    "kind": "state",
+    "division": null,
+    "rating": 64,
+    "primary": "#7c3aed",
+    "secondary": "#ffffff"
+  },
+  {
+    "name": "Pimentense",
+    "state": "RO",
+    "country": "BR",
+    "kind": "state",
+    "division": null,
+    "rating": 63,
+    "primary": "#0369a1",
+    "secondary": "#f8fafc"
+  },
+  {
+    "name": "São Raimundo-RR",
+    "state": "RR",
+    "country": "BR",
+    "kind": "state",
+    "division": null,
+    "rating": 60,
+    "primary": "#1d4ed8",
+    "secondary": "#ffffff"
+  },
+  {
+    "name": "GAS",
+    "state": "RR",
+    "country": "BR",
+    "kind": "state",
+    "division": null,
+    "rating": 71,
+    "primary": "#92400e",
+    "secondary": "#fde68a"
+  },
+  {
+    "name": "Náutico-RR",
+    "state": "RR",
+    "country": "BR",
+    "kind": "state",
+    "division": null,
+    "rating": 70,
+    "primary": "#ca8a04",
+    "secondary": "#111827"
+  },
+  {
+    "name": "Baré",
+    "state": "RR",
+    "country": "BR",
+    "kind": "state",
+    "division": null,
+    "rating": 69,
+    "primary": "#166534",
+    "secondary": "#ffffff"
+  },
+  {
+    "name": "River-RR",
+    "state": "RR",
+    "country": "BR",
+    "kind": "state",
+    "division": null,
+    "rating": 68,
+    "primary": "#b91c1c",
+    "secondary": "#ffffff"
+  },
+  {
+    "name": "Rio Negro-RR",
+    "state": "RR",
+    "country": "BR",
+    "kind": "state",
+    "division": null,
+    "rating": 67,
+    "primary": "#0f766e",
+    "secondary": "#ffffff"
+  },
+  {
+    "name": "Atlético Roraima",
+    "state": "RR",
+    "country": "BR",
+    "kind": "state",
+    "division": null,
+    "rating": 66,
+    "primary": "#92400e",
+    "secondary": "#fde68a"
+  },
+  {
+    "name": "Progresso-RR",
+    "state": "RR",
+    "country": "BR",
+    "kind": "state",
+    "division": null,
+    "rating": 65,
+    "primary": "#4338ca",
+    "secondary": "#ffffff"
+  },
+  {
+    "name": "Monte Roraima",
+    "state": "RR",
+    "country": "BR",
+    "kind": "state",
+    "division": null,
+    "rating": 64,
+    "primary": "#0369a1",
+    "secondary": "#f8fafc"
+  },
+  {
+    "name": "Real-RR",
+    "state": "RR",
+    "country": "BR",
+    "kind": "state",
+    "division": null,
+    "rating": 63,
+    "primary": "#b91c1c",
+    "secondary": "#ffffff"
+  },
+  {
+    "name": "Avaí",
+    "state": "SC",
+    "country": "BR",
+    "kind": "state",
+    "division": null,
+    "rating": 69,
+    "primary": "#0369a1",
+    "secondary": "#f8fafc"
+  },
+  {
+    "name": "Figueirense",
+    "state": "SC",
+    "country": "BR",
+    "kind": "state",
+    "division": null,
+    "rating": 68,
+    "primary": "#166534",
+    "secondary": "#ffffff"
+  },
+  {
+    "name": "Chapecoense",
+    "state": "SC",
+    "country": "BR",
+    "kind": "state",
+    "division": null,
+    "rating": 69,
+    "primary": "#7c3aed",
+    "secondary": "#ffffff"
+  },
+  {
+    "name": "Criciúma",
+    "state": "SC",
+    "country": "BR",
+    "kind": "state",
+    "division": null,
+    "rating": 70,
+    "primary": "#92400e",
+    "secondary": "#fde68a"
+  },
+  {
+    "name": "Joinville",
+    "state": "SC",
+    "country": "BR",
+    "kind": "state",
+    "division": null,
+    "rating": 65,
+    "primary": "#7c3aed",
+    "secondary": "#ffffff"
+  },
+  {
+    "name": "Brusque",
+    "state": "SC",
+    "country": "BR",
+    "kind": "state",
+    "division": null,
+    "rating": 65,
+    "primary": "#111827",
+    "secondary": "#f8fafc"
+  },
+  {
+    "name": "Marcílio Dias",
+    "state": "SC",
+    "country": "BR",
+    "kind": "state",
+    "division": null,
+    "rating": 66,
+    "primary": "#4d7c0f",
+    "secondary": "#ffffff"
+  },
+  {
+    "name": "Barra-SC",
+    "state": "SC",
+    "country": "BR",
+    "kind": "state",
+    "division": null,
+    "rating": 65,
+    "primary": "#7c3aed",
+    "secondary": "#ffffff"
+  },
+  {
+    "name": "Hercílio Luz",
+    "state": "SC",
+    "country": "BR",
+    "kind": "state",
+    "division": null,
+    "rating": 64,
+    "primary": "#7c3aed",
+    "secondary": "#ffffff"
+  },
+  {
+    "name": "Concórdia",
+    "state": "SC",
+    "country": "BR",
+    "kind": "state",
+    "division": null,
+    "rating": 63,
+    "primary": "#4338ca",
+    "secondary": "#ffffff"
+  },
+  {
+    "name": "Palmeiras",
+    "state": "SP",
+    "country": "BR",
+    "kind": "state",
+    "division": null,
+    "rating": 79,
+    "primary": "#1d4ed8",
+    "secondary": "#ffffff"
+  },
+  {
+    "name": "Corinthians",
+    "state": "SP",
+    "country": "BR",
+    "kind": "state",
+    "division": null,
+    "rating": 76,
+    "primary": "#b91c1c",
+    "secondary": "#ffffff"
+  },
+  {
+    "name": "São Paulo",
+    "state": "SP",
+    "country": "BR",
+    "kind": "state",
+    "division": null,
+    "rating": 77,
+    "primary": "#111827",
+    "secondary": "#f8fafc"
+  },
+  {
+    "name": "Santos",
+    "state": "SP",
+    "country": "BR",
+    "kind": "state",
+    "division": null,
+    "rating": 74,
+    "primary": "#7c3aed",
+    "secondary": "#ffffff"
+  },
+  {
+    "name": "Red Bull Bragantino",
+    "state": "SP",
+    "country": "BR",
+    "kind": "state",
+    "division": null,
+    "rating": 73,
+    "primary": "#0369a1",
+    "secondary": "#f8fafc"
+  },
+  {
+    "name": "Ponte Preta",
+    "state": "SP",
+    "country": "BR",
+    "kind": "state",
+    "division": null,
+    "rating": 69,
+    "primary": "#1d4ed8",
+    "secondary": "#ffffff"
+  },
+  {
+    "name": "Guarani",
+    "state": "SP",
+    "country": "BR",
+    "kind": "state",
+    "division": null,
+    "rating": 69,
+    "primary": "#b91c1c",
+    "secondary": "#ffffff"
+  },
+  {
+    "name": "Novorizontino",
+    "state": "SP",
+    "country": "BR",
+    "kind": "state",
+    "division": null,
+    "rating": 71,
+    "primary": "#111827",
+    "secondary": "#f8fafc"
+  },
+  {
+    "name": "Mirassol",
+    "state": "SP",
+    "country": "BR",
+    "kind": "state",
+    "division": null,
+    "rating": 71,
+    "primary": "#7c3aed",
+    "secondary": "#ffffff"
+  },
+  {
+    "name": "Ituano",
+    "state": "SP",
+    "country": "BR",
+    "kind": "state",
+    "division": null,
+    "rating": 66,
+    "primary": "#92400e",
+    "secondary": "#fde68a"
+  },
+  {
+    "name": "Portuguesa",
+    "state": "SP",
+    "country": "BR",
+    "kind": "state",
+    "division": null,
+    "rating": 67,
+    "primary": "#0369a1",
+    "secondary": "#f8fafc"
+  },
+  {
+    "name": "Botafogo-SP",
+    "state": "SP",
+    "country": "BR",
+    "kind": "state",
+    "division": null,
+    "rating": 61,
+    "primary": "#7c3aed",
+    "secondary": "#ffffff"
+  },
+  {
+    "name": "Inter de Limeira",
+    "state": "SP",
+    "country": "BR",
+    "kind": "state",
+    "division": null,
+    "rating": 64,
+    "primary": "#166534",
+    "secondary": "#ffffff"
+  },
+  {
+    "name": "São Bernardo FC",
+    "state": "SP",
+    "country": "BR",
+    "kind": "state",
+    "division": null,
+    "rating": 59,
+    "primary": "#4d7c0f",
+    "secondary": "#ffffff"
+  },
+  {
+    "name": "Água Santa",
+    "state": "SP",
+    "country": "BR",
+    "kind": "state",
+    "division": null,
+    "rating": 63,
+    "primary": "#1d4ed8",
+    "secondary": "#ffffff"
+  },
+  {
+    "name": "Confiança",
+    "state": "SE",
+    "country": "BR",
+    "kind": "state",
+    "division": null,
+    "rating": 66,
+    "primary": "#92400e",
+    "secondary": "#fde68a"
+  },
+  {
+    "name": "Sergipe",
+    "state": "SE",
+    "country": "BR",
+    "kind": "state",
+    "division": null,
+    "rating": 62,
+    "primary": "#7c3aed",
+    "secondary": "#ffffff"
+  },
+  {
+    "name": "Itabaiana",
+    "state": "SE",
+    "country": "BR",
+    "kind": "state",
+    "division": null,
+    "rating": 70,
+    "primary": "#1d4ed8",
+    "secondary": "#ffffff"
+  },
+  {
+    "name": "Lagarto",
+    "state": "SE",
+    "country": "BR",
+    "kind": "state",
+    "division": null,
+    "rating": 69,
+    "primary": "#0369a1",
+    "secondary": "#f8fafc"
+  },
+  {
+    "name": "Falcon",
+    "state": "SE",
+    "country": "BR",
+    "kind": "state",
+    "division": null,
+    "rating": 68,
+    "primary": "#b91c1c",
+    "secondary": "#ffffff"
+  },
+  {
+    "name": "Dorense",
+    "state": "SE",
+    "country": "BR",
+    "kind": "state",
+    "division": null,
+    "rating": 67,
+    "primary": "#1d4ed8",
+    "secondary": "#ffffff"
+  },
+  {
+    "name": "América de Propriá",
+    "state": "SE",
+    "country": "BR",
+    "kind": "state",
+    "division": null,
+    "rating": 66,
+    "primary": "#0f766e",
+    "secondary": "#ffffff"
+  },
+  {
+    "name": "Carmópolis",
+    "state": "SE",
+    "country": "BR",
+    "kind": "state",
+    "division": null,
+    "rating": 65,
+    "primary": "#1d4ed8",
+    "secondary": "#ffffff"
+  },
+  {
+    "name": "Guarany-SE",
+    "state": "SE",
+    "country": "BR",
+    "kind": "state",
+    "division": null,
+    "rating": 64,
+    "primary": "#111827",
+    "secondary": "#f8fafc"
+  },
+  {
+    "name": "Atlético Gloriense",
+    "state": "SE",
+    "country": "BR",
+    "kind": "state",
+    "division": null,
+    "rating": 63,
+    "primary": "#4d7c0f",
+    "secondary": "#ffffff"
+  },
+  {
+    "name": "Tocantinópolis",
+    "state": "TO",
+    "country": "BR",
+    "kind": "state",
+    "division": null,
+    "rating": 61,
+    "primary": "#111827",
+    "secondary": "#f8fafc"
+  },
+  {
+    "name": "Capital-TO",
+    "state": "TO",
+    "country": "BR",
+    "kind": "state",
+    "division": null,
+    "rating": 71,
+    "primary": "#0f766e",
+    "secondary": "#ffffff"
+  },
+  {
+    "name": "União Atlético Clube",
+    "state": "TO",
+    "country": "BR",
+    "kind": "state",
+    "division": null,
+    "rating": 70,
+    "primary": "#1d4ed8",
+    "secondary": "#ffffff"
+  },
+  {
+    "name": "Bela Vista-TO",
+    "state": "TO",
+    "country": "BR",
+    "kind": "state",
+    "division": null,
+    "rating": 69,
+    "primary": "#7c3aed",
+    "secondary": "#ffffff"
+  },
+  {
+    "name": "Gurupi",
+    "state": "TO",
+    "country": "BR",
+    "kind": "state",
+    "division": null,
+    "rating": 68,
+    "primary": "#0f766e",
+    "secondary": "#ffffff"
+  },
+  {
+    "name": "Interporto",
+    "state": "TO",
+    "country": "BR",
+    "kind": "state",
+    "division": null,
+    "rating": 67,
+    "primary": "#0f766e",
+    "secondary": "#ffffff"
+  },
+  {
+    "name": "Araguaína",
+    "state": "TO",
+    "country": "BR",
+    "kind": "state",
+    "division": null,
+    "rating": 66,
+    "primary": "#0369a1",
+    "secondary": "#f8fafc"
+  },
+  {
+    "name": "Tocantins EC",
+    "state": "TO",
+    "country": "BR",
+    "kind": "state",
+    "division": null,
+    "rating": 65,
+    "primary": "#4338ca",
+    "secondary": "#ffffff"
+  },
+  {
+    "name": "Batalhão FC",
+    "state": "TO",
+    "country": "BR",
+    "kind": "state",
+    "division": null,
+    "rating": 64,
+    "primary": "#0369a1",
+    "secondary": "#f8fafc"
+  },
+  {
+    "name": "Palmas FR",
+    "state": "TO",
+    "country": "BR",
+    "kind": "state",
+    "division": null,
+    "rating": 63,
+    "primary": "#4d7c0f",
+    "secondary": "#ffffff"
+  }
+]

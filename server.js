@@ -3,7 +3,8 @@ const express = require("express");
 const { Pool } = require("pg");
 const crypto = require("crypto");
 const path = require("path");
-const CLUB_SEED = [...require("./clubs.json"),...require("./international_clubs.json"),...require("./global_clubs.json")];
+const STATE_CLUB_SEED = require("./state_clubs.json");
+const CLUB_SEED = [...require("./clubs.json"),...require("./international_clubs.json"),...require("./global_clubs.json"),...STATE_CLUB_SEED];
 const REAL_PLAYER_SEED = require("./real_players.json");
 const STATE_DATA = require("./states.json");
 const COUNTRY_DATA = require("./countries.json");
@@ -621,6 +622,31 @@ const shuffle=arr=>{const a=[...arr];for(let i=a.length-1;i>0;i--){const j=rand(
 const randomName=()=>`${firstNames[rand(0,firstNames.length-1)]} ${lastNames[rand(0,lastNames.length-1)]}`;
 const normalizeSearch=v=>String(v||"").normalize("NFD").replace(/[\u0300-\u036f]/g,"").toLowerCase().trim();
 
+
+function xmlSafe(value){
+  return String(value??"").replace(/[&<>"']/g,ch=>({"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;","'":"&apos;"})[ch]);
+}
+function clubInitials(name){
+  const parts=String(name||"FC").replace(/[-_]/g," ").split(/\s+/).filter(Boolean);
+  return (parts.slice(0,2).map(x=>x[0]).join("")||"FC").toUpperCase().slice(0,3);
+}
+function generatedClubCrest(name,primary="#18864b",secondary="#f7fafc"){
+  const initials=xmlSafe(clubInitials(name));
+  const p=/^#[0-9a-f]{6}$/i.test(String(primary))?primary:"#18864b";
+  const s=/^#[0-9a-f]{6}$/i.test(String(secondary))?secondary:"#f7fafc";
+  const svg=`<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 120 140">
+    <path d="M60 4 108 20v48c0 31-18 54-48 68C30 122 12 99 12 68V20L60 4Z" fill="${p}" stroke="#ffffff" stroke-width="6"/>
+    <path d="M60 13 98 26v39c0 25-14 44-38 57C36 109 22 90 22 65V26L60 13Z" fill="${s}" opacity=".92"/>
+    <path d="M60 18 60 118" stroke="${p}" stroke-width="9" opacity=".26"/>
+    <circle cx="60" cy="63" r="29" fill="${p}" opacity=".92"/>
+    <text x="60" y="70" text-anchor="middle" font-family="Arial,sans-serif" font-size="28" font-weight="900" fill="#fff">${initials}</text>
+  </svg>`;
+  return `data:image/svg+xml;base64,${Buffer.from(svg).toString("base64")}`;
+}
+function canonicalStateClubNames(stateCode){
+  return STATE_CLUB_SEED.filter(x=>x.state===stateCode).map(x=>x.name);
+}
+
 function makeFriendCode(){return crypto.randomBytes(4).toString("hex").toUpperCase().slice(0,6)}
 
 async function ensureFriendCode(client, clubId){
@@ -640,24 +666,48 @@ async function seedClubs(){
   await tx(async c=>{
     for(const x of CLUB_SEED){
       const confed=x.confed||confederationForCountry(x.country);
+      const crest=generatedClubCrest(x.name,x.primary,x.secondary);
       await c.query(`
         INSERT INTO clubs(
           name,is_ai,state_code,country_code,confederation_code,club_kind,national_seed_division,
-          base_rating,team_rating,coins,primary_color,secondary_color
+          base_rating,team_rating,coins,primary_color,secondary_color,crest_data
         )
-        VALUES($1,TRUE,$2,$3,$4,$5,$6,$7,$7,0,$8,$9)
+        VALUES($1,TRUE,$2,$3,$4,$5,$6,$7,$7,0,$8,$9,$10)
         ON CONFLICT(name) DO UPDATE SET
-          is_ai=TRUE,
-          state_code=EXCLUDED.state_code,
-          country_code=EXCLUDED.country_code,
-          confederation_code=EXCLUDED.confederation_code,
-          club_kind=EXCLUDED.club_kind,
-          national_seed_division=EXCLUDED.national_seed_division,
-          base_rating=EXCLUDED.base_rating,
-          primary_color=EXCLUDED.primary_color,
-          secondary_color=EXCLUDED.secondary_color
-      `,[x.name,x.state,x.country,confed,x.kind,x.division,x.rating,x.primary,x.secondary]);
+          is_ai=CASE WHEN clubs.user_id IS NULL THEN TRUE ELSE clubs.is_ai END,
+          state_code=COALESCE(EXCLUDED.state_code,clubs.state_code),
+          country_code=COALESCE(EXCLUDED.country_code,clubs.country_code),
+          confederation_code=COALESCE(EXCLUDED.confederation_code,clubs.confederation_code),
+          club_kind=CASE
+            WHEN clubs.club_kind='national' AND EXCLUDED.club_kind='state' THEN clubs.club_kind
+            ELSE EXCLUDED.club_kind
+          END,
+          national_seed_division=CASE
+            WHEN clubs.club_kind='national' AND EXCLUDED.club_kind='state' THEN clubs.national_seed_division
+            ELSE EXCLUDED.national_seed_division
+          END,
+          base_rating=CASE
+            WHEN clubs.club_kind='national' AND EXCLUDED.club_kind='state' THEN GREATEST(clubs.base_rating,EXCLUDED.base_rating)
+            ELSE EXCLUDED.base_rating
+          END,
+          primary_color=COALESCE(NULLIF(clubs.primary_color,''),EXCLUDED.primary_color),
+          secondary_color=COALESCE(NULLIF(clubs.secondary_color,''),EXCLUDED.secondary_color),
+          crest_data=COALESCE(NULLIF(clubs.crest_data,''),EXCLUDED.crest_data)
+      `,[x.name,x.state,x.country,confed,x.kind,x.division,x.rating,x.primary,x.secondary,crest]);
     }
+
+    // Garante escudo para qualquer clube antigo, criado pelo usuário ou vindo de save anterior.
+    const withoutCrest=(await c.query(`
+      SELECT id,name,primary_color,secondary_color
+      FROM clubs
+      WHERE crest_data IS NULL OR crest_data=''
+    `)).rows;
+    for(const club of withoutCrest){
+      await c.query(`UPDATE clubs SET crest_data=$2 WHERE id=$1`,[
+        club.id,generatedClubCrest(club.name,club.primary_color,club.secondary_color)
+      ]);
+    }
+
     const missing=await c.query(`SELECT id FROM clubs WHERE friend_code IS NULL`);
     for(const r of missing.rows) await ensureFriendCode(c,r.id);
   });
@@ -5684,8 +5734,19 @@ async function buildSeasonData(ownerId,stateCode,previous=null,countryCode="BR")
   }
 
   if(countryCode==="BR"){
-    const opp=(await q(`SELECT id FROM clubs WHERE is_ai=TRUE AND country_code='BR' AND state_code=$1 ORDER BY CASE WHEN club_kind='state' THEN 0 ELSE 1 END,RANDOM() LIMIT 7`,[stateCode])).rows.map(x=>Number(x.id));
-    if(opp.length<7)throw new Error("Faltam clubes para o Estadual.");
+    const canonical=canonicalStateClubNames(stateCode);
+    const opp=(await q(`
+      SELECT id,name,base_rating
+      FROM clubs
+      WHERE is_ai=TRUE
+        AND country_code='BR'
+        AND state_code=$1
+        AND name=ANY($2::text[])
+        AND id<>$3
+      ORDER BY base_rating DESC,RANDOM()
+      LIMIT 7
+    `,[stateCode,canonical,ownerId])).rows.map(x=>Number(x.id));
+    if(opp.length<7)throw new Error(`Faltam clubes reais para ${STATE_DATA.championships[stateCode]||stateCode}.`);
     data.state=stateObject(STATE_DATA.championships[stateCode]||`Campeonato ${stateCode}`,[Number(ownerId),...opp]);
   }
 
@@ -8423,10 +8484,61 @@ async function repairLibertadoresGroups(career){
 }
 
 
+async function repairBrazilStateParticipants(career){
+  if(!career||String(career.country_code||"BR")!=="BR"||!career.data?.state)return false;
+  const stateCode=career.state_code;
+  const stateComp=career.data.state;
+  const canonicalNames=canonicalStateClubNames(stateCode);
+  if(!canonicalNames.length)return false;
+
+  let changed=false;
+  const correctName=STATE_DATA.championships[stateCode]||`Campeonato ${stateCode}`;
+  if(stateComp.name!==correctName){stateComp.name=correctName;changed=true}
+
+  if(!Array.isArray(stateComp.entries)||!Array.isArray(stateComp.fixtures))return changed;
+  const ownerId=Number(career.owner_club_id);
+  const canonicalRows=(await q(`
+    SELECT id,name FROM clubs
+    WHERE is_ai=TRUE AND country_code='BR' AND state_code=$1 AND name=ANY($2::text[])
+    ORDER BY base_rating DESC,name
+  `,[stateCode,canonicalNames])).rows;
+  const canonicalIds=new Set(canonicalRows.map(r=>String(r.id)));
+  const currentIds=stateComp.entries.map(e=>Number(e.clubId)).filter(Boolean);
+  const currentRows=currentIds.length?(await q(`SELECT id,name FROM clubs WHERE id=ANY($1::bigint[])`,[currentIds])).rows:[];
+  const currentName=new Map(currentRows.map(r=>[String(r.id),r.name]));
+  const used=new Set(stateComp.entries.map(e=>String(e.clubId)));
+  const replacements=canonicalRows.filter(r=>!used.has(String(r.id))&&String(r.id)!==String(ownerId));
+  let ri=0;
+
+  for(const entry of stateComp.entries){
+    if(String(entry.clubId)===String(ownerId))continue;
+    const id=String(entry.clubId);
+    const name=currentName.get(id)||"";
+    const isCanonical=canonicalIds.has(id)&&canonicalNames.includes(name);
+    if(isCanonical)continue;
+    const target=replacements[ri++];
+    if(!target)continue;
+    const oldId=Number(entry.clubId),newId=Number(target.id);
+    entry.clubId=newId;
+    used.add(String(newId));
+    for(const f of stateComp.fixtures){
+      if(String(f.home)===String(oldId))f.home=newId;
+      if(String(f.away)===String(oldId))f.away=newId;
+      if(String(f.pw)===String(oldId))f.pw=newId;
+    }
+    if(String(stateComp.champion)===String(oldId))stateComp.champion=newId;
+    changed=true;
+  }
+
+  career.data.state=stateComp;
+  return changed;
+}
+
 async function repairCareer(ownerId){
   let career=await getCareer(ownerId);
   if(!career||!career.data)return career;
   let changed=false;
+  if(await repairBrazilStateParticipants(career))changed=true;
   if(await repairLibertadoresGroups(career))changed=true;
   if(!career.data.calendar){career.data.calendar=initialCalendar(career.season_no);changed=true}
   if(!career.data.copaBrasil){career.data.copaBrasil=await createCopaBrasil(ownerId);changed=true}
@@ -9709,7 +9821,8 @@ app.put("/api/club/customize",auth,async(req,res,next)=>{
     if(crest&&!/^data:image\/(png|jpeg|webp);base64,/i.test(crest))return res.status(400).json({error:"Escudo inválido."});
     if(crest.length>700000)return res.status(400).json({error:"Escudo grande demais."});
     const updated=await tx(async client=>{
-      const r=await client.query(`UPDATE clubs SET name=$2,primary_color=$3,secondary_color=$4,crest_data=$5 WHERE id=$1 RETURNING *`,[c.id,name,primary,secondary,crest||null]);
+      const finalCrest=crest||generatedClubCrest(name,primary,secondary);
+      const r=await client.query(`UPDATE clubs SET name=$2,primary_color=$3,secondary_color=$4,crest_data=$5 WHERE id=$1 RETURNING *`,[c.id,name,primary,secondary,finalCrest]);
       const felipeMode=await applyFelipeMode(client,c.id);
       return {club:(await client.query(`SELECT * FROM clubs WHERE id=$1`,[c.id])).rows[0],felipeMode};
     });
