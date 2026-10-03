@@ -1297,118 +1297,16 @@ async function applyV46Migration(){
   });
 }
 
-const FELIPE_INFINITE_COINS=2000000000;
-
-async function fillFelipeSquadToMaximum(client,club){
-  const target={GK:4,DEF:10,MID:10,ATT:6};
-  const rows=(await client.query(`
-    SELECT position,COUNT(*)::int count
-    FROM players
-    WHERE club_id=$1
-    GROUP BY position
-  `,[club.id])).rows;
-  const have=Object.fromEntries(rows.map(r=>[r.position,Number(r.count||0)]));
-  const rolePlan={
-    GK:["GK"],
-    DEF:["CB","RB","LB","CB"],
-    MID:["CM","CDM","CAM","RM","LM"],
-    ATT:["ST","RW","LW","ST"]
-  };
-
-  for(const pos of ["GK","DEF","MID","ATT"]){
-    const missing=Math.max(0,Number(target[pos])-Number(have[pos]||0));
-    for(let i=0;i<missing;i++){
-      const role=rolePlan[pos][i%rolePlan[pos].length];
-      await client.query(`
-        INSERT INTO players(
-          club_id,name,position,role,rating,pace,shooting,passing,defending,price,
-          is_starter,age,salary,contract_seasons,fitness,morale,injury_games,
-          potential,form_rating,happiness,squad_status,tactical_role,nationality_code
-        )
-        VALUES(
-          $1,$2,$3,$4,100,100,100,100,100,999999999,
-          FALSE,$5,0,99,100,100,0,
-          100,100,100,'STAR','BALANCED',$6
-        )
-      `,[
-        club.id,
-        `Felipe Elite ${pos} ${Number(have[pos]||0)+i+1}`,
-        pos,role,rand(18,27),club.country_code||"BR"
-      ]);
-    }
-  }
-}
-
 async function applyFelipeMode(client,clubId){
-  const club=(await client.query(`SELECT * FROM clubs WHERE id=$1`,[clubId])).rows[0];
+  const club=(await client.query(`SELECT id,name FROM clubs WHERE id=$1`,[clubId])).rows[0];
   if(!club||!isFelipeName(club.name))return false;
-
-  await fillFelipeSquadToMaximum(client,club);
-
   await client.query(`
     UPDATE players SET
-      rating=100,
-      pace=100,
-      shooting=100,
-      passing=100,
-      defending=100,
-      price=999999999,
-      salary=0,
-      contract_seasons=99,
-      fitness=100,
-      morale=100,
-      injury_games=0,
-      injury_type=NULL,
-      suspension_games=0,
-      yellow_accumulation=0,
-      potential=100,
-      form_rating=100,
-      happiness=100
+      rating=100,pace=100,shooting=100,passing=100,defending=100,
+      fitness=100,morale=100,injury_games=0
     WHERE club_id=$1
   `,[clubId]);
-
-  await client.query(`
-    UPDATE clubs SET
-      coins=$2,
-      base_rating=100,
-      team_rating=100,
-      fans=$2,
-      board_confidence=100,
-      media_pressure=0,
-      chemistry=100,
-      manager_reputation=100,
-      stadium_level=8,
-      stadium_capacity=100000,
-      ticket_price=100,
-      saf_patience=100,
-      saf_annual_budget=$2,
-      saf_debt_limit=-2000000000
-    WHERE id=$1
-  `,[clubId,FELIPE_INFINITE_COINS]);
-
-  for(const [role,meta] of Object.entries(STAFF_ROLES)){
-    await client.query(`
-      INSERT INTO club_staff(club_id,role,staff_name,level,salary)
-      VALUES($1,$2,$3,5,0)
-      ON CONFLICT(club_id,role) DO UPDATE SET
-        level=5,
-        salary=0
-    `,[clubId,role,`Felipe ${meta.label}`]);
-  }
-
-  await client.query(`
-    UPDATE academy_players SET
-      rating=100,
-      potential=100
-    WHERE club_id=$1 AND status='academy'
-  `,[clubId]);
-
-  await client.query(`
-    UPDATE manager_national_jobs SET
-      confidence=100
-    WHERE club_id=$1
-  `,[clubId]);
-
+  await client.query(`UPDATE clubs SET team_rating=100 WHERE id=$1`,[clubId]);
   return true;
 }
 function felipeScore(){
@@ -1614,10 +1512,6 @@ async function ensureRealismClubData(client,clubId,career=null){
         VALUES($1,$2,$3,$4,$5,$6,$7,$8,'academy')
       `,[clubId,season,randomName(),position,roleFor(position),rand(15,18),rating,potential]);
     }
-  }
-
-  if(isFelipeName(club.name)){
-    await applyFelipeMode(client,clubId);
   }
 }
 
@@ -2052,18 +1946,170 @@ function ensurePlayerV44Data(pc,data){
   if(!Array.isArray(data.loanOffers))data.loanOffers=[];
   if(!Array.isArray(data.playerNationalTeamHistory))data.playerNationalTeamHistory=[];
   if(!Array.isArray(data.uefaClubHistory))data.uefaClubHistory=[];
-  if(!Array.isArray(data.milestones))data.milestones=[];
-  if(!data.records)data.records={motm:0,winStreak:0,bestWinStreak:0,braces:0,hatTricks:0,cleanSheetStreak:0,bestCleanSheetStreak:0};
-  if(!data.relationships)data.relationships={teammates:60,fans:50,media:50};
-  if(data.seasonAmbition===undefined)data.seasonAmbition=null;
-  if(data.matchMoment===undefined)data.matchMoment=null;
-  if(data.lastMatchMomentResult===undefined)data.lastMatchMomentResult=null;
+  if(!Array.isArray(data.interviewHistory))data.interviewHistory=[];
+  if(!Array.isArray(data.missionHistory))data.missionHistory=[];
+  if(data.playerLevel===undefined)data.playerLevel=1;
+  if(data.playerXp===undefined)data.playerXp=0;
+  if(data.teammateBond===undefined)data.teammateBond=55;
+  if(data.matchPreparation===undefined)data.matchPreparation=null;
+  if(data.pendingInterview===undefined)data.pendingInterview=null;
   if(!data.matchPlan)data.matchPlan="BALANCED";
   if(data.personalSponsor===undefined)data.personalSponsor=null;
   if(data.acceptedLoan===undefined)data.acceptedLoan=null;
   if(data.loanState===undefined)data.loanState=null;
   return data;
 }
+
+function playerLevelXpNeeded(level){
+  return 120+Math.max(0,Number(level||1)-1)*45;
+}
+function playerProgressionSummary(data){
+  const level=Math.max(1,Number(data?.playerLevel||1));
+  const xp=Math.max(0,Number(data?.playerXp||0));
+  const needed=playerLevelXpNeeded(level);
+  return {
+    level,xp,needed,
+    percent:Math.round(clamp(xp/Math.max(1,needed)*100,0,100))
+  };
+}
+function playerAddCareerXp(pc,data,amount,reason="Experiência"){
+  ensurePlayerV44Data(pc,data);
+  let gained=Math.max(0,Math.round(Number(amount||0)));
+  let xp=Number(data.playerXp||0)+gained;
+  let level=Math.max(1,Number(data.playerLevel||1));
+  let levelsGained=0;
+  while(xp>=playerLevelXpNeeded(level)){
+    xp-=playerLevelXpNeeded(level);
+    level++;
+    levelsGained++;
+    pc.skill_points=Number(pc.skill_points||0)+1;
+    pc.morale=clamp(Number(pc.morale||75)+2,35,100);
+    if(level%5===0){
+      pc.reputation=clamp(Number(pc.reputation||0)+1,0,100);
+      pc.fame=clamp(Number(pc.fame||0)+1,0,100);
+    }
+    playerV44Timeline(data,"level",`Nível ${level} alcançado: +1 ponto de evolução.`,pc.season_no,pc.current_round);
+  }
+  data.playerXp=xp;
+  data.playerLevel=level;
+  return {gained,levelsGained,level,xp,needed:playerLevelXpNeeded(level),reason};
+}
+function playerMissionHash(pc){
+  const txt=`${pc?.id||0}|${pc?.season_no||1}|${pc?.current_round||1}|${pc?.position||"ATT"}`;
+  let h=2166136261;
+  for(let i=0;i<txt.length;i++){
+    h^=txt.charCodeAt(i);
+    h=Math.imul(h,16777619);
+  }
+  return h>>>0;
+}
+function playerMatchMission(pc){
+  if(!pc||pc.status!=="ACTIVE"||Number(pc.current_round||1)>38)return null;
+  const byPos={
+    GK:[
+      {key:"SAVES",label:"Fazer pelo menos 4 defesas",target:4,rewardXp:85},
+      {key:"RATING",label:"Conseguir nota 7,5 ou maior",target:7.5,rewardXp:80},
+      {key:"CLEAN_SHEET",label:"Terminar sem sofrer gol",target:1,rewardXp:95},
+      {key:"WIN",label:"Ajudar o time a vencer",target:1,rewardXp:75}
+    ],
+    DEF:[
+      {key:"RATING",label:"Conseguir nota 7,2 ou maior",target:7.2,rewardXp:80},
+      {key:"CLEAN_SHEET",label:"Ajudar o time a não sofrer gol",target:1,rewardXp:90},
+      {key:"WIN",label:"Vencer a partida",target:1,rewardXp:75},
+      {key:"GOAL_OR_ASSIST",label:"Participar diretamente de um gol",target:1,rewardXp:105}
+    ],
+    MID:[
+      {key:"ASSIST",label:"Dar pelo menos 1 assistência",target:1,rewardXp:100},
+      {key:"GOAL_OR_ASSIST",label:"Fazer gol ou dar assistência",target:1,rewardXp:90},
+      {key:"RATING",label:"Conseguir nota 7,4 ou maior",target:7.4,rewardXp:80},
+      {key:"WIN",label:"Vencer a partida",target:1,rewardXp:75}
+    ],
+    ATT:[
+      {key:"GOAL",label:"Marcar pelo menos 1 gol",target:1,rewardXp:100},
+      {key:"GOAL_OR_ASSIST",label:"Fazer gol ou dar assistência",target:1,rewardXp:90},
+      {key:"RATING",label:"Conseguir nota 7,5 ou maior",target:7.5,rewardXp:80},
+      {key:"WIN",label:"Vencer a partida",target:1,rewardXp:75}
+    ]
+  };
+  const list=byPos[pc.position]||byPos.ATT;
+  return {...list[playerMissionHash(pc)%list.length],season:Number(pc.season_no),round:Number(pc.current_round)};
+}
+function playerMissionCompleted(pc,mission,match){
+  if(!mission||!match||!match.played)return false;
+  const perf=Number(match.performance||0);
+  const userHome=String(match.home)===String(pc.club_id);
+  const opponentGoals=userHome?Number(match.awayGoals||0):Number(match.homeGoals||0);
+  if(mission.key==="RATING")return perf>=Number(mission.target);
+  if(mission.key==="GOAL")return Number(match.goals||0)>=Number(mission.target);
+  if(mission.key==="ASSIST")return Number(match.assists||0)>=Number(mission.target);
+  if(mission.key==="GOAL_OR_ASSIST")return Number(match.goals||0)+Number(match.assists||0)>=Number(mission.target);
+  if(mission.key==="CLEAN_SHEET")return opponentGoals===0;
+  if(mission.key==="SAVES")return Number(match.saves||0)>=Number(mission.target);
+  if(mission.key==="WIN")return match.result==="win";
+  return false;
+}
+function resolvePlayerMission(pc,data,mission,match){
+  if(!mission)return null;
+  const completed=playerMissionCompleted(pc,mission,match);
+  const record={
+    ...mission,completed,
+    performance:match?.performance??null,
+    played:Boolean(match?.played),
+    date:new Date().toISOString()
+  };
+  data.missionHistory.unshift(record);
+  data.missionHistory=data.missionHistory.slice(0,60);
+  if(completed){
+    playerAddCareerXp(pc,data,mission.rewardXp,`Missão: ${mission.label}`);
+    pc.reputation=clamp(Number(pc.reputation||0)+1,0,100);
+    pc.morale=clamp(Number(pc.morale||75)+2,35,100);
+    pc.followers=Number(pc.followers||0)+700;
+    playerV44Timeline(data,"mission",`Missão cumprida: ${mission.label}.`,pc.season_no,mission.round);
+  }
+  return record;
+}
+function maybeCreatePlayerInterview(pc,data,match,missionResult){
+  if(!match?.played||data.pendingInterview)return false;
+  const standout=Number(match.performance||0)>=8.1||Number(match.goals||0)>=2||
+    (pc.position==="GK"&&Number(match.saves||0)>=6&&match.cleanSheet)||
+    (missionResult?.completed&&Number(match.performance||0)>=7.5);
+  if(!standout)return false;
+  const roll=(playerMissionHash({...pc,current_round:Number(pc.current_round||1)+17})%100);
+  if(roll>=72&&Number(match.performance||0)<8.7)return false;
+  const reason=Number(match.goals||0)>=2?"grande atuação com gols":
+    pc.position==="GK"&&match.cleanSheet?"atuação decisiva no gol":
+    missionResult?.completed?"missão cumprida e boa atuação":"destaque da rodada";
+  data.pendingInterview={
+    id:`${pc.season_no}-${pc.current_round}`,
+    season:Number(pc.season_no),round:Number(pc.current_round),reason,
+    performance:Number(match.performance||0),
+    opponent:String(match.home)===String(pc.club_id)?match.awayName:match.homeName,
+    createdAt:new Date().toISOString()
+  };
+  return true;
+}
+function playerCareerMilestones(pc,data){
+  const all=[];
+  const push=(key,label,unlocked,progress,target)=>all.push({key,label,unlocked:Boolean(unlocked),progress:Number(progress||0),target:Number(target||1)});
+  push("debut","Estreia profissional",Number(pc.appearances)>=1,Math.min(Number(pc.appearances||0),1),1);
+  if(pc.position==="GK"){
+    push("first_clean_sheet","Primeiro jogo sem sofrer gol",Number(pc.clean_sheets)>=1,Math.min(Number(pc.clean_sheets||0),1),1);
+    push("clean25","25 jogos sem sofrer gol",Number(pc.clean_sheets)>=25,Number(pc.clean_sheets||0),25);
+    push("saves250","250 defesas",Number(pc.gk_saves)>=250,Number(pc.gk_saves||0),250);
+  }else{
+    push("first_goal","Primeiro gol profissional",Number(pc.goals)>=1,Math.min(Number(pc.goals||0),1),1);
+    push("goals25","25 gols",Number(pc.goals)>=25,Number(pc.goals||0),25);
+    push("goals50","50 gols",Number(pc.goals)>=50,Number(pc.goals||0),50);
+    push("assists25","25 assistências",Number(pc.assists)>=25,Number(pc.assists||0),25);
+  }
+  push("apps50","50 jogos",Number(pc.appearances)>=50,Number(pc.appearances||0),50);
+  push("apps100","100 jogos",Number(pc.appearances)>=100,Number(pc.appearances||0),100);
+  push("national_debut","Estreia pela seleção",Number(pc.national_caps)>=1,Math.min(Number(pc.national_caps||0),1),1);
+  push("national25","25 jogos pela seleção",Number(pc.national_caps)>=25,Number(pc.national_caps||0),25);
+  push("star","50 de fama",Number(pc.fame)>=50,Number(pc.fame||0),50);
+  return all;
+}
+
 function playerObjectiveValue(obj,pc,data){
   const s=data.seasonStats||{};
   if(obj.key==="appearances")return Number(s.appearances||0);
@@ -2100,10 +2146,13 @@ function playerCareerMetaForNext(oldData){
     awards:[...(oldData?.awards||[])],
     loanState:oldData?.loanState||null,
     playerNationalTeamHistory:[...(oldData?.playerNationalTeamHistory||[])].slice(0,40),
-    uefaClubHistory:[...(oldData?.uefaClubHistory||[])].slice(0,40),
-    milestones:[...(oldData?.milestones||[])].slice(0,40),
-    records:{...(oldData?.records||{})},
-    relationships:{...(oldData?.relationships||{teammates:60,fans:50,media:50})}
+    playerLevel:Number(oldData?.playerLevel||1),
+    playerXp:Number(oldData?.playerXp||0),
+    teammateBond:Number(oldData?.teammateBond??55),
+    interviewHistory:[...(oldData?.interviewHistory||[])].slice(0,30),
+    missionHistory:[...(oldData?.missionHistory||[])].slice(0,60),
+    matchPreparation:null,
+    pendingInterview:null
   };
 }
 function playerPlanModifiers(plan){
@@ -2115,113 +2164,6 @@ function playerPlanModifiers(plan){
     SHOWCASE:{perf:.12,goal:.04,assist:.04,fatigue:3,injury:.015,rep:1}
   })[plan]||{perf:0,goal:0,assist:0,fatigue:0,injury:0,rep:0};
 }
-
-const PLAYER_AMBITIONS={
-  STAR:{label:"Virar protagonista",description:"Busque notas altas e destaque individual.",perf:.08,goal:.03,assist:.02,fatigue:1,injury:.002,rep:1,trust:0,followers:.12},
-  TEAM:{label:"Ganhar espaço no time",description:"Priorize confiança do treinador e jogo coletivo.",perf:.04,goal:-.01,assist:.04,fatigue:0,injury:0,rep:0,trust:1,followers:0},
-  FITNESS:{label:"Temporada física forte",description:"Menos desgaste e menor risco de lesão.",perf:.02,goal:0,assist:0,fatigue:-2,injury:-.012,rep:0,trust:0,followers:0},
-  MARKET:{label:"Valorizar no mercado",description:"Mais exposição, reputação e seguidores.",perf:.03,goal:.01,assist:.01,fatigue:1,injury:.003,rep:1,trust:0,followers:.28}
-};
-function playerAmbitionModifiers(data){
-  const key=String(data?.seasonAmbition?.key||"");
-  return PLAYER_AMBITIONS[key]||{label:null,perf:0,goal:0,assist:0,fatigue:0,injury:0,rep:0,trust:0,followers:0};
-}
-function playerAmbitionStatus(pc,data){
-  const amb=data?.seasonAmbition;
-  if(!amb)return null;
-  const key=String(amb.key||"");
-  const s=data.seasonStats||{};
-  const avg=Number(s.ratedMatches||0)?Number(s.ratingTotal||0)/Number(s.ratedMatches):0;
-  let value=0,target=0,unit="",completed=false;
-  if(key==="STAR"){value=avg;target=7.25;unit="nota";completed=value>=target}
-  else if(key==="TEAM"){value=Number(pc.coach_trust||0);target=75;unit="confiança";completed=value>=target}
-  else if(key==="FITNESS"){value=Number(s.appearances||0);target=26;unit="jogos";completed=value>=target}
-  else {value=Number(pc.reputation||0);target=45;unit="reputação";completed=value>=target}
-  return {...amb,label:PLAYER_AMBITIONS[key]?.label||key,description:PLAYER_AMBITIONS[key]?.description||"",value:Math.round(value*100)/100,target,unit,completed};
-}
-function playerMatchMomentOptions(position){
-  if(position==="GK")return {
-    WALL:{label:"Fechar o gol",description:"Mais foco em defesas e segurança.",perf:.16,goal:0,assist:0,fatigue:1,injury:.002,rep:0,trust:1,saveBonus:2,goalPrevent:.16},
-    COMMAND:{label:"Comandar a área",description:"Liderança e confiança do treinador.",perf:.09,goal:0,assist:.01,fatigue:0,injury:0,rep:0,trust:2,saveBonus:1,goalPrevent:.06},
-    SWEEPER:{label:"Jogar como líbero",description:"Mais participação com os pés e risco maior.",perf:.11,goal:0,assist:.05,fatigue:2,injury:.005,rep:1,trust:0,saveBonus:0,goalPrevent:0}
-  };
-  return {
-    HERO:{label:"Buscar a jogada decisiva",description:"Mais chance de gol e destaque, com maior risco.",perf:.15,goal:.09,assist:-.01,fatigue:2,injury:.008,rep:1,trust:0,saveBonus:0,goalPrevent:0},
-    TEAM:{label:"Jogar para o time",description:"Mais chance de assistência e confiança do treinador.",perf:.10,goal:-.02,assist:.10,fatigue:0,injury:0,rep:0,trust:2,saveBonus:0,goalPrevent:0},
-    SMART:{label:"Jogar com inteligência",description:"Boa atuação com menos desgaste e risco.",perf:.07,goal:0,assist:.02,fatigue:-2,injury:-.01,rep:0,trust:1,saveBonus:0,goalPrevent:0}
-  };
-}
-function playerMatchMomentModifiers(data,round,position){
-  const moment=data?.matchMoment;
-  if(!moment||Number(moment.round)!==Number(round))return {key:null,label:null,perf:0,goal:0,assist:0,fatigue:0,injury:0,rep:0,trust:0,saveBonus:0,goalPrevent:0};
-  const options=playerMatchMomentOptions(position);
-  return {key:moment.key,...(options[moment.key]||{})};
-}
-function playerAdjustRelationship(data,key,delta){
-  if(!data.relationships)data.relationships={teammates:60,fans:50,media:50};
-  data.relationships[key]=clamp(Number(data.relationships[key]||50)+Number(delta||0),0,100);
-}
-function playerMilestoneCatalog(pc){
-  const list=[
-    ["apps25",Number(pc.appearances||0)>=25,"25 jogos pelo clube"],
-    ["apps50",Number(pc.appearances||0)>=50,"50 jogos pelo clube"],
-    ["apps100",Number(pc.appearances||0)>=100,"100 jogos pelo clube"]
-  ];
-  if(pc.position==="GK"){
-    list.push(["cs10",Number(pc.clean_sheets||0)>=10,"10 jogos sem sofrer gol"],["cs25",Number(pc.clean_sheets||0)>=25,"25 jogos sem sofrer gol"]);
-  }else{
-    list.push(["goals10",Number(pc.goals||0)>=10,"10 gols na carreira"],["goals25",Number(pc.goals||0)>=25,"25 gols na carreira"],["goals50",Number(pc.goals||0)>=50,"50 gols na carreira"],["assists10",Number(pc.assists||0)>=10,"10 assistências na carreira"],["assists25",Number(pc.assists||0)>=25,"25 assistências na carreira"]);
-  }
-  list.push(["caps10",Number(pc.national_caps||0)>=10,"10 jogos pela seleção"],["caps25",Number(pc.national_caps||0)>=25,"25 jogos pela seleção"]);
-  return list;
-}
-function playerCheckMilestones(pc,data,round=null){
-  ensurePlayerV44Data(pc,data);
-  const existing=new Set((data.milestones||[]).map(m=>m.key));
-  const unlocked=[];
-  for(const [key,ok,label] of playerMilestoneCatalog(pc)){
-    if(!ok||existing.has(key))continue;
-    const item={key,label,season:Number(pc.season_no||1),round:Number(round||pc.current_round||1),date:new Date().toISOString()};
-    data.milestones.unshift(item);existing.add(key);unlocked.push(item);
-    pc.skill_points=Number(pc.skill_points||0)+1;
-    pc.fame=clamp(Number(pc.fame||0)+1,0,100);
-    pc.followers=Number(pc.followers||0)+1000;
-    playerV44Timeline(data,"milestone",`Marco alcançado: ${label}. +1 ponto de evolução.`,pc.season_no,round||pc.current_round);
-  }
-  data.milestones=data.milestones.slice(0,40);
-  return unlocked;
-}
-function playerUpdateRecords(pc,data,match){
-  ensurePlayerV44Data(pc,data);
-  const r=data.records;
-  if(!match?.played)return r;
-  if(Number(match.performance||0)>=8.7)r.motm=Number(r.motm||0)+1;
-  if(match.result==="win")r.winStreak=Number(r.winStreak||0)+1;else r.winStreak=0;
-  r.bestWinStreak=Math.max(Number(r.bestWinStreak||0),Number(r.winStreak||0));
-  if(Number(match.goals||0)>=2)r.braces=Number(r.braces||0)+1;
-  if(Number(match.goals||0)>=3)r.hatTricks=Number(r.hatTricks||0)+1;
-  if(pc.position==="GK"){
-    if(match.cleanSheet)r.cleanSheetStreak=Number(r.cleanSheetStreak||0)+1;else r.cleanSheetStreak=0;
-    r.bestCleanSheetStreak=Math.max(Number(r.bestCleanSheetStreak||0),Number(r.cleanSheetStreak||0));
-  }
-  return r;
-}
-function playerAmbitionFinalize(pc,data){
-  const status=playerAmbitionStatus(pc,data);
-  if(!status||status.rewarded)return null;
-  data.seasonAmbition={...data.seasonAmbition,completed:Boolean(status.completed),rewarded:true,finalValue:status.value};
-  if(status.completed){
-    pc.skill_points=Number(pc.skill_points||0)+2;
-    pc.reputation=clamp(Number(pc.reputation||0)+3,0,100);
-    pc.fame=clamp(Number(pc.fame||0)+2,0,100);
-    pc.followers=Number(pc.followers||0)+2500;
-    playerV44Timeline(data,"ambition",`Objetivo pessoal concluído: ${status.label}. +2 pontos de evolução.`,pc.season_no,38);
-  }else{
-    playerV44Timeline(data,"ambition",`Objetivo pessoal não concluído: ${status.label}.`,pc.season_no,38);
-  }
-  return {...status,rewarded:true};
-}
-
 function playerCompetitionStatus(pc,competitor){
   const gap=Number(pc.overall||60)-Number(competitor?.rating||60);
   return gap>=4?"FAVORITO":gap>=-2?"DISPUTA_ABERTA":"CORRENDO_ATRAS";
@@ -2248,7 +2190,6 @@ function finalizePlayerV44Season(pc,data){
   pc.reputation=clamp(Number(pc.reputation||0)+awards.length*3,0,100);
   pc.fame=clamp(Number(pc.fame||0)+awards.length*4,0,100);
   pc.followers=Number(pc.followers||0)+awards.length*3500;
-  const ambitionResult=playerAmbitionFinalize(pc,data);
   const legacyGain=Math.round(Number(s.appearances||0)+Number(s.goals||0)*3+Number(s.assists||0)*2+Number(s.cleanSheets||0)*2+awards.length*18+objectiveStatus.filter(x=>x.completed).length*8);
   pc.legacy_score=Number(pc.legacy_score||0)+legacyGain;
   data.careerHistory.unshift({
@@ -2258,7 +2199,7 @@ function finalizePlayerV44Season(pc,data){
   });
   data.careerHistory=data.careerHistory.slice(0,20);
   data.personalSponsor=null;
-  return {skillReward,repReward,awards,legacyGain,objectiveStatus,ambitionResult};
+  return {skillReward,repReward,awards,legacyGain,objectiveStatus};
 }
 
 function createPlayerCareerCup(teamIds,clubId,countryCode="BR"){
@@ -2909,14 +2850,13 @@ async function simulatePlayerNationalTeamMatch(userId,penaltyCorner=null){
     playerV44Timeline(data,"national_team",
       `${nationalTeamName(nation)}: ${userMatch.homeName} ${userMatch.homeGoals} x ${userMatch.awayGoals} ${userMatch.awayName}. Nota ${historyEntry.performance}.`,
       pc.season_no,pc.current_round);
-    playerCheckMilestones(pc,data,pc.current_round);
 
     await client.query(`
       UPDATE player_careers SET
         national_caps=$2,national_goals=$3,reputation=$4,fame=$5,followers=$6,morale=$7,fitness=$8,
-        data=$9::jsonb,skill_points=$10,updated_at=NOW()
+        data=$9::jsonb,updated_at=NOW()
       WHERE id=$1
-    `,[pc.id,pc.national_caps,pc.national_goals,pc.reputation,pc.fame,pc.followers,pc.morale,pc.fitness,JSON.stringify(data),pc.skill_points]);
+    `,[pc.id,pc.national_caps,pc.national_goals,pc.reputation,pc.fame,pc.followers,pc.morale,pc.fitness,JSON.stringify(data)]);
 
     return {
       ok:true,match:historyEntry,status:nt.status,stage:nt.stage,
@@ -2949,6 +2889,13 @@ async function hydratePlayerCareer(pc){
   const sponsorOffers=playerPersonalSponsorOffers(pc);
   const isCaptain=Number(pc.leadership||0)>=75&&Number(pc.coach_trust||0)>=80&&Number(pc.age||17)>=21;
   const nationalTeam=playerNationalTeamSummary(pc,data);
+  const progression=playerProgressionSummary(data);
+  const matchMission=playerMatchMission(pc);
+  const milestones=playerCareerMilestones(pc,data);
+  const lockerRoom={
+    teammateBond:Number(data.teammateBond??55),
+    preparation:data.matchPreparation||null
+  };
   const entries=sortEntries(data?.league?.entries||[]).map(e=>({...e,gd:e.gf-e.ga,club:map.get(String(e.clubId))}));
   const fixtures=(data?.league?.fixtures||[]).map(f=>({...f,homeClub:map.get(String(f.home)),awayClub:map.get(String(f.away))}));
   const cup=data?.cup?{
@@ -3002,10 +2949,6 @@ async function hydratePlayerCareer(pc){
     acceptedOffer:data?.acceptedOffer||null,
     nextDivision:data?.nextDivision||pc.club_division,
     objectives:objectiveStatus,matchPlan:data.matchPlan||"BALANCED",perks:data.perks||[],lifestyle:data.lifestyle||{},
-    seasonAmbition:playerAmbitionStatus(pc,data),
-    matchMoment:data.matchMoment||null,lastMatchMomentResult:data.lastMatchMomentResult||null,
-    relationships:data.relationships||{teammates:60,fans:50,media:50},
-    records:data.records||{},milestones:data.milestones||[],
     timeline:data.timeline||[],careerHistory:data.careerHistory||[],awards:data.awards||[],
     marketInterest:(data.marketInterest||[]).map(o=>({...o,club:map.get(String(o.clubId))})),
     loanOffers:(data.loanOffers||[]).map(o=>({...o,club:map.get(String(o.clubId))})),acceptedLoan:data.acceptedLoan||null,loanState:data.loanState||null,
@@ -3014,7 +2957,11 @@ async function hydratePlayerCareer(pc){
     agent:{level:Number(pc.agent_level||1),relation:Number(pc.agent_relation||55),cooldown:Number(pc.last_agent_action_round||0)>0?Math.max(0,4-(Number(pc.current_round||1)-Number(pc.last_agent_action_round||0))):0},
     nationalTeam,
     contract:{years:Number(pc.contract_years||0),salary:Number(pc.salary||0),releaseClause:Number(pc.release_clause||0),marketValue},
-    interaction:{used:Boolean(interaction),currentRound:Math.max(1,Number(pc.current_round||1)),last:interaction}
+    interaction:{used:Boolean(interaction),currentRound:Math.max(1,Number(pc.current_round||1)),last:interaction},
+    progression,matchMission,lockerRoom,milestones,
+    pendingInterview:data.pendingInterview||null,
+    interviewHistory:data.interviewHistory||[],
+    missionHistory:data.missionHistory||[]
   };
 }
 async function generatePlayerTransferOffers(pc,data){
@@ -3096,7 +3043,10 @@ async function simulatePlayerCareerRound(userId,cachedClubMap=null,penaltyCorner
     const round=Number(pc.current_round);
     const games=data.league.fixtures.filter(f=>Number(f.round)===round&&!f.played);
     const clubMap=cachedClubMap||await fastClubSnapshot();
-    let playerMatch=null;
+    const mission=playerMatchMission(pc);
+    const preparationBonus=Number(data.matchPreparation?.perf||0);
+    const bondBonus=clamp((Number(data.teammateBond??55)-50)*.004,-.12,.22);
+    let playerMatch=null,missionResult=null,xpResult=null,interviewAvailable=false;
 
     for(const f of games){
       const userGame=String(f.home)===String(pc.club_id)||String(f.away)===String(pc.club_id);
@@ -3115,8 +3065,6 @@ async function simulatePlayerCareerRound(userId,cachedClubMap=null,penaltyCorner
       const role=String(pc.squad_role||"ROTATION");
       const roleChance=role==="STARTER"?.94:role==="ROTATION"?.76:.48;
       const plan=playerPlanModifiers(data.matchPlan||"BALANCED");
-      const ambition=playerAmbitionModifiers(data);
-      const moment=playerMatchMomentModifiers(data,round,pc.position);
       const injured=Number(pc.injury_games||0)>0;
       const selectionChance=clamp(roleChance+(trust-55)*.004+(Number(pc.overall)-60)*.006+(data.perks.includes("leader")?.025:0),.30,.98);
       const selected=!injured&&Math.random()<selectionChance;
@@ -3146,10 +3094,8 @@ async function simulatePlayerCareerRound(userId,cachedClubMap=null,penaltyCorner
         };
         data.history.unshift(playerMatch);
         data.history=data.history.slice(0,60);
-        if(moment.key){
-          data.lastMatchMomentResult={round,key:moment.key,label:moment.label,text:injured?"A decisão de jogo não pôde ser usada porque você estava lesionado.":"A decisão de jogo não teve efeito porque você ficou no banco."};
-          data.matchMoment=null;
-        }
+        missionResult=resolvePlayerMission(pc,data,mission,playerMatch);
+        xpResult=playerAddCareerXp(pc,data,5,injured?"Recuperação de lesão":"Rodada no banco");
         continue;
       }
 
@@ -3160,17 +3106,13 @@ async function simulatePlayerCareerRound(userId,cachedClubMap=null,penaltyCorner
         const reflexes=Number(pc.gk_reflexes||60);
         const positioning=Number(pc.gk_positioning||60);
         const diving=Number(pc.gk_diving||60);
-        const gkBoost=(Number(pc.overall)-60)*.11+(reflexes-60)*.035+(positioning-60)*.025+(diving-60)*.02+Number(ambition.perf||0)*3+Number(moment.perf||0)*4;
+        const gkBoost=(Number(pc.overall)-60)*.11+(reflexes-60)*.035+(positioning-60)*.025+(diving-60)*.02;
         if(userHome)hr+=gkBoost; else ar+=gkBoost;
 
         const sc=basicScore(hr,ar);
         let ug=userHome?sc.hg:sc.ag;
         let og=userHome?sc.ag:sc.hg;
         const penChance=clamp(.035+(reflexes-55)*.0035,.03,.20);
-        if(og>0&&Number(moment.goalPrevent||0)>0&&Math.random()<Number(moment.goalPrevent||0)){
-          og=Math.max(0,og-1);
-          if(userHome)sc.ag=og; else sc.hg=og;
-        }
         if(og>0&&Math.random()<penChance){
           penaltySaves=1;
           og=Math.max(0,og-1);
@@ -3179,27 +3121,27 @@ async function simulatePlayerCareerRound(userId,cachedClubMap=null,penaltyCorner
 
         const oppRating=Number(userHome?away.rating:home.rating);
         const shotsFaced=Math.max(og+2,og+rand(3,7)+Math.max(0,Math.round((oppRating-64)/5)));
-        saves=Math.max(0,shotsFaced-og)+Number(moment.saveBonus||0);
+        saves=Math.max(0,shotsFaced-og);
         performance=clamp(
-          Math.round((6.05+saves*.18+(og===0?.75:0)-og*.30+(positioning-60)*.012+Number(ambition.perf||0)+Number(moment.perf||0)+(Math.random()*.7-.35))*10)/10,
+          Math.round((6.05+saves*.18+(og===0?.75:0)-og*.30+(positioning-60)*.012+preparationBonus+bondBonus+(Math.random()*.7-.35))*10)/10,
           4.5,10
         );
-        if(Math.random()<clamp(.025+(Number(pc.passing)-55)*.0025+Number(ambition.assist||0)+Number(moment.assist||0),.02,.24)&&performance>=7.2)assists=1;
+        if(Math.random()<clamp(.025+(Number(pc.passing)-55)*.0025,.02,.12)&&performance>=7.2)assists=1;
 
         f.played=true;f.hg=sc.hg;f.ag=sc.ag;
         applyResult(findEntry(data.league.entries,f.home),sc.hg,sc.ag);
         applyResult(findEntry(data.league.entries,f.away),sc.ag,sc.hg);
       }else{
         const lifestyleBonus=data.lifestyle?.personal_trainer?.15:0;
-        const basePerf=6.35+(Number(pc.overall)-60)*.035+(Number(pc.fitness)-70)*.012+plan.perf+lifestyleBonus+Number(ambition.perf||0)+Number(moment.perf||0)+(Math.random()*1.6-.8);
+        const basePerf=6.35+(Number(pc.overall)-60)*.035+(Number(pc.fitness)-70)*.012+plan.perf+lifestyleBonus+preparationBonus+bondBonus+(Math.random()*1.6-.8);
         performance=clamp(Math.round(basePerf*10)/10,4.5,10);
         const attackWeight=pc.position==="ATT"?1:pc.position==="MID"?.65:.22;
         const assistWeight=pc.position==="MID"?1:pc.position==="ATT"?.65:.25;
         const clinical=data.perks.includes("clinical")?.06:0;
-        if(Math.random()<clamp(.08+attackWeight*(Number(pc.overall)-50)/100+performance*.012+plan.goal+clinical+Number(ambition.goal||0)+Number(moment.goal||0),.03,.82))goals++;
+        if(Math.random()<clamp(.08+attackWeight*(Number(pc.overall)-50)/100+performance*.012+plan.goal+clinical,.03,.75))goals++;
         if(pc.position==="ATT"&&performance>8.2&&Math.random()<.22)goals++;
         const maestro=data.perks.includes("playmaker")?.07:0;
-        if(Math.random()<clamp(.07+assistWeight*(Number(pc.passing)-45)/110+performance*.01+plan.assist+maestro+Number(ambition.assist||0)+Number(moment.assist||0),.03,.76))assists++;
+        if(Math.random()<clamp(.07+assistWeight*(Number(pc.passing)-45)/110+performance*.01+plan.assist+maestro,.03,.68))assists++;
 
         const boost=(Number(pc.overall)-60)*.12+(performance-6.5)*1.5;
         hr=Number(home.rating)+(userHome?boost:0);
@@ -3216,12 +3158,12 @@ async function simulatePlayerCareerRound(userId,cachedClubMap=null,penaltyCorner
       const ug=userHome?f.hg:f.ag,og=userHome?f.ag:f.hg;
       const result=ug>og?"win":ug===og?"draw":"loss";
       const fatigueReduction=(data.perks.includes("engine")?2:0)+(data.lifestyle?.nutrition?2:0);
-      const newFitness=clamp(Number(pc.fitness)-Math.max(2,rand(pc.position==="GK"?5:7,pc.position==="GK"?10:13)+Number(plan.fatigue||0)+Number(ambition.fatigue||0)+Number(moment.fatigue||0)-fatigueReduction),35,100);
+      const newFitness=clamp(Number(pc.fitness)-Math.max(3,rand(pc.position==="GK"?5:7,pc.position==="GK"?10:13)+Number(plan.fatigue||0)-fatigueReduction),35,100);
       const newMorale=clamp(Number(pc.morale)+(result==="win"?4:result==="draw"?1:-3),35,100);
       const skillGain=performance>=8.5?2:performance>=7?1:0;
       const personalityRep=pc.personality==="CHARISMATIC"&&performance>=7?1:0;
-      const repGain=(performance>=8?2:performance>=6.5?1:0)+Number(plan.rep||0)+personalityRep+Number(ambition.rep||0)+Number(moment.rep||0);
-      const trustDelta=(performance>=8?5:performance>=7?3:performance>=6.2?1:-4)+(data.perks.includes("leader")?1:0)+(pc.personality==="PROFESSIONAL"?1:0)+Number(ambition.trust||0)+Number(moment.trust||0);
+      const repGain=(performance>=8?2:performance>=6.5?1:0)+Number(plan.rep||0)+personalityRep;
+      const trustDelta=(performance>=8?5:performance>=7?3:performance>=6.2?1:-4)+(data.perks.includes("leader")?1:0)+(pc.personality==="PROFESSIONAL"?1:0);
       const nextTrust=clamp(Number(pc.coach_trust||55)+trustDelta,0,100);
       const nextRole=nextTrust>=72?"STARTER":nextTrust>=48?"ROTATION":"RESERVE";
       const previousApps=Number(pc.appearances||0);
@@ -3259,22 +3201,32 @@ async function simulatePlayerCareerRound(userId,cachedClubMap=null,penaltyCorner
       if(pc.position==="GK"&&og===0)ss.cleanSheets=Number(ss.cleanSheets||0)+1;
       ss.ratingTotal=Number(ss.ratingTotal||0)+performance;
       ss.ratedMatches=Number(ss.ratedMatches||0)+1;
-      const followerMult=(data.lifestyle?.media_team?1.35:1)*(1+Number(ambition.followers||0));
+      const followerMult=data.lifestyle?.media_team?1.35:1;
       pc.followers=Number(pc.followers||0)+Math.round((150+Math.max(0,performance-6)*180+goals*450+assists*300)*followerMult);
       pc.fame=clamp(Number(pc.fame||0)+(performance>=8?2:performance>=7?1:0),0,100);
       pc.leadership=clamp(Number(pc.leadership||0)+(performance>=8.5?1:0),0,100);
-      playerAdjustRelationship(data,"teammates",result==="win"?1:result==="loss"?-1:0);
-      playerAdjustRelationship(data,"fans",performance>=8?3:performance>=7?1:performance<6?-2:0);
-      playerAdjustRelationship(data,"media",performance>=8.5?3:performance<5.8?-2:0);
-      playerUpdateRecords(pc,data,playerMatch);
-      const unlockedMilestones=playerCheckMilestones(pc,data,round);
-      if(moment.key){
-        const momentText=`${moment.label}: nota ${performance}${goals?` · ${goals} gol(s)`:""}${assists?` · ${assists} assistência(s)`:""}${saves?` · ${saves} defesa(s)`:""}.`;
-        data.lastMatchMomentResult={round,key:moment.key,label:moment.label,text:momentText};
-        playerV44Timeline(data,"match_decision",momentText,pc.season_no,round);
-        data.matchMoment=null;
+
+      data.teammateBond=clamp(
+        Number(data.teammateBond??55)+
+        (result==="win"?2:result==="draw"?1:-1)+
+        (performance>=8?1:0)+
+        (assists>0?1:0),
+        0,100
+      );
+
+      if(data.matchPreparation){
+        playerV44Timeline(data,"preparation",`${data.matchPreparation.label||"Preparação especial"} utilizada na partida.`,pc.season_no,round);
+        data.matchPreparation=null;
       }
-      const baseInjury=.012+Math.max(0,75-Number(pc.fitness||75))*.0014+Number(plan.injury||0)+Number(ambition.injury||0)+Number(moment.injury||0)-(data.perks.includes("ironman")?.01:0)-(data.lifestyle?.physio?.008:0);
+
+      missionResult=resolvePlayerMission(pc,data,mission,playerMatch);
+      const matchXp=Math.round(
+        20+Math.max(0,performance-6)*18+goals*24+assists*18+saves*3+(result==="win"?10:0)
+      );
+      xpResult=playerAddCareerXp(pc,data,matchXp,"Atuação em partida");
+      interviewAvailable=maybeCreatePlayerInterview(pc,data,playerMatch,missionResult);
+
+      const baseInjury=.012+Math.max(0,75-Number(pc.fitness||75))*.0014+Number(plan.injury||0)-(data.perks.includes("ironman")?.01:0)-(data.lifestyle?.physio?.008:0);
       if(pc.injury_games<=0&&Math.random()<clamp(baseInjury,.003,.11)){
         pc.injury_games=rand(1,4);
         pc.injury_type=["Contusão muscular","Torção no tornozelo","Lesão na coxa","Desconforto no joelho"][rand(0,3)];
@@ -3357,7 +3309,12 @@ async function simulatePlayerCareerRound(userId,cachedClubMap=null,penaltyCorner
        pc.gk_saves,pc.gk_penalty_saves,pc.injury_games||0,pc.injury_type||null,pc.followers||0,pc.fame||0,
        pc.national_caps||0,pc.national_goals||0,pc.legacy_score||0,pc.leadership||40]);
 
-    return {match:playerMatch,cupMatch,europeMatch,status,nextRound,skillPoints:pc.skill_points,balance};
+    return {
+      match:playerMatch,cupMatch,europeMatch,status,nextRound,
+      skillPoints:pc.skill_points,balance,
+      missionResult,xpResult,interviewAvailable:Boolean(data.pendingInterview||interviewAvailable),
+      playerLevel:Number(data.playerLevel||1),playerXp:Number(data.playerXp||0)
+    };
   });
 }
 async function trainPlayerCareer(userId,attribute){
@@ -3970,25 +3927,8 @@ async function recordUserMatch(client,ownerId,opponentId,m,events,type,reward=0)
   ]);
 }
 async function addFinance(client,clubId,amount,category,description){
-  const club=(await client.query(`SELECT name FROM clubs WHERE id=$1`,[clubId])).rows[0];
-  if(club&&isFelipeName(club.name)){
-    await client.query(`UPDATE clubs SET coins=$2 WHERE id=$1`,[clubId,FELIPE_INFINITE_COINS]);
-    await client.query(`
-      INSERT INTO club_finance_events(club_id,amount,category,description)
-      VALUES($1,0,$2,$3)
-    `,[clubId,category,`${description} · Modo Felipe: caixa infinito`]);
-    return;
-  }
-
-  await client.query(
-    `UPDATE clubs SET coins=LEAST($3,coins+$2) WHERE id=$1`,
-    [clubId,amount,FELIPE_INFINITE_COINS]
-  );
-  await client.query(
-    `INSERT INTO club_finance_events(club_id,amount,category,description)
-     VALUES($1,$2,$3,$4)`,
-    [clubId,amount,category,description]
-  );
+  await client.query(`UPDATE clubs SET coins=coins+$2 WHERE id=$1`,[clubId,amount]);
+  await client.query(`INSERT INTO club_finance_events(club_id,amount,category,description) VALUES($1,$2,$3,$4)`,[clubId,amount,category,description]);
 }
 async function wageBill(client,clubId){
   const [players,staff]=await Promise.all([
@@ -5211,9 +5151,7 @@ async function realismSummary(client,club,career){
   ]);
 
   const opponent=await opponentAnalysis(client,club.id,career,staff.levels.SCOUT);
-  const window=isFelipeName(club.name)
-    ?{open:true,next:null,date:career?.data?.calendar?.date,felipeMode:true}
-    :transferWindowInfo(career?.data?.calendar?.date);
+  const window=transferWindowInfo(career?.data?.calendar?.date);
   const latestHome=(await client.query(`
     SELECT attendance,game_date FROM matches
     WHERE user_club_id=$1 AND is_home=TRUE
@@ -9327,7 +9265,7 @@ async function payTransferInstallments(client,clubId,month){
       continue;
     }
     await addFinance(client,clubId,-payment,"transfer_installment",`Parcela de ${r.player_name} — ${Number(r.installments_paid)+1}/${r.installments_total}`);
-    if(r.selling_club_id)await client.query(`UPDATE clubs SET coins=LEAST($3,coins+$2) WHERE id=$1`,[r.selling_club_id,payment,FELIPE_INFINITE_COINS]);
+    if(r.selling_club_id)await client.query(`UPDATE clubs SET coins=coins+$2 WHERE id=$1`,[r.selling_club_id,payment]);
     const remaining=Math.max(0,Number(r.amount_remaining)-payment);
     const paid=Number(r.installments_paid)+1;
     const finished=remaining<=0||paid>=Number(r.installments_total);
@@ -9361,7 +9299,7 @@ async function processLoanMonth(client,clubId,month){
     const fee=Number(l.monthly_fee||0);
     if(fee>0){
       await addFinance(client,clubId,-fee,"loan_fee",`Empréstimo de ${l.player_name} — ${month}`);
-      await client.query(`UPDATE clubs SET coins=LEAST($3,coins+$2) WHERE id=$1`,[l.parent_club_id,fee,FELIPE_INFINITE_COINS]);
+      await client.query(`UPDATE clubs SET coins=coins+$2 WHERE id=$1`,[l.parent_club_id,fee]);
       total+=fee;
     }
     const elapsed=Number(l.months_elapsed||0)+1;
@@ -9555,14 +9493,14 @@ app.get("/api/player-career",auth,async(req,res,next)=>{
 app.post("/api/player-career/interaction",auth,async(req,res,next)=>{
   try{
     const type=String(req.body.type||"");
-    const allowed=new Set(["coach_talk","agent_push","recovery","media","teammates","charity","family","social"]);
+    const allowed=new Set(["coach_talk","agent_push","recovery","media","teammates","charity","family","social","video_analysis","mentor","fan_event","psychology"]);
     if(!allowed.has(type))return res.status(400).json({error:"Interação inválida."});
 
     const result=await tx(async client=>{
       const pc=(await client.query(`SELECT * FROM player_careers WHERE user_id=$1 AND is_active_career=TRUE FOR UPDATE`,[req.user.id])).rows[0];
       if(!pc)throw Object.assign(new Error("Carreira de jogador não encontrada."),{status:404});
-      const data=ensurePlayerV44Data(pc,typeof pc.data==="string"?JSON.parse(pc.data):pc.data);
       if(pc.status!=="ACTIVE")throw Object.assign(new Error("Interações ficam disponíveis durante a temporada."),{status:400});
+      const data=ensurePlayerV44Data(pc,typeof pc.data==="string"?JSON.parse(pc.data):pc.data);
       const round=Math.max(1,Number(pc.current_round||1));
       const used=(await client.query(
         `SELECT 1 FROM player_career_interactions WHERE career_id=$1 AND season_no=$2 AND round_no=$3 LIMIT 1`,
@@ -9584,8 +9522,23 @@ app.post("/api/player-career/interaction",auth,async(req,res,next)=>{
         await client.query(`UPDATE player_careers SET reputation=LEAST(100,reputation+2),fame=LEAST(100,fame+2),followers=followers+1200,morale=GREATEST(35,morale-1) WHERE id=$1`,[pc.id]);
         text="Entrevista à mídia: reputação +2, fama +2 e +1.200 seguidores.";
       }else if(type==="teammates"){
+        data.teammateBond=clamp(Number(data.teammateBond??55)+8,0,100);
         await client.query(`UPDATE player_careers SET morale=LEAST(100,morale+5),leadership=LEAST(100,leadership+3),coach_trust=LEAST(100,coach_trust+1) WHERE id=$1`,[pc.id]);
-        text="Convívio com o elenco: moral +5, liderança +3 e confiança +1.";
+        text=`Convívio com o elenco: moral +5, liderança +3 e entrosamento pessoal ${data.teammateBond}/100.`;
+      }else if(type==="video_analysis"){
+        data.matchPreparation={type:"video_analysis",label:"Análise de vídeo",perf:.28,createdRound:round};
+        await client.query(`UPDATE player_careers SET coach_trust=LEAST(100,coach_trust+2) WHERE id=$1`,[pc.id]);
+        text="Análise de vídeo concluída: +0,28 de bônus-base na sua próxima partida da liga e confiança +2.";
+      }else if(type==="mentor"){
+        data.teammateBond=clamp(Number(data.teammateBond??55)+6,0,100);
+        await client.query(`UPDATE player_careers SET leadership=LEAST(100,leadership+4),morale=LEAST(100,morale+2) WHERE id=$1`,[pc.id]);
+        text=`Você orientou jogadores mais jovens: liderança +4, moral +2 e entrosamento ${data.teammateBond}/100.`;
+      }else if(type==="fan_event"){
+        await client.query(`UPDATE player_careers SET followers=followers+3000,fame=LEAST(100,fame+2),morale=LEAST(100,morale+2) WHERE id=$1`,[pc.id]);
+        text="Evento com torcedores: +3.000 seguidores, fama +2 e moral +2.";
+      }else if(type==="psychology"){
+        await client.query(`UPDATE player_careers SET morale=LEAST(100,morale+8),coach_trust=LEAST(100,coach_trust+1) WHERE id=$1`,[pc.id]);
+        text="Sessão de psicologia esportiva: moral +8 e confiança +1.";
       }else if(type==="charity"){
         await client.query(`UPDATE player_careers SET reputation=LEAST(100,reputation+3),fame=LEAST(100,fame+2),followers=followers+1800 WHERE id=$1`,[pc.id]);
         text="Evento beneficente: reputação +3, fama +2 e +1.800 seguidores.";
@@ -9597,15 +9550,7 @@ app.post("/api/player-career/interaction",auth,async(req,res,next)=>{
         text="Postagem nas redes: +2.500 seguidores e fama +3, com pequeno risco de desgaste interno.";
       }
 
-      if(type==="coach_talk")playerAdjustRelationship(data,"teammates",1);
-      else if(type==="agent_push")playerAdjustRelationship(data,"media",1);
-      else if(type==="media"){playerAdjustRelationship(data,"media",5);playerAdjustRelationship(data,"fans",2)}
-      else if(type==="teammates")playerAdjustRelationship(data,"teammates",7);
-      else if(type==="charity"){playerAdjustRelationship(data,"fans",6);playerAdjustRelationship(data,"media",4)}
-      else if(type==="family")playerAdjustRelationship(data,"teammates",1);
-      else if(type==="social"){playerAdjustRelationship(data,"fans",5);playerAdjustRelationship(data,"media",2);playerAdjustRelationship(data,"teammates",-1)}
-      await client.query(`UPDATE player_careers SET data=$2::jsonb WHERE id=$1`,[pc.id,JSON.stringify(data)]);
-
+      await client.query(`UPDATE player_careers SET data=$2::jsonb,updated_at=NOW() WHERE id=$1`,[pc.id,JSON.stringify(data)]);
       await client.query(`
         INSERT INTO player_career_interactions(career_id,season_no,round_no,interaction_type,result_text)
         VALUES($1,$2,$3,$4,$5)
@@ -9618,44 +9563,54 @@ app.post("/api/player-career/interaction",auth,async(req,res,next)=>{
 
 
 
-app.post("/api/player-career/season-ambition",auth,async(req,res,next)=>{
+app.post("/api/player-career/interview/respond",auth,async(req,res,next)=>{
   try{
-    const key=String(req.body.key||"").toUpperCase();
-    if(!PLAYER_AMBITIONS[key])return res.status(400).json({error:"Objetivo pessoal inválido."});
-    const result=await tx(async client=>{
-      const pc=(await client.query(`SELECT * FROM player_careers WHERE user_id=$1 AND is_active_career=TRUE FOR UPDATE`,[req.user.id])).rows[0];
-      if(!pc)throw Object.assign(new Error("Carreira não encontrada."),{status:404});
-      if(pc.status!=="ACTIVE")throw Object.assign(new Error("Escolha o objetivo durante a temporada ativa."),{status:400});
-      const data=ensurePlayerV44Data(pc,typeof pc.data==="string"?JSON.parse(pc.data):pc.data);
-      if(data.seasonAmbition&&Number(data.seasonAmbition.season)===Number(pc.season_no)){
-        throw Object.assign(new Error("Você já definiu seu objetivo pessoal nesta temporada."),{status:409});
-      }
-      data.seasonAmbition={key,season:Number(pc.season_no),chosenRound:Number(pc.current_round||1),rewarded:false};
-      playerV44Timeline(data,"ambition",`Objetivo pessoal escolhido: ${PLAYER_AMBITIONS[key].label}.`,pc.season_no,pc.current_round);
-      await client.query(`UPDATE player_careers SET data=$2::jsonb,updated_at=NOW() WHERE id=$1`,[pc.id,JSON.stringify(data)]);
-      return {ok:true,key,label:PLAYER_AMBITIONS[key].label,description:PLAYER_AMBITIONS[key].description};
-    });
-    res.json(result);
-  }catch(e){next(e)}
-});
+    const choice=String(req.body.choice||"").toLowerCase();
+    if(!["team","ambitious","charismatic"].includes(choice))return res.status(400).json({error:"Resposta de entrevista inválida."});
 
-app.post("/api/player-career/match-moment",auth,async(req,res,next)=>{
-  try{
-    const key=String(req.body.key||"").toUpperCase();
     const result=await tx(async client=>{
       const pc=(await client.query(`SELECT * FROM player_careers WHERE user_id=$1 AND is_active_career=TRUE FOR UPDATE`,[req.user.id])).rows[0];
-      if(!pc)throw Object.assign(new Error("Carreira não encontrada."),{status:404});
-      if(pc.status!=="ACTIVE")throw Object.assign(new Error("A temporada não está ativa."),{status:400});
-      const options=playerMatchMomentOptions(pc.position);
-      if(!options[key])throw Object.assign(new Error("Decisão de partida inválida para sua posição."),{status:400});
+      if(!pc)throw Object.assign(new Error("Carreira de jogador não encontrada."),{status:404});
       const data=ensurePlayerV44Data(pc,typeof pc.data==="string"?JSON.parse(pc.data):pc.data);
-      const round=Number(pc.current_round||1);
-      if(data.matchMoment&&Number(data.matchMoment.round)===round){
-        throw Object.assign(new Error("Você já escolheu sua decisão para esta rodada."),{status:409});
+      const interview=data.pendingInterview;
+      if(!interview)throw Object.assign(new Error("Não há entrevista pendente."),{status:409});
+
+      let text="",morale=0,trust=0,rep=0,fame=0,followers=0,leadership=0;
+      if(choice==="team"){
+        morale=3;trust=5;leadership=2;followers=500;
+        text="Você dividiu o mérito com o elenco. O treinador e os companheiros gostaram da postura.";
+        data.teammateBond=clamp(Number(data.teammateBond??55)+3,0,100);
+      }else if(choice==="ambitious"){
+        rep=4;fame=3;followers=2500;trust=-1;
+        text="Você assumiu grandes ambições publicamente. Sua marca cresceu, mas a cobrança interna aumentou.";
+      }else{
+        morale=2;fame=4;followers=4000;rep=2;
+        text="Você respondeu com carisma e virou assunto nas redes. Sua popularidade aumentou bastante.";
       }
-      data.matchMoment={key,round,season:Number(pc.season_no)};
-      await client.query(`UPDATE player_careers SET data=$2::jsonb,updated_at=NOW() WHERE id=$1`,[pc.id,JSON.stringify(data)]);
-      return {ok:true,key,round,label:options[key].label,description:options[key].description};
+
+      if(pc.personality==="CHARISMATIC"&&choice==="charismatic")followers+=1000;
+      if(pc.personality==="PROFESSIONAL"&&choice==="team")trust+=1;
+      if(pc.personality==="AMBITIOUS"&&choice==="ambitious")rep+=1;
+
+      const record={...interview,choice,text,answeredAt:new Date().toISOString()};
+      data.interviewHistory.unshift(record);
+      data.interviewHistory=data.interviewHistory.slice(0,30);
+      data.pendingInterview=null;
+      playerV44Timeline(data,"interview",text,pc.season_no,interview.round);
+
+      await client.query(`
+        UPDATE player_careers SET
+          morale=GREATEST(35,LEAST(100,morale+$2)),
+          coach_trust=GREATEST(0,LEAST(100,coach_trust+$3)),
+          reputation=GREATEST(0,LEAST(100,reputation+$4)),
+          fame=GREATEST(0,LEAST(100,fame+$5)),
+          followers=followers+$6,
+          leadership=GREATEST(0,LEAST(100,leadership+$7)),
+          data=$8::jsonb,updated_at=NOW()
+        WHERE id=$1
+      `,[pc.id,morale,trust,rep,fame,followers,leadership,JSON.stringify(data)]);
+
+      return {ok:true,choice,text,morale,trust,rep,fame,followers,leadership};
     });
     res.json(result);
   }catch(e){next(e)}
@@ -11549,13 +11504,7 @@ app.post("/api/players/:id/release",auth,async(req,res,next)=>{
       if(count<=12)throw Object.assign(new Error("Mantenha pelo menos 12 jogadores."),{status:400});
 
       const severance=Math.max(100,Number(p.salary||0)*2);
-      await x.query(`
-        UPDATE clubs SET coins=CASE
-          WHEN LOWER(BTRIM(name))='felipe' THEN $3
-          ELSE coins-$2
-        END
-        WHERE id=$1
-      `,[c.id,severance,FELIPE_INFINITE_COINS]);
+      await x.query(`UPDATE clubs SET coins=coins-$2 WHERE id=$1`,[c.id,severance]);
       await x.query(`INSERT INTO club_finance_events(club_id,amount,category,description) VALUES($1,$2,'severance',$3)`,[c.id,-severance,`Rescisão de ${p.name}`]);
 
       // A instância é arquivada fora do save e nunca aparece no mercado de outra carreira.
@@ -11685,9 +11634,7 @@ app.get("/api/transfers/search",auth,async(req,res,next)=>{
     const realOnly=String(req.query.realOnly||"")==="1";
     const userDiv=career?.user_division||"D";
     const profile=marketProfile(userDiv);
-    const window=isFelipeName(c.name)
-      ?{open:true,next:null,date:career?.data?.calendar?.date,felipeMode:true}
-      :transferWindowInfo(career?.data?.calendar?.date);
+    const window=transferWindowInfo(career?.data?.calendar?.date);
     const staff=await staffLevels(pool,c.id);
     const scoutLevel=Number(staff.levels.SCOUT||1);
     const reportRows=(await q(`SELECT target_player_id FROM scout_reports WHERE club_id=$1`,[c.id])).rows;
@@ -11769,7 +11716,7 @@ app.post("/api/transfers/offer",auth,async(req,res,next)=>{
     const career=await getCareer(c.id);
     const userDiv=career?.user_division||"D";
     const window=transferWindowInfo(career?.data?.calendar?.date);
-    if(!window.open&&!isFelipeName(c.name)){
+    if(!window.open){
       return res.status(403).json({error:`Janela de transferências fechada. Próxima abertura: ${window.next||"próxima temporada"}.`});
     }
 
@@ -11828,17 +11775,11 @@ app.post("/api/transfers/offer",auth,async(req,res,next)=>{
         throw Object.assign(new Error(`Caixa insuficiente para a entrada e as luvas. Custo imediato: ${immediateCost.toLocaleString("pt-BR")} moedas.`),{status:400});
       }
 
-      await client.query(`
-        UPDATE clubs SET coins=CASE
-          WHEN LOWER(BTRIM(name))='felipe' THEN $3
-          ELSE coins-$2
-        END
-        WHERE id=$1
-      `,[c.id,immediateCost,FELIPE_INFINITE_COINS]);
+      await client.query(`UPDATE clubs SET coins=coins-$2 WHERE id=$1`,[c.id,immediateCost]);
       await client.query(`INSERT INTO club_finance_events(club_id,amount,category,description) VALUES($1,$2,'transfer',$3)`,
         [c.id,-immediateCost,`Contratação de ${p.name}: ${realInstallments>1?`entrada 1/${realInstallments}`:"transferência"} + luvas`]);
 
-      if(p.club_id&&firstFee>0)await client.query(`UPDATE clubs SET coins=LEAST($3,coins+$2) WHERE id=$1`,[p.club_id,firstFee,FELIPE_INFINITE_COINS]);
+      if(p.club_id&&firstFee>0)await client.query(`UPDATE clubs SET coins=coins+$2 WHERE id=$1`,[p.club_id,firstFee]);
 
       const signed=await clonePlayerForCareer(client,p,c.id,{
         salary:Math.round(salaryOffer),
@@ -11894,7 +11835,7 @@ app.post("/api/transfers/loan",auth,async(req,res,next)=>{
     const career=await getCareer(c.id);
     const userDiv=career?.user_division||"D";
     const window=transferWindowInfo(career?.data?.calendar?.date);
-    if(!window.open&&!isFelipeName(c.name))return res.status(403).json({error:`Janela de transferências fechada. Próxima abertura: ${window.next||"próxima temporada"}.`});
+    if(!window.open)return res.status(403).json({error:`Janela de transferências fechada. Próxima abertura: ${window.next||"próxima temporada"}.`});
 
     const result=await tx(async client=>{
       const balance=Number((await client.query(`SELECT coins FROM clubs WHERE id=$1 FOR UPDATE`,[c.id])).rows[0]?.coins||0);
@@ -12012,7 +11953,7 @@ app.post("/api/transfers/loans/:loanId/buy",auth,async(req,res,next)=>{
     if(transferBanInfo(c.coins).active)return res.status(403).json({error:"Transfer ban ativo. A opção de compra não pode ser exercida enquanto o clube estiver bloqueado."});
     const loanCareer=await getCareer(c.id);
     const loanWindow=transferWindowInfo(loanCareer?.data?.calendar?.date);
-    if(!loanWindow.open&&!isFelipeName(c.name))return res.status(403).json({error:`Janela de transferências fechada. A opção poderá ser exercida a partir de ${loanWindow.next||"próxima temporada"}.`});
+    if(!loanWindow.open)return res.status(403).json({error:`Janela de transferências fechada. A opção poderá ser exercida a partir de ${loanWindow.next||"próxima temporada"}.`});
 
     const loanId=String(req.params.loanId||"");
     const result=await tx(async client=>{
@@ -12042,7 +11983,7 @@ app.post("/api/transfers/loans/:loanId/buy",auth,async(req,res,next)=>{
         client,c.id,-price,"loan_purchase",
         `Opção de compra exercida — ${loan.player_name}`
       );
-      await client.query(`UPDATE clubs SET coins=LEAST($3,coins+$2) WHERE id=$1`,[loan.parent_club_id,price,FELIPE_INFINITE_COINS]);
+      await client.query(`UPDATE clubs SET coins=coins+$2 WHERE id=$1`,[loan.parent_club_id,price]);
 
       const newContract=Math.max(3,Number(loan.contract_seasons||1));
       await client.query(`

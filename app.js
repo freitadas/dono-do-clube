@@ -33,13 +33,6 @@ async function api(url,options={}){
   return data;
 }
 function esc(v){return String(v??"").replace(/[&<>"']/g,c=>({"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;","'":"&#039;"}[c]))}
-function isFelipeManager(){
-  return String(state.club?.name||"").trim().toLowerCase()==="felipe";
-}
-function managerMoneyLabel(value){
-  return isFelipeManager()?"∞":Number(value||0).toLocaleString("pt-BR");
-}
-
 function initials(n){return String(n||"FC").split(/\s+/).slice(0,2).map(x=>x[0]).join("").toUpperCase()}
 function crestHtml(c,size=""){
   const cls=`crest ${size}`.trim();
@@ -289,7 +282,7 @@ function renderCreateClub(){
       const felipe=n.trim().toLowerCase()==="felipe";
       const country=app.querySelector("#clubCountry").value||"BR";
       const div=leagueLabel("D",country);
-      app.querySelector("#preview").innerHTML=`<div><div class="preview-crest">${esc(initials(n))}</div><h2>${esc(n)}</h2><p>${felipe?"⚡ Modo Felipe Supremo: tudo no máximo + dinheiro ∞":`Começa em ${esc(div)}`}</p></div>`;
+      app.querySelector("#preview").innerHTML=`<div><div class="preview-crest">${esc(initials(n))}</div><h2>${esc(n)}</h2><p>${felipe?"⚡ Modo Felipe será ativado":`Começa em ${esc(div)}`}</p></div>`;
     };
     const syncCountry=()=>{
       const country=app.querySelector("#clubCountry").value||"BR";
@@ -1470,7 +1463,7 @@ function homeView(){
     </div>
     <div class="stats">
       <div class="stat"><small>Overall</small><b>${c.team_rating}</b></div>
-      <div class="stat"><small>Caixa</small><b>${managerMoneyLabel(c.coins)}</b></div>
+      <div class="stat"><small>Caixa</small><b>${Number(c.coins).toLocaleString("pt-BR")}</b></div>
       <div class="stat"><small>Folha mensal</small><b>${Number(state.finance?.wages||0).toLocaleString("pt-BR")}</b></div>
       <div class="stat"><small>Elenco</small><b>${tired} cansados · ${injured} lesionados</b></div>
     </div>
@@ -1497,7 +1490,7 @@ function homeView(){
         <span class="right">${esc(m.opponent_name)}<br><small class="muted">${esc(m.match_type)}</small></span>
       </div>`).join(""):`<div class="empty">Nenhum jogo ainda.</div>`}
     </div>
-    <div class="card"><div class="section-title"><h2>Finanças</h2><span class="badge">${managerMoneyLabel(c.coins)}</span></div>
+    <div class="card"><div class="section-title"><h2>Finanças</h2><span class="badge">${Number(c.coins).toLocaleString("pt-BR")}</span></div>
       ${(state.finance?.recent||[]).length?(state.finance.recent||[]).slice(0,6).map(x=>`<div class="finance-row"><span>${esc(x.description)}</span><b class="${Number(x.amount)>=0?"income":"expense"}">${Number(x.amount)>=0?"+":""}${Number(x.amount).toLocaleString("pt-BR")}</b></div>`).join(""):`<p class="muted">As receitas e despesas aparecerão após os jogos.</p>`}
     </div>
   </section>
@@ -1639,12 +1632,12 @@ function marketView(){
   return `<section class="card">
     <div class="section-title">
       <div><div class="kicker">Scout, compras e vendas</div><h2>Mercado de transferências</h2></div>
-      <div class="finance-chips"><span class="coins">Caixa ● ${managerMoneyLabel(state.club.coins)}</span><span class="badge red">Folha mensal ${Number(state.finance?.wages||0).toLocaleString("pt-BR")}</span></div>
+      <div class="finance-chips"><span class="coins">Caixa ● ${Number(state.club.coins).toLocaleString("pt-BR")}</span><span class="badge red">Folha mensal ${Number(state.finance?.wages||0).toLocaleString("pt-BR")}</span></div>
     </div>
     ${transferBanBanner()}
     <div class="transfer-window-banner ${window.open?"open":"closed"}">
-      <b>${isFelipeManager()?"⚡ MERCADO SEMPRE ABERTO — MODO FELIPE":window.open?"🟢 JANELA DE TRANSFERÊNCIAS ABERTA":"🔒 JANELA DE TRANSFERÊNCIAS FECHADA"}</b>
-      <span>${isFelipeManager()?"Você pode contratar e exercer opções de compra em qualquer data.":window.open?"Compras e empréstimos podem ser registrados agora.":`Você pode pesquisar e observar jogadores, mas só poderá contratar quando a janela reabrir${window.next?` em ${esc(window.next)}`:""}.`}</span>
+      <b>${window.open?"🟢 JANELA DE TRANSFERÊNCIAS ABERTA":"🔒 JANELA DE TRANSFERÊNCIAS FECHADA"}</b>
+      <span>${window.open?"Compras e empréstimos podem ser registrados agora.":`Você pode pesquisar e observar jogadores, mas só poderá contratar quando a janela reabrir${window.next?` em ${esc(window.next)}`:""}.`}</span>
     </div>
     ${activeLoansMarketCard()}
     ${state.teamPerformance?`<div class="performance-market ${state.teamPerformance.hot?"hot":""} ${state.teamPerformance.elite?"elite":""}">
@@ -2397,40 +2390,55 @@ function playerCareerRealisticPanel(){
 function playerV44PersonalityLabel(v){return ({PROFESSIONAL:"Profissional",AMBITIOUS:"Ambicioso",LOYAL:"Leal",CHARISMATIC:"Carismático",REBEL:"Rebelde"})[v]||v}
 function playerV44GoalLabel(v){return ({LEGEND:"Virar uma lenda",EUROPE:"Chegar à elite europeia",NATIONAL_TEAM:"Brilhar pela seleção",ONE_CLUB:"Ídolo de um clube",MONEY:"Construir fortuna"})[v]||v}
 function playerV44PlanLabel(v){return ({BALANCED:"Equilibrado",ATTACKING:"Atacar mais",CREATIVE:"Criar jogadas",DISCIPLINED:"Jogar seguro",SHOWCASE:"Buscar destaque"})[v]||v}
-
-function playerAmbitionLabel(v){return ({STAR:"Virar protagonista",TEAM:"Ganhar espaço no time",FITNESS:"Temporada física forte",MARKET:"Valorizar no mercado"})[v]||v}
-function playerMatchMomentCards(pc,d){
-  const isGK=pc.position==="GK";
-  const options=isGK?
-    [["WALL","🧤 Fechar o gol","Mais defesas e segurança"],["COMMAND","📣 Comandar a área","Mais liderança e confiança"],["SWEEPER","⚡ Goleiro-líbero","Mais participação com os pés"]]:
-    [["HERO","⭐ Jogada decisiva","Mais chance de gol e destaque"],["TEAM","🤝 Jogar para o time","Mais assistência e confiança"],["SMART","🧠 Jogar com inteligência","Menos desgaste e risco"]];
-  const current=d.matchMoment&&Number(d.matchMoment.round)===Number(pc.current_round)?d.matchMoment.key:null;
-  return `<section class="card player-match-moment-card">
-    <div class="section-title"><div><div class="kicker">DECISÃO DE JOGO</div><h2>Qual será sua postura na próxima partida?</h2></div><span class="badge">R${pc.current_round}</span></div>
-    ${current?`<div class="msg ok">Decisão escolhida: <b>${esc(options.find(x=>x[0]===current)?.[1]||current)}</b>. Ela será usada quando você entrar em campo.</div>`:
-    `<div class="player-moment-grid">${options.map(o=>`<button class="secondary player-match-moment" data-key="${o[0]}"><b>${o[1]}</b><small>${o[2]}</small></button>`).join("")}</div>`}
-    ${d.lastMatchMomentResult?`<small class="muted">Última decisão: ${esc(d.lastMatchMomentResult.text||"")}</small>`:""}
-  </section>`;
-}
-function playerAmbitionCard(pc,d){
-  const amb=d.seasonAmbition;
-  if(amb){
-    const pct=Math.min(100,Math.round(Number(amb.value||0)/Math.max(.01,Number(amb.target||1))*100));
-    return `<section class="card player-ambition-card"><div class="section-title"><div><div class="kicker">OBJETIVO PESSOAL</div><h2>${esc(amb.label||playerAmbitionLabel(amb.key))}</h2></div><span class="badge ${amb.completed?"blue":""}">${amb.completed?"CONCLUÍDO":"ATIVO"}</span></div><p class="muted">${esc(amb.description||"")}</p><div class="objective-row ${amb.completed?"done":""}"><div><b>${Number(amb.value||0).toFixed(amb.unit==="nota"?2:0)} / ${amb.target}</b><small>${esc(amb.unit||"")} · recompensa final: +2 pontos de evolução</small></div><div class="meter"><i style="width:${pct}%"></i></div></div></section>`;
-  }
-  return `<section class="card player-ambition-card"><div class="kicker">OBJETIVO PESSOAL DA TEMPORADA</div><h2>Escolha sua prioridade</h2><p class="muted">A escolha dura a temporada inteira e altera pequenos bônus em campo.</p><div class="player-ambition-grid"><button class="secondary player-ambition" data-key="STAR">⭐ <b>Virar protagonista</b><small>Notas e destaque</small></button><button class="secondary player-ambition" data-key="TEAM">🤝 <b>Ganhar espaço</b><small>Confiança do treinador</small></button><button class="secondary player-ambition" data-key="FITNESS">💪 <b>Temporada física</b><small>Menos desgaste e lesões</small></button><button class="secondary player-ambition" data-key="MARKET">🌍 <b>Valorizar no mercado</b><small>Reputação e seguidores</small></button></div></section>`;
-}
-function relationshipBar(label,value,icon){
-  const v=Math.max(0,Math.min(100,Number(value||0)));
-  return `<div class="player-relation-row"><span>${icon} ${label}</span><b>${v}%</b><div class="meter"><i style="width:${v}%"></i></div></div>`;
-}
-
 function playerObjectivesCard(){
   const obs=state.playerData?.objectives||[];
   return `<section class="card player-v44-objectives"><div class="section-title"><div><div class="kicker">OBJETIVOS DA TEMPORADA</div><h2>Metas individuais</h2></div><span class="badge">${obs.filter(x=>x.completed).length}/${obs.length}</span></div>
     <div class="objective-list">${obs.map(o=>{const pct=Math.min(100,Math.round(Number(o.value||0)/Number(o.target||1)*100));return `<div class="objective-row ${o.completed?"done":""}"><div><b>${o.completed?"✓ ":""}${esc(o.label)}</b><small>${Number(o.value||0).toFixed(o.key==="avgRating"?2:0)} / ${o.target} · recompensa ${o.reward} pts</small></div><div class="meter"><i style="width:${pct}%"></i></div></div>`}).join("")}</div>
   </section>`;
 }
+
+function playerMissionIcon(key){
+  return ({GOAL:"⚽",ASSIST:"🎯",GOAL_OR_ASSIST:"✨",RATING:"⭐",CLEAN_SHEET:"🧱",SAVES:"🧤",WIN:"🏆"})[key]||"🎯";
+}
+function playerProgressBar(value,max){
+  const pct=Math.max(0,Math.min(100,Math.round(Number(value||0)/Math.max(1,Number(max||1))*100)));
+  return `<div class="player-progress-track"><span style="width:${pct}%"></span></div>`;
+}
+function playerInnovationCards(){
+  const d=state.playerData||{},p=d.progression||{},m=d.matchMission,locker=d.lockerRoom||{};
+  return `<section class="player-innovation-grid">
+    <div class="card player-level-card">
+      <div class="kicker">NÍVEL DO JOGADOR</div>
+      <div class="player-level-line"><b>Nível ${p.level||1}</b><span>${p.xp||0}/${p.needed||120} XP</span></div>
+      ${playerProgressBar(p.xp,p.needed)}
+      <small class="muted">Cada nível concede 1 ponto de evolução. Atuações, vitórias e missões dão XP.</small>
+    </div>
+    <div class="card player-mission-card">
+      <div class="kicker">MISSÃO DA PRÓXIMA RODADA</div>
+      ${m?`<h3>${playerMissionIcon(m.key)} ${esc(m.label)}</h3><p>Recompensa: <b>+${m.rewardXp} XP</b>, reputação e seguidores.</p>`:`<h3>Temporada encerrada</h3><p class="muted">Novas missões chegam na próxima temporada.</p>`}
+    </div>
+    <div class="card player-locker-card">
+      <div class="kicker">VESTIÁRIO</div>
+      <h3>Entrosamento ${locker.teammateBond??55}/100</h3>
+      ${playerProgressBar(locker.teammateBond??55,100)}
+      <p class="muted">Bom relacionamento com o elenco melhora seu rendimento. ${locker.preparation?`Preparação ativa: <b>${esc(locker.preparation.label||"especial")}</b>.`:"Nenhuma preparação especial ativa."}</p>
+    </div>
+  </section>`;
+}
+function playerInterviewCard(){
+  const it=state.playerData?.pendingInterview;
+  if(!it)return "";
+  return `<section class="card player-interview-card">
+    <div class="section-title"><div><div class="kicker">🎙️ ENTREVISTA PÓS-JOGO</div><h2>A imprensa quer falar com você</h2></div><span class="badge red">PENDENTE</span></div>
+    <p>Motivo: <b>${esc(it.reason||"destaque da rodada")}</b>${it.opponent?` contra ${esc(it.opponent)}`:""}. Nota ${Number(it.performance||0).toFixed(1)}.</p>
+    <div class="player-interview-actions">
+      <button class="secondary player-interview-answer" data-choice="team">🤝 Dividir mérito com o time<small>Confiança, liderança e vestiário</small></button>
+      <button class="secondary player-interview-answer" data-choice="ambitious">🔥 Mostrar ambição<small>Reputação e fama, com mais cobrança</small></button>
+      <button class="secondary player-interview-answer" data-choice="charismatic">😎 Responder com carisma<small>Muitos seguidores e fama</small></button>
+    </div>
+  </section>`;
+}
+
 function playerJourneyView(){
   const d=state.playerData,pc=d.career,c=d.competition||{},hist=d.careerHistory||[],awards=d.awards||[],timeline=d.timeline||[];
   return `<section class="player-v44-page">
@@ -2474,9 +2482,13 @@ function playerJourneyView(){
         <small>${esc(m.competition)}${m.performance?` · nota ${Number(m.performance).toFixed(1)}`:""}</small>
       </div>`).join("")}</div>
     </section>`:""}
-    <section class="card"><div class="section-title"><div><div class="kicker">RECORDES</div><h2>Marcas da carreira</h2></div><span class="badge">${(d.milestones||[]).length} marcos</span></div><div class="player-record-grid"><div><small>Craque do jogo</small><b>${d.records?.motm||0}</b></div><div><small>Hat-tricks</small><b>${d.records?.hatTricks||0}</b></div><div><small>2+ gols em um jogo</small><b>${d.records?.braces||0}</b></div><div><small>Melhor sequência de vitórias</small><b>${d.records?.bestWinStreak||0}</b></div>${pc.position==="GK"?`<div><small>Melhor sequência sem sofrer gol</small><b>${d.records?.bestCleanSheetStreak||0}</b></div>`:""}</div>${(d.milestones||[]).length?`<div class="player-milestone-list">${d.milestones.slice(0,12).map(m=>`<div>🏅 <b>${esc(m.label)}</b><small>T${m.season} · R${m.round}</small></div>`).join("")}</div>`:`<p class="muted">Marcos como 25 jogos, 10 gols e 10 partidas pela seleção aparecerão aqui.</p>`}</section>
+    <section class="card player-milestones-card">
+      <div class="section-title"><div><div class="kicker">MARCOS DA CARREIRA</div><h2>Conquistas permanentes</h2></div><span class="badge">${(d.milestones||[]).filter(x=>x.unlocked).length}/${(d.milestones||[]).length}</span></div>
+      <div class="player-milestones-grid">${(d.milestones||[]).map(x=>`<div class="player-milestone ${x.unlocked?"unlocked":""}"><span>${x.unlocked?"🏅":"🔒"}</span><b>${esc(x.label)}</b><small>${x.unlocked?"Conquistado":`${Math.min(x.progress,x.target)}/${x.target}`}</small></div>`).join("")}</div>
+    </section>
     <section class="card"><div class="section-title"><div><div class="kicker">PRÊMIOS</div><h2>Conquistas individuais</h2></div><span class="badge blue">${awards.length}</span></div>${awards.length?`<div class="v44-awards">${awards.map(a=>`<div>🏆 <b>${esc(a.award)}</b><span>Temporada ${a.season}</span></div>`).join("")}</div>`:`<div class="empty">Seus prêmios aparecerão aqui conforme a carreira evoluir.</div>`}</section>
     <section class="card"><div class="kicker">HISTÓRICO DA CARREIRA</div><h2>Temporadas</h2>${hist.length?`<div class="v44-history">${hist.map(h=>`<div><b>Temporada ${h.season}</b><span>${h.appearances} J · ${h.goals} G · ${h.assists} A · nota ${Number(h.avgRating||0).toFixed(2)}</span><small>${(h.awards||[]).map(esc).join(" · ")||`${h.objectives}/${h.totalObjectives} objetivos`}</small></div>`).join("")}</div>`:`<div class="empty">A primeira temporada ainda está em andamento.</div>`}</section>
+    ${(d.interviewHistory||[]).length?`<section class="card"><div class="section-title"><div><div class="kicker">MÍDIA</div><h2>Entrevistas marcantes</h2></div><span class="badge">${d.interviewHistory.length}</span></div><div class="v44-history">${d.interviewHistory.slice(0,8).map(x=>`<div><b>${esc(x.reason||"Entrevista")}</b><span>${esc(x.text||"")}</span><small>Temporada ${x.season} · rodada ${x.round}</small></div>`).join("")}</div></section>`:""}
     <section class="card"><div class="kicker">LINHA DO TEMPO</div><h2>Momentos importantes</h2><div class="v44-timeline">${timeline.slice(0,20).map(x=>`<div><span>${esc(String(x.type||"evento").toUpperCase())}</span><b>${esc(x.text)}</b><small>T${x.season||pc.season_no} · R${x.round||"—"}</small></div>`).join("")||`<div class="empty">Sem eventos importantes ainda.</div>`}</div></section>
     ${!pc.retired&&(Number(pc.age)>=34||Number(pc.season_no)>=15)?`<section class="card danger-zone"><div><div class="kicker danger-kicker">FIM DE CARREIRA</div><h3>Aposentadoria</h3><p class="muted">Encerre a carreira e preserve todo o histórico, prêmios e legado.</p></div><button id="playerRetire" class="danger">Aposentar jogador</button></section>`:""}
   </section>`;
@@ -2500,7 +2512,6 @@ function playerLifeView(){
     <div class="player-v44-grid two"><div class="card"><div class="kicker">MARCA PESSOAL</div><h2>${Number(pc.followers||0).toLocaleString("pt-BR")} seguidores</h2><div class="real-grid"><div><small>Fama</small><b>${pc.fame}/100</b></div><div><small>Reputação</small><b>${pc.reputation}/100</b></div><div><small>Personalidade</small><b>${esc(playerV44PersonalityLabel(pc.personality))}</b></div><div><small>Objetivo</small><b>${esc(playerV44GoalLabel(pc.career_goal))}</b></div></div></div>
       <div class="card"><div class="kicker">PATROCÍNIO PESSOAL</div>${sp?`<h2>${esc(sp.name)}</h2><p>${esc(sp.label)} · +${Number(sp.pay).toLocaleString("pt-BR")} a cada ciclo salarial.</p><small>Total recebido: ${Number(sp.totalEarned||0).toLocaleString("pt-BR")}</small>`:`<h2>Sem contrato</h2><p class="muted">Sua fama libera propostas pessoais.</p>`}</div></div>
     ${!sp?`<section class="card"><div class="kicker">PROPOSTAS PESSOAIS</div><div class="player-offer-grid">${(d.personalSponsorOffers||[]).map(o=>`<article class="player-offer"><b>${esc(o.name)}</b><span>${esc(o.label)}</span><strong>+${Number(o.pay).toLocaleString("pt-BR")} por ciclo</strong><button class="primary sign-personal-sponsor" data-key="${o.id}">Assinar</button></article>`).join("")||`<div class="empty">Aumente fama e reputação para atrair marcas.</div>`}</div></section>`:""}
-    <section class="card player-relationships"><div class="section-title"><div><div class="kicker">RELACIONAMENTOS</div><h2>Seu ambiente na carreira</h2></div><span class="badge">DINÂMICO</span></div><div class="player-relations-grid">${relationshipBar("Treinador",pc.coach_trust,"👔")}${relationshipBar("Empresário",d.agent?.relation,"🤝")}${relationshipBar("Companheiros",d.relationships?.teammates,"👥")}${relationshipBar("Torcida",d.relationships?.fans,"📣")}${relationshipBar("Imprensa",d.relationships?.media,"🎙️")}</div></section>
     <section class="card"><div class="kicker">ESTRUTURA PESSOAL</div><h2>Invista na carreira</h2><div class="v44-lifestyle-grid">${Object.entries(lifestyle).map(([k,v])=>`<div class="training-card ${l[k]?"owned":""}"><b>${esc(v[0])}</b><small>${esc(v[2])}</small>${l[k]?`<span class="badge">ATIVO</span>`:`<button class="secondary buy-lifestyle" data-key="${k}">Comprar · ${Number(v[1]).toLocaleString("pt-BR")}</button>`}</div>`).join("")}</div></section>
     <section class="card"><div class="section-title"><div><div class="kicker">BASTIDORES</div><h2>Decisão da rodada</h2></div><span class="badge">${d.interaction?.used?"Já usada":"Disponível"}</span></div><div class="v44-action-grid"><button class="secondary player-interaction" data-type="coach_talk" ${d.interaction?.used?"disabled":""}>👔 Treinador</button><button class="secondary player-interaction" data-type="teammates" ${d.interaction?.used?"disabled":""}>🤝 Elenco</button><button class="secondary player-interaction" data-type="recovery" ${d.interaction?.used?"disabled":""}>🧊 Recuperação</button><button class="secondary player-interaction" data-type="media" ${d.interaction?.used?"disabled":""}>🎙️ Entrevista</button><button class="secondary player-interaction" data-type="charity" ${d.interaction?.used?"disabled":""}>❤️ Evento social</button><button class="secondary player-interaction" data-type="family" ${d.interaction?.used?"disabled":""}>🏠 Família</button><button class="secondary player-interaction" data-type="social" ${d.interaction?.used?"disabled":""}>📱 Redes sociais</button></div></section>
   </section>`;
@@ -2533,6 +2544,8 @@ function playerCareerHome(){
     </div>
   </section>
 
+  ${playerInnovationCards()}
+  ${playerInterviewCard()}
 
   <section class="card v44-match-plan">
     <div class="section-title"><div><div class="kicker">PLANO DE PARTIDA</div><h2>Como você quer jogar?</h2></div>${pc.injury_games>0?`<span class="badge red">🩹 ${pc.injury_games} rodada(s) fora</span>`:""}</div>
@@ -2540,8 +2553,6 @@ function playerCareerHome(){
     <div class="v44-plan-row"><select id="playerMatchPlan"><option value="BALANCED" ${d.matchPlan==="BALANCED"?"selected":""}>Equilibrado</option><option value="ATTACKING" ${d.matchPlan==="ATTACKING"?"selected":""}>Atacar mais</option><option value="CREATIVE" ${d.matchPlan==="CREATIVE"?"selected":""}>Criar jogadas</option><option value="DISCIPLINED" ${d.matchPlan==="DISCIPLINED"?"selected":""}>Jogar seguro</option><option value="SHOWCASE" ${d.matchPlan==="SHOWCASE"?"selected":""}>Buscar destaque</option></select><button id="savePlayerMatchPlan" class="secondary">Salvar plano</button></div>
     <small class="muted">Planos ofensivos aumentam chance de destaque, mas elevam desgaste e risco de lesão.</small>
   </section>
-  ${!statusEnd?playerMatchMomentCards(pc,d):""}
-  ${playerAmbitionCard(pc,d)}
   ${playerObjectivesCard()}
   <section class="player-career-stats">
     <div class="stat"><small>Idade</small><b>${pc.age}</b></div>
@@ -2565,8 +2576,6 @@ function playerCareerHome(){
     <div class="stat"><small>Valor de mercado</small><b>${Number(pc.market_value||0).toLocaleString("pt-BR")}</b></div>
     <div class="stat"><small>Seguidores</small><b>${Number(pc.followers||0).toLocaleString("pt-BR")}</b></div>
     <div class="stat"><small>Legado</small><b>${pc.legacy_score||0}</b></div>
-    <div class="stat"><small>Craque do jogo</small><b>${d.records?.motm||0}</b></div>
-    <div class="stat"><small>Melhor sequência</small><b>${d.records?.bestWinStreak||0} vitórias</b></div>
   </section>
 
   ${last?`<section class="card">
@@ -2578,6 +2587,7 @@ function playerCareerHome(){
       ${last.played===false?`<span><b>Você ficou no banco</b></span>`:`<span>Nota <b>${last.performance}</b></span>`}
       ${isGK&&last.played!==false?`<span>Defesas <b>${last.saves||0}</b></span><span>Sem sofrer gol <b>${last.cleanSheet?"Sim":"Não"}</b></span>`:`<span>Gols <b>${last.goals||0}</b></span><span>Assistências <b>${last.assists||0}</b></span>`}
     </div>
+    ${d.missionHistory?.[0]&&Number(d.missionHistory[0].round)===Number(last.round)?`<div class="player-last-mission ${d.missionHistory[0].completed?"success":"fail"}">${d.missionHistory[0].completed?"✅":"❌"} Missão: ${esc(d.missionHistory[0].label)}</div>`:""}
   </section>`:""}
 
   ${!statusEnd?`<section class="card player-interactions">
@@ -2591,6 +2601,11 @@ function playerCareerHome(){
       <button class="secondary player-interaction" data-type="agent_push" ${interaction.used?"disabled":""}>🤝 Cobrar o agente<small>Aumenta exposição no mercado</small></button>
       <button class="secondary player-interaction" data-type="recovery" ${interaction.used?"disabled":""}>🧊 Recuperação extra<small>Recupera físico</small></button>
       <button class="secondary player-interaction" data-type="media" ${interaction.used?"disabled":""}>🎙️ Dar entrevista<small>Ganha reputação, com pressão</small></button>
+      <button class="secondary player-interaction" data-type="video_analysis" ${interaction.used?"disabled":""}>📺 Analisar adversário<small>Bônus de desempenho no próximo jogo da liga</small></button>
+      <button class="secondary player-interaction" data-type="teammates" ${interaction.used?"disabled":""}>🫂 Fortalecer o vestiário<small>Melhora entrosamento, moral e liderança</small></button>
+      <button class="secondary player-interaction" data-type="mentor" ${interaction.used?"disabled":""}>🧑‍🏫 Orientar jovens<small>Liderança e respeito do elenco</small></button>
+      <button class="secondary player-interaction" data-type="fan_event" ${interaction.used?"disabled":""}>🙌 Evento com torcida<small>Seguidores, fama e moral</small></button>
+      <button class="secondary player-interaction" data-type="psychology" ${interaction.used?"disabled":""}>🧠 Psicologia esportiva<small>Grande ganho de moral</small></button>
     </div>
   </section>`:""}
 
@@ -2667,6 +2682,15 @@ function playerTrainingView(){
 }
 
 function bindPlayerCareer(){
+  app.querySelectorAll(".player-interview-answer").forEach(btn=>btn.onclick=async()=>{
+    btn.disabled=true;
+    try{
+      const d=await api("/api/player-career/interview/respond",{method:"POST",body:JSON.stringify({choice:btn.dataset.choice})});
+      await refreshPlayerCareer();renderPlayerCareer();
+      alert(d.text||"Entrevista concluída.");
+    }catch(err){alert(err.message);btn.disabled=false}
+  });
+
   const nationalJoin=app.querySelector("#playerNationalJoin");
   if(nationalJoin)nationalJoin.onclick=async()=>{
     nationalJoin.disabled=true;nationalJoin.textContent="ACEITANDO...";
@@ -2714,7 +2738,11 @@ function bindPlayerCareer(){
           :(pc?.position==="GK"
             ?`Sua nota: ${r.match.performance} · Defesas: ${r.match.saves||0} · Pênaltis defendidos: ${r.match.penaltySaves||0}`
             :`Sua nota: ${r.match.performance} · Gols: ${r.match.goals||0} · Assistências: ${r.match.assists||0}`);
-        alert(`${r.match.homeName} ${r.match.homeGoals} x ${r.match.awayGoals} ${r.match.awayName}\n${extra}`);
+        let summary=`${r.match.homeName} ${r.match.homeGoals} x ${r.match.awayGoals} ${r.match.awayName}\n${extra}`;
+        if(r.missionResult)summary+=`\n\n${r.missionResult.completed?"✅ MISSÃO CUMPRIDA":"❌ MISSÃO NÃO CUMPRIDA"}: ${r.missionResult.label}`;
+        if(r.xpResult)summary+=`\nXP ganho: +${r.xpResult.gained}${r.xpResult.levelsGained?` · SUBIU PARA O NÍVEL ${r.xpResult.level}`:""}`;
+        if(r.interviewAvailable)summary+="\n\n🎙️ Há uma entrevista pós-jogo esperando por você na tela inicial.";
+        alert(summary);
       }
       if(r.cupMatch){
         const p=r.cupMatch.penaltyShootout;
@@ -2768,18 +2796,6 @@ function bindPlayerCareer(){
   });
 
 
-
-  app.querySelectorAll(".player-ambition").forEach(btn=>btn.onclick=async()=>{
-    const labels={STAR:"Virar protagonista",TEAM:"Ganhar espaço no time",FITNESS:"Temporada física forte",MARKET:"Valorizar no mercado"};
-    if(!confirm(`Definir "${labels[btn.dataset.key]||btn.dataset.key}" como objetivo pessoal desta temporada?\n\nEssa escolha não poderá ser trocada até a próxima temporada.`))return;
-    btn.disabled=true;
-    try{const d=await api("/api/player-career/season-ambition",{method:"POST",body:JSON.stringify({key:btn.dataset.key})});await refreshPlayerCareer();renderPlayerCareer();alert(`Objetivo definido: ${d.label}.`)}catch(err){alert(err.message);btn.disabled=false}
-  });
-  app.querySelectorAll(".player-match-moment").forEach(btn=>btn.onclick=async()=>{
-    btn.disabled=true;
-    try{const d=await api("/api/player-career/match-moment",{method:"POST",body:JSON.stringify({key:btn.dataset.key})});await refreshPlayerCareer();renderPlayerCareer();alert(`Decisão para a próxima partida: ${d.label}.`)}catch(err){alert(err.message);btn.disabled=false}
-  });
-
   const planBtn=app.querySelector("#savePlayerMatchPlan");
   if(planBtn)planBtn.onclick=async()=>{planBtn.disabled=true;try{await api("/api/player-career/match-plan",{method:"POST",body:JSON.stringify({plan:app.querySelector("#playerMatchPlan").value})});await refreshPlayerCareer();renderPlayerCareer()}catch(err){alert(err.message);planBtn.disabled=false}};
   app.querySelectorAll(".player-session").forEach(btn=>btn.onclick=async()=>{btn.disabled=true;try{const d=await api("/api/player-career/training-session",{method:"POST",body:JSON.stringify({type:btn.dataset.type})});await refreshPlayerCareer();renderPlayerCareer();alert(d.text)}catch(err){alert(err.message);btn.disabled=false}});
@@ -2808,6 +2824,10 @@ function playerExpansionPanel(){
   <div>🇧🇷 Seleção: convocação por desempenho</div>
   <div>👟 Patrocínios: contratos individuais</div>
   <div>🏅 Legado: histórico da carreira</div>
+  <div>🎯 Missões: objetivos diferentes a cada rodada</div>
+  <div>⭐ Níveis: XP e progressão contínua</div>
+  <div>🫂 Vestiário: entrosamento e liderança</div>
+  <div>🎙️ Entrevistas: escolhas com consequências</div>
   </div></section>`;
 }
 
@@ -3665,7 +3685,7 @@ function clubView(){
           <span class="muted">Você pode alterar o nome a qualquer momento.</span>
           <label>Novo nome<input id="customName" value="${esc(c.name)}" maxlength="30" required></label>
         </div>
-        ${String(c.name||"").trim().toLowerCase()==="felipe"?`<div class="felipe-banner">⚡ MODO FELIPE SUPREMO — dinheiro ∞, elenco 100, base 100, comissão máxima, estádio máximo e recursos máximos.</div>`:""}
+        ${String(c.name||"").trim().toLowerCase()==="felipe"?`<div class="felipe-banner">⚡ MODO FELIPE ATIVO — elenco 100 e goleadas especiais.</div>`:""}
         <label>País<input value="${esc(countryName(c.country_code||"BR"))}" disabled></label>
         ${(c.country_code||"BR")==="BR"?`<label>Estado<input value="${esc(STATES[c.state_code])}" disabled></label>`:""}
         <div class="colors"><label>Cor principal<input id="customPrimary" type="color" value="${c.primary_color}"></label>
@@ -3794,7 +3814,7 @@ function render(){
         <button class="career-top-btn" data-view="careers">${esc(state.club.career_label||`Carreira ${state.club.career_slot||1}`)}</button>
         ${(state.realism?.managerOffers||[]).length?`<button class="notification-top-btn" data-view="realism" title="Propostas de outros clubes">📩 ${(state.realism.managerOffers||[]).length}</button>`:""}
         <button id="manualSave" class="manual-save-btn" title="Salvar a carreira agora">💾 SALVAR</button>
-        <span class="coins">● ${managerMoneyLabel(state.club.coins)}</span><button id="logout" class="icon-btn">↪</button>
+        <span class="coins">● ${Number(state.club.coins).toLocaleString("pt-BR")}</span><button id="logout" class="icon-btn">↪</button>
       </div>
     </header>${body}
   </div>
@@ -4847,7 +4867,7 @@ function bindClub(){
       await refreshAll();
       await refreshCareerList().catch(()=>{});
       render();
-      if(result.felipeMode)alert("MODO FELIPE SUPREMO ATIVADO: dinheiro infinito, 30 jogadores OVR 100, atributos e potencial 100, comissão nível 5, estádio nível 8, torcida/confiança/entrosamento/reputação no máximo, sem lesões ou suspensões e mercado sempre aberto.");
+      if(result.felipeMode)alert("MODO FELIPE ATIVADO: todos os jogadores do clube agora têm atributos 100 e o time recebe placares especiais.");
     }catch(err){
       app.querySelector("#customMsg").innerHTML=`<div class="msg">${esc(err.message)}</div>`;
     }

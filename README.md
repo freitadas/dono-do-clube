@@ -1430,28 +1430,12 @@ Reformulação ampla do modo jogador: personalidade e objetivo de carreira, núm
 - Recalcula a classificação da fase de grupos com base nos resultados já disputados.
 
 
-## v61 — Modo Carreira Jogador 3.0
-- Objetivo pessoal por temporada: protagonista, espaço no time, físico ou mercado.
-- Decisão de jogo antes de cada rodada, com opções próprias para jogadores de linha e goleiros.
-- As decisões alteram nota, chances de gol/assistência/defesa, desgaste, risco de lesão, reputação e confiança.
-- Sistema de relacionamentos com treinador, empresário, companheiros, torcida e imprensa.
-- Recordes de craque do jogo, sequências, jogos com 2+ gols, hat-tricks e sequências sem sofrer gol.
-- Marcos de carreira com recompensas de evolução.
-- Histórico continental europeu passa a ser preservado entre temporadas.
-
-
-## v62 — Modo Felipe Supremo
-Ao usar o nome exato `felipe` no Modo Carreira Treinador:
-- Caixa aparece como `∞` e despesas não reduzem o dinheiro.
-- Elenco é completado até 30 jogadores.
-- Todos os jogadores ficam com OVR, ritmo, chute, passe, defesa, potencial, forma, físico, moral e felicidade em 100.
-- Jogadores ficam sem lesão e sem suspensão.
-- Contratos vão para 99 temporadas e salários dos jogadores ficam zerados.
-- Comissão técnica inteira fica no nível 5.
-- Categorias de base ficam com OVR/potencial 100.
-- Estádio fica no nível 8 com capacidade de 100.000.
-- Torcida, confiança da diretoria, entrosamento e reputação do treinador ficam no máximo.
-- Pressão da mídia fica zerada.
-- Mercado de transferências fica sempre aberto.
-- Se houver seleção comandada, a confiança da federação fica em 100.
-- Goleadas especiais do Modo Felipe original continuam ativas.
+## v61 — Inovações do Modo Carreira Jogador
+- Sistema de nível e XP: partidas e missões dão experiência; subir de nível concede ponto de evolução.
+- Missão individual diferente a cada rodada, adaptada à posição.
+- Entrevistas pós-jogo após grandes atuações, com respostas e consequências diferentes.
+- Entrosamento pessoal com o vestiário, que influencia desempenho.
+- Preparação por análise de vídeo para a próxima partida da liga.
+- Novas decisões semanais: análise de adversário, vestiário, mentoria, evento com torcida e psicologia esportiva.
+- Marcos permanentes da carreira: estreia, gols, jogos, seleção, fama e feitos de goleiro.
+- Histórico de missões e entrevistas integrado à jornada.

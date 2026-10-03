@@ -1522,21 +1522,30 @@ repeating-linear-gradient(0deg,#1e7d43 0,#1e7d43 56px,#237f47 56px,#237f47 112px
 }
 
 
-/* v61 — Modo Carreira Jogador 3.0 */
-.player-moment-grid,.player-ambition-grid{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:8px}
-.player-ambition-grid{grid-template-columns:repeat(4,minmax(0,1fr))}
-.player-match-moment,.player-ambition{display:grid;gap:4px;text-align:left;min-height:76px;padding:10px}
-.player-match-moment b,.player-ambition b{font-size:10px}.player-match-moment small,.player-ambition small{font-size:8px;color:var(--muted)}
-.player-relations-grid{display:grid;grid-template-columns:1fr 1fr;gap:10px 16px}
-.player-relation-row{display:grid;grid-template-columns:1fr auto;gap:4px 8px;align-items:center;font-size:9px}.player-relation-row .meter{grid-column:1/-1}
-.player-record-grid{display:grid;grid-template-columns:repeat(4,minmax(0,1fr));gap:8px;margin-bottom:12px}.player-record-grid>div{display:grid;gap:3px;padding:10px;border:1px solid var(--line);border-radius:10px}.player-record-grid small{font-size:8px;color:var(--muted)}.player-record-grid b{font-size:18px}
-.player-milestone-list{display:grid;grid-template-columns:1fr 1fr;gap:6px}.player-milestone-list>div{display:grid;grid-template-columns:auto 1fr auto;gap:6px;align-items:center;padding:8px;border:1px solid var(--line);border-radius:8px}.player-milestone-list b{font-size:9px}.player-milestone-list small{font-size:8px;color:var(--muted)}
-@media(max-width:780px){.player-ambition-grid{grid-template-columns:1fr 1fr}.player-moment-grid{grid-template-columns:1fr}.player-relations-grid{grid-template-columns:1fr}.player-record-grid{grid-template-columns:1fr 1fr}.player-milestone-list{grid-template-columns:1fr}}
-
-
-/* v62 — Modo Felipe Supremo */
-.felipe-banner{
-  border:1px solid rgba(230,186,60,.55);
-  background:linear-gradient(135deg,rgba(238,190,49,.15),rgba(71,126,224,.10));
-  font-weight:900;
+/* v61 — inovações do Modo Carreira Jogador */
+.player-innovation-grid{
+  display:grid;
+  grid-template-columns:repeat(3,minmax(0,1fr));
+  gap:10px;
+  margin:12px 0;
 }
+.player-level-card,.player-mission-card,.player-locker-card{display:grid;gap:8px}
+.player-level-line{display:flex;align-items:end;justify-content:space-between;gap:8px}
+.player-level-line b{font-size:22px}.player-level-line span{font-size:9px;color:var(--muted)}
+.player-progress-track{height:8px;border-radius:999px;background:rgba(255,255,255,.08);overflow:hidden;border:1px solid var(--line)}
+.player-progress-track span{display:block;height:100%;background:currentColor;opacity:.65;border-radius:999px}
+.player-mission-card h3,.player-locker-card h3{margin:0;font-size:16px}
+.player-mission-card p,.player-locker-card p{margin:0;font-size:9px;color:var(--muted)}
+.player-interview-card{border-color:rgba(218,152,51,.45);background:linear-gradient(135deg,rgba(218,152,51,.10),rgba(255,255,255,.02))}
+.player-interview-actions{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:8px}
+.player-interview-actions button{display:grid;gap:3px;text-align:left}
+.player-interview-actions small{font-size:8px;color:var(--muted);font-weight:500}
+.player-last-mission{margin-top:9px;padding:8px 10px;border-radius:8px;font-size:9px;font-weight:800}
+.player-last-mission.success{background:rgba(63,167,98,.12);border:1px solid rgba(63,167,98,.32)}
+.player-last-mission.fail{background:rgba(193,74,74,.10);border:1px solid rgba(193,74,74,.26)}
+.player-milestones-grid{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:8px}
+.player-milestone{display:grid;grid-template-columns:auto 1fr;gap:3px 8px;align-items:center;padding:9px;border:1px solid var(--line);border-radius:9px;opacity:.55}
+.player-milestone.unlocked{opacity:1;background:rgba(220,168,54,.08);border-color:rgba(220,168,54,.30)}
+.player-milestone span{grid-row:1/3;font-size:18px}.player-milestone b{font-size:9px}.player-milestone small{font-size:8px;color:var(--muted)}
+@media(max-width:900px){.player-innovation-grid{grid-template-columns:1fr 1fr}.player-interview-actions{grid-template-columns:1fr}.player-milestones-grid{grid-template-columns:1fr 1fr}}
+@media(max-width:560px){.player-innovation-grid,.player-milestones-grid{grid-template-columns:1fr}}
