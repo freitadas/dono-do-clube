@@ -1530,3 +1530,12 @@ repeating-linear-gradient(0deg,#1e7d43 0,#1e7d43 56px,#237f47 56px,#237f47 112px
 .fixture .club-with-crest{max-width:100%}
 .fixture .right .club-with-crest{justify-content:flex-end}
 .group-card .club-with-crest,.other-league-table .club-with-crest{gap:5px}
+
+/* v63 — arquivos reais, sem geração de escudos por iniciais. */
+.crest{display:inline-flex;align-items:center;justify-content:center;vertical-align:middle;flex-shrink:0}
+.crest.large{width:88px;height:100px}
+.crest img{object-fit:contain;max-width:100%;max-height:100%}
+.crest-unavailable{color:var(--muted);font-weight:400}
+.national-flag .crest{width:62px;height:70px}
+.national-flag.huge .crest{width:92px;height:105px}
+.preview-crest img{object-fit:contain}

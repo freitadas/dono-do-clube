@@ -3,6 +3,7 @@ const express = require("express");
 const { Pool } = require("pg");
 const crypto = require("crypto");
 const path = require("path");
+const RealCrests = require("./real_crests.js");
 const STATE_CLUB_SEED = require("./state_clubs.json");
 const CLUB_SEED = [...require("./clubs.json"),...require("./international_clubs.json"),...require("./global_clubs.json"),...STATE_CLUB_SEED];
 const REAL_PLAYER_SEED = require("./real_players.json");
@@ -623,25 +624,8 @@ const randomName=()=>`${firstNames[rand(0,firstNames.length-1)]} ${lastNames[ran
 const normalizeSearch=v=>String(v||"").normalize("NFD").replace(/[\u0300-\u036f]/g,"").toLowerCase().trim();
 
 
-function xmlSafe(value){
-  return String(value??"").replace(/[&<>"']/g,ch=>({"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;","'":"&apos;"})[ch]);
-}
-function clubInitials(name){
-  const parts=String(name||"FC").replace(/[-_]/g," ").split(/\s+/).filter(Boolean);
-  return (parts.slice(0,2).map(x=>x[0]).join("")||"FC").toUpperCase().slice(0,3);
-}
-function generatedClubCrest(name,primary="#18864b",secondary="#f7fafc"){
-  const initials=xmlSafe(clubInitials(name));
-  const p=/^#[0-9a-f]{6}$/i.test(String(primary))?primary:"#18864b";
-  const s=/^#[0-9a-f]{6}$/i.test(String(secondary))?secondary:"#f7fafc";
-  const svg=`<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 120 140">
-    <path d="M60 4 108 20v48c0 31-18 54-48 68C30 122 12 99 12 68V20L60 4Z" fill="${p}" stroke="#ffffff" stroke-width="6"/>
-    <path d="M60 13 98 26v39c0 25-14 44-38 57C36 109 22 90 22 65V26L60 13Z" fill="${s}" opacity=".92"/>
-    <path d="M60 18 60 118" stroke="${p}" stroke-width="9" opacity=".26"/>
-    <circle cx="60" cy="63" r="29" fill="${p}" opacity=".92"/>
-    <text x="60" y="70" text-anchor="middle" font-family="Arial,sans-serif" font-size="28" font-weight="900" fill="#fff">${initials}</text>
-  </svg>`;
-  return `data:image/svg+xml;base64,${Buffer.from(svg).toString("base64")}`;
+function realClubCrest(name){
+  return RealCrests.club(name)?.src||null;
 }
 function canonicalStateClubNames(stateCode){
   return STATE_CLUB_SEED.filter(x=>x.state===stateCode).map(x=>x.name);
@@ -666,7 +650,7 @@ async function seedClubs(){
   await tx(async c=>{
     for(const x of CLUB_SEED){
       const confed=x.confed||confederationForCountry(x.country);
-      const crest=generatedClubCrest(x.name,x.primary,x.secondary);
+      const crest=realClubCrest(x.name);
       await c.query(`
         INSERT INTO clubs(
           name,is_ai,state_code,country_code,confederation_code,club_kind,national_seed_division,
@@ -696,16 +680,16 @@ async function seedClubs(){
       `,[x.name,x.state,x.country,confed,x.kind,x.division,x.rating,x.primary,x.secondary,crest]);
     }
 
-    // Garante escudo para qualquer clube antigo, criado pelo usuário ou vindo de save anterior.
-    const withoutCrest=(await c.query(`
-      SELECT id,name,primary_color,secondary_color
-      FROM clubs
-      WHERE crest_data IS NULL OR crest_data=''
-    `)).rows;
-    for(const club of withoutCrest){
-      await c.query(`UPDATE clubs SET crest_data=$2 WHERE id=$1`,[
-        club.id,generatedClubCrest(club.name,club.primary_color,club.secondary_color)
-      ]);
+    // Repara o escudo nos saves existentes sem recriar clube, elenco ou carreira.
+    // Remove somente o SVG de iniciais da v62; uploads pessoais continuam disponíveis.
+    const existing=(await c.query(`SELECT id,name,is_ai,crest_data FROM clubs`)).rows;
+    for(const club of existing){
+      const official=realClubCrest(club.name);
+      const next=official||
+        (RealCrests.isGenerated(club.crest_data)?null:club.crest_data);
+      if(next!==club.crest_data){
+        await c.query(`UPDATE clubs SET crest_data=$2 WHERE id=$1`,[club.id,next]);
+      }
     }
 
     const missing=await c.query(`SELECT id FROM clubs WHERE friend_code IS NULL`);
@@ -9815,13 +9799,13 @@ app.delete("/api/careers/:clubId",auth,async(req,res,next)=>{
 app.put("/api/club/customize",auth,async(req,res,next)=>{
   try{
     const c=await userClub(req.user.id);
-    const name=String(req.body.name||c.name).trim().replace(/\s+/g," "),primary=String(req.body.primaryColor||c.primary_color),secondary=String(req.body.secondaryColor||c.secondary_color),crest=req.body.crestData===null?null:String(req.body.crestData||c.crest_data||"");
+    const name=String(req.body.name||c.name).trim().replace(/\s+/g," "),primary=String(req.body.primaryColor||c.primary_color),secondary=String(req.body.secondaryColor||c.secondary_color),crest=req.body.crestData==null?(req.body.crestData===null?null:(RealCrests.uploaded(c.crest_data)?c.crest_data:null)):String(req.body.crestData);
     if(name.length<3||name.length>30)return res.status(400).json({error:"Nome deve ter 3 a 30 caracteres."});
     if(!/^#[0-9a-fA-F]{6}$/.test(primary)||!/^#[0-9a-fA-F]{6}$/.test(secondary))return res.status(400).json({error:"Cor inválida."});
     if(crest&&!/^data:image\/(png|jpeg|webp);base64,/i.test(crest))return res.status(400).json({error:"Escudo inválido."});
-    if(crest.length>700000)return res.status(400).json({error:"Escudo grande demais."});
+    if(crest&&crest.length>700000)return res.status(400).json({error:"Escudo grande demais."});
     const updated=await tx(async client=>{
-      const finalCrest=crest||generatedClubCrest(name,primary,secondary);
+      const finalCrest=crest||realClubCrest(name);
       const r=await client.query(`UPDATE clubs SET name=$2,primary_color=$3,secondary_color=$4,crest_data=$5 WHERE id=$1 RETURNING *`,[c.id,name,primary,secondary,finalCrest]);
       const felipeMode=await applyFelipeMode(client,c.id);
       return {club:(await client.query(`SELECT * FROM clubs WHERE id=$1`,[c.id])).rows[0],felipeMode};
@@ -12379,6 +12363,8 @@ app.post("/api/friends/:clubId/play",auth,async(req,res,next)=>{
   }catch(e){next(e)}
 });
 
+app.use("/assets/crests",express.static(path.join(__dirname,"assets","crests"),{maxAge:"1y",immutable:true,index:false}));
+app.get("/real_crests.js",(_req,res)=>res.sendFile(path.join(__dirname,"real_crests.js")));
 app.get("/styles.css",(_req,res)=>res.sendFile(path.join(__dirname,"styles.css")));
 app.get("/app.js",(_req,res)=>res.sendFile(path.join(__dirname,"app.js")));
 app.get("/",(_req,res)=>res.sendFile(path.join(__dirname,"index.html")));
