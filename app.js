@@ -12,7 +12,8 @@ const state={
   careers:[],maxCareers:10,lineupDirty:false,
   boardMessages:[],boardExpectation:null,teamPerformance:null,rotationAdvice:null,realism:null,
   transferWindow:null,scoutLevel:1,
-  transferSearch:{name:"",position:"",minRating:58,maxPrice:500000,realOnly:false},
+  transferSearch:{name:"",position:"",minRating:58,maxPrice:500000,maxAge:40,minPotential:0,nationality:"",maxSalary:999999,sourceClub:""},
+  mega:null,
   activeType:null,playerCareer:null,playerData:null,countries:{},creationMode:"club",clubStartMode:"real",playerView:"home",
   playerStarterClubs:[],realClubChoices:[],realClubDivision:"A",selectedRealClubId:null,
   playerExpansion:{agent:true,media:true,sponsorship:true,awards:true,nationalTeam:true,legacy:true},
@@ -168,7 +169,9 @@ async function refreshAll(){
   const c=await api("/api/competitions");
   const d=await api("/api/dashboard");
   const nt=await api("/api/national-team").catch(()=>({job:null,offers:[]}));
+  const mega=await api("/api/v66/hub").catch(()=>null);
   Object.assign(state,d);
+  state.mega=mega;
   state.nationalTeam=nt;
   state.competitions=c;
   state.activeType="club";
@@ -525,7 +528,7 @@ function tacticalRoleLabel(v){
 function playerCard(p){
   const severance=Math.max(100,Number(p.salary||0)*2);
   return `<article class="player ${p.is_starter?"starter":""} ${Number(p.suspension_games||0)>0?"suspended":""}">
-    <span class="pos">${esc(p.role||posName(p.position))} · ${p.age} anos</span>
+    <span class="pos">${p.shirt_number?`#${p.shirt_number} · `:""}${esc(p.role||posName(p.position))} · ${p.age} anos${p.nationality_code?` · ${esc(p.nationality_code)}`:""}</span>
     <span class="rating">${p.rating}</span>
     <h4>${esc(p.name)}</h4>
     <div class="condition-line ${fitnessClass(p)}">
@@ -543,7 +546,7 @@ function playerCard(p){
     <div class="pstats">
       <span>J <b>${p.appearances}</b></span><span>G <b>${p.goals}</b></span>
       <span>A <b>${p.assists}</b></span><span>Sal. <b>${Number(p.salary||0).toLocaleString("pt-BR")}</b></span>
-      <span>Contrato <b>${p.contract_seasons||1}T</b></span><span>Rescisão <b>${severance.toLocaleString("pt-BR")}</b></span>
+      <span>Contrato <b>${p.contract_seasons??1}T</b></span><span>Cláusula <b>${Number(p.release_clause||severance).toLocaleString("pt-BR")}</b></span><span>Pé <b>${p.preferred_foot==="LEFT"?"Esquerdo":"Direito"}</b></span><span>Perfil <b>${esc(({PROFESSIONAL:"Profissional",AMBITIOUS:"Ambicioso",LOYAL:"Leal",LEADER:"Líder",TEMPERAMENTAL:"Temperamental",TEAM_PLAYER:"Coletivo",SHOWMAN:"Midiático"})[p.personality]||p.personality||"Profissional")}</b></span>
       <span>Potencial <b>${p.potential??p.rating}</b></span>
       <span>Status <b>${esc(squadStatusLabel(p.squad_status))}</b></span>
       <span>Cartões <b>${p.yellow_accumulation||0}/3 🟨 · ${p.red_cards||0} 🟥</b></span>
@@ -1401,6 +1404,55 @@ function tacticLabel(v){
 function tacticOptions(values,current){
   return values.map(v=>`<option value="${v}" ${current===v?"selected":""}>${esc(tacticLabel(v))}</option>`).join("");
 }
+function megaHubView(){
+  const m=state.mega;if(!m||!m.club)return ``;
+  const c=m.club,exp=m.expiring||[],hist=m.transferHistory||[],academy=m.academy||[],next=m.nextFixtures||[],worldAwards=m.worldAwards||[];
+  const personality=v=>({PROFESSIONAL:"Profissional",AMBITIOUS:"Ambicioso",LOYAL:"Leal",LEADER:"Líder",TEMPERAMENTAL:"Temperamental",TEAM_PLAYER:"Coletivo",SHOWMAN:"Midiático"})[v]||v||"Profissional";
+  return `<section class="v66-mega">
+    <section class="card v66-hero"><div><div class="kicker">MEGA CARREIRA v66</div><h2>Universo persistente do clube</h2><p class="muted">Contratos, base, reputação, estruturas, uniformes, personalidade, histórico de transferências e editor da carreira.</p></div>
+      <div class="v66-kpis"><span>Torcida <b>${Number(c.fan_count||0).toLocaleString("pt-BR")}</b></span><span>Rep. nacional <b>${c.national_reputation||0}</b></span><span>Rep. continental <b>${c.continental_reputation||0}</b></span><span>Rep. mundial <b>${c.world_reputation||0}</b></span><span>Aposentados no universo <b>${m.retiredCount||0}</b></span></div>
+    </section>
+
+    <section class="grid realism-two">
+      <div class="card"><div class="section-title"><div><div class="kicker">IDENTIDADE</div><h2>Estádio, filosofia e uniformes</h2></div></div>
+        <form id="v66ClubProfile" class="stack">
+          <label>Nome do estádio<input id="v66StadiumName" maxlength="60" value="${esc(c.stadium_name||`Estádio ${c.name}`)}"></label>
+          <label>Filosofia<select id="v66Philosophy">${[["BALANCED","Equilibrada"],["YOUTH","Formadora"],["POSSESSION","Posse"],["COUNTER","Contra-ataque"],["PRESSING","Pressão alta"],["SELLING_CLUB","Clube vendedor"],["GALACTICOS","Estrelas"]].map(([v,l])=>`<option value="${v}" ${c.club_philosophy===v?"selected":""}>${l}</option>`).join("")}</select></label>
+          <label>Estratégia de mercado<select id="v66TransferStrategy">${[["BALANCED","Equilibrada"],["YOUTH_FIRST","Priorizar jovens"],["VALUE_BUY","Oportunidades"],["STAR_HUNT","Buscar estrelas"],["SELL_TO_GROW","Comprar para valorizar"]].map(([v,l])=>`<option value="${v}" ${c.transfer_strategy===v?"selected":""}>${l}</option>`).join("")}</select></label>
+          <div class="kit-editor"><label>Casa 1<input id="homeKitPrimary" type="color" value="${c.home_kit_primary||c.primary_color}"></label><label>Casa 2<input id="homeKitSecondary" type="color" value="${c.home_kit_secondary||c.secondary_color}"></label><label>Fora 1<input id="awayKitPrimary" type="color" value="${c.away_kit_primary||c.secondary_color}"></label><label>Fora 2<input id="awayKitSecondary" type="color" value="${c.away_kit_secondary||c.primary_color}"></label><label>3º 1<input id="thirdKitPrimary" type="color" value="${c.third_kit_primary||"#111827"}"></label><label>3º 2<input id="thirdKitSecondary" type="color" value="${c.third_kit_secondary||"#f8fafc"}"></label></div>
+          <button class="primary">Salvar identidade</button>
+        </form>
+      </div>
+      <div class="card"><div class="section-title"><div><div class="kicker">ESTRUTURA</div><h2>CT e formação</h2></div></div>
+        <div class="facility-grid"><div><b>Centro de treinamento</b><span>Nível ${c.training_level||1}/5</span><button class="secondary v66-upgrade" data-type="TRAINING" ${(c.training_level||1)>=5?"disabled":""}>Melhorar</button></div><div><b>Academia</b><span>Nível ${c.academy_level||1}/5</span><button class="secondary v66-upgrade" data-type="ACADEMY" ${(c.academy_level||1)>=5?"disabled":""}>Melhorar</button></div></div>
+        <button id="v66Recalc" class="secondary">Recalcular OVR por posição</button>
+      </div>
+    </section>
+
+    <section class="card"><div class="section-title"><div><div class="kicker">OLHEIROS DE BASE</div><h2>Sub-15, Sub-17 e Sub-20</h2></div><span class="badge">${academy.length} jovens</span></div>
+      <form id="v66YouthScout" class="v66-inline-form"><select id="v66AgeGroup"><option>U15</option><option selected>U17</option><option>U20</option></select><select id="v66Region"><option value="BR">Brasil</option><option value="SOUTH_AMERICA">América do Sul</option><option value="EUROPE">Europa</option><option value="NORTH_AMERICA">América do Norte</option><option value="ASIA">Ásia</option></select><button class="primary">Enviar olheiro</button></form>
+      <div class="academy-grid">${academy.slice(0,15).map(y=>`<article class="academy-card"><span class="rating">${y.rating}</span><b>${esc(y.name)}</b><small>${esc(y.age_group||"U20")} · ${esc(y.role)} · ${y.age} anos · ${esc(y.nationality_code||"")}</small><div>Potencial <strong>${y.potential}</strong> · ${y.preferred_foot==="LEFT"?"canhoto":"destro"}</div></article>`).join("")||`<div class="empty">Envie um olheiro para descobrir novos atletas.</div>`}</div>
+    </section>
+
+    <section class="card"><div class="section-title"><div><div class="kicker">CONTRATOS</div><h2>Jogadores perto do fim do vínculo</h2></div><span class="badge">${exp.length}</span></div>
+      <div class="v66-contract-list">${exp.length?exp.map(p=>`<div class="v66-contract-row"><div><b>#${p.shirt_number||"—"} ${esc(p.name)}</b><small>${esc(p.role||p.position)} · OVR ${p.rating} · ${p.age} anos · ${personality(p.personality)}</small></div><span>${p.contract_seasons}T · ${Number(p.salary||0).toLocaleString("pt-BR")}/mês</span><button class="primary v66-renew" data-id="${p.id}" data-name="${esc(p.name)}" data-salary="${p.salary||0}" data-clause="${p.release_clause||0}">Renovar</button></div>`).join(""):`<div class="empty">Nenhum contrato urgente.</div>`}</div>
+    </section>
+
+    <section class="card"><div class="section-title"><div><div class="kicker">ELENCO AVANÇADO</div><h2>Personalidade, pé e editor</h2></div></div>
+      <div class="table-wrap"><table class="v66-player-table"><thead><tr><th>#</th><th>Jogador</th><th>OVR/POT</th><th>Atributos</th><th>Pé</th><th>Perfil / agente</th><th>Contrato</th><th>Cláusula</th><th>Ações</th></tr></thead><tbody>${(m.players||[]).map(p=>`<tr><td>${p.shirt_number||"—"}</td><td><b>${esc(p.name)}</b><small>${esc(p.role||p.position)} · ${p.age} · ${esc(p.nationality_code||"")}</small></td><td>${p.rating}/${p.potential}</td><td><small>ACC ${p.acceleration||p.pace} · FIN ${p.finishing||p.shooting} · PAS ${p.short_passing||p.passing}<br>DRI ${p.dribbling||p.pace} · MAR ${p.marking||p.defending} · FIS ${p.stamina||p.rating}</small></td><td>${p.preferred_foot==="LEFT"?"E":"D"}</td><td>${esc(personality(p.personality))}<small>${esc(p.agent_name||"Sem agente")}</small></td><td>${p.contract_seasons}T</td><td>${Number(p.release_clause||0).toLocaleString("pt-BR")}</td><td><button class="secondary v66-talk" data-id="${p.id}" data-name="${esc(p.name)}">Conversar</button><button class="secondary v66-edit" data-id="${p.id}" data-name="${esc(p.name)}" data-rating="${p.rating}" data-potential="${p.potential}" data-shirt="${p.shirt_number||10}" data-foot="${p.preferred_foot||"RIGHT"}">Editar</button></td></tr>`).join("")}</tbody></table></div>
+    </section>
+
+    <section class="grid realism-two">
+      <div class="card"><div class="section-title"><div><div class="kicker">CALENDÁRIO</div><h2>Próximos jogos</h2></div></div>${next.length?next.map(f=>`<div class="v66-event"><b>Rodada ${f.round}</b><span>${String(f.home)===String(state.club.id)?"Casa":"Fora"}</span></div>`).join(""):`<div class="empty">Sem jogos de liga pendentes.</div>`}</div>
+      <div class="card"><div class="section-title"><div><div class="kicker">HISTÓRICO DE TRANSFERÊNCIAS</div><h2>Movimentações persistentes</h2></div></div>${hist.length?hist.slice(0,15).map(t=>`<div class="v66-transfer"><b>${esc(t.player_name)}</b><span>${esc(t.from_club_name||"Livre")} → ${esc(t.to_club_name||"Livre")}</span><small>${esc(t.transfer_type)} · ${Number(t.fee||0).toLocaleString("pt-BR")}</small></div>`).join(""):`<div class="empty">As próximas negociações ficarão registradas aqui.</div>`}</div>
+    </section>
+
+    <section class="card"><div class="section-title"><div><div class="kicker">PRÊMIOS MUNDIAIS</div><h2>Bola de Ouro, artilharia e revelação</h2></div><span class="badge">${worldAwards.length}</span></div>
+      <div class="v66-awards">${worldAwards.length?worldAwards.map(a=>`<div class="award-row"><span>🏆</span><div><b>${esc(({WORLD_PLAYER:"Melhor jogador do mundo",GOLDEN_BOOT:"Chuteira de Ouro",BEST_YOUNG:"Melhor jovem"})[a.award_type]||a.award_type)}</b><small>${esc(a.player_name)} · ${esc(a.club_name||"Sem clube")} · temporada ${a.season_no}</small></div></div>`).join(""):`<div class="empty">Os prêmios mundiais serão calculados no fechamento da temporada.</div>`}</div>
+    </section>
+  </section>`;
+}
+
 function realismView(){
   const r=state.realism||{};
   const tactics=r.tactics||{};
@@ -1576,6 +1628,7 @@ function realismView(){
         ${playerHistory.slice(0,60).map(x=>`<tr><td>${x.season_no}</td><td>${esc(x.player_name)}</td><td>${x.appearances}</td><td>${x.goals}</td><td>${x.assists}</td><td>${x.clean_sheets}</td><td>${x.rating_end}</td></tr>`).join("")}
       </tbody></table></div>`:`<div class="empty">Os números por temporada serão arquivados ao fim do primeiro ano.</div>`}
     </section>
+    ${megaHubView()}
   </section>`;
 }
 
@@ -1802,7 +1855,7 @@ function marketView(){
     <hr class="section-divider">
     <div class="kicker">CONTRATAÇÕES</div><h3>Pesquisar jogadores</h3>
     ${state.marketProfile?`<div class="market-level">Mercado de ${esc(leagueLabel(state.competitions?.career?.user_division||"D",state.competitions?.career?.country_code||state.club?.country_code))} · jogadores normalmente entre OVR ${state.marketProfile.min} e ${state.marketProfile.max}. Ao subir de divisão, o nível disponível aumenta.</div>`:""}
-    <p class="muted">O mercado agora inclui jogadores com nomes reais. Os atributos, preços e salários são valores de jogo balanceados e não representam uma base oficial ao vivo. Cada carreira mantém sua própria cópia do atleta.</p><p class="muted">O clube vendedor precisa aceitar a proposta e o jogador precisa aceitar o salário e o projeto esportivo. Compras podem ser parceladas em até 24x. Jogadores não essenciais de clubes do jogo podem chegar por empréstimo.</p>
+    <p class="muted">O mercado usa o mesmo universo de jogadores dos clubes e agentes livres. Não existe uma categoria separada de “jogadores reais”. Atributos e valores são balanceados para a simulação.</p><p class="muted">O clube vendedor precisa aceitar a proposta e o jogador precisa aceitar salário e projeto. Compras podem ser parceladas em até 24x; empréstimos podem incluir opção de compra.</p>
     ${ban?.active?`<p class="muted">A pesquisa continua disponível, mas novas contratações estão bloqueadas pelo transfer ban.</p>`:""}
     <form id="transferSearch" class="transfer-search" action="javascript:void(0)" novalidate>
       <input id="searchName" placeholder="Nome do jogador" value="${esc(state.transferSearch?.name||"")}">
@@ -1816,7 +1869,11 @@ function marketView(){
       </select>
       <input id="searchMinRating" type="number" min="40" max="100" value="${Number(state.transferSearch?.minRating??58)}" placeholder="OVR mínimo">
       <input id="searchMaxPrice" type="number" min="0" value="${Number(state.transferSearch?.maxPrice??500000)}" placeholder="Valor máximo">
-      <label class="real-filter"><input id="searchRealOnly" type="checkbox" ${state.transferSearch?.realOnly?"checked":""}> Só jogadores reais</label>
+      <input id="searchMaxAge" type="number" min="15" max="50" value="${Number(state.transferSearch?.maxAge??40)}" placeholder="Idade máxima">
+      <input id="searchMinPotential" type="number" min="40" max="99" value="${Number(state.transferSearch?.minPotential??0)}" placeholder="Potencial mínimo">
+      <input id="searchNationality" maxlength="3" value="${esc(state.transferSearch?.nationality||"")}" placeholder="Nacionalidade (BR, ARG...)">
+      <input id="searchMaxSalary" type="number" min="0" value="${Number(state.transferSearch?.maxSalary??999999)}" placeholder="Salário máximo">
+      <input id="searchSourceClub" value="${esc(state.transferSearch?.sourceClub||"")}" placeholder="Clube atual">
       <button id="transferSearchBtn" type="button" class="primary">Pesquisar</button>
     </form>
     <div id="transferMsg"></div>
@@ -1844,8 +1901,8 @@ function transferCards(){
     return `<article class="player transfer-player ${scouted?"scouted":"unscouted"}">
       <span class="pos">${esc(p.role||posName(p.position))} · ${p.age} anos${p.nationality_code?` · ${esc(p.nationality_code)}`:""}</span>
       <span class="rating">${ratingText}</span>
-      <h4>${esc(p.name)} ${p.is_real_name?`<span class="real-player-badge">REAL</span>`:""}</h4>
-      <div class="transfer-source">${p.source_club_name?esc(p.source_club_name):(p.is_real_name?"Mercado global":"Livre no mercado")}${p.source_division?` · ${esc(leagueLabel(p.source_division,state.competitions?.career?.country_code||state.club?.country_code))}`:""}</div>
+      <h4>${esc(p.name)}</h4>
+      <div class="transfer-source">${p.source_club_name?esc(p.source_club_name):"Agente livre"}${p.source_division?` · ${esc(leagueLabel(p.source_division,state.competitions?.career?.country_code||state.club?.country_code))}`:""}</div>
 
       ${scouted?`<div class="attrs">
         <span>VEL <b>${p.pace}</b></span><span>CHU <b>${p.shooting}</b></span>
@@ -1860,6 +1917,8 @@ function transferCards(){
         <span>Pedido <b>${Number(p.asking_price||0).toLocaleString("pt-BR")}</b></span>
         <span>Salário mensal <b>${Number(p.suggested_salary||0).toLocaleString("pt-BR")}</b></span>
         <span>Interesse <b>${esc(p.interest)}</b></span>
+        ${Number(p.release_clause||0)>0?`<span>Cláusula <b>${Number(p.release_clause).toLocaleString("pt-BR")}</b></span>`:""}
+        ${p.agent_name?`<span>Agente <b>${esc(p.agent_name)}</b></span>`:""}
         ${scouted?`<span>Potencial <b>${p.potential??p.rating}</b></span>`:""}
       </div>
       <div class="loan-status ${p.loan_eligible?"loan-ok":"loan-no"}">${p.loan_eligible?`Empréstimo disponível · sugerido ${Number(p.suggested_loan_fee||0).toLocaleString("pt-BR")}/mês`:`Empréstimo: ${esc(p.loan_reason||"indisponível")}`}</div>
@@ -4129,6 +4188,7 @@ function bindManagerOfferButtons(){
 
 function bindRealism(){
   bindManagerOfferButtons();
+  bindV66Mega();
 
   app.querySelectorAll(".manager-interaction").forEach(btn=>btn.onclick=async()=>{
     if(!confirm("Executar esta interação nesta rodada?"))return;
@@ -4218,6 +4278,18 @@ function bindRealism(){
       if(upgrade)alert(`Estádio ampliado para ${Number(d.capacity).toLocaleString("pt-BR")} lugares.`);
     }catch(err){alert(err.message);if(submitter)submitter.disabled=false}
   };
+}
+
+
+function bindV66Mega(){
+  const form=app.querySelector("#v66ClubProfile");
+  if(form)form.onsubmit=async e=>{e.preventDefault();const btn=e.submitter||form.querySelector("button");btn.disabled=true;try{await api("/api/v66/club-profile",{method:"PUT",body:JSON.stringify({stadiumName:app.querySelector("#v66StadiumName").value,philosophy:app.querySelector("#v66Philosophy").value,transferStrategy:app.querySelector("#v66TransferStrategy").value,homeKitPrimary:app.querySelector("#homeKitPrimary").value,homeKitSecondary:app.querySelector("#homeKitSecondary").value,awayKitPrimary:app.querySelector("#awayKitPrimary").value,awayKitSecondary:app.querySelector("#awayKitSecondary").value,thirdKitPrimary:app.querySelector("#thirdKitPrimary").value,thirdKitSecondary:app.querySelector("#thirdKitSecondary").value})});await refreshAll();state.view="realism";render()}catch(err){alert(err.message);btn.disabled=false}};
+  app.querySelectorAll(".v66-upgrade").forEach(b=>b.onclick=async()=>{if(!confirm("Investir nesta estrutura?"))return;b.disabled=true;try{const d=await api("/api/v66/facilities/upgrade",{method:"POST",body:JSON.stringify({type:b.dataset.type})});await refreshAll();state.view="realism";render();alert(`Estrutura atualizada para o nível ${d.level}.`)}catch(err){alert(err.message);b.disabled=false}});
+  const scout=app.querySelector("#v66YouthScout");if(scout)scout.onsubmit=async e=>{e.preventDefault();const b=e.submitter;b.disabled=true;try{const d=await api("/api/v66/youth-scout",{method:"POST",body:JSON.stringify({ageGroup:app.querySelector("#v66AgeGroup").value,region:app.querySelector("#v66Region").value})});await refreshAll();state.view="realism";render();alert(`${d.prospects.length} jovens encontrados. Custo: ${Number(d.cost).toLocaleString("pt-BR")}.`)}catch(err){alert(err.message);b.disabled=false}};
+  const rec=app.querySelector("#v66Recalc");if(rec)rec.onclick=async()=>{if(!confirm("Recalcular os overalls usando pesos específicos por posição?"))return;rec.disabled=true;try{const d=await api("/api/v66/recalculate-overalls",{method:"POST",body:"{}"});await refreshAll();state.view="realism";render();alert(`${d.changed} jogadores recalculados.`)}catch(err){alert(err.message);rec.disabled=false}};
+  app.querySelectorAll(".v66-renew").forEach(b=>b.onclick=async()=>{const years=Number(prompt(`Renovar ${b.dataset.name} por quantas temporadas?`,`3`));if(!years)return;const salary=Number(prompt("Salário mensal:",String(b.dataset.salary||0)));if(!salary)return;const clause=Number(prompt("Cláusula de rescisão:",String(b.dataset.clause||0)));const bonus=Number(prompt("Luvas de assinatura:",String(Math.round(salary*2))));try{await api(`/api/v66/player/${b.dataset.id}/renew`,{method:"POST",body:JSON.stringify({years,salary,releaseClause:clause,signingBonus:bonus})});await refreshAll();state.view="realism";render()}catch(err){alert(err.message)}});
+  app.querySelectorAll(".v66-talk").forEach(b=>b.onclick=async()=>{const choice=prompt(`Conversa com ${b.dataset.name}:\n1 = Elogiar\n2 = Cobrar\n3 = Prometer minutos\n4 = Falar de liderança`,`1`);const action=({1:"PRAISE",2:"DEMAND",3:"PROMISE_MINUTES",4:"CAPTAIN_TALK"})[choice];if(!action)return;try{const d=await api(`/api/v66/player/${b.dataset.id}/conversation`,{method:"POST",body:JSON.stringify({action})});await refreshAll();state.view="realism";render();alert(d.resultText)}catch(err){alert(err.message)}});
+  app.querySelectorAll(".v66-edit").forEach(b=>b.onclick=async()=>{const rating=Number(prompt(`OVR de ${b.dataset.name}:`,b.dataset.rating));if(!rating)return;const potential=Number(prompt("Potencial:",b.dataset.potential));const shirtNumber=Number(prompt("Número da camisa:",b.dataset.shirt));const preferredFoot=String(prompt("Pé dominante: RIGHT ou LEFT",b.dataset.foot)||b.dataset.foot).toUpperCase();try{await api(`/api/v66/player/${b.dataset.id}/editor`,{method:"PUT",body:JSON.stringify({rating,potential,shirtNumber,preferredFoot})});await refreshAll();state.view="realism";render()}catch(err){alert(err.message)}});
 }
 
 function bindHome(){
@@ -4468,7 +4540,11 @@ function readTransferSearchFilters(){
     position:String(app.querySelector("#searchPosition")?.value||""),
     minRating:Math.max(40,Math.min(100,Number(app.querySelector("#searchMinRating")?.value||58))),
     maxPrice:Math.max(0,Number(app.querySelector("#searchMaxPrice")?.value||500000)),
-    realOnly:Boolean(app.querySelector("#searchRealOnly")?.checked)
+    maxAge:Math.max(15,Math.min(50,Number(app.querySelector("#searchMaxAge")?.value||40))),
+    minPotential:Math.max(0,Math.min(99,Number(app.querySelector("#searchMinPotential")?.value||0))),
+    nationality:String(app.querySelector("#searchNationality")?.value||"").trim().toUpperCase(),
+    maxSalary:Math.max(0,Number(app.querySelector("#searchMaxSalary")?.value||999999)),
+    sourceClub:String(app.querySelector("#searchSourceClub")?.value||"").trim()
   };
   state.transferSearch=filters;
   return filters;
@@ -4480,7 +4556,6 @@ async function searchTransfers(){
   const pos=encodeURIComponent(filters.position);
   const min=encodeURIComponent(filters.minRating);
   const max=encodeURIComponent(filters.maxPrice);
-  const realOnly=filters.realOnly?"1":"0";
 
   const box=app.querySelector("#transferResults");
   const msg=app.querySelector("#transferMsg");
@@ -4494,7 +4569,7 @@ async function searchTransfers(){
   if(box)box.innerHTML=`<div class="empty">Procurando jogadores...</div>`;
 
   try{
-    const d=await api(`/api/transfers/search?q=${qv}&position=${pos}&minRating=${min}&maxPrice=${max}&realOnly=${realOnly}`);
+    const d=await api(`/api/transfers/search?q=${qv}&position=${pos}&minRating=${min}&maxPrice=${max}&maxAge=${filters.maxAge}&minPotential=${filters.minPotential}&nationality=${encodeURIComponent(filters.nationality)}&maxSalary=${filters.maxSalary}&sourceClub=${encodeURIComponent(filters.sourceClub)}`);
     state.transferResults=d.players||[];
     state.marketProfile=d.marketProfile||state.marketProfile;
     state.transferWindow=d.transferWindow||state.transferWindow;
@@ -4554,6 +4629,9 @@ function openTransferOffer(p){
       <label>Forma de pagamento<select id="offerInstallments">${installmentOptions}</select></label>
       <label>Salário mensal<input id="offerSalary" type="number" min="10" value="${salary}"></label>
       <label>Duração do contrato<select id="offerYears"><option value="1">1 temporada</option><option value="2">2 temporadas</option><option value="3" selected>3 temporadas</option><option value="4">4 temporadas</option></select></label>
+      <label>Cláusula de rescisão<input id="offerRelease" type="number" min="0" value="${Math.max(Number(p.asking_price||0)*2,Number(p.fair_value||0)*2)}"></label>
+      ${p.source_club_id?`<label>Percentual de venda futura<select id="offerSellOn"><option value="0">0%</option><option value="5">5%</option><option value="10">10%</option><option value="15">15%</option><option value="20">20%</option></select></label>
+      <div class="offer-bonus-grid"><label>Bônus após jogos<input id="offerAppsTarget" type="number" min="0" value="20"></label><label>Valor do bônus<input id="offerAppsBonus" type="number" min="0" value="0"></label><label>Bônus após gols<input id="offerGoalsTarget" type="number" min="0" value="10"></label><label>Valor do bônus<input id="offerGoalsBonus" type="number" min="0" value="0"></label></div>`:""}
       <div id="installmentPreview" class="offer-summary"></div>
       <div class="offer-summary">Valor justo estimado: <b>${Number(p.fair_value||0).toLocaleString("pt-BR")}</b> · Pedido: <b>${fee.toLocaleString("pt-BR")}</b> · Salário sugerido: <b>${Number(p.suggested_salary||0).toLocaleString("pt-BR")}</b></div>
       <div id="offerMsg"></div>
@@ -4583,7 +4661,13 @@ function openTransferOffer(p){
         feeOffer:Number(feeEl.value||0),
         installments:Number(instEl.value||1),
         salaryOffer:Number(bg.querySelector("#offerSalary").value||0),
-        years:Number(bg.querySelector("#offerYears").value||3)
+        years:Number(bg.querySelector("#offerYears").value||3),
+        releaseClause:Number(bg.querySelector("#offerRelease")?.value||0),
+        sellOnPercent:Number(bg.querySelector("#offerSellOn")?.value||0),
+        appearanceTarget:Number(bg.querySelector("#offerAppsTarget")?.value||0),
+        appearanceBonus:Number(bg.querySelector("#offerAppsBonus")?.value||0),
+        goalTarget:Number(bg.querySelector("#offerGoalsTarget")?.value||0),
+        goalBonus:Number(bg.querySelector("#offerGoalsBonus")?.value||0)
       })});
       bg.querySelector("#offerMsg").innerHTML=`<div class="msg ${d.accepted?"ok":""}">${esc(d.message)}</div>`;
       if(d.accepted){
@@ -4739,13 +4823,8 @@ function bindMarket(){
   const position=app.querySelector("#searchPosition");
   if(position)position.addEventListener("change",()=>{readTransferSearchFilters()});
 
-  const name=app.querySelector("#searchName");
-  const min=app.querySelector("#searchMinRating");
-  const max=app.querySelector("#searchMaxPrice");
-  const real=app.querySelector("#searchRealOnly");
-  [name,min,max,real].filter(Boolean).forEach(el=>{
-    el.addEventListener(el.type==="checkbox"?"change":"input",()=>{readTransferSearchFilters()});
-  });
+  const fields=["#searchName","#searchMinRating","#searchMaxPrice","#searchMaxAge","#searchMinPotential","#searchNationality","#searchMaxSalary","#searchSourceClub"];
+  fields.map(x=>app.querySelector(x)).filter(Boolean).forEach(el=>el.addEventListener("input",()=>{readTransferSearchFilters()}));
 
   bindTransferButtons();
   app.querySelectorAll(".accept-offer").forEach(b=>b.onclick=async()=>{

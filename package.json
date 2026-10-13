@@ -1,8 +1,8 @@
 {
   "name": "dono-do-clube",
-  "version": "64.0.0",
+  "version": "66.0.0",
   "private": true,
-  "description": "Dono do Clube v64 — início de carreira com clube real escolhido ou criação de clube próprio, mantendo escudos reais",
+  "description": "Dono do Clube v66 — Mega Carreira: universo persistente, contratos avançados, base U15/U17/U20, reputação, instalações, atributos por posição, IA de mercado, aposentadoria/newgens e histórico completo",
   "main": "server.js",
   "scripts": {
     "start": "node server.js"
