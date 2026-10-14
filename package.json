@@ -1,8 +1,8 @@
 {
   "name": "dono-do-clube",
-  "version": "66.0.0",
+  "version": "67.0.0",
   "private": true,
-  "description": "Dono do Clube v66 — Mega Carreira: universo persistente, contratos avançados, base U15/U17/U20, reputação, instalações, atributos por posição, IA de mercado, aposentadoria/newgens e histórico completo",
+  "description": "Dono do Clube v67 — universo ampliado com sincronização FC26/SoFIFA, elencos reais por clube e mercado mundial pesquisável com todos os jogadores cadastrados",
   "main": "server.js",
   "scripts": {
     "start": "node server.js"

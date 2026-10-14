@@ -12,7 +12,8 @@ const state={
   careers:[],maxCareers:10,lineupDirty:false,
   boardMessages:[],boardExpectation:null,teamPerformance:null,rotationAdvice:null,realism:null,
   transferWindow:null,scoutLevel:1,
-  transferSearch:{name:"",position:"",minRating:58,maxPrice:500000,maxAge:40,minPotential:0,nationality:"",maxSalary:999999,sourceClub:""},
+  transferSearch:{name:"",position:"",minRating:40,maxPrice:999999,maxAge:50,minPotential:0,nationality:"",maxSalary:999999,sourceClub:""},
+  transferPagination:{page:1,pages:1,total:0,pageSize:120},
   mega:null,
   activeType:null,playerCareer:null,playerData:null,countries:{},creationMode:"club",clubStartMode:"real",playerView:"home",
   playerStarterClubs:[],realClubChoices:[],realClubDivision:"A",selectedRealClubId:null,
@@ -359,7 +360,7 @@ function renderCreateClub(){
             <option value="SHOT_STOPPER">Pegador de chutes</option>
           </select></label>
         <label>Clube inicial da 4ª divisão<select id="playerClub" name="clubId" required><option>Carregando clubes...</option></select></label>
-        <div class="player-career-note">Você começa aos 17 anos. Há 30 países de liga, mercado internacional, agente, contratos, lesões, prêmios e uma carreira de seleção jogável quando você for convocado.</div>
+        <div class="player-career-note">Você começa aos 17 anos. Há 30 países de liga + a opção Mundo, mercado internacional, agente, contratos, lesões, prêmios e uma carreira de seleção jogável quando você for convocado.</div>
         <button class="primary">Criar carreira de jogador</button>
         ${hasCareers?`<button type="button" id="cancelNewCareer" class="secondary">Voltar para minhas carreiras</button>`:""}
         <div id="playerCareerMsg"></div>
@@ -1854,7 +1855,7 @@ function marketView(){
     </section>
     <hr class="section-divider">
     <div class="kicker">CONTRATAÇÕES</div><h3>Pesquisar jogadores</h3>
-    ${state.marketProfile?`<div class="market-level">Mercado de ${esc(leagueLabel(state.competitions?.career?.user_division||"D",state.competitions?.career?.country_code||state.club?.country_code))} · jogadores normalmente entre OVR ${state.marketProfile.min} e ${state.marketProfile.max}. Ao subir de divisão, o nível disponível aumenta.</div>`:""}
+    <div class="market-level">🌍 Mercado mundial completo · jogadores de todos os clubes cadastrados e agentes livres podem ser pesquisados.</div>
     <p class="muted">O mercado usa o mesmo universo de jogadores dos clubes e agentes livres. Não existe uma categoria separada de “jogadores reais”. Atributos e valores são balanceados para a simulação.</p><p class="muted">O clube vendedor precisa aceitar a proposta e o jogador precisa aceitar salário e projeto. Compras podem ser parceladas em até 24x; empréstimos podem incluir opção de compra.</p>
     ${ban?.active?`<p class="muted">A pesquisa continua disponível, mas novas contratações estão bloqueadas pelo transfer ban.</p>`:""}
     <form id="transferSearch" class="transfer-search" action="javascript:void(0)" novalidate>
@@ -1867,9 +1868,9 @@ function marketView(){
           ["RW","Ponta direita"],["LW","Ponta esquerda"],["ST","Centroavante"]
         ].map(([v,l])=>`<option value="${v}" ${String(state.transferSearch?.position||"")===v?"selected":""}>${l}</option>`).join("")}
       </select>
-      <input id="searchMinRating" type="number" min="40" max="100" value="${Number(state.transferSearch?.minRating??58)}" placeholder="OVR mínimo">
-      <input id="searchMaxPrice" type="number" min="0" value="${Number(state.transferSearch?.maxPrice??500000)}" placeholder="Valor máximo">
-      <input id="searchMaxAge" type="number" min="15" max="50" value="${Number(state.transferSearch?.maxAge??40)}" placeholder="Idade máxima">
+      <input id="searchMinRating" type="number" min="40" max="100" value="${Number(state.transferSearch?.minRating??40)}" placeholder="OVR mínimo">
+      <input id="searchMaxPrice" type="number" min="0" value="${Number(state.transferSearch?.maxPrice??999999)}" placeholder="Valor máximo">
+      <input id="searchMaxAge" type="number" min="15" max="50" value="${Number(state.transferSearch?.maxAge??50)}" placeholder="Idade máxima">
       <input id="searchMinPotential" type="number" min="40" max="99" value="${Number(state.transferSearch?.minPotential??0)}" placeholder="Potencial mínimo">
       <input id="searchNationality" maxlength="3" value="${esc(state.transferSearch?.nationality||"")}" placeholder="Nacionalidade (BR, ARG...)">
       <input id="searchMaxSalary" type="number" min="0" value="${Number(state.transferSearch?.maxSalary??999999)}" placeholder="Salário máximo">
@@ -1889,11 +1890,11 @@ function incomingOfferCards(){
   </article>`).join("")}</div>`;
 }
 function transferCards(){
-  if(!state.transferResults?.length)return `<div class="empty">Use a pesquisa para encontrar jogadores livres e atletas de outros clubes. A qualidade do mercado aumenta conforme sua divisão.</div>`;
+  if(!state.transferResults?.length)return `<div class="empty">Nenhum jogador encontrado com esses filtros. O mercado consulta todos os jogadores cadastrados no universo da carreira.</div>`;
   const window=state.realism?.transferWindow||state.transferWindow||{open:true};
   const blocked=Boolean(state.finance?.transferBan?.active)||!window.open;
 
-  return state.transferResults.map(p=>{
+  const cards=state.transferResults.map(p=>{
     const scouted=Boolean(p.scouted);
     const ratingText=scouted?String(p.rating):`${p.rating_min}–${p.rating_max}`;
     const blockLabel=state.finance?.transferBan?.active?"Transfer ban":!window.open?"Janela fechada":"Comprar";
@@ -1929,6 +1930,9 @@ function transferCards(){
       </div>
     </article>`;
   }).join("");
+  const pg=state.transferPagination||{page:1,pages:1,total:state.transferResults.length};
+  const pager=pg.pages>1?`<div class="market-pager"><button class="secondary market-page" data-page="${Math.max(1,pg.page-1)}" ${pg.page<=1?"disabled":""}>← Anterior</button><span>Página <b>${pg.page}</b> de <b>${pg.pages}</b> · ${Number(pg.total||0).toLocaleString("pt-BR")} jogadores</span><button class="secondary market-page" data-page="${Math.min(pg.pages,pg.page+1)}" ${pg.page>=pg.pages?"disabled":""}>Próxima →</button></div>`:`<div class="market-pager"><span>${Number(pg.total||state.transferResults.length).toLocaleString("pt-BR")} jogador(es) encontrado(s)</span></div>`;
+  return cards+pager;
 }
 function friendsView(){
   return `<section class="card">
@@ -4538,9 +4542,9 @@ function readTransferSearchFilters(){
   const filters={
     name:String(app.querySelector("#searchName")?.value||"").trim(),
     position:String(app.querySelector("#searchPosition")?.value||""),
-    minRating:Math.max(40,Math.min(100,Number(app.querySelector("#searchMinRating")?.value||58))),
-    maxPrice:Math.max(0,Number(app.querySelector("#searchMaxPrice")?.value||500000)),
-    maxAge:Math.max(15,Math.min(50,Number(app.querySelector("#searchMaxAge")?.value||40))),
+    minRating:Math.max(40,Math.min(100,Number(app.querySelector("#searchMinRating")?.value||40))),
+    maxPrice:Math.max(0,Number(app.querySelector("#searchMaxPrice")?.value||999999)),
+    maxAge:Math.max(15,Math.min(50,Number(app.querySelector("#searchMaxAge")?.value||50))),
     minPotential:Math.max(0,Math.min(99,Number(app.querySelector("#searchMinPotential")?.value||0))),
     nationality:String(app.querySelector("#searchNationality")?.value||"").trim().toUpperCase(),
     maxSalary:Math.max(0,Number(app.querySelector("#searchMaxSalary")?.value||999999)),
@@ -4550,8 +4554,9 @@ function readTransferSearchFilters(){
   return filters;
 }
 
-async function searchTransfers(){
+async function searchTransfers(page=1){
   const filters=readTransferSearchFilters();
+  page=Math.max(1,Number(page||1));
   const qv=encodeURIComponent(filters.name);
   const pos=encodeURIComponent(filters.position);
   const min=encodeURIComponent(filters.minRating);
@@ -4569,11 +4574,12 @@ async function searchTransfers(){
   if(box)box.innerHTML=`<div class="empty">Procurando jogadores...</div>`;
 
   try{
-    const d=await api(`/api/transfers/search?q=${qv}&position=${pos}&minRating=${min}&maxPrice=${max}&maxAge=${filters.maxAge}&minPotential=${filters.minPotential}&nationality=${encodeURIComponent(filters.nationality)}&maxSalary=${filters.maxSalary}&sourceClub=${encodeURIComponent(filters.sourceClub)}`);
+    const d=await api(`/api/transfers/search?q=${qv}&position=${pos}&minRating=${min}&maxPrice=${max}&maxAge=${filters.maxAge}&minPotential=${filters.minPotential}&nationality=${encodeURIComponent(filters.nationality)}&maxSalary=${filters.maxSalary}&sourceClub=${encodeURIComponent(filters.sourceClub)}&page=${page}&pageSize=120`);
     state.transferResults=d.players||[];
     state.marketProfile=d.marketProfile||state.marketProfile;
     state.transferWindow=d.transferWindow||state.transferWindow;
     state.scoutLevel=Number(d.scoutLevel||state.scoutLevel||1);
+    state.transferPagination={page:Number(d.page||1),pages:Number(d.pages||1),total:Number(d.total||0),pageSize:Number(d.pageSize||120)};
     if(state.finance&&d.transferBan)state.finance.transferBan=d.transferBan;
 
     // Atualiza somente a área dos resultados. Não renderiza a aba inteira.
@@ -4582,8 +4588,8 @@ async function searchTransfers(){
     bindTransferButtons();
 
     if(msg){
-      const count=state.transferResults.length;
-      msg.innerHTML=`<div class="msg ok">${count} jogador(es) encontrado(s)${filters.position?` para ${esc(filters.position)}`:""}.</div>`;
+      const total=Number(state.transferPagination?.total||state.transferResults.length);
+      msg.innerHTML=`<div class="msg ok">${total.toLocaleString("pt-BR")} jogador(es) no resultado${filters.position?` para ${esc(filters.position)}`:""}. Exibindo página ${state.transferPagination.page}/${state.transferPagination.pages}.</div>`;
     }
   }catch(err){
     const liveBox=app.querySelector("#transferResults");
@@ -4597,6 +4603,7 @@ async function searchTransfers(){
   }
 }
 function bindTransferButtons(){
+  app.querySelectorAll(".market-page").forEach(b=>b.onclick=()=>searchTransfers(Number(b.dataset.page||1)));
   app.querySelectorAll(".scout-player").forEach(b=>b.onclick=async()=>{
     b.disabled=true;b.textContent="OBSERVANDO...";
     try{

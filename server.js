@@ -1383,6 +1383,30 @@ async function createRoster(client, club, force=false){
   if(force)await client.query(`DELETE FROM players WHERE club_id=$1`,[club.id]);
 
   const realCareer=Boolean(club.source_club_id);
+  // v67: ao iniciar com um clube real, copia o elenco real do clube-fonte para a carreira.
+  if(realCareer){
+    const sourcePlayers=(await client.query(`
+      SELECT * FROM players WHERE club_id=$1 AND market_template_id IS NULL
+      ORDER BY is_starter DESC,rating DESC,id
+    `,[club.source_club_id])).rows;
+    if(sourcePlayers.length>=11){
+      let starters=0;
+      for(const sp of sourcePlayers){
+        const isStarter=starters<11?Boolean(sp.is_starter):false;
+        if(isStarter)starters++;
+        await client.query(`
+          INSERT INTO players(
+            club_id,name,position,role,rating,pace,shooting,passing,defending,price,is_starter,age,
+            salary,contract_seasons,fitness,morale,injury_games,potential,form_rating,happiness,squad_status,
+            is_real_name,nationality_code,market_template_id,external_source,external_player_id
+          ) VALUES($1,$2,$3,$4,$5,$6,$7,$8,$9,$10,$11,$12,$13,$14,100,78,0,$15,70,80,$16,TRUE,$17,$18,$19,$20)
+        `,[club.id,sp.name,sp.position,sp.role,sp.rating,sp.pace,sp.shooting,sp.passing,sp.defending,sp.price,isStarter,sp.age,
+           sp.salary,sp.contract_seasons,Math.max(Number(sp.rating||60),Number(sp.potential||sp.rating||60)),isStarter?"STARTER":"ROTATION",
+           sp.nationality_code||club.country_code||"BR",sp.id,sp.external_source||null,sp.external_player_id||null]);
+      }
+      return;
+    }
+  }
   const base=(club.is_ai||realCareer)?Number(club.base_rating||64):64;
   const lo=(club.is_ai||realCareer)?Math.max(52,base-4):61;
   const hi=(club.is_ai||realCareer)?Math.min(85,base+3):68;
@@ -1584,14 +1608,23 @@ async function opponentAnalysis(client,clubId,career,scoutLevel=1){
 }
 
 async function ensureMarket(){
-  const r=await q(`SELECT COUNT(*)::int count FROM players WHERE club_id IS NULL`);
-  const pos=["GK","DEF","MID","ATT"];
-  for(let i=r.rows[0].count;i<40;i++){
-    const p=makePlayer(pos[rand(0,3)],59,77);
+  const r=await q(`SELECT COUNT(*)::int count FROM players WHERE club_id IS NULL AND market_template_id IS NULL`);
+  let missing=Math.max(0,40-Number(r.rows[0].count||0));
+  if(!missing)return;
+  const existing=new Set((await q(`SELECT LOWER(name) name FROM players WHERE market_template_id IS NULL`)).rows.map(x=>x.name));
+  for(const seed of REAL_PLAYER_SEED){
+    if(missing<=0)break;
+    if(existing.has(String(seed.name||"").toLowerCase()))continue;
+    const rating=clamp(Number(seed.rating||65),40,99);
+    const potential=clamp(Number(seed.potential||rating),rating,99);
+    const price=Math.max(500,Number(seed.price||Math.round((((rating-48)**2)*55+rating*110)/100)*100));
     await q(`
-      INSERT INTO players(name,position,role,rating,pace,shooting,passing,defending,price,age,salary,contract_seasons,fitness,morale,injury_games,potential,form_rating,happiness,is_real_name,nationality_code)
-      VALUES($1,$2,$3,$4,$5,$6,$7,$8,$9,$10,$11,$12,$13,$14,$15,$16,$17,$18,$19,$20)
-    `,[p.name,p.position,p.role,p.rating,p.pace,p.shooting,p.passing,p.defending,p.price,p.age,p.salary,p.contract_seasons,p.fitness,p.morale,p.injury_games,p.potential,p.form_rating,p.happiness,Boolean(p.is_real_name),p.nationality_code||"BR"]);
+      INSERT INTO players(name,position,role,rating,pace,shooting,passing,defending,price,age,salary,contract_seasons,fitness,morale,injury_games,potential,form_rating,happiness,is_real_name,real_player_key,nationality_code,external_source)
+      VALUES($1,$2,$3,$4,$5,$6,$7,$8,$9,$10,$11,$12,100,76,0,$13,70,78,TRUE,$14,$15,'LOCAL_REAL')
+      ON CONFLICT(real_player_key) DO NOTHING
+    `,[seed.name,seed.position,seed.role,rating,seed.pace,seed.shooting,seed.passing,seed.defending,price,seed.age,salaryForRating(rating),seed.contract_seasons||2,potential,`local:${seed.key||normalizeSearch(seed.name).replace(/\s+/g,"-")}`,seed.nationality||"BR"]);
+    existing.add(String(seed.name||"").toLowerCase());
+    missing--;
   }
 }
 
@@ -9303,7 +9336,6 @@ app.get("/api/club-career/clubs",auth,async(req,res,next)=>{
       FROM clubs
       WHERE is_ai=TRUE AND club_kind='national' AND country_code=$1 AND national_seed_division=$2
       ORDER BY base_rating DESC,name
-      LIMIT 40
     `,[country,division])).rows;
     res.json({country,division,clubs});
   }catch(e){next(e)}
@@ -11529,13 +11561,15 @@ app.get("/api/transfers/search",auth,async(req,res,next)=>{
     const ban=transferBanInfo(c.coins);
     const qText=normalizeSearch(req.query.q||"");
     const position=String(req.query.position||"").trim().toUpperCase();
-    const minRating=Number(req.query.minRating||0);
+    const minRating=Number(req.query.minRating||40);
     const maxPrice=Number(req.query.maxPrice||999999999);
     const maxAge=Number(req.query.maxAge||99);
     const minPotential=Number(req.query.minPotential||0);
     const nationality=String(req.query.nationality||"").trim().toUpperCase();
     const maxSalary=Number(req.query.maxSalary||999999999);
     const sourceClub=normalizeSearch(req.query.sourceClub||"");
+    const page=Math.max(1,Number(req.query.page||1));
+    const pageSize=Math.max(24,Math.min(240,Number(req.query.pageSize||120)));
     const userDiv=career?.user_division||"D";
     const profile=marketProfile(userDiv);
     const window=transferWindowInfo(career?.data?.calendar?.date);
@@ -11544,6 +11578,7 @@ app.get("/api/transfers/search",auth,async(req,res,next)=>{
     const reportRows=(await q(`SELECT target_player_id FROM scout_reports WHERE club_id=$1`,[c.id])).rows;
     const scoutedIds=new Set(reportRows.map(x=>String(x.target_player_id)));
 
+    // v67: o mercado pesquisa o universo inteiro de jogadores; não há corte por divisão.
     const rows=(await q(`
       SELECT p.*,
         sc.name source_club_name,sc.id source_club_id,sc.is_ai source_is_ai,
@@ -11557,26 +11592,26 @@ app.get("/api/transfers/search",auth,async(req,res,next)=>{
           SELECT 1 FROM players own
           WHERE own.club_id=$1 AND own.market_template_id=p.id
         )
-      ORDER BY p.is_real_name DESC,p.rating DESC,p.price DESC
-      LIMIT 700
+      ORDER BY p.is_real_name DESC,p.rating DESC,p.price DESC,p.name
     `,[c.id])).rows;
 
-    const filtered=rows.filter(p=>{
-      const sourceDiv=p.source_club_id?divisionOfClub(career,p.source_club_id):null;
+    const eligible=rows.filter(p=>{
       const ask=askingPrice(p);
       if(qText&&!normalizeSearch(p.name).includes(qText))return false;
       if(position&&p.position!==position&&p.role!==position)return false;
-      if(Number(p.rating)<Math.max(minRating,profile.min))return false;
-      if(Number(p.rating)>profile.max)return false;
+      if(Number(p.rating)<minRating)return false;
       if(Number(p.age||99)>maxAge)return false;
       if(Number(p.potential||p.rating||0)<minPotential)return false;
       if(nationality&&String(p.nationality_code||"").toUpperCase()!==nationality)return false;
       if(Number(p.salary||0)>maxSalary)return false;
       if(sourceClub&&!normalizeSearch(p.source_club_name||"").includes(sourceClub))return false;
       if(ask>maxPrice)return false;
-      if(!marketSourceVisible(userDiv,sourceDiv))return false;
       return true;
-    }).slice(0,90).map(p=>{
+    });
+    const total=eligible.length;
+    const pages=Math.max(1,Math.ceil(total/pageSize));
+    const currentPage=Math.min(page,pages);
+    const filtered=eligible.slice((currentPage-1)*pageSize,currentPage*pageSize).map(p=>{
       const sourceDiv=p.source_club_id?divisionOfClub(career,p.source_club_id):null;
       const salary=suggestedSalary(p);
       const chance=interestChance(p,c,userDiv,sourceDiv,Math.round(salary*1.1/10)*10,3);
@@ -11601,13 +11636,9 @@ app.get("/api/transfers/search",auth,async(req,res,next)=>{
     });
 
     res.json({
-      players:filtered,
-      transferBan:ban,
-      marketProfile:profile,
-      userDivision:userDiv,
-      transferWindow:window,
-      scoutLevel,
-      independentCareerMarket:true
+      players:filtered,total,page:currentPage,pages,pageSize,
+      transferBan:ban,marketProfile:profile,userDivision:userDiv,transferWindow:window,scoutLevel,
+      independentCareerMarket:true,allPlayersMarket:true
     });
   }catch(e){next(e)}
 });
@@ -11779,8 +11810,6 @@ app.post("/api/transfers/loan",auth,async(req,res,next)=>{
       if(!eligibility.eligible)throw Object.assign(new Error(eligibility.reason),{status:400});
 
       const sourceDiv=divisionOfClub(career,p.club_id);
-      const profile=marketProfile(userDiv);
-      if(Number(p.rating)>profile.max+1)throw Object.assign(new Error("Esse jogador está acima do nível de empréstimo disponível para sua divisão."),{status:400});
 
       const fairFee=Math.max(250,Math.round(fairMarketValue(p)*0.025/50)*50);
       const suggestedPurchasePrice=Math.max(
@@ -12467,6 +12496,19 @@ app.post("/api/friends/:clubId/play",auth,async(req,res,next)=>{
   }catch(e){next(e)}
 });
 
+app.get("/api/universe/status",auth,async(req,res,next)=>{
+  try{
+    const [clubs,players,realPlayers,freeAgents,meta]=await Promise.all([
+      q(`SELECT COUNT(*)::int count FROM clubs WHERE is_ai=TRUE AND COALESCE(club_kind,'')<>'market'`),
+      q(`SELECT COUNT(*)::int count FROM players p LEFT JOIN clubs c ON c.id=p.club_id WHERE p.market_template_id IS NULL AND (p.club_id IS NULL OR c.is_ai=TRUE)`),
+      q(`SELECT COUNT(*)::int count FROM players WHERE is_real_name=TRUE AND market_template_id IS NULL`),
+      q(`SELECT COUNT(*)::int count FROM players WHERE club_id IS NULL AND market_template_id IS NULL`),
+      q(`SELECT value FROM app_meta WHERE key='v67_fc26_universe_20261013'`)
+    ]);
+    res.json({clubs:clubs.rows[0].count,players:players.rows[0].count,realPlayers:realPlayers.rows[0].count,freeAgents:freeAgents.rows[0].count,fc26:meta.rows[0]?.value||null});
+  }catch(e){next(e)}
+});
+
 app.get("/styles.css",(_req,res)=>res.sendFile(path.join(__dirname,"styles.css")));
 app.get("/real_crests.js",(_req,res)=>res.sendFile(path.join(__dirname,"real_crests.js")));
 app.get("/app.js",(_req,res)=>res.sendFile(path.join(__dirname,"app.js")));
@@ -12506,6 +12548,7 @@ async function start(){
   await applyV44Migration();
   await applyV46Migration();
   await seedRealMarketPlayers();
+  await require("./v67_universe").install({pool,q,tx,salaryForRating});
   await ensureMarket();
   await require("./v66_mega")({
     app,pool,auth,userClub,q,tx,getCareer,rand,clamp,randomName,
@@ -12713,7 +12756,7 @@ app.put("/api/player-career/save/:id", express.json(), async(req,res)=>{
  res.json(r.rows[0]);
 });
 
-app.listen(PORT,"0.0.0.0",()=>console.log(`Dono do Clube v66 rodando na porta ${PORT}`));
+app.listen(PORT,"0.0.0.0",()=>console.log(`Dono do Clube v67 rodando na porta ${PORT}`));
 }
 start().catch(e=>{console.error("Falha ao iniciar:",e);process.exit(1)});
 

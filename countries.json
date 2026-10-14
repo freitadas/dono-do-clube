@@ -358,5 +358,17 @@
       "C": "Liga 3",
       "D": "Copa Perú"
     }
+  },
+  "GLOBAL": {
+    "name": "Mundo",
+    "flag": "🌍",
+    "regional": false,
+    "cup": "Copa Mundial de Clubes",
+    "divisions": {
+      "A": "Liga Mundial A",
+      "B": "Liga Mundial B",
+      "C": "Liga Mundial C",
+      "D": "Liga Mundial D"
+    }
   }
 }
